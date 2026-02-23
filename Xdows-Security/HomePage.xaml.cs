@@ -10,11 +10,11 @@ namespace Xdows_Security
         public HomePage()
         {
             InitializeComponent();
-            /* 1. ҳ�������ɺ�����ˢ�����ݣ����� UI�� */
+
             Loaded += async (_, _) => await (DataContext as HomeViewModel)!.LoadOnUiThread();
         }
 
-        /* 2. ��־���ˣ�����ԭ������ */
+
         private void LogLevelFilter_MenuClick(object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleMenuFlyoutItem item) return;
