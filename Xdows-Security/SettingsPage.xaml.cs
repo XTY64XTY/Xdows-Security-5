@@ -19,12 +19,11 @@ namespace Xdows_Security
 {
     public sealed partial class SettingsPage : Page
     {
-        private bool IsInitialize = true;
+        private Boolean IsInitialize = true;
 
         public SettingsPage()
         {
             this.InitializeComponent();
-
             _ = InitializeAsync();
         }
 
@@ -39,7 +38,7 @@ namespace Xdows_Security
                     Settings_About_Feedback.NavigateUri = new Uri(AppInfo.AppFeedback);
                     Settings_About_Website.NavigateUri = new Uri(AppInfo.AppWebsite);
 
-                    if (App.GetCzkCloudApiKey() == string.Empty)
+                    if (App.GetCzkCloudApiKey() == String.Empty)
                     {
                         CzkCloudScanToggle?.IsOn = false;
                         CzkCloudScanToggle?.IsEnabled = false;
