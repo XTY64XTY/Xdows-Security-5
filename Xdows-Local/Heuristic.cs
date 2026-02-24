@@ -31,6 +31,7 @@ namespace Xdows_Local
             new Rule([["InternetReadFile", "FtpGetFile", "URLDownloadToFile"], ["MoveFile", "CopyFile"]], 5, string.Empty),
             new Rule([["CallNextHook", "SetWindowsHook"]], 15, "AddHook"),
             new Rule([["_"]], 5, string.Empty),
+            new Rule([["free"]], 5, string.Empty),
             new Rule([["GetLastError"]], 5, string.Empty),
             new Rule([["FlushInstruction"]], 5, string.Empty),
             new Rule([["WriteConsole"]], -5, string.Empty),
