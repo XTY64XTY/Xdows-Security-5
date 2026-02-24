@@ -13,13 +13,12 @@ namespace Xdows_Security.Views
     public sealed partial class BugReportPage : Page
     {
         private FeedbackTCPClient? _tcpClient;
-        private readonly Dictionary<string, string> _userAvatars = [];
-        private string _currentUsername = "";
+        private readonly Dictionary<String, String> _userAvatars = [];
+        private String _currentUsername = "";
         private DispatcherTimer? _refreshTimer;
-        private bool _isAutoRefresh = false;
+        private Boolean _isAutoRefresh = false;
         private DateTime _lastServerMessageTime = DateTime.Now;
-        private readonly Queue<string> _pendingMessages = new();
-
+        private readonly Queue<String> _pendingMessages = new();
 
         public BugReportPage()
         {
@@ -40,7 +39,7 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_FailedInit"), ex.Message));
+                    AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_FailedInit"), ex.Message));
                 }
             };
             Unloaded += (_, __) => Cleanup();
@@ -53,8 +52,8 @@ namespace Xdows_Security.Views
             _tcpClient = new FeedbackTCPClient();
 
             // 使用系统账户名作为用户名
-            string systemUsername = Environment.UserName;
-            if (_tcpClient != null && (string.IsNullOrEmpty(_tcpClient.Username) || _tcpClient.Username != systemUsername))
+            String systemUsername = Environment.UserName;
+            if (_tcpClient != null && (String.IsNullOrEmpty(_tcpClient.Username) || _tcpClient.Username != systemUsername))
             {
                 try
                 {
@@ -62,7 +61,7 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SetUsernameFailed"), ex.Message));
+                    AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SetUsernameFailed"), ex.Message));
                     StatusTxt.Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_NotConnected");
                     return;
                 }
@@ -129,7 +128,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task HandleReceivedMessageAsync(Dictionary<string, object> messageDict)
+        private async Task HandleReceivedMessageAsync(Dictionary<String, Object> messageDict)
         {
             try
             {
@@ -138,13 +137,13 @@ namespace Xdows_Security.Views
                     return;
                 }
 
-                if (!messageDict.TryGetValue("type", out var typeObj))
+                if (!messageDict.TryGetValue("type", out Object? typeObj))
                 {
                     return;
                 }
 
-                string type = typeObj?.ToString() ?? "";
-                if (string.IsNullOrEmpty(type))
+                String type = typeObj?.ToString() ?? "";
+                if (String.IsNullOrEmpty(type))
                 {
                     return;
                 }
@@ -200,7 +199,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void HandleRegisterSuccess(Dictionary<string, object> messageDict)
+        private void HandleRegisterSuccess(Dictionary<String, Object> messageDict)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -213,38 +212,38 @@ namespace Xdows_Security.Views
                 StatusTxt.Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_Connected");
                 AddSystemMessage(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_JoinedChannel"));
 
-                if (messageDict.TryGetValue("user", out var userObj) &&
+                if (messageDict.TryGetValue("user", out Object? userObj) &&
                     userObj is JsonElement userElement)
                 {
-                    if (userElement.TryGetProperty("username", out var usernameElement))
+                    if (userElement.TryGetProperty("username", out JsonElement usernameElement))
                     {
                         _currentUsername = usernameElement.GetString() ?? "";
                     }
 
-                    if (userElement.TryGetProperty("avatar", out var avatarElement))
+                    if (userElement.TryGetProperty("avatar", out JsonElement avatarElement))
                     {
-                        string avatar = avatarElement.GetString() ?? "";
-                        if (!string.IsNullOrEmpty(avatar) && !string.IsNullOrEmpty(_currentUsername))
+                        String avatar = avatarElement.GetString() ?? "";
+                        if (!String.IsNullOrEmpty(avatar) && !String.IsNullOrEmpty(_currentUsername))
                         {
                             _userAvatars[_currentUsername] = avatar;
                         }
                     }
                 }
 
-                if (messageDict.TryGetValue("recent_messages", out var messagesObj) &&
+                if (messageDict.TryGetValue("recent_messages", out Object? messagesObj) &&
                     messagesObj is JsonElement messagesElement &&
                     messagesElement.ValueKind == JsonValueKind.Array)
                 {
                     MessagesPanel.Children.Clear();
 
-                    foreach (var msgElement in messagesElement.EnumerateArray())
+                    foreach (JsonElement msgElement in messagesElement.EnumerateArray())
                     {
                         try
                         {
-                            var msgDict = JsonSerializer.Deserialize<Dictionary<string, object>>(msgElement.GetRawText());
+                            Dictionary<String, Object>? msgDict = JsonSerializer.Deserialize(msgElement.GetRawText(), BugReportJsonContext.Default.DictionaryStringObject);
                             if (msgDict != null)
                             {
-                                if (msgDict.TryGetValue("type", out var _))
+                                if (msgDict.TryGetValue("type", out Object? _))
                                 {
                                     // do nothing
                                 }
@@ -276,11 +275,11 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_HandleRegisterFailed"), ex.Message));
+                AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_HandleRegisterFailed"), ex.Message));
             }
         }
 
-        private void HandleNewMessage(Dictionary<string, object> messageDict, bool isHistory = false)
+        private void HandleNewMessage(Dictionary<String, Object> messageDict, Boolean isHistory = false)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -290,67 +289,67 @@ namespace Xdows_Security.Views
 
             try
             {
-                if (!messageDict.TryGetValue("username", out var usernameObj) ||
-                    !messageDict.TryGetValue("type", out var typeObj))
+                if (!messageDict.TryGetValue("username", out Object? usernameObj) ||
+                    !messageDict.TryGetValue("type", out Object? typeObj))
                     return;
 
-                string username = usernameObj.ToString() ?? "";
-                string type = typeObj.ToString() ?? "";
+                String username = usernameObj.ToString() ?? "";
+                String type = typeObj.ToString() ?? "";
 
                 if (type != "text" && type != "new_message")
                 {
                     // 仅处理文本类型消息
                 }
 
-                if (!messageDict.TryGetValue("content", out var contentObj))
+                if (!messageDict.TryGetValue("content", out Object? contentObj))
                     return;
 
-                string content = contentObj.ToString() ?? "";
+                String content = contentObj.ToString() ?? "";
 
-                if (messageDict.TryGetValue("user_info", out var textUserInfoObj) &&
+                if (messageDict.TryGetValue("user_info", out Object? textUserInfoObj) &&
                     textUserInfoObj is JsonElement textUserInfoElement)
                 {
-                    if (textUserInfoElement.TryGetProperty("username", out var infoUsernameElement) &&
-                        textUserInfoElement.TryGetProperty("avatar", out var avatarElement))
+                    if (textUserInfoElement.TryGetProperty("username", out JsonElement infoUsernameElement) &&
+                        textUserInfoElement.TryGetProperty("avatar", out JsonElement avatarElement))
                     {
-                        string infoUsername = infoUsernameElement.GetString() ?? "";
-                        string avatar = avatarElement.GetString() ?? "";
+                        String infoUsername = infoUsernameElement.GetString() ?? "";
+                        String avatar = avatarElement.GetString() ?? "";
 
-                        if (!string.IsNullOrEmpty(infoUsername) && !string.IsNullOrEmpty(avatar))
+                        if (!String.IsNullOrEmpty(infoUsername) && !String.IsNullOrEmpty(avatar))
                         {
                             _userAvatars[infoUsername] = avatar;
                         }
                     }
                 }
 
-                bool textIsMe = username == _currentUsername;
+                Boolean textIsMe = username == _currentUsername;
 
                 if (textIsMe && !isHistory)
                 {
                     return;
                 }
 
-                int readByCount = 0;
-                int totalUsers = 0;
+                Int32 readByCount = 0;
+                Int32 totalUsers = 0;
 
-                if (messageDict.TryGetValue("read_by_count", out var readByObj) &&
-                    int.TryParse(readByObj.ToString(), out int readCount))
+                if (messageDict.TryGetValue("read_by_count", out Object? readByObj) &&
+                    Int32.TryParse(readByObj.ToString(), out Int32 readCount))
                 {
                     readByCount = readCount;
                 }
 
-                if (messageDict.TryGetValue("total_users", out var totalUsersObj) &&
-                    int.TryParse(totalUsersObj.ToString(), out int totalCount))
+                if (messageDict.TryGetValue("total_users", out Object? totalUsersObj) &&
+                    Int32.TryParse(totalUsersObj.ToString(), out Int32 totalCount))
                 {
                     totalUsers = totalCount;
                 }
 
                 AddMessageWithUser(content, username, textIsMe, isHistory, readByCount, totalUsers);
 
-                if (!isHistory && messageDict.TryGetValue("id", out var idObj))
+                if (!isHistory && messageDict.TryGetValue("id", out Object? idObj))
                 {
-                    string messageId = idObj.ToString() ?? "";
-                    if (!string.IsNullOrEmpty(messageId))
+                    String messageId = idObj.ToString() ?? "";
+                    if (!String.IsNullOrEmpty(messageId))
                     {
                         _ = Task.Run(async () =>
                         {
@@ -369,7 +368,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void HandleUserOnline(Dictionary<string, object> messageDict)
+        private void HandleUserOnline(Dictionary<String, Object> messageDict)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -377,14 +376,14 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            if (!messageDict.TryGetValue("username", out var usernameObj))
+            if (!messageDict.TryGetValue("username", out Object? usernameObj))
                 return;
 
-            string username = usernameObj.ToString() ?? "";
-            AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UserOnline"), username));
+            String username = usernameObj.ToString() ?? "";
+            AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UserOnline"), username));
         }
 
-        private void HandleUserOffline(Dictionary<string, object> messageDict)
+        private void HandleUserOffline(Dictionary<String, Object> messageDict)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -392,33 +391,33 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            if (!messageDict.TryGetValue("username", out var usernameObj))
+            if (!messageDict.TryGetValue("username", out Object? usernameObj))
                 return;
 
-            string username = usernameObj.ToString() ?? "";
-            AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UserOffline"), username));
+            String username = usernameObj.ToString() ?? "";
+            AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UserOffline"), username));
         }
 
-        private void HandleReadStatusUpdate(Dictionary<string, object> messageDict)
+        private static void HandleReadStatusUpdate(Dictionary<String, Object> messageDict)
         {
-            if (messageDict.TryGetValue("message_id", out var idObj) &&
-                messageDict.TryGetValue("read_by_count", out var readCountObj) &&
-                messageDict.TryGetValue("total_users", out var totalUsersObj))
+            if (messageDict.TryGetValue("message_id", out Object? idObj) &&
+                messageDict.TryGetValue("read_by_count", out Object? readCountObj) &&
+                messageDict.TryGetValue("total_users", out Object? totalUsersObj))
             {
                 _ = idObj.ToString() ?? "";
-                _ = int.TryParse(readCountObj.ToString(), out int rc) ? rc : 0;
-                _ = int.TryParse(totalUsersObj.ToString(), out int tu) ? tu : 0;
+                _ = Int32.TryParse(readCountObj.ToString(), out Int32 rc) ? rc : 0;
+                _ = Int32.TryParse(totalUsersObj.ToString(), out Int32 tu) ? tu : 0;
             }
         }
 
-        private void HandleSystemMessage(Dictionary<string, object> messageDict)
+        private void HandleSystemMessage(Dictionary<String, Object> messageDict)
         {
-            if (messageDict.TryGetValue("content", out var contentObj))
+            if (messageDict.TryGetValue("content", out Object? contentObj))
             {
-                string content = contentObj.ToString() ?? "";
-                string sender = "System";
+                String content = contentObj.ToString() ?? "";
+                String sender = "System";
 
-                if (messageDict.TryGetValue("sender", out var senderObj))
+                if (messageDict.TryGetValue("sender", out Object? senderObj))
                 {
                     sender = senderObj.ToString() ?? "System";
                 }
@@ -459,36 +458,36 @@ namespace Xdows_Security.Views
                 }
             });
 
-            var refreshMessageDict = new Dictionary<string, object>
+            Dictionary<String, Object> refreshMessageDict = new()
             {
                 ["type"] = "register_success",
-                ["users"] = new List<Dictionary<string, object>>(),
-                ["messages"] = new List<Dictionary<string, object>>()
+                ["users"] = new List<Dictionary<String, Object>>(),
+                ["messages"] = new List<Dictionary<String, Object>>()
             };
 
             HandleRegisterSuccess(refreshMessageDict);
         }
 
-        private void HandleErrorMessage(Dictionary<string, object> messageDict)
+        private void HandleErrorMessage(Dictionary<String, Object> messageDict)
         {
-            if (messageDict.TryGetValue("content", out var msgObj))
+            if (messageDict.TryGetValue("content", out Object? msgObj))
             {
-                string errorMessage = msgObj.ToString() ?? "";
+                String errorMessage = msgObj.ToString() ?? "";
                 AddSystemMessage(errorMessage);
             }
-            else if (messageDict.TryGetValue("message", out var msgObj2))
+            else if (messageDict.TryGetValue("message", out Object? msgObj2))
             {
-                string errorMessage = msgObj2.ToString() ?? "";
-                AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_ErrorFormat"), errorMessage));
+                String errorMessage = msgObj2.ToString() ?? "";
+                AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_ErrorFormat"), errorMessage));
             }
         }
 
         #endregion
 
         #region UI消息处理
-        private async Task<bool> ShowUsernameDialogAsync()
+        private async Task<Boolean> ShowUsernameDialogAsync()
         {
-            var dialog = new ContentDialog
+            ContentDialog dialog = new()
             {
                 Title = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernameDialog_Title"),
                 Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernameDialog_Content"),
@@ -498,18 +497,18 @@ namespace Xdows_Security.Views
                 XamlRoot = this.XamlRoot
             };
 
-            var stackPanel = new StackPanel { Spacing = 12 };
+            StackPanel stackPanel = new() { Spacing = 12 };
             stackPanel.Children.Add(new TextBlock { Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernameLabel") });
-            var usernameBox = new TextBox { PlaceholderText = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernamePlaceholder") };
+            TextBox usernameBox = new() { PlaceholderText = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernamePlaceholder") };
             stackPanel.Children.Add(usernameBox);
 
             dialog.Content = stackPanel;
 
-            bool result = false;
+            Boolean result = false;
             dialog.PrimaryButtonClick += async (_, __) =>
             {
-                string username = usernameBox.Text.Trim();
-                if (string.IsNullOrEmpty(username))
+                String username = usernameBox.Text.Trim();
+                if (String.IsNullOrEmpty(username))
                 {
                     usernameBox.PlaceholderText = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernameEmpty");
                     return;
@@ -525,7 +524,7 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SetUsernameFailed"), ex.Message));
+                    AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SetUsernameFailed"), ex.Message));
                 }
             };
 
@@ -533,7 +532,7 @@ namespace Xdows_Security.Views
             return result;
         }
 
-        private void AddMessageWithUser(string content, string username, bool isMe, bool isHistory = false, int readByCount = 0, int totalUsers = 0)
+        private void AddMessageWithUser(String content, String username, Boolean isMe, Boolean isHistory = false, Int32 readByCount = 0, Int32 totalUsers = 0)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -541,7 +540,7 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            var container = new StackPanel
+            StackPanel container = new()
             {
                 Orientation = Orientation.Horizontal,
                 Spacing = 8,
@@ -549,7 +548,7 @@ namespace Xdows_Security.Views
                 HorizontalAlignment = isMe ? HorizontalAlignment.Right : HorizontalAlignment.Left
             };
 
-            var avatar = new Border
+            Border avatar = new()
             {
                 Width = 32,
                 Height = 32,
@@ -558,7 +557,7 @@ namespace Xdows_Security.Views
                 VerticalAlignment = VerticalAlignment.Top,
                 Margin = new Thickness(0, 0, 0, 8)
             };
-            var avatarText = new TextBlock
+            TextBlock avatarText = new()
             {
                 Text = username.Length > 0 ? username[0].ToString().ToUpper() : "?",
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -569,7 +568,7 @@ namespace Xdows_Security.Views
 
             avatar.Child = avatarText;
 
-            var messageBubble = new Border
+            Border messageBubble = new()
             {
                 CornerRadius = new CornerRadius(12),
                 Padding = new Thickness(12, 8, 12, 8),
@@ -579,9 +578,9 @@ namespace Xdows_Security.Views
                 BorderThickness = new Thickness(1)
             };
 
-            var messageStack = new StackPanel { Spacing = 4 };
+            StackPanel messageStack = new() { Spacing = 4 };
 
-            var usernameText = new TextBlock
+            TextBlock usernameText = new()
             {
                 Text = username,
                 FontSize = 12,
@@ -589,7 +588,7 @@ namespace Xdows_Security.Views
             };
             messageStack.Children.Add(usernameText);
 
-            var contentText = new TextBlock
+            TextBlock contentText = new()
             {
                 Text = content,
                 TextWrapping = TextWrapping.Wrap,
@@ -600,9 +599,9 @@ namespace Xdows_Security.Views
 
             if (totalUsers > 0)
             {
-                var readStatusText = new TextBlock
+                TextBlock readStatusText = new()
                 {
-                    Text = readByCount >= totalUsers ? WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_AllRead") : string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_ReadCountFormat"), readByCount),
+                    Text = readByCount >= totalUsers ? WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_AllRead") : String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_ReadCountFormat"), readByCount),
                     FontSize = 10,
                     Foreground = (Brush)Application.Current.Resources["TextFillColorDisabledBrush"],
                     HorizontalAlignment = HorizontalAlignment.Right,
@@ -629,7 +628,7 @@ namespace Xdows_Security.Views
             ScrollToBottom();
         }
 
-        private void AddSystemMessage(string message)
+        private void AddSystemMessage(String message)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -637,20 +636,20 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            var container = new StackPanel
+            StackPanel container = new()
             {
                 Margin = new Thickness(0, 4, 0, 4),
                 HorizontalAlignment = HorizontalAlignment.Center
             };
 
-            var systemMessage = new Border
+            Border systemMessage = new()
             {
                 CornerRadius = new CornerRadius(12),
                 Padding = new Thickness(12, 6, 12, 6),
                 Background = (Brush)Application.Current.Resources["ControlFillColorSecondaryBrush"]
             };
 
-            var text = new TextBlock
+            TextBlock text = new()
             {
                 Text = message,
                 FontSize = 12,
@@ -664,7 +663,7 @@ namespace Xdows_Security.Views
             ScrollToBottom();
         }
 
-        private void ScrollToBottom(bool force = false)
+        private void ScrollToBottom(Boolean force = false)
         {
             if (!DispatcherQueue.HasThreadAccess)
             {
@@ -691,7 +690,7 @@ namespace Xdows_Security.Views
         #endregion
 
         #region 事件处理
-        private async void SendBtn_Click(object sender, RoutedEventArgs e)
+        private async void SendBtn_Click(Object sender, RoutedEventArgs e)
         {
             await SendBtn_ClickAsync();
         }
@@ -704,12 +703,12 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            string text = InputBox.Text.Trim();
-            if (string.IsNullOrEmpty(text))
+            String text = InputBox.Text.Trim();
+            if (String.IsNullOrEmpty(text))
                 return;
 
             InputBox.Text = "";
-            string displayUsername = !string.IsNullOrEmpty(_currentUsername) ? _currentUsername : WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_Me");
+            String displayUsername = !String.IsNullOrEmpty(_currentUsername) ? _currentUsername : WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_Me");
             AddMessageWithUser(text, displayUsername, isMe: true, readByCount: 1, totalUsers: 1);
 
             _pendingMessages.Enqueue(text);
@@ -726,7 +725,7 @@ namespace Xdows_Security.Views
 
             while (_pendingMessages.Count > 0)
             {
-                string message = _pendingMessages.Peek();
+                String message = _pendingMessages.Peek();
                 try
                 {
                     await _tcpClient.SendMessageAsync(message);
@@ -739,7 +738,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void InputBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        private void InputBox_KeyDown(Object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.Enter && !e.KeyStatus.IsMenuKeyDown)
             {
@@ -748,7 +747,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void ReconnectBtn_Click(object sender, RoutedEventArgs e)
+        private async void ReconnectBtn_Click(Object sender, RoutedEventArgs e)
         {
             if (_tcpClient != null)
             {
@@ -759,9 +758,9 @@ namespace Xdows_Security.Views
             await InitializeTCPClientAsync();
         }
 
-        private async void SettingsBtn_Click(object sender, RoutedEventArgs e)
+        private async void SettingsBtn_Click(Object sender, RoutedEventArgs e)
         {
-            var dialog = new ContentDialog
+            ContentDialog dialog = new()
             {
                 Title = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SettingsDialog_Title"),
                 CloseButtonText = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Cancel"),
@@ -770,21 +769,21 @@ namespace Xdows_Security.Views
                 XamlRoot = this.XamlRoot
             };
 
-            var stackPanel = new StackPanel { Spacing = 12 };
+            StackPanel stackPanel = new() { Spacing = 12 };
 
-            var usernamePanel = new StackPanel { Spacing = 4 };
+            StackPanel usernamePanel = new() { Spacing = 4 };
             usernamePanel.Children.Add(new TextBlock { Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_UsernameLabel") });
-            var usernameBox = new TextBox { Text = _tcpClient?.Username ?? "" };
+            TextBox usernameBox = new() { Text = _tcpClient?.Username ?? "" };
             usernamePanel.Children.Add(usernameBox);
 
-            var hostPanel = new StackPanel { Spacing = 4 };
+            StackPanel hostPanel = new() { Spacing = 4 };
             hostPanel.Children.Add(new TextBlock { Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_HostLabel") });
-            var hostBox = new TextBox { Text = _tcpClient?.ServerHost ?? "" };
+            TextBox hostBox = new() { Text = _tcpClient?.ServerHost ?? "" };
             hostPanel.Children.Add(hostBox);
 
-            var portPanel = new StackPanel { Spacing = 4 };
+            StackPanel portPanel = new() { Spacing = 4 };
             portPanel.Children.Add(new TextBlock { Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_PortLabel") });
-            var portBox = new TextBox { Text = _tcpClient?.ServerPort.ToString() ?? "" };
+            TextBox portBox = new() { Text = _tcpClient?.ServerPort.ToString() ?? "" };
             portPanel.Children.Add(portBox);
 
             stackPanel.Children.Add(usernamePanel);
@@ -806,7 +805,7 @@ namespace Xdows_Security.Views
 
                         await _tcpClient.SetUsernameAsync(usernameBox.Text);
 
-                        if (int.TryParse(portBox.Text, out int port))
+                        if (Int32.TryParse(portBox.Text, out Int32 port))
                         {
                             await _tcpClient.SetServerAsync(hostBox.Text, port);
                         }
@@ -818,7 +817,7 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    AddSystemMessage(string.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SettingSaveFailed"), ex.Message));
+                    AddSystemMessage(String.Format(WinUI3Localizer.Localizer.Get().GetLocalizedString("BugReportPage_SettingSaveFailed"), ex.Message));
                 }
                 return;
             };
@@ -861,13 +860,13 @@ namespace Xdows_Security.Views
 
             _refreshTimer.Start();
 
-            var connectionCheckTimer = new DispatcherTimer
+            DispatcherTimer connectionCheckTimer = new()
             {
                 Interval = TimeSpan.FromMilliseconds(3000)
             };
 
-            int connectionFailureCount = 0;
-            bool isUpdatingStatus = false;
+            Int32 connectionFailureCount = 0;
+            Boolean isUpdatingStatus = false;
 
             connectionCheckTimer.Tick += (sender, e) =>
             {
