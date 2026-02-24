@@ -130,7 +130,7 @@ namespace Xdows_Security
             return tcs.Task;
         }
 
-        private void RunProtectionWithToggle(ToggleSwitch toggle, int runId)
+        private void RunProtectionWithToggle(ToggleSwitch toggle, Int32 runId)
         {
             toggle.Toggled -= RunProtection;
             if (!ProtectionStatus.Run(runId))
@@ -146,14 +146,17 @@ namespace Xdows_Security
                 Files_CompatibilityMode.IsEnabled = !ProtectionStatus.IsRun(1);
             }
         }
-        private void Settings_Feedback_Click(object sender, RoutedEventArgs e)
+
+        private void Settings_Feedback_Click(Object sender, RoutedEventArgs e)
         {
             App.MainWindow?.GoToBugReportPage(SettingsPage_Other_Feedback.Header.ToString());
         }
-        private void RunProtection(object sender, RoutedEventArgs e)
+
+        private void RunProtection(Object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
-            int runId = toggle.Tag switch
+            String tag = toggle.Tag as String ?? String.Empty;
+            Int32 runId = tag switch
             {
                 "Progress" => 0,
                 "Files" => 1,
@@ -162,12 +165,13 @@ namespace Xdows_Security
             };
             RunProtectionWithToggle(toggle, runId);
         }
-        private async void Toggled_SaveToggleData(object sender, RoutedEventArgs e)
+
+        private async void Toggled_SaveToggleData(Object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
 
-            string key = toggle.Tag as string ?? toggle.Name;
-            if (string.IsNullOrWhiteSpace(key)) return;
+            String key = toggle.Tag as String ?? toggle.Name;
+            if (String.IsNullOrWhiteSpace(key)) return;
             if (toggle.IsOn && (key == "CzkCloudScan" || key == "CloudScan"))
             {
                 _ = new ContentDialog
@@ -183,38 +187,38 @@ namespace Xdows_Security
             var settings = ApplicationData.Current.LocalSettings;
             settings.Values[key] = toggle.IsOn;
         }
+
         private void LoadScanSetting()
         {
             var settings = ApplicationData.Current.LocalSettings;
 
-            var toggles = new List<ToggleSwitch>
-              {
-                 ScanProgressToggle,
-                 DeepScanToggle,
-                 ExtraDataToggle,
-                 LocalScanToggle,
-                 CzkCloudScanToggle,
-                 SouXiaoScanToggle,
-                 CloudScanToggle,
-                 TrayVisibleToggle,
-                 DisabledVerifyToggle,
-                 Process_CompatibilityMode,
-                 Files_CompatibilityMode,
-               };
+            List<ToggleSwitch> toggles =
+            [
+                ScanProgressToggle,
+                DeepScanToggle,
+                ExtraDataToggle,
+                LocalScanToggle,
+                CzkCloudScanToggle,
+                SouXiaoScanToggle,
+                CloudScanToggle,
+                TrayVisibleToggle,
+                DisabledVerifyToggle,
+                Process_CompatibilityMode,
+                Files_CompatibilityMode,
+            ];
 
-            foreach (var toggle in toggles)
+            foreach (ToggleSwitch toggle in toggles)
             {
                 if (toggle == null) continue;
 
-                if (toggle.Tag is string key && !string.IsNullOrWhiteSpace(key) &&
-                    settings.Values.TryGetValue(key, out object raw) && raw is bool isOn)
+                String key = toggle.Tag as String??"";
+                if (!String.IsNullOrWhiteSpace(key) && settings.Values.TryGetValue(key, out Object raw) && raw is Boolean isOn)
                 {
                     toggle.IsOn = isOn;
                 }
             }
 
-            if (settings.Values.TryGetValue("AppBackdropOpacity", out object opacityRaw) &&
-                opacityRaw is double opacity)
+            if (settings.Values.TryGetValue("AppBackdropOpacity", out Object opacityRaw) && opacityRaw is Double opacity)
             {
                 Appearance_Backdrop_Opacity.Value = opacity;
             }
@@ -230,13 +234,13 @@ namespace Xdows_Security
             // Load scan index mode setting (default Parallel) without direct XAML field access
             try
             {
-                var mode = settings.Values.TryGetValue("ScanIndexMode", out object raw) && raw is string s ? s : "Parallel";
-                var combo = this.FindName("ScanIndexModeComboBox") as ComboBox;
+                String mode = settings.Values.TryGetValue("ScanIndexMode", out Object raw) && raw is String s ? s : "Parallel";
+                ComboBox combo = this.FindName("ScanIndexModeComboBox") as ComboBox ?? new();
                 if (combo != null)
                 {
-                    foreach (var obj in combo.Items)
+                    foreach (Object obj in combo.Items)
                     {
-                        if (obj is ComboBoxItem item && (item.Tag as string) == mode)
+                        if (obj is ComboBoxItem item && (item.Tag as String) == mode)
                         {
                             combo.SelectedItem = item;
                             break;
@@ -245,7 +249,7 @@ namespace Xdows_Security
                     // If Parallel mode, disable ScanProgress toggle
                     try
                     {
-                        var toggle = this.FindName("ScanProgressToggle") as ToggleSwitch;
+                        ToggleSwitch toggle = this.FindName("ScanProgressToggle") as ToggleSwitch ?? new();
                         if (toggle != null)
                         {
                             if (mode == "Parallel")
