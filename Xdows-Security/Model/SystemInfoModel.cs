@@ -25,7 +25,7 @@ namespace Xdows_Security.Model
             return (true, mem.dwMemoryLoad, $"{u:F1} {units[idx]} / {t:F1} {units[idx]} ({mem.dwMemoryLoad}%)");
         }
 
-        public string OSName => App.OsName;
-        public string OSVersion => App.OsVersion;
+        public static string OSName => App.OsName;
+        public static string OSVersion => App.OsVersion;
     }
 }

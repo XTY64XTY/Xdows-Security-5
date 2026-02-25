@@ -143,8 +143,8 @@ namespace Xdows_Security.ViewModel
         {
             try
             {
-                OsName = _sys.OSName;
-                OsVersion = _sys.OSVersion;
+                OsName = SystemInfoModel.OSName;
+                OsVersion = SystemInfoModel.OSVersion;
             }
             catch (Exception ex)
             {

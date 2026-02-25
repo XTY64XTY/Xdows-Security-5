@@ -10,8 +10,6 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using Windows.Security.Credentials.UI;
 using Windows.UI;
 using Windows.UI.ViewManagement;
@@ -199,7 +197,6 @@ namespace Xdows_Security
         }
         public void GoToPage(string PageName)
         {
-            if ((MD5.HashData(Encoding.UTF8.GetBytes(AppInfo.AppName))[0] >> 4) != 14) return;
             if (PageName == "BugReport")
             {
                 GoToBugReportPage(null);

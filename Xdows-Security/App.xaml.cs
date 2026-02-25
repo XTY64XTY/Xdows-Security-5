@@ -32,7 +32,7 @@ namespace Xdows_Security
 
         static Updater()
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Xdows-Security/4.1");
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{AppInfo.AppId}/{AppInfo.AppVersion}");
         }
 
         public static async Task<UpdateInfo?> CheckUpdateAsync()
@@ -80,9 +80,11 @@ namespace Xdows_Security
     public class AppInfo
     {
         public static readonly string AppName = "Xdows Security";
+        public static readonly string AppId = "Xdows-Security";
         public static readonly string AppVersion = "4.1.1";
         public static readonly string AppFeedback = "https://github.com/XTY64XTY12345/Xdows-Security/issues/new/choose";
         public static readonly string AppWebsite = "https://xty64xty.netlify.app/";
+        // 修改 开发团队、Xdows Tools 名称请修改本地化资源文件
     }
     public static class ProtectionStatus
     {
@@ -370,7 +372,7 @@ namespace Xdows_Security
                 LogText.AddNewLog(LogLevel.ERROR, "App", $"Error in OnLaunched: {ex.Message}");
             }
         }
-        private void InitializeMainWindow()
+        private static void InitializeMainWindow()
         {
             try
             {
@@ -419,7 +421,7 @@ namespace Xdows_Security
             ? (Environment.OSVersion.Version.Build >= 22000 ? "Windows 11" : "Windows 10")
             : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macOS" : "Linux";
 
-        public static string OsVersion => Environment.OSVersion.ToString();
+        public static string OsVersion => RuntimeInformation.OSDescription;
         public static void PlayEntranceAnimation(UIElement uIElement, string kind)
         {
             var visual = ElementCompositionPreview.GetElementVisual(uIElement);
