@@ -577,6 +577,7 @@ namespace Xdows_Security.Views
             App.MainWindow?.manager?.IsVisibleInTray = TrayVisibleToggle.IsEnabled;
         }
 
+
         private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
@@ -593,16 +594,10 @@ namespace Xdows_Security.Views
 
         private void ShowAllSettingsItems()
         {
-            ScrollViewer? scrollViewer = this.Content as ScrollViewer;
-            if (scrollViewer == null) return;
+            if (SettingsContentPanel == null) return;
 
-            StackPanel? stackPanel = scrollViewer.Content as StackPanel;
-            if (stackPanel == null) return;
-
-            foreach (UIElement child in stackPanel.Children)
+            foreach (UIElement child in SettingsContentPanel.Children)
             {
-                if (child is AutoSuggestBox) continue;
-
                 if (child is FrameworkElement element)
                 {
                     element.Visibility = Visibility.Visible;
@@ -618,19 +613,15 @@ namespace Xdows_Security.Views
                     }
                 }
             }
+            App.PlayEntranceAnimation(SettingsContentPanel, "up", 40);
         }
 
         private void FilterSettingsItems(String searchText)
         {
-            ScrollViewer? scrollViewer = this.Content as ScrollViewer;
-            if (scrollViewer == null) return;
+            if (SettingsContentPanel == null) return;
 
-            StackPanel? stackPanel = scrollViewer.Content as StackPanel;
-            if (stackPanel == null) return;
-
-            foreach (UIElement child in stackPanel.Children)
+            foreach (UIElement child in SettingsContentPanel.Children)
             {
-                if (child is AutoSuggestBox) continue;
                 if (child is FrameworkElement element)
                 {
                     element.Visibility = Visibility.Collapsed;
@@ -648,10 +639,9 @@ namespace Xdows_Security.Views
             }
 
             Boolean currentHeaderMatched = false;
-            for (Int32 i = 0; i < stackPanel.Children.Count; i++)
+            for (Int32 i = 0; i < SettingsContentPanel.Children.Count; i++)
             {
-                UIElement child = stackPanel.Children[i];
-                if (child is AutoSuggestBox) continue;
+                UIElement child = SettingsContentPanel.Children[i];
                 if (child is FrameworkElement element)
                 {
                     if (element is TextBlock textBlock)
@@ -694,6 +684,7 @@ namespace Xdows_Security.Views
                     }
                 }
             }
+            App.PlayEntranceAnimation(SettingsContentPanel, "up", 40);
         }
 
         private static Boolean IsSettingsItemMatched(FrameworkElement item, String searchText)

@@ -422,25 +422,28 @@ namespace Xdows_Security
             : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macOS" : "Linux";
 
         public static string OsVersion => RuntimeInformation.OSDescription;
-        public static void PlayEntranceAnimation(UIElement uIElement, string kind)
+        public static void PlayEntranceAnimation(UIElement uIElement, string kind, float finalVerticalOffset = 0f)
         {
             var visual = ElementCompositionPreview.GetElementVisual(uIElement);
             var compositor = visual.Compositor;
+            const float amplitude = 40f;
+            Vector3 directionOffset = kind.ToLowerInvariant() switch
+            {
+                "left" => new Vector3(-amplitude, 0, 0),
+                "right" => new Vector3(amplitude, 0, 0),
+                "up" => new Vector3(0, amplitude, 0),
+                _ => new Vector3(0, amplitude, 0),
+            };
+            Vector3 finalOffset = new(0, finalVerticalOffset, 0);
 
             visual.Opacity = 0;
-            visual.Offset = kind switch
-            {
-                "left" => new Vector3(-40, 0, 0),
-                "right" => new Vector3(40, 0, 0),
-                "up" => new Vector3(0, 40, 0),
-                _ => new Vector3(0, 40, 0),
-            };
+            visual.Offset = directionOffset + finalOffset;
 
             var easing = compositor.CreateCubicBezierEasingFunction(new Vector2(0, 0), new Vector2(0, 1));
 
             var offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
             offsetAnimation.Target = "Offset";
-            offsetAnimation.InsertKeyFrame(1.0f, new Vector3(0, 0, 0), easing);
+            offsetAnimation.InsertKeyFrame(1.0f, finalOffset, easing);
             offsetAnimation.Duration = TimeSpan.FromMilliseconds(400);
 
             var opacityAnimation = compositor.CreateScalarKeyFrameAnimation();
