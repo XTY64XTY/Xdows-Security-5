@@ -15,6 +15,7 @@
   <Project Path="../SouXiaoAVEngine/PublicPart/PublicPart.csproj" />
   <Project Path="../SouXiaoAVEngine/SouRLib/SouRLib.csproj" />
   <Project Path="../SouXiaoAVEngine/SouXiao/SouXiao.csproj" />
+  <Project Path="../SouXiaoAVEngine/VirusmarkAPI/VirusmarkAPI.csproj" />
   <Project Path="Helper/Helper.csproj" />
   <Project Path="Protection/Protection.csproj" />
   <Project Path="ScanEngine/ScanEngine.csproj" />
