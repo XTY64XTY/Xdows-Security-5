@@ -144,15 +144,6 @@
   <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
     <value>User documents</value>
   </data>
-  <data name="SecurityPage_SelectFolder_Title" xml:space="preserve">
-    <value>Select folder</value>
-  </data>
-  <data name="SecurityPage_SelectFile_Title" xml:space="preserve">
-    <value>Select file</value>
-  </data>
-  <data name="TrustDialog_SelectFile_Title" xml:space="preserve">
-    <value>Select file</value>
-  </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>Get Failed</value>
   </data>
@@ -819,9 +810,6 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_ExportLog_SaveDialog_Title" xml:space="preserve">
     <value>Save log</value>
   </data>
-  <data name="HomePage_ExportLog_Filter_Name" xml:space="preserve">
-    <value>Log files</value>
-  </data>
   <data name="SettingsPage_Appearance_Nav.Header" xml:space="preserve">
     <value>Navigation Position</value>
   </data>
@@ -863,9 +851,6 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   </data>
   <data name="BugReportPage_ConnectionFailed" xml:space="preserve">
     <value>Connection failed</value>
-  </data>
-  <data name="BugReportPage_SelectFileTitle" xml:space="preserve">
-    <value>Select file</value>
   </data>
   <data name="BugReportPage_DownloadAndLocate" xml:space="preserve">
     <value>Download and locate</value>
@@ -1033,15 +1018,6 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
     <value>Failed to clear background image: {0}</value>
   </data>
-  <data name="SettingsPage_BackgroundImage_SelectDialog_Title" xml:space="preserve">
-    <value>Choose Background Photo</value>
-  </data>
-  <data name="SettingsPage_BackgroundImage_ImageFiles" xml:space="preserve">
-    <value>Photo Files</value>
-  </data>
-  <data name="SettingsPage_BackgroundImage_AllFiles" xml:space="preserve">
-    <value>All Files</value>
-  </data>
   <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
     <value>Developer</value>
   </data>
@@ -1179,9 +1155,6 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   </data>
   <data name="BugReportPage_SettingsButton.Content" xml:space="preserve">
     <value>Settings</value>
-  </data>
-  <data name="SettingsPage_Protection_Boot_Save_Button_Filter_Name" xml:space="preserve">
-    <value>Data File</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
     <value>Save As</value>

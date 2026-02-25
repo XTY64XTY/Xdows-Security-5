@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.WindowsAPICodePack.Dialogs;
+using Microsoft.Windows.Storage.Pickers;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,7 +49,7 @@ namespace Xdows_Security
                 await TrustManager.RemoveFromTrust(item.SourcePath);
                 _items.Remove(item);
             }
-            
+
             await ReloadAsync();
         }
 
@@ -60,22 +61,10 @@ namespace Xdows_Security
 
         private async void AddMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            using var dlg = new CommonOpenFileDialog
-            {
-                Title = Localizer.Get().GetLocalizedString("TrustDialog_SelectFile_Title"),
-                IsFolderPicker = false,
-                EnsurePathExists = true,
-            };
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                var filePath = dlg.FileName;
-
-                if (!string.IsNullOrEmpty(filePath))
-                {
-                    await TrustManager.AddToTrust(filePath);
-                    await ReloadAsync();
-                }
-            }
+            PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
+            if (file is null) { return; }
+            await TrustManager.AddToTrust(file.Path);
+            _ = ReloadAsync();
         }
     }
 }

@@ -144,15 +144,6 @@
   <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
     <value>用户文档</value>
   </data>
-  <data name="SecurityPage_SelectFolder_Title" xml:space="preserve">
-    <value>选择目录</value>
-  </data>
-  <data name="SecurityPage_SelectFile_Title" xml:space="preserve">
-    <value>选择文件</value>
-  </data>
-  <data name="TrustDialog_SelectFile_Title" xml:space="preserve">
-    <value>选择文件</value>
-  </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>获取失败</value>
   </data>
@@ -819,9 +810,6 @@
   <data name="HomePage_ExportLog_SaveDialog_Title" xml:space="preserve">
     <value>保存日志</value>
   </data>
-  <data name="HomePage_ExportLog_Filter_Name" xml:space="preserve">
-    <value>日志文件</value>
-  </data>
   <data name="SettingsPage_Appearance_Nav.Header" xml:space="preserve">
     <value>导航栏位置</value>
   </data>
@@ -862,9 +850,6 @@
   </data>
   <data name="BugReportPage_ConnectionFailed" xml:space="preserve">
     <value>连接失败</value>
-  </data>
-  <data name="BugReportPage_SelectFileTitle" xml:space="preserve">
-    <value>选择文件</value>
   </data>
   <data name="BugReportPage_DownloadAndLocate" xml:space="preserve">
     <value>下载并定位</value>
@@ -1032,15 +1017,6 @@
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
     <value>无法清空背景图片: {0}</value>
   </data>
-  <data name="SettingsPage_BackgroundImage_SelectDialog_Title" xml:space="preserve">
-    <value>选择背景图片</value>
-  </data>
-  <data name="SettingsPage_BackgroundImage_ImageFiles" xml:space="preserve">
-    <value>图片文件</value>
-  </data>
-  <data name="SettingsPage_BackgroundImage_AllFiles" xml:space="preserve">
-    <value>所有文件</value>
-  </data>
   <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
     <value>开发团队</value>
   </data>
@@ -1178,9 +1154,6 @@
   </data>
   <data name="BugReportPage_SettingsButton.Content" xml:space="preserve">
     <value>设置</value>
-  </data>
-  <data name="SettingsPage_Protection_Boot_Save_Button_Filter_Name" xml:space="preserve">
-    <value>数据文件</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
     <value>另存为</value>

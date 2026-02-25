@@ -8,7 +8,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.WindowsAPICodePack.Dialogs;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -556,32 +556,16 @@ namespace Xdows_Security.Views
 
         private async void OnMoreScanBrowseFolderClick(Object sender, RoutedEventArgs e)
         {
-            using CommonOpenFileDialog dlg = new()
-            {
-                Title = Localizer.Get().GetLocalizedString("SecurityPage_SelectFolder_Title"),
-                IsFolderPicker = true,
-                EnsurePathExists = true
-            };
-
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                await AddPathToMoreScanList(dlg.FileName, true);
-            }
+            string? folder = await PickPathAsync(ScanMode.Folder);
+            if (folder is null) return;
+            await AddPathToMoreScanList(folder, true);
         }
 
         private async void OnMoreScanBrowseFileClick(Object sender, RoutedEventArgs e)
         {
-            using CommonOpenFileDialog dlg = new()
-            {
-                Title = Localizer.Get().GetLocalizedString("SecurityPage_SelectFile_Title"),
-                IsFolderPicker = false,
-                EnsurePathExists = true
-            };
-
-            if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-            {
-                await AddPathToMoreScanList(dlg.FileName, false);
-            }
+            string? file = await PickPathAsync(ScanMode.File);
+            if (file is null) return;
+            await AddPathToMoreScanList(file, false);
         }
 
         private async Task AddPathToMoreScanList(String path, Boolean isFolder)
@@ -1142,28 +1126,24 @@ namespace Xdows_Security.Views
             }
         }
 
-        private static async Task<String?> PickPathAsync(ScanMode mode)
+        private async Task<String?> PickPathAsync(ScanMode mode)
         {
-            if (mode == ScanMode.File)
+            try
             {
-                using CommonOpenFileDialog dlg = new()
+                if (mode == ScanMode.File)
                 {
-                    Title = Localizer.Get().GetLocalizedString("SecurityPage_SelectFile_Title"),
-                    IsFolderPicker = false,
-                    EnsurePathExists = true,
-                };
-                return dlg.ShowDialog() == CommonFileDialogResult.Ok ? dlg.FileName : null;
-            }
-            else
-            {
-                using CommonOpenFileDialog dlg = new()
+                    PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
+                    if (file is null) { return null; }
+                    return file.Path;
+                }
+                else
                 {
-                    Title = Localizer.Get().GetLocalizedString("SecurityPage_SelectFolder_Title"),
-                    IsFolderPicker = true,
-                    EnsurePathExists = true,
-                };
-                return dlg.ShowDialog() == CommonFileDialogResult.Ok ? dlg.FileName : null;
+                    PickFolderResult folder = await (new FolderPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFolderAsync());
+                    if (folder is null) { return null; }
+                    return folder.Path;
+                }
             }
+            catch { return null; }
         }
 
         private static List<String> EnumerateFiles(ScanMode mode, String? userPath, IReadOnlyList<String>? customPaths) => mode switch

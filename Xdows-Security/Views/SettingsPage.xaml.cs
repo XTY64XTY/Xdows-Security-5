@@ -4,7 +4,7 @@ using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.WindowsAPICodePack.Dialogs;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -211,7 +211,7 @@ namespace Xdows_Security.Views
             {
                 if (toggle == null) continue;
 
-                String key = toggle.Tag as String??"";
+                String key = toggle.Tag as String ?? "";
                 if (!String.IsNullOrWhiteSpace(key) && settings.Values.TryGetValue(key, out Object raw) && raw is Boolean isOn)
                 {
                     toggle.IsOn = isOn;
@@ -564,16 +564,9 @@ namespace Xdows_Security.Views
         {
             try
             {
-                using Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog dlg = new()
-                {
-                    Title = Localizer.Get().GetLocalizedString("TrustDialog_SelectFile_Title"),
-                    IsFolderPicker = false,
-                    EnsurePathExists = true,
-                };
-                if (dlg.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
-                {
-                    Boolean success = await TrustManager.AddToTrust(dlg.FileName);
-                }
+                PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
+                if (file is null) { return; }
+                await TrustManager.AddToTrust(file.Path);
             }
             catch { }
         }
@@ -898,26 +891,24 @@ namespace Xdows_Security.Views
             App.MainWindow?.UpdateBackgroundImageOpacity(slider.Value / 100.0);
         }
 
-        private void Boot_Save_Button_Click(Object sender, RoutedEventArgs e)
+        private async void Boot_Save_Button_Click(Object sender, RoutedEventArgs e)
         {
             try
             {
                 Byte[] mbr = Helper.DiskOperator.ReadBootSector(0);
                 if (mbr.Length == 0) return;
-                CommonSaveFileDialog dlg = new()
+                FileSavePicker picker = new(XamlRoot.ContentIslandEnvironment.AppWindowId)
                 {
-                    Title = Localizer.Get().GetLocalizedString("SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title"),
-                    DefaultFileName = "Data.bin",
-                    DefaultExtension = "bin",
-                    OverwritePrompt = true,
-                    InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                    SuggestedFileName = "Data",
+                    DefaultFileExtension = ".bin",
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                    SuggestedFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
                 };
-                dlg.Filters.Add(new CommonFileDialogFilter(
-                    Localizer.Get().GetLocalizedString("SettingsPage_Protection_Boot_Save_Button_Filter_Name"), "*.bin"));
-                if (dlg.ShowDialog() == CommonFileDialogResult.Ok)
-                {
-                    File.WriteAllBytesAsync(dlg.FileName, mbr);
-                }
+
+                PickFileResult file = await picker.PickSaveFileAsync();
+                if (file is null) { return; }
+
+                _ = File.WriteAllBytesAsync(file.Path, mbr);
             }
             catch { }
         }
