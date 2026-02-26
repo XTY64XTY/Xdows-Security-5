@@ -1,0 +1,4 @@
+EXPORTS
+    CalculateFileSha256
+    IsFileTrusted
+    CreateTrustItemJson
