@@ -12,32 +12,54 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
       - name: Check for hardcoded credentials
         run: |
-          echo "Checking for hardcoded API keys and IPs..."
+          echo "## Hardcoded Credentials Check" >> $GITHUB_STEP_SUMMARY
           ISSUES=0
-          # Check for hardcoded IPs with ports (likely server endpoints)
           if grep -rn '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}:[0-9]\{4,5\}' --include="*.cs" .; then
-            echo "::warning::Found hardcoded IP:port combinations in source code"
+            echo "::warning::Found hardcoded IP:port combinations"
+            echo "⚠️ Found hardcoded IP:port" >> $GITHUB_STEP_SUMMARY
             ISSUES=$((ISSUES+1))
           fi
-          # Check for hardcoded API keys
-          if grep -rn 'key=my_virus_key' --include="*.cs" .; then
-            echo "::warning::Found hardcoded API key in source code"
+          if grep -rn 'key=my_virus_key\|api_key.*=.*"[^"]\{10,\}"' --include="*.cs" .; then
+            echo "::warning::Found potential hardcoded API key"
+            echo "⚠️ Found potential hardcoded API key" >> $GITHUB_STEP_SUMMARY
             ISSUES=$((ISSUES+1))
           fi
-          echo "Found $ISSUES potential credential issues"
+          if [ $ISSUES -eq 0 ]; then
+            echo "✅ No hardcoded credentials found" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Check for empty catch blocks
         run: |
-          echo "Checking for empty catch blocks..."
-          COUNT=$(grep -rn 'catch.*{.*}' --include="*.cs" . | grep -v '//' | wc -l)
-          echo "Found approximately $COUNT potential empty catch blocks"
+          echo "## Empty Catch Blocks" >> $GITHUB_STEP_SUMMARY
+          COUNT=$(grep -rncP 'catch\s*(\([^)]*\))?\s*\{\s*\}' --include="*.cs" . | grep -v ':0$' | wc -l)
+          echo "Found $COUNT files with empty catch blocks" >> $GITHUB_STEP_SUMMARY
+          grep -rnP 'catch\s*(\([^)]*\))?\s*\{\s*\}' --include="*.cs" . || true
+
+      - name: Check for unsafe code
+        run: |
+          echo "## Unsafe Code Usage" >> $GITHUB_STEP_SUMMARY
+          if grep -rn '\bunsafe\b' --include="*.cs" .; then
+            echo "⚠️ Found unsafe code blocks" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No unsafe code found" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Check file sizes
         run: |
-          echo "Checking for oversized source files..."
-          find . -name "*.cs" -size +50k -exec ls -lh {} \;
+          echo "## Large Source Files (>500 lines)" >> $GITHUB_STEP_SUMMARY
+          find . -name "*.cs" -exec sh -c 'lines=$(wc -l < "$1"); if [ "$lines" -gt 500 ]; then echo "⚠️ $1: $lines lines"; fi' _ {} \; | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Check TODO/HACK/FIXME comments
+        run: |
+          echo "## Code Debt Markers" >> $GITHUB_STEP_SUMMARY
+          grep -rn 'TODO\|HACK\|FIXME\|XXX\|TEMP' --include="*.cs" . | head -20 || echo "✅ None found" >> $GITHUB_STEP_SUMMARY
 
       - name: Summary
-        run: echo "Code quality check complete. Review warnings above."
+        run: echo "Code quality check complete." >> $GITHUB_STEP_SUMMARY
