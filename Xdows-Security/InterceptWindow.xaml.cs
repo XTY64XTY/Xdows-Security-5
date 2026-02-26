@@ -43,6 +43,10 @@ namespace Xdows_Security
             FilePathText.Text = _originalFilePath;
             DetectionTimeText.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
+            if (_type == "Other")
+            {
+                TrustButton.IsEnabled = false;
+            }
             PositionWindowAtBottomRight();
             App.PlayEntranceAnimation(RootPanel, "right");
         }

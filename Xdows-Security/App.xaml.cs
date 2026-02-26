@@ -364,6 +364,13 @@ namespace Xdows_Security
         {
             try
             {
+                Helper.Linker.Start((bool isSucceed, string path, string type) =>
+                {
+                    App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+                    {
+                        InterceptWindow.ShowOrActivate(isSucceed, path, type);
+                    });
+                });
                 await InitializeLocalizer();
                 InitializeMainWindow();
             }
