@@ -1,4 +1,8 @@
-﻿/*
+﻿// This file is intentionally left as a mascot/good-luck charm.
+// It contains no executable code.
+// Consider moving ASCII art to a resource file or removing this file entirely.
+
+/*
 #        ┏┓　　　┏┓+ +
 #　　　┏┛┻━━━┛┻┓ + +
 #　　　┃　　　　　　　┃ 　

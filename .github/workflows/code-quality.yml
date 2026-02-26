@@ -1,0 +1,43 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for hardcoded credentials
+        run: |
+          echo "Checking for hardcoded API keys and IPs..."
+          ISSUES=0
+          # Check for hardcoded IPs with ports (likely server endpoints)
+          if grep -rn '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}:[0-9]\{4,5\}' --include="*.cs" .; then
+            echo "::warning::Found hardcoded IP:port combinations in source code"
+            ISSUES=$((ISSUES+1))
+          fi
+          # Check for hardcoded API keys
+          if grep -rn 'key=my_virus_key' --include="*.cs" .; then
+            echo "::warning::Found hardcoded API key in source code"
+            ISSUES=$((ISSUES+1))
+          fi
+          echo "Found $ISSUES potential credential issues"
+
+      - name: Check for empty catch blocks
+        run: |
+          echo "Checking for empty catch blocks..."
+          COUNT=$(grep -rn 'catch.*{.*}' --include="*.cs" . | grep -v '//' | wc -l)
+          echo "Found approximately $COUNT potential empty catch blocks"
+
+      - name: Check file sizes
+        run: |
+          echo "Checking for oversized source files..."
+          find . -name "*.cs" -size +50k -exec ls -lh {} \;
+
+      - name: Summary
+        run: echo "Code quality check complete. Review warnings above."

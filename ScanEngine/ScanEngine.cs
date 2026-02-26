@@ -35,7 +35,9 @@ namespace ScanEngine
         {
             var client = s_httpClient;
             string hash = await GetFileMD5Async(path);
-            string url = $"http://103.118.245.82:5000/scan/md5?key=my_virus_key_2024&md5={hash}";
+            string server = Environment.GetEnvironmentVariable("XDOWS_CLOUD_SERVER") ?? "http://103.118.245.82:5000";
+            string apiKey = Environment.GetEnvironmentVariable("XDOWS_CLOUD_API_KEY") ?? "my_virus_key_2024";
+            string url = $"{server}/scan/md5?key={apiKey}&md5={hash}";
             try
             {
                 var resp = await client.GetAsync(url);

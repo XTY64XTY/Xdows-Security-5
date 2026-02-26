@@ -102,8 +102,8 @@ namespace Xdows_Security
         private Task? _heartbeatTask;
         private bool _isConnected = false;
         private string _username = "";
-        private string _serverHost = "103.118.245.82";
-        private int _serverPort = 8888;
+        private string _serverHost = Environment.GetEnvironmentVariable("XDOWS_FEEDBACK_HOST") ?? "103.118.245.82";
+        private int _serverPort = int.TryParse(Environment.GetEnvironmentVariable("XDOWS_FEEDBACK_PORT"), out var p) ? p : 8888;
         // 事件
         public event EventHandler<string>? OnConnected;
         public event EventHandler<string>? OnDisconnected;
