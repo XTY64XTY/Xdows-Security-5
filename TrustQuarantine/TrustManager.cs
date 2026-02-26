@@ -42,7 +42,6 @@ namespace TrustQuarantine
                 }
                 catch
                 {
-                    // 忽略解析错误
                 }
             }
 
@@ -56,11 +55,13 @@ namespace TrustQuarantine
 
             try
             {
-                string fileHash = await CalculateFileHashAsync(filePath);
+                string? fileHash = await CalculateFileHashAsync(filePath);
+                if (fileHash == null)
+                    return false;
 
                 var currentItems = GetTrustItems();
                 if (currentItems.Any(item => string.Equals(item.Hash, fileHash, StringComparison.OrdinalIgnoreCase)))
-                    return true; // 文件已存在
+                    return true;
 
                 var item = new TrustItemModel
                 {
@@ -89,7 +90,7 @@ namespace TrustQuarantine
             {
                 var currentItems = GetTrustItems();
                 if (currentItems.Any(item => string.Equals(item.Hash, fileHash, StringComparison.OrdinalIgnoreCase)))
-                    return true; // 已存在
+                    return true;
 
                 var item = new TrustItemModel
                 {
@@ -145,6 +146,21 @@ namespace TrustQuarantine
 
             try
             {
+                bool nativeResult = Native_TrustManager.IsPathTrustedManaged(filePath, TrustFolderPath);
+                if (nativeResult)
+                    return true;
+            }
+            catch
+            {
+            }
+
+            return IsPathTrustedFallback(filePath);
+        }
+
+        private static bool IsPathTrustedFallback(string filePath)
+        {
+            try
+            {
                 using var sha256 = SHA256.Create();
                 using var stream = File.OpenRead(filePath);
                 var hashBytes = sha256.ComputeHash(stream);
@@ -159,7 +175,24 @@ namespace TrustQuarantine
             }
         }
 
-        private static async Task<string> CalculateFileHashAsync(string filePath)
+        private static async Task<string?> CalculateFileHashAsync(string filePath)
+        {
+            try
+            {
+                string? nativeHash = await Native_TrustManager.CalculateFileHashAsyncManaged(filePath);
+                if (!string.IsNullOrEmpty(nativeHash))
+                {
+                    return nativeHash;
+                }
+            }
+            catch
+            {
+            }
+
+            return await CalculateFileHashAsyncFallback(filePath);
+        }
+
+        private static async Task<string?> CalculateFileHashAsyncFallback(string filePath)
         {
             using var sha256 = SHA256.Create();
             using var stream = File.OpenRead(filePath);

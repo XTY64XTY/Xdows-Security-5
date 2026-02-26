@@ -1,0 +1,663 @@
+{
+  "projectOverview": {
+    "name": "Xdows-Security Native Components",
+    "description": "C++ native DLL modules for Xdows-Security antivirus software",
+    "version": "1.0.0",
+    "createdDate": "2026-02-26",
+    "totalModules": 6
+  },
+  "technicalSpecifications": {
+    "languageStandards": {
+      "cpp": "ISO C++20",
+      "c": "ISO C17 (2018)"
+    },
+    "developmentEnvironment": {
+      "os": "Windows 10.0 SDK (latest version)",
+      "platformToolset": "v145",
+      "compiler": "MSVC (latest version)",
+      "targetArchitecture": ["x64", "x86"]
+    },
+    "packageManager": {
+      "name": "Vcpkg",
+      "requiredPackages": [
+        {
+          "name": "nlohmann-json",
+          "version": "3.12.0",
+          "usedBy": ["Xdows.Native.Trust"],
+          "purpose": "JSON serialization for trust items"
+        },
+        {
+          "name": "pcre2",
+          "version": "10.47",
+          "usedBy": ["Xdows.Native.Script"],
+          "purpose": "High-performance regex for script analysis (optional)"
+        }
+      ]
+    },
+    "buildConfiguration": {
+      "warningLevel": "Level4 (/W4)",
+      "treatWarningsAsErrors": true,
+      "runtimeLibrary": "Multi-threaded (/MT)",
+      "characterSet": "Unicode",
+      "optimization": "Maximize Speed (/O2) for Release",
+      "debugInformation": "Program Database (/Zi) for Debug"
+    }
+  },
+  "codingStandards": {
+    "fileExtensions": {
+      "cppSource": ".cpp",
+      "cppHeader": ".hpp",
+      "cSource": ".c",
+      "cHeader": ".h"
+    },
+    "comments": {
+      "policy": "No comments allowed in source code",
+      "exception": "Only copyright headers in file beginning allowed"
+    },
+    "codeStyle": {
+      "namingConventions": {
+        "classes": "PascalCase",
+        "structs": "PascalCase",
+        "functions": "PascalCase for public API, camelCase for internal",
+        "variables": "camelCase for local, m_ prefix for member",
+        "constants": "UPPER_SNAKE_CASE",
+        "macros": "UPPER_SNAKE_CASE with module prefix",
+        "enumValues": "PascalCase with type prefix"
+      },
+      "formatting": {
+        "indentation": "4 spaces",
+        "braceStyle": "Allman style (brace on new line)",
+        "lineLength": "120 characters maximum",
+        "pointerAlignment": "Left (Type* name)",
+        "referenceAlignment": "Left (Type& name)"
+      },
+      "organization": {
+        "includeOrder": ["Windows headers", "Standard library", "Third-party", "Project headers"],
+        "separation": "One blank line between logical sections",
+        "headers": "Use #pragma once instead of include guards"
+      }
+    },
+    "qualityRequirements": {
+      "zeroWarnings": true,
+      "staticAnalysis": "Enable Microsoft Code Analysis",
+      "cppCoreGuidelines": "Follow C++ Core Guidelines",
+      "noExceptions": "Use error codes and out parameters instead of exceptions for C API",
+      "noRtti": "Disable RTTI (/GR-)",
+      "noExceptionsFlag": "Disable exceptions (/EHsc for C++, none for C)"
+    }
+  },
+  "modules": [
+    {
+      "id": "CORE",
+      "name": "Xdows.Native.Core",
+      "description": "Core infrastructure and data structures",
+      "type": "Foundation",
+      "tags": ["infrastructure", "data-structures", "system-info", "disk-io"],
+      "dependencies": {
+        "internal": [],
+        "external": [],
+        "vcpkg": []
+      },
+      "files": {
+        "headers": [
+          "include/XdowsCore.hpp",
+          "include/DiskOperator.hpp",
+          "include/SystemInfo.hpp",
+          "include/Models.hpp"
+        ],
+        "sources": [
+          "src/DiskOperator.cpp",
+          "src/SystemInfo.cpp"
+        ],
+        "exports": "Xdows.Native.Core.def"
+      },
+      "apiExports": [
+        {
+          "name": "ReadBootSector",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL ReadBootSector(int driveIndex, BYTE* buffer, DWORD bufferSize)",
+          "purpose": "Read physical disk boot sector",
+          "sourceFile": "DiskOperator"
+        },
+        {
+          "name": "ReadVolumeBootRecord",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL ReadVolumeBootRecord(const wchar_t* driveLetter, BYTE* buffer, DWORD bufferSize)",
+          "purpose": "Read volume boot record",
+          "sourceFile": "DiskOperator"
+        },
+        {
+          "name": "GetMemoryInfo",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL GetMemoryInfo(DWORD* loadPercent, wchar_t* display, DWORD displaySize)",
+          "purpose": "Get system memory information",
+          "sourceFile": "SystemInfo"
+        }
+      ],
+      "dataStructures": [
+        {
+          "name": "TrustItem",
+          "type": "struct",
+          "fields": [
+            { "name": "SourcePath", "type": "wchar_t[MAX_PATH]" },
+            { "name": "Hash", "type": "wchar_t[65]" }
+          ]
+        },
+        {
+          "name": "QuarantineItem",
+          "type": "struct",
+          "fields": [
+            { "name": "FileHash", "type": "wchar_t[65]" },
+            { "name": "SourcePath", "type": "wchar_t[MAX_PATH]" },
+            { "name": "ThreatName", "type": "wchar_t[128]" },
+            { "name": "EncryptionKey", "type": "wchar_t[49]" },
+            { "name": "IV", "type": "wchar_t[33]" },
+            { "name": "EncryptedData", "type": "BYTE*" },
+            { "name": "DataSize", "type": "size_t" }
+          ]
+        },
+        {
+          "name": "PluginMetadata",
+          "type": "struct",
+          "fields": [
+            { "name": "Id", "type": "wchar_t[64]" },
+            { "name": "Name", "type": "wchar_t[128]" },
+            { "name": "Description", "type": "wchar_t[256]" },
+            { "name": "Author", "type": "wchar_t[64]" },
+            { "name": "Version", "type": "wchar_t[16]" },
+            { "name": "Requires", "type": "wchar_t[64]" }
+          ]
+        }
+      ],
+      "developmentNotes": [
+        "Use Windows API CreateFileW with \\\.\\PhysicalDriveN format",
+        "Buffer size must be exactly 512 bytes for boot sectors",
+        "All string fields must be null-terminated",
+        "Use GlobalMemoryStatusEx for memory information",
+        "Format memory display as 'Used / Total (Percentage%)'"
+      ],
+      "estimatedLines": 500,
+      "complexity": "Low",
+      "developmentOrder": 1
+    },
+    {
+      "id": "REGISTRY",
+      "name": "Xdows.Native.Registry",
+      "description": "Registry security scanning module",
+      "type": "Security",
+      "tags": ["registry", "scanning", "security", "static-analysis"],
+      "dependencies": {
+        "internal": [],
+        "external": [],
+        "vcpkg": []
+      },
+      "files": {
+        "headers": [
+          "include/RegistryScan.hpp"
+        ],
+        "sources": [
+          "src/RegistryScan.cpp"
+        ],
+        "exports": "Xdows.Native.Registry.def"
+      },
+      "apiExports": [
+        {
+          "name": "ScanRegistryKey",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL ScanRegistryKey(const wchar_t* keyPath, wchar_t* threatType, DWORD threatTypeSize)",
+          "purpose": "Scan registry key for suspicious entries",
+          "sourceFile": "RegistryScan"
+        }
+      ],
+      "suspiciousKeys": [
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunServices",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunServicesOnce",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Drivers32",
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\AppInit_DLLs",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+        "SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+        "SOFTWARE\\Policies\\Microsoft\\MMC",
+        "SOFTWARE\\Classes",
+        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer",
+        "SYSTEM\\CurrentControlSet\\Control\\StorageDevicePolicies",
+        "Software\\Classes\\ms-settings\\Shell\\Open\\command"
+      ],
+      "developmentNotes": [
+        "Use case-insensitive string comparison",
+        "Return empty string for safe keys",
+        "Return 'Xdows.Local.RegistryScan' for suspicious keys",
+        "Use std::wstring for internal string operations",
+        "Store suspicious keys in std::vector<std::wstring> as constant"
+      ],
+      "estimatedLines": 100,
+      "complexity": "Low",
+      "developmentOrder": 2
+    },
+    {
+      "id": "PE",
+      "name": "Xdows.Native.PE",
+      "description": "PE file analysis and DLL export scanning",
+      "type": "Security",
+      "tags": ["pe-analysis", "dll", "exports", "security"],
+      "dependencies": {
+        "internal": [],
+        "external": [],
+        "vcpkg": []
+      },
+      "files": {
+        "headers": [
+          "include/DllScan.hpp"
+        ],
+        "sources": [
+          "src/DllScan.cpp"
+        ],
+        "exports": "Xdows.Native.PE.def"
+      },
+      "apiExports": [
+        {
+          "name": "ScanDllExports",
+          "signature": "extern \"C\" __declspec(dllexport) int ScanDllExports(const PEExportInfo* peInfo, wchar_t* detection, DWORD detectionSize)",
+          "purpose": "Scan DLL export table for suspicious functions",
+          "sourceFile": "DllScan"
+        }
+      ],
+      "dataStructures": [
+        {
+          "name": "PEExportInfo",
+          "type": "struct",
+          "fields": [
+            { "name": "ExportNames", "type": "wchar_t**" },
+            { "name": "ExportCount", "type": "int" }
+          ]
+        }
+      ],
+      "whitelistPatterns": [
+        "Py", "Scan", "chromium", "blink", "Qt"
+      ],
+      "blacklistPatterns": [
+        "Hook", "Virus", "Bypass"
+      ],
+      "developmentNotes": [
+        "Return 0 for safe DLLs, 1 for suspicious",
+        "Check whitelist first, then blacklist",
+        "Use case-insensitive comparison",
+        "Detection buffer should contain threat description or empty",
+        "PE parsing is done externally, this module only analyzes export names"
+      ],
+      "estimatedLines": 50,
+      "complexity": "Low",
+      "developmentOrder": 3
+    },
+    {
+      "id": "PROCESS",
+      "name": "Xdows.Native.Process",
+      "description": "Process enumeration and monitoring",
+      "type": "Monitoring",
+      "tags": ["process", "monitoring", "real-time", "callback"],
+      "dependencies": {
+        "internal": [],
+        "external": [],
+        "vcpkg": []
+      },
+      "files": {
+        "headers": [
+          "include/ProcessMonitor.hpp"
+        ],
+        "sources": [
+          "src/ProcessMonitor.cpp"
+        ],
+        "exports": "Xdows.Native.Process.def"
+      },
+      "apiExports": [
+        {
+          "name": "EnumProcessesNative",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL EnumProcessesNative(DWORD* pids, DWORD maxCount, DWORD* returnedCount)",
+          "purpose": "Enumerate all running process IDs",
+          "sourceFile": "ProcessMonitor"
+        },
+        {
+          "name": "GetProcessPathById",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL GetProcessPathById(DWORD pid, wchar_t* path, DWORD pathSize)",
+          "purpose": "Get executable path from process ID",
+          "sourceFile": "ProcessMonitor"
+        },
+        {
+          "name": "MonitorProcesses",
+          "signature": "extern \"C\" __declspec(dllexport) void MonitorProcesses(NewProcessCallback callback, void* userData, volatile BOOL* stopFlag)",
+          "purpose": "Monitor for new processes in a loop",
+          "sourceFile": "ProcessMonitor"
+        }
+      ],
+      "callbacks": [
+        {
+          "name": "NewProcessCallback",
+          "signature": "typedef void (*NewProcessCallback)(DWORD pid, const wchar_t* path, void* userData)",
+          "purpose": "Called when a new process is detected"
+        }
+      ],
+      "developmentNotes": [
+        "Use psapi.dll EnumProcesses for process enumeration",
+        "Use kernel32.dll QueryFullProcessImageNameW for path retrieval",
+        "Monitor loop should run in separate thread",
+        "Check stopFlag periodically to exit gracefully",
+        "Compare process lists to detect new processes",
+        "Use OpenProcess with PROCESS_QUERY_LIMITED_INFORMATION",
+        "Always close process handles with CloseHandle"
+      ],
+      "estimatedLines": 300,
+      "complexity": "Medium",
+      "developmentOrder": 4
+    },
+    {
+      "id": "TRUST",
+      "name": "Xdows.Native.Trust",
+      "description": "Trust zone management and hash calculation",
+      "type": "Security",
+      "tags": ["trust", "hash", "sha256", "cryptography", "json"],
+      "dependencies": {
+        "internal": ["CORE"],
+        "external": ["bcrypt.lib"],
+        "vcpkg": ["nlohmann-json"]
+      },
+      "files": {
+        "headers": [
+          "include/TrustManagerNative.hpp"
+        ],
+        "sources": [
+          "src/TrustManagerNative.cpp"
+        ],
+        "exports": "Xdows.Native.Trust.def"
+      },
+      "apiExports": [
+        {
+          "name": "CalculateFileSha256",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL CalculateFileSha256(const wchar_t* filePath, wchar_t* hash, DWORD hashSize)",
+          "purpose": "Calculate SHA256 hash of file",
+          "sourceFile": "TrustManagerNative"
+        },
+        {
+          "name": "IsFileTrusted",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL IsFileTrusted(const wchar_t* filePath, const wchar_t* trustFolderPath)",
+          "purpose": "Check if file is in trust zone",
+          "sourceFile": "TrustManagerNative"
+        },
+        {
+          "name": "CreateTrustItemJson",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL CreateTrustItemJson(const wchar_t* filePath, const wchar_t* hash, wchar_t* json, DWORD jsonSize)",
+          "purpose": "Generate JSON for trust item",
+          "sourceFile": "TrustManagerNative"
+        }
+      ],
+      "developmentNotes": [
+        "Use Windows CNG API (BCrypt*) for SHA256 calculation",
+        "Hash string format: lowercase hex without separators",
+        "Trust items stored as individual JSON files named {hash}.json",
+        "Use nlohmann/json for JSON generation",
+        "File format: {\"SourcePath\":\"...\",\"Hash\":\"...\"}",
+        "Compare hashes case-insensitively",
+        "Read files in chunks for large file support"
+      ],
+      "estimatedLines": 400,
+      "complexity": "Medium",
+      "developmentOrder": 5
+    },
+    {
+      "id": "SCRIPT",
+      "name": "Xdows.Native.Script",
+      "description": "Script file static analysis engine",
+      "type": "Security",
+      "tags": ["script", "analysis", "powershell", "batch", "javascript", "python", "regex"],
+      "dependencies": {
+        "internal": [],
+        "external": [],
+        "vcpkg": ["pcre2"]
+      },
+      "files": {
+        "headers": [
+          "include/ScriptScan.hpp"
+        ],
+        "sources": [
+          "src/ScriptScan.cpp"
+        ],
+        "exports": "Xdows.Native.Script.def"
+      },
+      "apiExports": [
+        {
+          "name": "ScanScriptFile",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL ScanScriptFile(const wchar_t* filePath, const BYTE* content, size_t contentSize, ScriptScanResult* result)",
+          "purpose": "Scan script file for malicious patterns",
+          "sourceFile": "ScriptScan"
+        },
+        {
+          "name": "IsScriptFile",
+          "signature": "extern \"C\" __declspec(dllexport) BOOL IsScriptFile(const wchar_t* extension)",
+          "purpose": "Check if file extension is a script type",
+          "sourceFile": "ScriptScan"
+        }
+      ],
+      "dataStructures": [
+        {
+          "name": "ScriptScanResult",
+          "type": "struct",
+          "fields": [
+            { "name": "Score", "type": "int" },
+            { "name": "Tags", "type": "wchar_t[512]" }
+          ]
+        }
+      ],
+      "supportedExtensions": [
+        ".ps1", ".psm1", ".psd1",
+        ".vbs", ".vbe",
+        ".js", ".jse",
+        ".bat", ".cmd",
+        ".py", ".pyw",
+        ".sh", ".bash", ".zsh",
+        ".pl", ".pm",
+        ".rb",
+        ".php", ".phtml", ".php3", ".php4", ".php5",
+        ".lnk"
+      ],
+      "detectionCategories": {
+        "generic": [
+          { "pattern": "eval\\(|Invoke-Expression|Execute\\(|exec\\(", "score": 20, "tag": "DynamicExecution" },
+          { "pattern": "base64|FromBase64String|atob|btoa", "score": 15, "tag": "EncodedContent" },
+          { "pattern": "(download|wget|curl|invoke-webrequest|fetch\\s*\\()", "score": 20, "tag": "DownloadBehavior" },
+          { "pattern": "(http|https|ftp)://", "score": 10, "tag": "NetworkActivity" },
+          { "pattern": "(delete|remove|copy|move|create\\s+file|write\\s+file)", "score": 10, "tag": "FileOperation" },
+          { "pattern": "(reg\\s+|registry|regedit|reg.exe)", "score": 15, "tag": "RegistryOperation" },
+          { "pattern": "(start-process|createobject|wscript.shell|shell.application)", "score": 15, "tag": "ProcessOperation" },
+          { "pattern": "(startup|runonce|autorun|msconfig)", "score": 20, "tag": "PersistenceMechanism" },
+          { "pattern": "(nyancat|rainbow|memz|trollface)", "score": 30, "tag": "MEMZSignature" },
+          { "pattern": "(delete\\s+.*system|format\\s+|shutdown|reboot|blue\\s+screen)", "score": 25, "tag": "SystemDestruction" }
+        ],
+        "powershell": [
+          { "pattern": "-executionpolicy\\s+bypass", "score": 20, "tag": "BypassExecutionPolicy" },
+          { "pattern": "-windowstyle\\s+hidden", "score": 15, "tag": "HiddenWindow" },
+          { "pattern": "(reflection|assembly.load|loadfrom)", "score": 15, "tag": "ReflectionUsage" },
+          { "pattern": "(add-type|dllimport|getmodulehandle)", "score": 15, "tag": "WinAPIUsage" },
+          { "pattern": "new-object\\s+-comobject", "score": 10, "tag": "COMObjectUsage" }
+        ],
+        "batch": [
+          { "pattern": "@echo\\s+off", "score": 5, "tag": "HiddenCommands" },
+          { "pattern": "powershell\\s+", "score": 10, "tag": "PowerShellInBatch" },
+          { "pattern": "certutil\\s+", "score": 15, "tag": "CertutilUsage" },
+          { "pattern": "bitsadmin\\s+", "score": 15, "tag": "BitsadminUsage" },
+          { "pattern": "(del\\s+[/sfq]|format\\s+|rmdir\\s+[/sq]|shutdown\\s+[/sfr])", "score": 25, "tag": "SystemDestruction" },
+          { "pattern": "(reg\\s+(add|delete)|regedit)", "score": 20, "tag": "RegistryModification" }
+        ]
+      },
+      "developmentNotes": [
+        "Use pcre2 for regex matching (better performance than std::regex)",
+        "Detect file encoding using IsTextUnicode or BOM detection",
+        "Convert content to UTF-8 for analysis",
+        "Score accumulation model - higher score = higher risk",
+        "Tags are space-separated in result buffer",
+        "Special handling for .lnk shortcut files",
+        "Check for suspicious BAT file markers in binary content",
+        "Limit content size to prevent memory issues"
+      ],
+      "estimatedLines": 1500,
+      "complexity": "High",
+      "developmentOrder": 6
+    }
+  ],
+  "projectStructure": {
+    "solutionFile": "Xdows.Native.sln",
+    "directoryLayout": {
+      "root": "Xdows-Security-Native/",
+      "subdirectories": [
+        "Xdows.Native.Core/",
+        "Xdows.Native.Registry/",
+        "Xdows.Native.PE/",
+        "Xdows.Native.Process/",
+        "Xdows.Native.Trust/",
+        "Xdows.Native.Script/",
+        "include/",
+        "lib/",
+        "bin/",
+        "third_party/"
+      ]
+    },
+    "perProjectStructure": {
+      "./*": "Public header files (.hpp/.h)",
+      "./**": "Source files (.cpp/.c)",
+      "exports.def": "DLL export definitions",
+      "vcpkg.json": "Vcpkg manifest for project-specific dependencies"
+    }
+  },
+  "developmentPhases": {
+    "phase1": {
+      "name": "Foundation Setup",
+      "duration": "Week 1",
+      "tasks": [
+        "Create Visual Studio solution and project templates",
+        "Configure vcpkg integration",
+        "Set up common property sheets for compiler flags",
+        "Define coding style enforcement tools",
+        "Create header template with copyright only"
+      ],
+      "deliverables": [
+        "Xdows.Native.sln",
+        "Common.props (shared compiler settings)",
+        "Empty project templates for all 6 modules"
+      ]
+    },
+    "phase2": {
+      "name": "Core Module Development",
+      "duration": "Week 2",
+      "tasks": [
+        "Implement DiskOperator with boot sector reading",
+        "Implement SystemInfo with memory detection",
+        "Define all data structures in Models.hpp",
+        "Create C# interop test harness"
+      ],
+      "deliverables": [
+        "Xdows.Native.Core.dll",
+        "Unit tests for disk operations",
+        "C# P/Invoke declarations"
+      ]
+    },
+    "phase3": {
+      "name": "Security Modules",
+      "duration": "Week 3-4",
+      "tasks": [
+        "Implement RegistryScan (simple string matching)",
+        "Implement DllScan (export name analysis)",
+        "Implement TrustManager with CNG SHA256",
+        "Integrate nlohmann-json for trust items"
+      ],
+      "deliverables": [
+        "Xdows.Native.Registry.dll",
+        "Xdows.Native.PE.dll",
+        "Xdows.Native.Trust.dll"
+      ]
+    },
+    "phase4": {
+      "name": "Monitoring and Script Analysis",
+      "duration": "Week 5-6",
+      "tasks": [
+        "Implement ProcessMonitor with callbacks",
+        "Implement ScriptScan with all pattern types",
+        "Integrate pcre2 for regex performance",
+        "Optimize script scanning for large files"
+      ],
+      "deliverables": [
+        "Xdows.Native.Process.dll",
+        "Xdows.Native.Script.dll",
+        "Performance benchmarks"
+      ]
+    },
+    "phase5": {
+      "name": "Integration and Testing",
+      "duration": "Week 7",
+      "tasks": [
+        "Create comprehensive C# integration layer",
+        "Write integration tests for all modules",
+        "Performance profiling and optimization",
+        "Memory leak detection",
+        "Documentation generation"
+      ],
+      "deliverables": [
+        "Xdows.Native.Interop.dll (C# wrapper)",
+        "Test suite with >80% coverage",
+        "Performance report"
+      ]
+    }
+  },
+  "qualityAssurance": {
+    "staticAnalysis": {
+      "tools": ["Microsoft Code Analysis", "Clang-Tidy"],
+      "rules": [
+        "C++ Core Guidelines",
+        "Microsoft All Rules",
+        "Security Rules (C26400-C26499)"
+      ]
+    },
+    "testing": {
+      "unitTests": "Catch2 or Google Test framework",
+      "integrationTests": "C# test project with xUnit",
+      "coverageTarget": "80% line coverage minimum"
+    },
+    "performance": {
+      "benchmarking": "Google Benchmark for critical paths",
+      "memoryProfiling": "Application Verifier and CRT debug heap",
+      "targetMetrics": {
+        "bootSectorRead": "< 10ms",
+        "processEnum": "< 50ms for 1000 processes",
+        "scriptScan": "< 100ms per 1MB file",
+        "hashCalculation": "< 500ms per 100MB file"
+      }
+    },
+    "security": {
+      "checks": [
+        "Buffer overflow prevention (use safe string functions)",
+        "Null pointer validation",
+        "Handle leak detection",
+        "Safe DLL loading (SetDllDirectory)",
+        "ASLR and DEP compatibility"
+      ]
+    }
+  },
+  "cSharpInterop": {
+    "namingConvention": "Native{ModuleName}",
+    "example": {
+      "module": "Xdows.Native.Core",
+      "className": "NativeCore",
+      "dllImport": "[DllImport(\"Xdows.Native.Core.dll\", CallingConvention = CallingConvention.Cdecl)]",
+      "stringMarshaling": "[MarshalAs(UnmanagedType.LPWStr)] string",
+      "callbackPattern": "UnmanagedFunctionPointer(CallingConvention.Cdecl)"
+    },
+    "helperClasses": [
+      "NativeBuffer<T> for safe buffer management",
+      "NativeString for wchar_t* marshaling",
+      "NativeCallback for delegate lifecycle management"
+    ]
+  },
+  "maintenance": {
+    "versioning": "Semantic versioning (MAJOR.MINOR.PATCH)",
+    "changelog": "Keep CHANGELOG.md per module",
+    "deprecation": "Mark deprecated APIs with deprecation attribute",
+    "compatibility": "Maintain binary compatibility within major versions"
+  }
+}
