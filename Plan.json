@@ -520,8 +520,8 @@
       ]
     },
     "perProjectStructure": {
-      "include/": "Public header files (.hpp)",
-      "src/": "Source files (.cpp)",
+      "./*": "Public header files (.hpp/.h)",
+      "./**": "Source files (.cpp/.c)",
       "exports.def": "DLL export definitions",
       "vcpkg.json": "Vcpkg manifest for project-specific dependencies"
     }
