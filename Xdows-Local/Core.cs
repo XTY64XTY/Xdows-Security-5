@@ -52,9 +52,7 @@ namespace Xdows_Local
             IReadOnlyList<PeNet.Header.Pe.ImportFunction>? importedFunctions = peFile.ImportedFunctions;
             if (importedFunctions != null)
             {
-                List<PeNet.Header.Pe.ImportFunction> validImports = importedFunctions
-                    .Where(import => import.Name != null)
-                    .ToList();
+                List<PeNet.Header.Pe.ImportFunction> validImports = [.. importedFunctions.Where(import => import.Name != null)];
 
                 fileInfo.ImportsDll = [.. validImports.Select(import => import.DLL)];
                 fileInfo.ImportsName = [.. validImports.Select(import => import.Name ?? String.Empty)];
