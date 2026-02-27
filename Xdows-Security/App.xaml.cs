@@ -1,4 +1,5 @@
 using Compatibility.Windows.Storage;
+using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
 using Protection;
@@ -102,7 +103,12 @@ namespace Xdows_Security
             // content = $"{AppInfo.AppName} {content}.{Environment.NewLine}相关数据：{Path.GetFileName(path)}{Environment.NewLine}单击此通知以查看详细信息";
             App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
             {
-                InterceptWindow.ShowOrActivate(isSucceed, path, type);
+                InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
+                {
+                    path = path,
+                    isSucceed = isSucceed,
+                    interceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
+                });
             });
             // Notifications.ShowNotification("发现威胁", content, path);
         };
@@ -364,12 +370,22 @@ namespace Xdows_Security
         {
             try
             {
-                Helper.Linker.Start((bool isSucceed, string path, string type) =>
+                Helper.Linker.Start(async (interceptWindowSetting) =>
                 {
-                    App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+                    var tcs = new TaskCompletionSource<string>();
+                    App.MainWindow?.DispatcherQueue?.TryEnqueue(async () =>
                     {
-                        InterceptWindow.ShowOrActivate(isSucceed, path, type);
+                        try
+                        {
+                            var result = await InterceptWindow.ShowOrActivate(interceptWindowSetting);
+                            tcs.TrySetResult(result);
+                        }
+                        catch (Exception ex)
+                        {
+                            tcs.TrySetException(ex);
+                        }
                     });
+                    return await tcs.Task;
                 });
                 await InitializeLocalizer();
                 InitializeMainWindow();

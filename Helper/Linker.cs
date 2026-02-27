@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Web;
@@ -10,7 +10,7 @@ namespace Helper
     {
         public static class CallBack
         {
-            public delegate void InterceptCallBack(bool isSucceed, string path, string type);
+            public delegate Task<string> InterceptCallBack(InterceptWindowHelper.InterceptWindowSetting interceptWindowSetting);
         }
         public static async void Start(InterceptCallBack interceptCallBack)
         {
@@ -55,6 +55,7 @@ namespace Helper
                 int statusCode;
                 string statusText;
                 string jsonBody;
+                string? buttonName = null;
 
                 if (path.Equals("/InterceptWindow/", StringComparison.OrdinalIgnoreCase))
                 {
@@ -70,7 +71,12 @@ namespace Helper
                     {
                         statusCode = 200;
                         statusText = "OK";
-                        interceptCallBack.Invoke(true, pathParam, "Other");
+                        buttonName = await interceptCallBack.Invoke(new InterceptWindowHelper.InterceptWindowSetting
+                        {
+                            path = pathParam,
+                            isSucceed = true,
+                            interceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.InterceptOrRelease
+                        });
                     }
                 }
                 else
@@ -78,7 +84,7 @@ namespace Helper
                     statusCode = 404;
                     statusText = "Not Found";
                 }
-                jsonBody = GetJsonBody(statusCode, statusText);
+                jsonBody = GetJsonBody(statusCode, statusText, buttonName);
 
                 // 发送HTTP响应
                 var response = $@"
@@ -94,16 +100,15 @@ Connection: close
             }
         }
 
-        private static string GetJsonBody(int statusCode, string statusText)
+        private static string GetJsonBody(int statusCode, string statusText, string? buttonName = null)
         {
+            string buttonJson = buttonName is null ? string.Empty : $",\n    \"ButtonReturn\": \"{buttonName}\"";
             return $@"
 {{
     ""statusCode"": {statusCode},
     ""statusText"": ""{statusText}"",
-    ""timestamp"": ""{DateTime.Now:yyyy-MM-ddTHH:mm:ss.fffZ}"",
+    ""timestamp"": ""{DateTime.Now:yyyy-MM-ddTHH:mm:ss.fffZ}""{buttonJson}
 }}";
-
-
         }
     }
 }
