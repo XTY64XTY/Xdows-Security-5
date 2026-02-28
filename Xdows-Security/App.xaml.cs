@@ -82,7 +82,7 @@ namespace Xdows_Security
         public static readonly string AppName = "Xdows Security";
         public static readonly string AppId = "Xdows-Security";
         public static readonly string AppVersion = "4.1.1";
-        public static readonly string AppFeedback = "https://github.com/XTY64XTY12345/Xdows-Security/issues/new/choose";
+        public static readonly string AppFeedback = "https://github.com/LoveProgrammingMint/Xdows-Security/issues/new/choose";
         public static readonly string AppWebsite = "https://xty64xty.netlify.app/";
         // 修改 开发团队、Xdows Tools 名称请修改本地化资源文件
     }
@@ -204,7 +204,7 @@ namespace Xdows_Security
             TriggerTextChanged();
         }
 
-        public static void AddNewLog(LogLevel level, string source, string info)
+        public static async void AddNewLog(LogLevel level, string source, string info)
         {
             var row = new LogRow
             {
@@ -215,7 +215,7 @@ namespace Xdows_Security
                 ThreadId = Environment.CurrentManagedThreadId
             };
             UpdateHotCache(row);
-            _ = _writeChannel.Writer.WriteAsync(row);
+            await _writeChannel.Writer.WriteAsync(row);
         }
         static LogText()
         {
