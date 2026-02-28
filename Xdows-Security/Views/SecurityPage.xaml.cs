@@ -637,7 +637,7 @@ namespace Xdows_Security.Views
             Boolean UseCloudScan = settings.Values["CloudScan"] as Boolean? ?? false;
             Boolean UseSouXiaoScan = settings.Values["SouXiaoScan"] as Boolean? ?? false;
 
-            ScanEngine.ScanEngine.SouXiaoEngineScan SouXiaoEngine = new();
+            Helper.ScanEngine.SouXiaoEngineScan SouXiaoEngine = new();
             if (UseSouXiaoScan)
             {
                 if (!SouXiaoEngine.Initialize())
@@ -833,7 +833,7 @@ namespace Xdows_Security.Views
                             }
                             if (UseLocalScan)
                             {
-                                scanTasks.Add(ScanEngine.ScanEngine.LocalScanAsync(file, DeepScan, ExtraData)
+                                scanTasks.Add(Helper.ScanEngine.LocalScanAsync(file, DeepScan, ExtraData)
                                     .ContinueWith(t =>
                                     {
                                         String localResult = t.Result;
@@ -845,7 +845,7 @@ namespace Xdows_Security.Views
                             }
                             if (UseCloudScan)
                             {
-                                scanTasks.Add(ScanEngine.ScanEngine.CloudScanAsync(file)
+                                scanTasks.Add(Helper.ScanEngine.CloudScanAsync(file)
                                     .ContinueWith(t =>
                                     {
                                         (Int32? statusCode, String? result) = t.Result;
@@ -856,7 +856,7 @@ namespace Xdows_Security.Views
                             }
                             if (UseCzkCloudScan)
                             {
-                                scanTasks.Add(ScanEngine.ScanEngine.CzkCloudScanAsync(file, czkApiKey)
+                                scanTasks.Add(Helper.ScanEngine.CzkCloudScanAsync(file, czkApiKey)
                                     .ContinueWith(t =>
                                     {
                                         (Int32? statusCode, String? result) = t.Result;

@@ -101,15 +101,15 @@ namespace Xdows_Security
                 : $"Cannot InterceptProcess：{Path.GetFileName(path)}");
             // string content = isSucceed ? "已发现威胁" : "无法处理威胁";
             // content = $"{AppInfo.AppName} {content}.{Environment.NewLine}相关数据：{Path.GetFileName(path)}{Environment.NewLine}单击此通知以查看详细信息";
-            App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+            _ = (App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
             {
-                InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
+                _ = InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
                 {
                     path = path,
                     isSucceed = isSucceed,
                     interceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
                 });
-            });
+            }));
             // Notifications.ShowNotification("发现威胁", content, path);
         };
         private static readonly IProtectionModel LegacyProcessProtection = new LegacyProcessProtection();

@@ -13,13 +13,13 @@ namespace Protection
 
         private static CancellationTokenSource? _cts = null;
         private static Task? _monitorTask = null;
-        private static ScanEngine.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
+        private static Helper.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
         public const string Name = "Process";
         string IProtectionModel.Name => Name;
 
         public bool Run(InterceptCallBack toastCallBack)
         {
-            SouXiaoEngine ??= new ScanEngine.ScanEngine.SouXiaoEngineScan();
+            SouXiaoEngine ??= new Helper.ScanEngine.SouXiaoEngineScan();
             SouXiaoEngine.Initialize();
             if (SouXiaoEngine == null)
             {

@@ -45,7 +45,6 @@
     <ProjectReference Include="..\..\ICEX\XShark\XShark.csproj" />
     <ProjectReference Include="..\Helper\Helper.csproj" />
     <ProjectReference Include="..\Protection\Protection.csproj" />
-    <ProjectReference Include="..\ScanEngine\ScanEngine.csproj" />
     <ProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
   </ItemGroup>
 
@@ -71,11 +70,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <Optimize>true</Optimize>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="C:\Users\a1b2c\.nuget\packages\microsoft.windowsappsdk.runtime\1.8.250916003\buildTransitive\..\include\WindowsAppSDK-VersionInfo.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <PRIResource Remove="Resources\**" />
   </ItemGroup>
@@ -88,8 +82,5 @@
     <PRIResource Update="Strings\zh-HANS\Resources.resw">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </PRIResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="G:\NuGet\microsoft.windowsappsdk.foundation\1.8.250906002\buildTransitive\..\include\MddBootstrapAutoInitializer.cs" />
   </ItemGroup>
 </Project>

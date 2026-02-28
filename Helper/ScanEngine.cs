@@ -2,7 +2,7 @@ using PublicPart;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace ScanEngine
+namespace Helper
 {
     public static class ScanEngine
     {
@@ -90,7 +90,7 @@ namespace ScanEngine
                     {
                         foreach (var item1 in item.Value)
                         {
-                            if (!(item1 == EngineResult.Safe || item1 == EngineResult.UnSupport))
+                            if (item1 is not (EngineResult.Safe or EngineResult.UnSupport))
                             {
                                 return (true, $"SouXiao.Heuristic.{item.Key}");
                             }

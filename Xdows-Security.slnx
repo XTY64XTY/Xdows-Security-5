@@ -9,16 +9,13 @@
     <Platform Solution="*|ARM64" Project="x64" />
   </Project>
   <Project Path="../ICEX/ProcessManagerSharp/ProcessManagerSharp.csproj" />
-  <Project Path="../ICEX/XdowsLocalEx/XdowsLocalEx.csproj" />
   <Project Path="../ICEX/XShark/XShark.csproj" />
   <Project Path="../SouXiaoAVEngine/LiuLiAVHeuristic/LiuLiAVHeuristic.csproj" />
   <Project Path="../SouXiaoAVEngine/PublicPart/PublicPart.csproj" />
   <Project Path="../SouXiaoAVEngine/SouRLib/SouRLib.csproj" />
   <Project Path="../SouXiaoAVEngine/SouXiao/SouXiao.csproj" />
-  <Project Path="../SouXiaoAVEngine/VirusmarkAPI/VirusmarkAPI.csproj" />
   <Project Path="Helper/Helper.csproj" />
   <Project Path="Protection/Protection.csproj" />
-  <Project Path="ScanEngine/ScanEngine.csproj" />
   <Project Path="TrustQuarantine/TrustQuarantine.csproj" />
   <Project Path="Xdows-Local/Xdows-Local.csproj" />
   <Project Path="Xdows-Security/Xdows-Security.csproj">

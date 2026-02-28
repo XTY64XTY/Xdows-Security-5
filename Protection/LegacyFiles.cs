@@ -8,12 +8,12 @@ namespace Protection
         private static InterceptCallBack? _toastCallBack;
         private static Thread? _monitorThread;
         private static bool _isMonitoring = false;
-        private static ScanEngine.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
+        private static Helper.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
         public const string Name = "Files";
         string IProtectionModel.Name => Name;
         public bool Run(InterceptCallBack toastCallBack)
         {
-            SouXiaoEngine ??= new ScanEngine.ScanEngine.SouXiaoEngineScan();
+            SouXiaoEngine ??= new Helper.ScanEngine.SouXiaoEngineScan();
             SouXiaoEngine.Initialize();
 
             if (_isMonitoring || SouXiaoEngine == null)
