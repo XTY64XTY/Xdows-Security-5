@@ -2,6 +2,7 @@ using Compatibility.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.Windows.Globalization;
 using Protection;
 using System;
 using System.Collections.Generic;
@@ -383,6 +384,8 @@ namespace Xdows_Security
         }
         private static async Task InitializeLocalizer()
         {
+            ApplicationLanguages.PrimaryLanguageOverride = "en-US";
+
             string stringsPath = Path.Combine(AppContext.BaseDirectory, "Strings");
 
             var settings = ApplicationData.Current.LocalSettings;
@@ -392,7 +395,6 @@ namespace Xdows_Security
                 .AddStringResourcesFolderForLanguageDictionaries(stringsPath)
                 .SetOptions(o => o.DefaultLanguage = lastLang)
                 .Build();
-            // ApplicationLanguages.PrimaryLanguageOverride = "en-US";
             await localizer.SetLanguage(lastLang);
         }
         public static string OsName => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
