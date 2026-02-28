@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Window
     x:Class="Xdows_Security.InterceptWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -80,8 +80,15 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
+                    <Button x:Name="ReleaseButton" Grid.Column="0"
+                        Width="160" 
+                        Height="36" 
+                        Margin="0,0,8,0"
+                        l:Uids.Uid="InterceptWindow_ReleaseButton"
+                        Click="ReleaseButton_Click"
+                        HorizontalAlignment="Stretch"/>
                     <SplitButton
-                         Grid.Column="0" 
+                        Grid.Column="0" 
                         x:Name="TrustButton"
                         l:Uids.Uid="InterceptWindow_TrustButton"
                         Width="160" 

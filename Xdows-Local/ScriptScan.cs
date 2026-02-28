@@ -7,6 +7,23 @@ namespace Xdows_Local
     {
         public static (Int32 score, String extra) ScanScriptFile(String filePath, Byte[] fileContent)
         {
+            try
+            {
+                var nativeResult = Native_ScriptScanner.ScanScriptFileManaged(filePath, fileContent);
+                if (nativeResult.score > 0)
+                {
+                    return nativeResult;
+                }
+            }
+            catch
+            {
+            }
+
+            return ScanScriptFileManaged(filePath, fileContent);
+        }
+
+        private static (Int32 score, String extra) ScanScriptFileManaged(String filePath, Byte[] fileContent)
+        {
             Int32 score = 0;
             List<String> extra = new();
             String fileExtension = GetExtString(filePath);
@@ -220,36 +237,6 @@ namespace Xdows_Local
                 extra.Add("SystemDestruction");
             }
 
-            if (Regex.Count(content, @"(msgbox|alert|messagebox|showmessage)", RegexOptions.IgnoreCase) > 5)
-            {
-                score += 20;
-                extra.Add("MultiplePopups");
-            }
-
-            if (Regex.IsMatch(content, @"(mousemove|cursor|setcursorpos|blockinput|keyboard)", RegexOptions.IgnoreCase))
-            {
-                score += 20;
-                extra.Add("InputInterference");
-            }
-
-            if (Regex.IsMatch(content, @"(screen|display|color\s+change|invert|fullscreen)", RegexOptions.IgnoreCase))
-            {
-                score += 10;
-                extra.Add("ScreenEffects");
-            }
-
-            if (Regex.IsMatch(content, @"(play\s+sound|beep|audio|\.wav|\.mp3)", RegexOptions.IgnoreCase))
-            {
-                score += 10;
-                extra.Add("AudioEffects");
-            }
-
-            if (Regex.IsMatch(content, @"(copy\s+.*%.*%|self\s+replicate|spread)", RegexOptions.IgnoreCase))
-            {
-                score += 25;
-                extra.Add("SelfReplication");
-            }
-
             return score;
         }
 
@@ -294,28 +281,22 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*\""wscript.shell\""", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(content, @"createobject\s*\(\s*""wscript.shell""", RegexOptions.IgnoreCase))
             {
                 score += 15;
                 extra.Add("WScriptShellUsage");
             }
 
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*\""scripting.filesystemobject\""", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(content, @"createobject\s*\(\s*""scripting.filesystemobject""", RegexOptions.IgnoreCase))
             {
                 score += 10;
                 extra.Add("FileSystemObjectUsage");
             }
 
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*\""shell.application\""", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(content, @"createobject\s*\(\s*""shell.application""", RegexOptions.IgnoreCase))
             {
                 score += 15;
                 extra.Add("ShellApplicationUsage");
-            }
-
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*\""msscriptcontrol.scriptcontrol\""", RegexOptions.IgnoreCase))
-            {
-                score += 20;
-                extra.Add("ScriptControlUsage");
             }
 
             return score;
@@ -335,12 +316,6 @@ namespace Xdows_Local
             {
                 score += 15;
                 extra.Add("WScriptUsage");
-            }
-
-            if (Regex.IsMatch(content, @"shell.application", RegexOptions.IgnoreCase))
-            {
-                score += 15;
-                extra.Add("ShellApplicationUsage");
             }
 
             return score;
@@ -374,12 +349,6 @@ namespace Xdows_Local
                 extra.Add("BitsadminUsage");
             }
 
-            if (Regex.IsMatch(content, @"(nyancat|rainbow|memz|trollface)", RegexOptions.IgnoreCase))
-            {
-                score += 30;
-                extra.Add("MEMZSignature");
-            }
-
             if (Regex.IsMatch(content, @"(del\s+[/sfq]|format\s+|rmdir\s+[/sq]|shutdown\s+[/sfr])", RegexOptions.IgnoreCase))
             {
                 score += 25;
@@ -390,48 +359,6 @@ namespace Xdows_Local
             {
                 score += 20;
                 extra.Add("RegistryModification");
-            }
-
-            if (Regex.IsMatch(content, @"(copy\s+.*%allusersprofile%.*startup|copy\s+.*%appdata%.*microsoft\\windows\\start\s+menu\\programs\\startup)", RegexOptions.IgnoreCase))
-            {
-                score += 25;
-                extra.Add("StartupPersistence");
-            }
-
-            if (Regex.IsMatch(content, @"(copy\s+.*%windir%\\system32|attrib\s+.*+h\s+.*%windir%\\system32)", RegexOptions.IgnoreCase))
-            {
-                score += 30;
-                extra.Add("SystemFileModification");
-            }
-
-            if (Regex.Count(content, @"echo\s+.*>>.*.bat", RegexOptions.IgnoreCase) > 3)
-            {
-                score += 20;
-                extra.Add("MultipleBatchCreation");
-            }
-
-            if (Regex.IsMatch(content, @"(msg\s+\*\s|errorlevel|error)", RegexOptions.IgnoreCase))
-            {
-                score += 15;
-                extra.Add("ErrorMessagePopup");
-            }
-
-            if (Regex.IsMatch(content, @"(mousemove|setmousepos|blockinput)", RegexOptions.IgnoreCase))
-            {
-                score += 20;
-                extra.Add("InputInterference");
-            }
-
-            if (Regex.IsMatch(content, @"(color\s+[0-9a-f]|mode\s+con|cls)", RegexOptions.IgnoreCase))
-            {
-                score += 10;
-                extra.Add("ScreenEffects");
-            }
-
-            if (Regex.IsMatch(content, @"(start\s+.*.wav|start\s+.*.mp3|echo\s+\007)", RegexOptions.IgnoreCase))
-            {
-                score += 10;
-                extra.Add("AudioEffects");
             }
 
             return score;
@@ -482,12 +409,6 @@ namespace Xdows_Local
             {
                 score += 5;
                 extra.Add("ChmodUsage");
-            }
-
-            if (Regex.IsMatch(content, @"systemctl\s+", RegexOptions.IgnoreCase))
-            {
-                score += 10;
-                extra.Add("SystemctlUsage");
             }
 
             return score;

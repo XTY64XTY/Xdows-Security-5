@@ -10,14 +10,16 @@ namespace Protection
     public class LegacyProcessProtection : IProtectionModel
     {
         // 感谢 XiaoWeiSecurity 对开源杀毒软件项目（特别是主动防御）的巨大贡献！！
+
         private static CancellationTokenSource? _cts = null;
         private static Task? _monitorTask = null;
-        private static ScanEngine.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
+        private static Helper.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
         public const string Name = "Process";
         string IProtectionModel.Name => Name;
+
         public bool Run(InterceptCallBack toastCallBack)
         {
-            SouXiaoEngine ??= new ScanEngine.ScanEngine.SouXiaoEngineScan();
+            SouXiaoEngine ??= new Helper.ScanEngine.SouXiaoEngineScan();
             SouXiaoEngine.Initialize();
             if (SouXiaoEngine == null)
             {
@@ -37,6 +39,7 @@ namespace Protection
                 return false;
             }
         }
+
         public bool Stop()
         {
             if (!IsRun())
@@ -65,6 +68,7 @@ namespace Protection
 
             return true;
         }
+
         public bool IsRun()
         {
             return _cts is { IsCancellationRequested: false };
@@ -74,8 +78,6 @@ namespace Protection
 
         private static async Task MonitorNewProcessesLoop(InterceptCallBack interceptCallBack, CancellationToken token)
         {
-            Debug.WriteLine("Protection Enabled");
-
             while (!token.IsCancellationRequested)
             {
                 try
@@ -95,7 +97,6 @@ namespace Protection
                             if (string.IsNullOrEmpty(path) || SouXiaoEngine == null)
                                 continue;
 
-                            // 检查文件是否在信任区中
                             if (TrustManager.IsPathTrusted(path))
                                 continue;
 
@@ -109,7 +110,6 @@ namespace Protection
                                     proc.Kill();
                                     _ = QuarantineManager.AddToQuarantine(path, result);
                                     interceptCallBack(true, path, Name);
-
                                 }
                                 catch
                                 {
@@ -138,6 +138,23 @@ namespace Protection
 
         private static List<int> GetProcessIdList()
         {
+            try
+            {
+                var result = Native_ProcessMonitor.GetProcessIdListManaged();
+                if (result.Count > 0)
+                {
+                    return result;
+                }
+            }
+            catch
+            {
+            }
+
+            return GetProcessIdListFallback();
+        }
+
+        private static List<int> GetProcessIdListFallback()
+        {
             const int maxCount = 512;
             int[] pids = new int[maxCount];
 
@@ -163,6 +180,23 @@ namespace Protection
         private static extern bool EnumProcesses(int[] lpidProcess, int cb, out int lpcbNeeded);
 
         private static string ProcessPidToPath(int pid)
+        {
+            try
+            {
+                string nativePath = Native_ProcessMonitor.GetProcessPathByIdManaged(pid);
+                if (!string.IsNullOrEmpty(nativePath))
+                {
+                    return nativePath;
+                }
+            }
+            catch
+            {
+            }
+
+            return ProcessPidToPathFallback(pid);
+        }
+
+        private static string ProcessPidToPathFallback(int pid)
         {
             const int PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 

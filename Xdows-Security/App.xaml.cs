@@ -1,18 +1,19 @@
 using Compatibility.Windows.Storage;
+using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.Windows.Globalization;
 using Protection;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using WinUI3Localizer;
 using static Protection.CallBack;
@@ -82,7 +83,7 @@ namespace Xdows_Security
         public static readonly string AppName = "Xdows Security";
         public static readonly string AppId = "Xdows-Security";
         public static readonly string AppVersion = "4.1.1";
-        public static readonly string AppFeedback = "https://github.com/XTY64XTY12345/Xdows-Security/issues/new/choose";
+        public static readonly string AppFeedback = "https://github.com/LoveProgrammingMint/Xdows-Security/issues/new/choose";
         public static readonly string AppWebsite = "https://xty64xty.netlify.app/";
         // 修改 开发团队、Xdows Tools 名称请修改本地化资源文件
     }
@@ -95,15 +96,20 @@ namespace Xdows_Security
 
         private static readonly InterceptCallBack interceptCallBack = (isSucceed, path, type) =>
         {
-            LogText.AddNewLog(LogLevel.WARN, "Protection", isSucceed
+            LogText.AddNewLog(LogText.LogLevel.WARN, "Protection", isSucceed
                 ? $"InterceptProcess：{Path.GetFileName(path)}"
                 : $"Cannot InterceptProcess：{Path.GetFileName(path)}");
             // string content = isSucceed ? "已发现威胁" : "无法处理威胁";
             // content = $"{AppInfo.AppName} {content}.{Environment.NewLine}相关数据：{Path.GetFileName(path)}{Environment.NewLine}单击此通知以查看详细信息";
-            App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+            _ = (App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
             {
-                InterceptWindow.ShowOrActivate(isSucceed, path, type);
-            });
+                _ = InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
+                {
+                    path = path,
+                    isSucceed = isSucceed,
+                    interceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
+                });
+            }));
             // Notifications.ShowNotification("发现威胁", content, path);
         };
         private static readonly IProtectionModel LegacyProcessProtection = new LegacyProcessProtection();
@@ -163,213 +169,192 @@ namespace Xdows_Security
         public static int ScansQuantity { get; set; } = 0;
         public static int VirusQuantity { get; set; } = 0;
     }
-    /// <summary>
-    /// 日志级别的枚举类型，定义了不同的日志级别。
-    /// </summary>
-    public enum LogLevel
-    {
-        DEBUG,  // 调试日志
-        INFO,   // 信息日志
-        WARN,   // 警告日志
-        ERROR,  // 错误日志
-        FATAL   // 致命错误日志
-    }
-
     public static class LogText
     {
-        #region 对外保持不变的接口
+        private const int HOT_MAX_LINES = 500;
+        private const int BATCH_SIZE = 50;
+        private const int FLUSH_INTERVAL_MS = 200;
+        private static readonly TimeSpan RetainAge = TimeSpan.FromDays(7);
+        private static readonly string BaseFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Xdows-Security", "Logs");
+        private static readonly Queue<string> _hotLines = new();
+        private static readonly object _lockObj = new();
+        private static readonly Channel<LogRow> _writeChannel = Channel.CreateUnbounded<LogRow>();
+        private static readonly Timer _throttleTimer;
+        private static bool _pendingEvent;
+
         public static event EventHandler? TextChanged;
-        public static string Text => _hotCache.ToString();
+        public static string Text
+        {
+            get
+            {
+                lock (_lockObj)
+                {
+                    return string.Join(Environment.NewLine, _hotLines);
+                }
+            }
+        }
 
         public static void ClearLog()
         {
-            lock (_hotCache)
+            lock (_lockObj)
             {
-                _hotCache.Clear();
-                _hotLines = 0;
+                _hotLines.Clear();
             }
-
-            AddNewLog(LogLevel.INFO, "LogSystem", "Log is cleared");
+            TriggerTextChanged();
         }
-        #endregion
 
-        #region 配置（可抽出去读 JSON）
-        private const int HOT_MAX_LINES = 500;
-        private const int HOT_MAX_BYTES = 80_000;
-        private const int BATCH_SIZE = 100;
-        private static readonly TimeSpan RetainAge = TimeSpan.FromDays(7);
-        #endregion
-
-        #region 路径 & 文件
-        private static readonly string BaseFolder =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                         "Xdows-Security");
-
-        private static string CurrentFilePath =>
-            Path.Combine(BaseFolder, $"logs-{DateTime.Now:yyyy-MM-dd}.txt");
-        #endregion
-
-        #region 并发容器
-        private static readonly StringBuilder _hotCache = new();
-        private static readonly ConcurrentQueue<LogRow> _pending = new();
-        private static int _hotLines;
-        private static readonly SemaphoreSlim _signal = new(0, int.MaxValue);
-        #endregion
-
-        #region 启动后台写盘
-        static LogText()
-        {
-            Directory.CreateDirectory(BaseFolder);
-            _ = Task.Run(WritePump);
-            AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-                AddNewLog(LogLevel.FATAL, "Unhandled", e.ExceptionObject.ToString()!);
-        }
-        #endregion
-
-        #region 对外唯一写入口
-        public static void AddNewLog(LogLevel level, string source, string info)
+        public static async void AddNewLog(LogLevel level, string source, string info)
         {
             var row = new LogRow
             {
                 Time = DateTime.Now,
-                Level = (int)level,
+                Level = level,
                 Source = source,
-                Text = info
+                Text = info,
+                ThreadId = Environment.CurrentManagedThreadId
             };
-
-            _pending.Enqueue(row);
-            _signal.Release();
-            AppendToHotCache(row);
+            UpdateHotCache(row);
+            await _writeChannel.Writer.WriteAsync(row);
         }
-        #endregion
-
-        #region 热缓存（线程安全）
-        private static void AppendToHotCache(LogRow row)
+        static LogText()
         {
-            lock (_hotCache)
-            {
-                if (_hotLines >= HOT_MAX_LINES || _hotCache.Length >= HOT_MAX_BYTES)
-                    TrimHotHead();
+            Directory.CreateDirectory(BaseFolder);
+            CleanupOldLogs();
+            _ = Task.Run(WritePumpAsync);
+            _throttleTimer = new Timer(OnTimerCallback, null, Timeout.Infinite, Timeout.Infinite);
+        }
+        private static void UpdateHotCache(LogRow row)
+        {
+            string formatted = FormatRow(row);
 
-                _hotCache.AppendLine(FormatRow(row));
-                _hotLines++;
+            lock (_lockObj)
+            {
+                if (_hotLines.Count >= HOT_MAX_LINES)
+                {
+                    _hotLines.Dequeue();
+                }
+                _hotLines.Enqueue(formatted);
             }
 
-            RaiseChangedThrottled();
+            TriggerTextChanged();
         }
 
-        private static void TrimHotHead()
+        private static void TriggerTextChanged()
         {
-            int cut = _hotCache.ToString().IndexOf('\n') + 1;
-            if (cut > 0)
+            _pendingEvent = true;
+            _throttleTimer.Change(100, Timeout.Infinite);
+        }
+
+        private static void OnTimerCallback(object? state)
+        {
+            if (_pendingEvent)
             {
-                _hotCache.Remove(0, cut);
-                _hotLines--;
+                _pendingEvent = false;
+                TextChanged?.Invoke(null, EventArgs.Empty);
             }
         }
-        #endregion
 
-        #region 事件节流
-        private static Timer? _throttleTimer;
-        private static void RaiseChangedThrottled()
-        {
-            if (Xdows_Security.MainWindow.NowPage != "Home") return;
-
-            _throttleTimer?.Dispose();
-            _throttleTimer = new Timer(_ => TextChanged?.Invoke(null, EventArgs.Empty),
-                                       null, 100, Timeout.Infinite);
-        }
-        #endregion
-
-        #region 后台写盘泵
-        private static async Task WritePump()
+        private static async Task WritePumpAsync()
         {
             var batch = new List<LogRow>(BATCH_SIZE);
-            while (true)
-            {
-                await _signal.WaitAsync();
-                while (_pending.TryDequeue(out var row)) batch.Add(row);
-                if (batch.Count == 0) continue;
+            var reader = _writeChannel.Reader;
 
+            while (await reader.WaitToReadAsync())
+            {
+                batch.Clear();
+
+                while (batch.Count < BATCH_SIZE && reader.TryRead(out var row))
+                {
+                    batch.Add(row);
+                }
+                if (batch.Count == 0) continue;
                 try
                 {
-                    await File.AppendAllTextAsync(CurrentFilePath,
-                        string.Join(Environment.NewLine, batch.ConvertAll(FormatRow)) +
-                        Environment.NewLine);
+                    string filePath = GetTodayFilePath();
+                    string content = string.Join(Environment.NewLine, batch.ConvertAll(FormatRow)) + Environment.NewLine;
+                    await File.AppendAllTextAsync(filePath, content);
                 }
-                catch
-                {
-                    var emergency = Path.Combine(BaseFolder, "emergency.log");
-                    await File.AppendAllTextAsync(emergency,
-                        string.Join(Environment.NewLine, batch.ConvertAll(FormatRow)) +
-                        Environment.NewLine);
-                }
-
-                batch.Clear();
-                RollIfNeeded();
+                catch { }
             }
         }
-        #endregion
 
-        #region 工具
-        private static string FormatRow(LogRow r) =>
-            $"[{r.Time:yyyy-MM-dd HH:mm:ss}][{LevelToText(r.Level)}][{r.Source}][{Environment.CurrentManagedThreadId}]: {r.Text}";
-
-        private static string LevelToText(int l) => l switch
+        private static void CleanupOldLogs()
         {
-            0 => "DEBUG",
-            1 => "INFO",
-            2 => "WARN",
-            3 => "ERROR",
-            4 => "FATAL",
-            _ => "UNKNOWN"
-        };
+            try
+            {
+                if (!Directory.Exists(BaseFolder)) return;
+                var dir = new DirectoryInfo(BaseFolder);
+                var cutoff = DateTime.UtcNow - RetainAge;
 
-        private static void RollIfNeeded()
-        {
-            var dir = new DirectoryInfo(BaseFolder);
-            foreach (var f in dir.GetFiles("logs-*.txt"))
-                if (DateTime.UtcNow - f.LastWriteTimeUtc > RetainAge)
-                    f.Delete();
+                foreach (var f in dir.GetFiles("logs-*.txt"))
+                {
+                    if (f.LastWriteTimeUtc < cutoff)
+                    {
+                        f.Delete();
+                    }
+                }
+            }
+            catch { }
         }
-        #endregion
-
-        #region 内部行对象
+        private static string GetTodayFilePath() =>
+            Path.Combine(BaseFolder, $"logs-{DateTime.Now:yyyy-MM-dd}.txt");
+        private static string FormatRow(LogRow r) =>
+            $"[{r.Time:yyyy-MM-dd HH:mm:ss}][{r.Level}][{r.Source}][T:{r.ThreadId}]: {r.Text}";
+        public enum LogLevel
+        {
+            DEBUG = 0,
+            INFO = 1,
+            WARN = 2,
+            ERROR = 3,
+            FATAL = 4
+        }
         private record LogRow
         {
-            public DateTime Time;
-            public int Level;
-            public string Source = "";
-            public string Text = "";
+            public DateTime Time { get; init; }
+            public LogLevel Level { get; init; }
+            public string Source { get; init; } = "";
+            public string Text { get; init; } = "";
+            public int ThreadId { get; init; }
         }
-        #endregion
     }
-    /// <summary>
-    /// 应用程序的主入口类，负责启动和管理应用程序。
-    /// </summary>
     public partial class App : Application
     {
         public static MainWindow? MainWindow { get; private set; } // 主窗口实例
 
         public App()
         {
-            LogText.AddNewLog(LogLevel.INFO, "UI Interface", "Attempting to load the MainWindow...");
+            LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "Attempting to load the MainWindow...");
             this.InitializeComponent();
         }
-
-        /// <summary>
-        /// 应用程序启动时调用，处理启动参数。
-        /// </summary>
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             try
             {
+                //Helper.Linker.Start(async (interceptWindowSetting) =>
+                //{
+                //    var tcs = new TaskCompletionSource<string>();
+                //    App.MainWindow?.DispatcherQueue?.TryEnqueue(async () =>
+                //    {
+                //        try
+                //        {
+                //            var result = await InterceptWindow.ShowOrActivate(interceptWindowSetting);
+                //            tcs.TrySetResult(result);
+                //        }
+                //        catch (Exception ex)
+                //        {
+                //            tcs.TrySetException(ex);
+                //        }
+                //    });
+                //    return await tcs.Task;
+                //});
                 await InitializeLocalizer();
                 InitializeMainWindow();
             }
             catch (Exception ex)
             {
-                LogText.AddNewLog(LogLevel.ERROR, "App", $"Error in OnLaunched: {ex.Message}");
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Error in OnLaunched: {ex.Message}");
             }
         }
         private static void InitializeMainWindow()
@@ -383,19 +368,14 @@ namespace Xdows_Security
             }
             catch (Exception ex)
             {
-                LogText.AddNewLog(LogLevel.ERROR, "App", $"Error initializing MainWindow: {ex.Message}");
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Error initializing MainWindow: {ex.Message}");
             }
         }
-        // 定义主题属性
         public static ElementTheme Theme { get; set; } = ElementTheme.Default;
-
-        // 获取云API密钥
         public static string GetCzkCloudApiKey()
         {
             return string.Empty;
         }
-
-        // 检查是否以管理员身份运行
         public static bool IsRunAsAdmin()
         {
             WindowsIdentity identity = WindowsIdentity.GetCurrent();
@@ -404,6 +384,8 @@ namespace Xdows_Security
         }
         private static async Task InitializeLocalizer()
         {
+            ApplicationLanguages.PrimaryLanguageOverride = "en-US";
+
             string stringsPath = Path.Combine(AppContext.BaseDirectory, "Strings");
 
             var settings = ApplicationData.Current.LocalSettings;
@@ -413,10 +395,8 @@ namespace Xdows_Security
                 .AddStringResourcesFolderForLanguageDictionaries(stringsPath)
                 .SetOptions(o => o.DefaultLanguage = lastLang)
                 .Build();
-            // ApplicationLanguages.PrimaryLanguageOverride = "en-US";
             await localizer.SetLanguage(lastLang);
         }
-        // Windows 版本获取
         public static string OsName => RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
             ? (Environment.OSVersion.Version.Build >= 22000 ? "Windows 11" : "Windows 10")
             : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macOS" : "Linux";

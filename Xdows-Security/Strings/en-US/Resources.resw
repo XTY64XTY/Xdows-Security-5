@@ -1228,4 +1228,7 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="InterceptWindow_Message_Exists_Body" xml:space="preserve">
     <value>Target path already contains a file; cannot restore from quarantine.</value>
   </data>
+  <data name="InterceptWindow_ReleaseButton.Content" xml:space="preserve">
+    <value>Release</value>
+  </data>
 </root>

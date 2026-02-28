@@ -76,7 +76,7 @@ namespace Xdows_Security
                 };
                 e.Flyout = flyout;
             };
-            LogText.AddNewLog(LogLevel.INFO, "UI Interface", "MainWindow loaded successfully");
+            LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "MainWindow loaded successfully");
         }
 
         private async void MainWindow_Activated_FirstTime(object sender, WindowActivatedEventArgs args)

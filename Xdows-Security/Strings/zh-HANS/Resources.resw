@@ -1227,4 +1227,7 @@
   <data name="InterceptWindow_Message_Exists_Body" xml:space="preserve">
     <value>目标路径已有文件，无法从隔离恢复。</value>
   </data>
+  <data name="InterceptWindow_ReleaseButton.Content" xml:space="preserve">
+    <value>放行</value>
+  </data>
 </root>

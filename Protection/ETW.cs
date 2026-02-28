@@ -8,7 +8,7 @@ namespace Protection
     {
         public delegate void MonitoringCallback(ProcessTraceData data, InterceptCallBack interceptCallBack);
 
-        private static readonly ScanEngine.ScanEngine.SouXiaoEngineScan SouXiaoEngine = new();
+        private static readonly Helper.ScanEngine.SouXiaoEngineScan SouXiaoEngine = new();
         internal static TraceEventSession? monitoringSession;
     }
 }

@@ -2,7 +2,7 @@ using PublicPart;
 using System.Security.Cryptography;
 using System.Text.Json;
 
-namespace ScanEngine
+namespace Helper
 {
     public static class ScanEngine
     {
