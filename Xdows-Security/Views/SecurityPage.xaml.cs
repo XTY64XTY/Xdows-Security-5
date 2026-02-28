@@ -677,7 +677,7 @@ namespace Xdows_Security.Views
             {
                 Log += " SouXiaoScan";
             }
-            LogText.AddNewLog(LogLevel.INFO, "Security - StartScan", Log);
+            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - StartScan", Log);
 
             String? userPath = null;
             if (mode is ScanMode.File or ScanMode.Folder)
@@ -804,7 +804,7 @@ namespace Xdows_Security.Views
 
                         _dispatcherQueue.TryEnqueue(() =>
                         {
-                            LogText.AddNewLog(LogLevel.INFO, "Security - ScanFile", file);
+                            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - ScanFile", file);
                             try
                             {
                                 StatusText.Text = String.Format(tStatusText, file);
@@ -818,7 +818,7 @@ namespace Xdows_Security.Views
                         {
                             if (TrustManager.IsPathTrusted(file))
                             {
-                                LogText.AddNewLog(LogLevel.INFO, "Security - Find", "Is Trusted");
+                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", "Is Trusted");
                                 _filesSafe++;
                                 continue;
                             }
@@ -884,7 +884,7 @@ namespace Xdows_Security.Views
 
                             if (!String.IsNullOrEmpty(finalVirusResult))
                             {
-                                LogText.AddNewLog(LogLevel.INFO, "Security - Find", finalVirusResult);
+                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", finalVirusResult);
                                 Statistics.VirusQuantity += 1;
                                 try
                                 {
@@ -898,19 +898,19 @@ namespace Xdows_Security.Views
                                 }
                                 catch (Exception ex)
                                 {
-                                    LogText.AddNewLog(LogLevel.ERROR, "Security - UI Update", ex.Message);
+                                    LogText.AddNewLog(LogText.LogLevel.ERROR, "Security - UI Update", ex.Message);
                                 }
                             }
                             else
                             {
-                                LogText.AddNewLog(LogLevel.INFO, "Security - Find", "Is Safe");
+                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", "Is Safe");
                                 _filesSafe++;
                             }
 
                         }
                         catch (Exception ex)
                         {
-                            LogText.AddNewLog(LogLevel.WARN, "Security - ScanFailed", ex.Message);
+                            LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ScanFailed", ex.Message);
                         }
 
                         finished++;
@@ -969,7 +969,7 @@ namespace Xdows_Security.Views
                 {
                     _dispatcherQueue.TryEnqueue(() =>
                     {
-                        LogText.AddNewLog(LogLevel.FATAL, "Security - Failed", ex.Message);
+                        LogText.AddNewLog(LogText.LogLevel.FATAL, "Security - Failed", ex.Message);
                         StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanFailed_Format"), ex.Message);
                         ScanProgress.Visibility = Visibility.Collapsed;
                         PauseScanButton.Visibility = Visibility.Collapsed;
@@ -1110,7 +1110,7 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    LogText.AddNewLog(LogLevel.FATAL, "Security - FilesInfo - GetFailed", ex.Message);
+                    LogText.AddNewLog(LogText.LogLevel.FATAL, "Security - FilesInfo - GetFailed", ex.Message);
                     ContentDialog failDlg = new()
                     {
                         Title = Localizer.Get().GetLocalizedString("SecurityPage_GetFailed_Text"),

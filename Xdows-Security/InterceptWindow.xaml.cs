@@ -172,7 +172,7 @@ namespace Xdows_Security
                     WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_Message_TrustFailed_Title"),
                     WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_Message_TrustFailed_Body")
                 );
-                LogText.AddNewLog(LogLevel.ERROR, "InterceptWindow - TrustOnly - Failed", ex.ToString());
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "InterceptWindow - TrustOnly - Failed", ex.ToString());
             }
         }
 
@@ -233,7 +233,7 @@ namespace Xdows_Security
                     WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_Message_RestoreFailed_Title"),
                     WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_Message_RestoreFailed_Body")
                 );
-                LogText.AddNewLog(LogLevel.ERROR, "InterceptWindow - RestoreOnly - Failed", ex.ToString());
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "InterceptWindow - RestoreOnly - Failed", ex.ToString());
             }
         }
 
@@ -319,7 +319,7 @@ namespace Xdows_Security
                     WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_Message_TrustFailed_Title"),
                     WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_Message_TrustFailed_Body")
                 );
-                LogText.AddNewLog(LogLevel.ERROR, "InterceptWindow - AddToTrust - Failed", ex.ToString());
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "InterceptWindow - AddToTrust - Failed", ex.ToString());
             }
         }
         private async Task ShowMessageDialog(string title, string message)
