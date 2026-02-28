@@ -1,20 +1,13 @@
 // using Windows.ApplicationModel.Resources;//多语言调用
 using Compatibility.Windows.Storage;
-using Microsoft.UI;
-using Microsoft.UI.Composition;
-using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Windows.Security.Credentials.UI;
-using Windows.UI;
-using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
-using WinRT;
 using WinUI3Localizer;
 using WinUIEx;
 using Xdows_Security.Views;
@@ -240,16 +233,6 @@ namespace Xdows_Security
                 GoToPage(pageName);
             }
         }
-
-
-        // 背景图片相关字段
-
-
-
-
-
-
-
 
         private void Window_Closed()
         {

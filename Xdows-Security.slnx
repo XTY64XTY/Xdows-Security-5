@@ -18,7 +18,6 @@
   <Project Path="../SouXiaoAVEngine/VirusmarkAPI/VirusmarkAPI.csproj" />
   <Project Path="Helper/Helper.csproj" />
   <Project Path="Protection/Protection.csproj" />
-  <Project Path="ScanEngine/ScanEngine.csproj" />
   <Project Path="TrustQuarantine/TrustQuarantine.csproj" />
   <Project Path="Xdows-Local/Xdows-Local.csproj" />
   <Project Path="Xdows-Security/Xdows-Security.csproj">
