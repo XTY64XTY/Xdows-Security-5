@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.Windows.Storage.Pickers;
 using System;
+using WinRT.Interop;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;

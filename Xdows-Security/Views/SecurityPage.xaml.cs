@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.Storage.Pickers;
 using System;
+using WinRT.Interop;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;

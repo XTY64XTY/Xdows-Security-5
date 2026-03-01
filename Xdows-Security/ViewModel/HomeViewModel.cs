@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.Storage.Pickers;
 using System;
+using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -103,7 +104,7 @@ namespace Xdows_Security.ViewModel
         {
             try
             {
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
                 var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
                 var picker = new FileSavePicker(windowId)
                 {
