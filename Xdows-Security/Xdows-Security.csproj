@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
@@ -32,7 +32,6 @@
 	<TrimmerRootAssembly Include="CommunityToolkit.WinUI.UI" />
 	<TrimmerRootAssembly Include="CommunityToolkit.WinUI.UI.Controls.Core" />
 	<TrimmerRootAssembly Include="CommunityToolkit.WinUI.Controls.SettingsControls" />
-	<TrimmerRootAssembly Include="CommunityToolkit.WinUI.UI.Controls.Markdown" />
 	<TrimmerRootAssembly Include="Microsoft.Diagnostics.Tracing.TraceEvent" />
 	<TrimmerRootAssembly Include="WinUIEx" />
 	<TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
@@ -58,7 +57,6 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
-    <PackageReference Include="CommunityToolkit.WinUI.UI.Controls.Markdown" Version="7.1.2" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260209005" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
