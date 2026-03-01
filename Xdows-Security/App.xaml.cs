@@ -82,7 +82,7 @@ namespace Xdows_Security
     {
         public static readonly string AppName = "Xdows Security";
         public static readonly string AppId = "Xdows-Security";
-        public static readonly string AppVersion = "4.1.1";
+        public static readonly string AppVersion = "4.1.2";
         public static readonly string AppFeedback = "https://github.com/LoveProgrammingMint/Xdows-Security/issues/new/choose";
         public static readonly string AppWebsite = "https://xty64xty.netlify.app/";
         // 修改 开发团队、Xdows Tools 名称请修改本地化资源文件

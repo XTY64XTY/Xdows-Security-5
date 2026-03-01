@@ -21,7 +21,6 @@
 		<IsAotCompatible>true</IsAotCompatible>
 		<CsWinRTAotOptimizerEnable>true</CsWinRTAotOptimizerEnable>
 		<TrimMode>partial</TrimMode>
-		<NoWarn>$(NoWarn);MSB3277;IL2026;IL3050</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
