@@ -28,7 +28,7 @@
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Theme_ComboBox_Dark" />
                     </ComboBox>
                 </controls:SettingsCard>
-                <controls:SettingsCard
+                <controls:SettingsExpander
                               l:Uids.Uid="SettingsPage_Appearance_Nav"
                               HeaderIcon="{ui:FontIcon Glyph=&#xE700;}"
                               x:Name="Appearance_Nav">
@@ -36,7 +36,14 @@
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_Left" />
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_Top" />
                     </ComboBox>
-                </controls:SettingsCard>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xF165;}">
+                            <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar" Tag="IsPaneToggleButtonInTitleBar" Toggled="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
                 <controls:SettingsExpander
                    l:Uids.Uid="SettingsPage_Appearance_Backdrop"
                    HeaderIcon="{ui:FontIcon Glyph=&#xEF1F;}"

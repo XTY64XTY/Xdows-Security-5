@@ -127,6 +127,7 @@ namespace Xdows_Security
                 settings.Values.TryGetValue("AppNavTheme", out object raw) && raw is double d ?
                 (int)d : 0
             );
+            UpdatePaneToggleButtonPosition();
             if (settings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle))
             {
                 manager?.IsVisibleInTray = (bool)trayVisibleToggle;
@@ -275,6 +276,11 @@ namespace Xdows_Security
         private void Nav_Loaded(object sender, RoutedEventArgs e)
         {
             LoadLocalizerData();
+        }
+
+        private void AppTitleBar_PaneToggleRequested(Microsoft.UI.Xaml.Controls.TitleBar sender, object args)
+        {
+            nav.IsPaneOpen = !nav.IsPaneOpen;
         }
     }
 }

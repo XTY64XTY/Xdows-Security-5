@@ -233,12 +233,21 @@ namespace Xdows_Security
         {
             _backgroundImageBrush?.Opacity = opacity;
         }
-
-        private void OnThemeChanged(FrameworkElement sender, object args)
+        public async void UpdatePaneToggleButtonPosition()
         {
+
             var settings = ApplicationData.Current.LocalSettings;
-            if (settings.Values["AppBackdrop"] is string backdrop)
-                ApplyBackdrop(backdrop, true);
+            if (settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out object isItInTitleBar))
+            {
+                AppTitleBar.IsPaneToggleButtonVisible = (bool)isItInTitleBar;
+                nav.IsPaneToggleButtonVisible = !AppTitleBar.IsPaneToggleButtonVisible;
+            }
+            else
+            {
+                AppTitleBar.IsPaneToggleButtonVisible = false;
+                nav.IsPaneToggleButtonVisible = true;
+
+            }
         }
     }
 }

@@ -1231,4 +1231,10 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="InterceptWindow_ReleaseButton.Content" xml:space="preserve">
     <value>Release</value>
   </data>
+  <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Header" xml:space="preserve">
+    <value>Compact UI</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
+    <value>Place the PaneToggleButton in the TitleBar</value>
+  </data>
 </root>

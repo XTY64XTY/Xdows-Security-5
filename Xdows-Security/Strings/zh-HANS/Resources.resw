@@ -1230,4 +1230,10 @@
   <data name="InterceptWindow_ReleaseButton.Content" xml:space="preserve">
     <value>放行</value>
   </data>
+  <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Header" xml:space="preserve">
+    <value>紧凑的界面</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
+    <value>将导航按钮置于标题栏</value>
+  </data>
 </root>

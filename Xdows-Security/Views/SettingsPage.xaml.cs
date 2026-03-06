@@ -205,6 +205,7 @@ namespace Xdows_Security.Views
                 DisabledVerifyToggle,
                 Process_CompatibilityMode,
                 Files_CompatibilityMode,
+                SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar
             ];
 
             foreach (ToggleSwitch toggle in toggles)
@@ -918,6 +919,12 @@ namespace Xdows_Security.Views
                 _ = File.WriteAllBytesAsync(file.Path, mbr);
             }
             catch { }
+        }
+
+        private async void SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled(object sender, RoutedEventArgs e)
+        {
+            Toggled_SaveToggleData(sender, e);
+            App.MainWindow?.UpdatePaneToggleButtonPosition();
         }
     }
 }
