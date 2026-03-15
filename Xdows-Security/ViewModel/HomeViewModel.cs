@@ -125,6 +125,13 @@ namespace Xdows_Security.ViewModel
                 Log(3, "ExportLog", ex.Message);
             }
         }
+        [RelayCommand]
+        private void CopyPomes()
+        {
+            var pkg = new DataPackage();
+            pkg.SetText(PomesLine);
+            Clipboard.SetContent(pkg);
+        }
 
         [RelayCommand]
         private void LogLevelFilter(string[]? selected)

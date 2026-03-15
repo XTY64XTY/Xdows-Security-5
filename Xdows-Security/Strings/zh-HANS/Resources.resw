@@ -756,9 +756,6 @@
   <data name="HomePage_CopySystemInfo.Text" xml:space="preserve">
     <value>复制系统信息</value>
   </data>
-  <data name="HomePage_RefreshPomes.Content" xml:space="preserve">
-    <value>刷新</value>
-  </data>
   <data name="HomePage_Scan.Text" xml:space="preserve">
     <value>扫描统计</value>
   </data>

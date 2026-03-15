@@ -756,9 +756,6 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_CopySystemInfo.Text" xml:space="preserve">
     <value>Copy System Info</value>
   </data>
-  <data name="HomePage_RefreshPomes.Content" xml:space="preserve">
-    <value>Refresh</value>
-  </data>
   <data name="HomePage_Scan.Text" xml:space="preserve">
     <value>Scan Statistics</value>
   </data>
