@@ -45,7 +45,7 @@
       git clone https://github.com/LoveProgrammingMint/ICEX
       ```
 
-    1. 生成项目
+    2. 生成项目
 
       直接编译 `Xdows-Security.slnx` 解决方案即可
 

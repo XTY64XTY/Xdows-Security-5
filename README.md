@@ -45,7 +45,7 @@
       git clone https://github.com/LoveProgrammingMint/ICEX   
       ```
 
-    1. Build the project
+    2. Build the project
 
       Simply build the `Xdows-Security.slnx` solution
 
