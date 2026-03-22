@@ -315,6 +315,12 @@
   <data name="SecurityPage_Details_LocateButton" xml:space="preserve">
     <value>定位文件</value>
   </data>
+  <data name="SecurityPage_Details_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="SecurityPage_Details_NotAvailable" xml:space="preserve">
+    <value>無法獲取</value>
+  </data>
   <data name="SecurityPage_LocateFailed_Title" xml:space="preserve">
     <value>定位失敗</value>
   </data>
@@ -642,6 +648,18 @@
   <data name="SettingsPage_Scan_Local_ExtraData.Description" xml:space="preserve">
     <value>病毒名稱中顯示威脅文件額外數據</value>
   </data>
+  <data name="SettingsPage_Scan_ScanInside.Header" xml:space="preserve">
+    <value>掃描文件內部</value>
+  </data>
+  <data name="SettingsPage_Scan_ScanInside.Description" xml:space="preserve">
+    <value>掃描 ZIP 壓縮包內部文件，掃描出威脅時會將文件隔離並從壓縮包中刪除</value>
+  </data>
+  <data name="SettingsPage_Scan_ScanInside_Nested.Header" xml:space="preserve">
+    <value>掃描嵌套壓縮包</value>
+  </data>
+  <data name="SettingsPage_Scan_ScanInside_Nested.Description" xml:space="preserve">
+    <value>掃描壓縮包內部的壓縮包文件</value>
+  </data>
   <data name="HomePage_Pomes" xml:space="preserve">
     <value>光是宇宙的標點，黑洞是它故意留的省略號.
 現代人用濾鏡僞造光，就像用簡歷僞造人生.
@@ -914,6 +932,12 @@
   </data>
   <data name="SecurityPage_HandleAction_Failed" xml:space="preserve">
     <value>處理文件失敗</value>
+  </data>
+  <data name="SecurityPage_HandleAction_ZipEntriesDeleted" xml:space="preserve">
+    <value>已從壓縮包中刪除 {0} 個文件</value>
+  </data>
+  <data name="SecurityPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
+    <value>已隔離 {0} 個文件並從壓縮包中刪除 {1} 個條目</value>
   </data>
   <data name="SecurityPage_HandleResult_Title" xml:space="preserve">
     <value>處理結果</value>

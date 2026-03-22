@@ -42,7 +42,7 @@ namespace TrustQuarantine
                 }
                 catch
                 {
-                    // Ã¯π˝Œﬁ∑®Ω‚ŒˆµƒŒƒº˛
+                    // Ë∑≥ËøáÊó†Ê≥ïËß£ÊûêÁöÑÊñá‰ª∂
                 }
             }
 
@@ -56,16 +56,33 @@ namespace TrustQuarantine
 
             try
             {
-                var fileHash = await CalculateFileHashAsync(filePath);
+                byte[] fileData = await File.ReadAllBytesAsync(filePath);
+                return await AddToQuarantineFromBytes(fileData, filePath, threatName, true);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static async Task<bool> AddToQuarantineFromBytes(byte[] fileData, string sourcePath, string threatName, bool deleteSource = false)
+        {
+            if (fileData == null || fileData.Length == 0 || string.IsNullOrWhiteSpace(sourcePath))
+                return false;
+
+            try
+            {
+                var fileHash = CalculateHashFromBytes(fileData);
 
                 var current = GetQuarantineItems();
                 if (current.Any(x => string.Equals(x.FileHash, fileHash, StringComparison.OrdinalIgnoreCase)))
                 {
-                    File.Delete(filePath);
-                    return true; // “—¥Ê‘⁄£¨≤ª÷ÿ∏¥ÃÌº”
+                    if (deleteSource && File.Exists(sourcePath))
+                    {
+                        File.Delete(sourcePath);
+                    }
+                    return true;
                 }
-
-                byte[] fileData = await File.ReadAllBytesAsync(filePath);
 
                 using var aes = Aes.Create();
                 aes.KeySize = 256;
@@ -78,23 +95,34 @@ namespace TrustQuarantine
                 {
                     FileHash = fileHash,
                     FileData = encrypted,
-                    SourcePath = filePath,
+                    SourcePath = sourcePath,
                     ThreatName = threatName ?? string.Empty,
                     EncryptionKey = Convert.ToBase64String(aes.Key),
                     IV = Convert.ToBase64String(aes.IV)
                 };
 
+                EnsureQuarantineFolderExists();
                 string quarantineItemFilePath = Path.Combine(QuarantineFolderPath, $"{fileHash}.json");
                 string json = JsonSerializer.Serialize(item, QuarantineJsonContext.Default.QuarantineItemModel);
                 await File.WriteAllTextAsync(quarantineItemFilePath, json);
 
-                File.Delete(filePath);
+                if (deleteSource && File.Exists(sourcePath))
+                {
+                    File.Delete(sourcePath);
+                }
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        private static string CalculateHashFromBytes(byte[] data)
+        {
+            using var sha256 = SHA256.Create();
+            var hashBytes = sha256.ComputeHash(data);
+            return Convert.ToHexStringLower(hashBytes);
         }
 
         public static async Task<bool> RestoreFile(string fileHash)

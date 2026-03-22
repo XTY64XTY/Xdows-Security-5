@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Dispatching;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -16,9 +16,9 @@ namespace Xdows_Security.Model
 
         public void Reload(string raw, string[]? filters)
         {
-            try
+            _dq.TryEnqueue(() =>
             {
-                _dq.TryEnqueue(() =>
+                try
                 {
                     var q = string.IsNullOrEmpty(raw)
                         ? []
@@ -30,23 +30,34 @@ namespace Xdows_Security.Model
                     _lines.Clear();
                     foreach (var l in q.TakeLast(MAX_LINES))
                         _lines.Add(l);
-                });
-            }
-            catch { }
+                }
+                catch { }
+            });
         }
 
         public void Push(string line)
         {
             _dq.TryEnqueue(() =>
             {
-                if (_lines.Count >= MAX_LINES) _lines.RemoveAt(0);
-                _lines.Add(line);
+                try
+                {
+                    if (_lines.Count >= MAX_LINES) _lines.RemoveAt(0);
+                    _lines.Add(line);
+                }
+                catch { }
             });
         }
 
         public void Clear()
         {
-            _dq.TryEnqueue(_lines.Clear);
+            _dq.TryEnqueue(() =>
+            {
+                try
+                {
+                    _lines.Clear();
+                }
+                catch { }
+            });
         }
 
         public void Export(string path, string raw)

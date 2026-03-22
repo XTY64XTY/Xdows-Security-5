@@ -315,6 +315,12 @@
   <data name="SecurityPage_Details_LocateButton" xml:space="preserve">
     <value>Locate File</value>
   </data>
+  <data name="SecurityPage_Details_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="SecurityPage_Details_NotAvailable" xml:space="preserve">
+    <value>Not Available</value>
+  </data>
   <data name="SecurityPage_LocateFailed_Title" xml:space="preserve">
     <value>Locate Failed</value>
   </data>
@@ -642,6 +648,18 @@
   <data name="SettingsPage_Scan_Local_ExtraData.Description" xml:space="preserve">
     <value>Add extra metadata to detected virus names</value>
   </data>
+  <data name="SettingsPage_Scan_ScanInside.Header" xml:space="preserve">
+    <value>Scan Inside Files</value>
+  </data>
+  <data name="SettingsPage_Scan_ScanInside.Description" xml:space="preserve">
+    <value>Scan files inside ZIP archives, threats will be quarantined and removed from the archive</value>
+  </data>
+  <data name="SettingsPage_Scan_ScanInside_Nested.Header" xml:space="preserve">
+    <value>Scan Nested Archives</value>
+  </data>
+  <data name="SettingsPage_Scan_ScanInside_Nested.Description" xml:space="preserve">
+    <value>Scan archive files inside archives</value>
+  </data>
   <data name="HomePage_Pomes" xml:space="preserve">
     <value>Light—cosmic dot; black hole its plotted ellipsis.
 Screens fake light with filters, like résumés fake life.
@@ -915,6 +933,12 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   </data>
   <data name="SecurityPage_HandleAction_Failed" xml:space="preserve">
     <value>Failed to handle file</value>
+  </data>
+  <data name="SecurityPage_HandleAction_ZipEntriesDeleted" xml:space="preserve">
+    <value>Deleted {0} entries from archive</value>
+  </data>
+  <data name="SecurityPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
+    <value>Quarantined {0} files and deleted {1} entries from archive</value>
   </data>
   <data name="SecurityPage_HandleResult_Title" xml:space="preserve">
     <value>Handle Result</value>

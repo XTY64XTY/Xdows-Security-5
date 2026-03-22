@@ -197,6 +197,8 @@ namespace Xdows_Security.Views
                 ScanProgressToggle,
                 DeepScanToggle,
                 ExtraDataToggle,
+                ScanInsideToggle,
+                ScanInsideNestedToggle,
                 LocalScanToggle,
                 CzkCloudScanToggle,
                 SouXiaoScanToggle,

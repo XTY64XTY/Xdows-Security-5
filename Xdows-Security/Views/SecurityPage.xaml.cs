@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Compatibility.Windows.Storage;
+using Helper;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
@@ -10,7 +11,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.Storage.Pickers;
 using System;
-using WinRT.Interop;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -91,6 +91,7 @@ namespace Xdows_Security.Views
         private IRelayCommand? _showDetailsCommand;
         private IRelayCommand? _trustCommand;
         private IRelayCommand? _handleCommand;
+        private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
 
         public SecurityPage()
         {
@@ -206,10 +207,21 @@ namespace Xdows_Security.Views
         {
             if (CurrentResults is null || row is null) return;
 
+            String displayPath = row.FilePath;
+            String? zipPath = null;
+            String? entryPath = null;
+
+            Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
+            if (zipIndex > 0)
+            {
+                zipPath = displayPath.Substring(0, zipIndex + 4);
+                entryPath = displayPath.Substring(zipIndex + 5);
+            }
+
             ContentDialog dialog = new()
             {
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Title"),
-                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Content"), row.FilePath),
+                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Content"), displayPath),
                 PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Primary"),
                 CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
                 XamlRoot = this.XamlRoot,
@@ -224,7 +236,84 @@ namespace Xdows_Security.Views
                     Boolean handled = false;
                     String actionTaken = "";
 
-                    if (await QuarantineManager.AddToQuarantine(row.FilePath, row.VirusName))
+                    if (zipPath != null && entryPath != null && _zipFileThreats.ContainsKey(zipPath))
+                    {
+                        var threatsInZip = _zipFileThreats[zipPath];
+                        var entriesToDelete = new List<String>();
+                        Int32 quarantinedCount = 0;
+
+                        foreach (var (EntryPath, VirusName) in threatsInZip)
+                        {
+                            if (EntryPath == entryPath || threatsInZip.Any(t => t.EntryPath.StartsWith(entryPath + "\\")))
+                            {
+                                entriesToDelete.Add(EntryPath);
+                            }
+                        }
+
+                        if (entriesToDelete.Count > 0)
+                        {
+                            foreach (var entry in entriesToDelete)
+                            {
+                                try
+                                {
+                                    var fileData = await ZipScanner.ExtractEntryAsync(zipPath, entry);
+                                    if (fileData != null && fileData.Length > 0)
+                                    {
+                                        var threatInfo = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
+                                        String virusName = threatInfo.VirusName ?? row.VirusName ?? "Unknown";
+                                        String sourcePath = Path.GetDirectoryName(zipPath) + "\\" + Path.GetFileName(entry);
+
+                                        LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Quarantining {sourcePath} from {zipPath}, size: {fileData.Length} bytes");
+
+                                        if (await QuarantineManager.AddToQuarantineFromBytes(fileData, sourcePath, virusName, false))
+                                        {
+                                            quarantinedCount++;
+                                            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Successfully quarantined {sourcePath}");
+                                        }
+                                        else
+                                        {
+                                            LogText.AddNewLog(LogText.LogLevel.WARN, "Security - QuarantineZipEntry", $"Failed to quarantine {sourcePath}");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        LogText.AddNewLog(LogText.LogLevel.WARN, "Security - QuarantineZipEntry", $"Failed to extract {entry} from {zipPath}");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogText.AddNewLog(LogText.LogLevel.ERROR, "Security - QuarantineZipEntry", $"Exception quarantining {entry}: {ex.Message}");
+                                }
+                            }
+
+                            // Then delete from ZIP
+                            Int32 deletedCount = 0;
+                            if (quarantinedCount > 0)
+                            {
+                                deletedCount = await ZipScanner.DeleteMultipleEntriesFromZipAsync(zipPath, entriesToDelete);
+                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - DeleteZipEntries", $"Deleted {deletedCount} entries from {zipPath}");
+                            }
+
+                            if (deletedCount > 0 || quarantinedCount > 0)
+                            {
+                                actionTaken = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_ZipEntriesQuarantined"), quarantinedCount, deletedCount);
+                                handled = true;
+
+                                foreach (var entry in entriesToDelete)
+                                {
+                                    VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == $"{zipPath}\\{entry}");
+                                    if (itemToRemove != null)
+                                    {
+                                        CurrentResults.Remove(itemToRemove);
+                                        _threatsFound--;
+                                    }
+                                }
+
+                                _zipFileThreats.Remove(zipPath);
+                            }
+                        }
+                    }
+                    else if (await QuarantineManager.AddToQuarantine(row.FilePath, row.VirusName))
                     {
                         actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Quarantined");
                         handled = true;
@@ -271,12 +360,6 @@ namespace Xdows_Security.Views
 
                     if (handled)
                     {
-                        VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
-                        if (itemToRemove != null)
-                        {
-                            CurrentResults.Remove(itemToRemove);
-                        }
-                        _threatsFound--;
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
                         StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults.Count);
                     }
@@ -621,12 +704,191 @@ namespace Xdows_Security.Views
 
         private record ScanResult(String EngineName, String? VirusInfo);
 
+        private async Task ScanZipFileAsync(String zipPath, Boolean scanNested, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useSouXiaoScan, Helper.ScanEngine.SouXiaoEngineScan? souXiaoEngine, String czkApiKey, CancellationToken token)
+        {
+            try
+            {
+                var entries = await ZipScanner.ReadZipEntriesAsync(zipPath, scanNested);
+
+                foreach (var (entryPath, data) in entries)
+                {
+                    // Check for pause at the start of each entry
+                    while (_isPaused && !token.IsCancellationRequested)
+                    {
+                        await Task.Delay(100, token);
+                    }
+
+                    if (token.IsCancellationRequested) break;
+
+                    // Check for pause before processing each entry
+                    if (_isPaused)
+                    {
+                        await Task.Delay(100, token);
+                        if (token.IsCancellationRequested) break;
+                    }
+
+                    String displayPath = $"{zipPath}\\{entryPath}";
+                    _dispatcherQueue.TryEnqueue(() =>
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.INFO, "Security - ScanFile", displayPath);
+                        try
+                        {
+                            StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning"), displayPath);
+                        }
+                        catch
+                        {
+                        }
+                    });
+
+                    String tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                    try
+                    {
+                        await File.WriteAllBytesAsync(tempFile, data, token);
+
+                        if (TrustManager.IsPathTrusted(tempFile))
+                        {
+                            _filesSafe++;
+                            continue;
+                        }
+
+                        List<Task<ScanResult>> entryScanTasks = [];
+                        if (useSouXiaoScan && souXiaoEngine != null)
+                        {
+                            entryScanTasks.Add(Task.Run(() =>
+                            {
+                                (Boolean isVirus, String result) = souXiaoEngine.ScanFile(tempFile);
+                                return new ScanResult("SouXiao", isVirus ? result : null);
+                            }));
+                        }
+                        if (useLocalScan)
+                        {
+                            entryScanTasks.Add(Helper.ScanEngine.LocalScanAsync(tempFile, deepScan, extraData)
+                                .ContinueWith(t =>
+                                {
+                                    String localResult = t.Result;
+                                    String? info = !String.IsNullOrEmpty(localResult)
+                                        ? (deepScan ? $"{localResult} with DeepScan" : localResult)
+                                        : null;
+                                    return new ScanResult("Local", info);
+                                }, TaskScheduler.Default));
+                        }
+                        if (useCloudScan)
+                        {
+                            entryScanTasks.Add(Helper.ScanEngine.CloudScanAsync(tempFile)
+                                .ContinueWith(t =>
+                                {
+                                    (Int32? statusCode, String? result) = t.Result;
+                                    String? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
+                                    return new ScanResult("Cloud", info);
+                                }, TaskScheduler.Default));
+                        }
+                        if (useCzkCloudScan)
+                        {
+                            entryScanTasks.Add(Helper.ScanEngine.CzkCloudScanAsync(tempFile, czkApiKey)
+                                .ContinueWith(t =>
+                                {
+                                    (Int32? statusCode, String? result) = t.Result;
+                                    String? info = (result != "safe") ? (result ?? String.Empty) : null;
+                                    return new ScanResult("CzkCloud", info);
+                                }, TaskScheduler.Default));
+                        }
+
+                        String? virusResult = null;
+                        if (entryScanTasks.Count > 0)
+                        {
+                            // Create a task that completes when pause is released
+                            TaskCompletionSource<Object?> pauseTcs = new();
+                            using var pauseCheckTimer = new Timer(_ =>
+                            {
+                                if (!_isPaused)
+                                {
+                                    pauseTcs.TrySetResult(null);
+                                }
+                            }, null, 100, 100);
+
+                            // Wait for all scan tasks to complete, but also check for pause
+                            Task<ScanResult[]> scanTask = Task.WhenAll(entryScanTasks);
+                            while (!scanTask.IsCompleted)
+                            {
+                                // If paused, wait until unpaused
+                                while (_isPaused && !token.IsCancellationRequested)
+                                {
+                                    await Task.Delay(100, token);
+                                }
+
+                                if (token.IsCancellationRequested)
+                                {
+                                    break;
+                                }
+
+                                // Wait a bit for tasks to complete
+                                await Task.WhenAny(scanTask, Task.Delay(100));
+                            }
+
+                            if (scanTask.IsCompleted && !scanTask.IsFaulted)
+                            {
+                                ScanResult[] results = scanTask.Result;
+                                foreach (ScanResult res in results)
+                                {
+                                    if (!String.IsNullOrEmpty(res.VirusInfo))
+                                    {
+                                        virusResult = res.VirusInfo;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!String.IsNullOrEmpty(virusResult))
+                        {
+                            Statistics.ScansQuantity += 1;
+                            Statistics.VirusQuantity += 1;
+
+                            if (!_zipFileThreats.ContainsKey(zipPath))
+                            {
+                                _zipFileThreats[zipPath] = [];
+                            }
+                            _zipFileThreats[zipPath].Add((entryPath, virusResult));
+
+                            _dispatcherQueue.TryEnqueue(() =>
+                            {
+                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult);
+                                BackToVirusListButton.Visibility = Visibility.Visible;
+                            });
+                            _threatsFound++;
+                            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", $"ZIP Entry: {entryPath} - {virusResult}");
+                        }
+                        else
+                        {
+                            _filesSafe++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ScanZipEntryFailed", ex.Message);
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempFile))
+                        {
+                            try { File.Delete(tempFile); } catch { }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ScanZipFailed", ex.Message);
+            }
+        }
+
         private async Task StartScanAsync(String displayName, ScanMode mode, IReadOnlyList<String>? customPaths = null)
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
             CancellationToken token = _cts.Token;
             _isPaused = false;
+            _zipFileThreats.Clear();
 
             ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
             Boolean showScanProgress = settings.Values["ShowScanProgress"] as Boolean? ?? false;
@@ -781,6 +1043,8 @@ namespace Xdows_Security.Views
                     TimeSpan pausedTime = TimeSpan.Zero; // 记录总的暂停时间
                     DateTime lastPauseTime = DateTime.MinValue; // 记录上次暂停开始的时间
                     String czkApiKey = App.GetCzkCloudApiKey();
+                    Boolean ScanInside = settings.Values["ScanInside"] as Boolean? ?? false;
+                    Boolean ScanInsideNested = settings.Values["ScanInsideNested"] as Boolean? ?? false;
 
                     foreach (String file in files)
                     {
@@ -814,6 +1078,14 @@ namespace Xdows_Security.Views
                             {
                             }
                         });
+
+                        if (ScanInside && ZipScanner.IsZipFile(file))
+                        {
+                            await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseSouXiaoScan, SouXiaoEngine, czkApiKey, token);
+                            _filesScanned++;
+                            finished++;
+                            continue;
+                        }
 
                         try
                         {
@@ -945,6 +1217,9 @@ namespace Xdows_Security.Views
 
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed"), false, _threatsFound);
 
+                    // ZIP file threats are kept in _zipFileThreats for manual handling
+                    // They will be removed from the dictionary when user handles them
+
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         ApplicationDataContainer settingsLocal = ApplicationData.Current.LocalSettings;
@@ -1024,15 +1299,67 @@ namespace Xdows_Security.Views
 
         private async Task ShowDetailsDialog(VirusRow? row)
         {
+            Boolean isDetailsPause = false;
+            Boolean scanWasResumed = false;
             try
             {
                 if (row is null) return;
-                Boolean isDetailsPause = PauseScanButton.Visibility == Visibility.Visible && PauseScanButton.IsEnabled;
+                isDetailsPause = PauseScanButton.Visibility == Visibility.Visible && PauseScanButton.IsEnabled;
                 if (isDetailsPause)
                 {
                     OnPauseScanClick(new Object(), new RoutedEventArgs());
                 }
-                FileInfo fileInfo = new(row.FilePath);
+
+                String displayPath = row.FilePath;
+                String? zipPath = null;
+                String? entryPath = null;
+                Boolean isZipEntry = false;
+
+                Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
+                if (zipIndex > 0)
+                {
+                    zipPath = displayPath.Substring(0, zipIndex + 4);
+                    entryPath = displayPath.Substring(zipIndex + 5);
+                    isZipEntry = true;
+                }
+
+                String fileSizeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
+                String creationTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
+                String lastWriteTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
+
+                if (isZipEntry && zipPath != null && entryPath != null)
+                {
+                    try
+                    {
+                        var entryInfo = await ZipScanner.GetEntryInfoAsync(zipPath, entryPath);
+                        if (entryInfo.HasValue)
+                        {
+                            fileSizeText = String.Format("{0:F2} KB", entryInfo.Value.Size / 1024.0);
+                            creationTimeText = entryInfo.Value.CreationTime.ToString();
+                            lastWriteTimeText = entryInfo.Value.LastWriteTime.ToString();
+                        }
+                        else
+                        {
+                            fileSizeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_NotAvailable");
+                        }
+                    }
+                    catch
+                    {
+                        fileSizeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_NotAvailable");
+                    }
+                }
+                else if (System.IO.File.Exists(displayPath))
+                {
+                    try
+                    {
+                        FileInfo fileInfo = new(displayPath);
+                        fileSizeText = String.Format("{0:F2} KB", fileInfo.Length / 1024.0);
+                        creationTimeText = fileInfo.CreationTime.ToString();
+                        lastWriteTimeText = fileInfo.LastWriteTime.ToString();
+                    }
+                    catch { }
+                }
+
                 ContentDialog dialog = new()
                 {
                     Title = Localizer.Get().GetLocalizedString("SecurityPage_Details_Title"),
@@ -1055,30 +1382,30 @@ namespace Xdows_Security.Views
                                         {
                                             Inlines =
                                             {
-                                                new Run { Text = row.FilePath },
+                                                new Run { Text = displayPath },
                                             }
                                         }
                                     }
                                 },
                                 new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_VirusName"), row.VirusName), Margin = new Thickness(0, 8, 0, 0) },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize"), fileInfo.Length / 1024.0), Margin = new Thickness(0, 8, 0, 0) },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime"), fileInfo.CreationTime), Margin = new Thickness(0, 8, 0, 0) },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime"), fileInfo.LastWriteTime), Margin = new Thickness(0, 8, 0, 0) }
+                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize"), fileSizeText), Margin = new Thickness(0, 8, 0, 0) },
+                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime"), creationTimeText), Margin = new Thickness(0, 8, 0, 0) },
+                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime"), lastWriteTimeText), Margin = new Thickness(0, 8, 0, 0) }
                             }
                         },
                         MaxHeight = 400
                     },
-                    PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_Details_LocateButton"),
+                    PrimaryButtonText = isZipEntry ? null : Localizer.Get().GetLocalizedString("SecurityPage_Details_LocateButton"),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot,
                     RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
                     DefaultButton = ContentDialogButton.Close
                 };
-                if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+                if (!isZipEntry && await dialog.ShowAsync() == ContentDialogResult.Primary)
                 {
                     try
                     {
-                        String filePath = row.FilePath;
+                        String filePath = displayPath;
                         String? directoryPath = Path.GetDirectoryName(filePath);
                         String fileName = Path.GetFileName(filePath);
 
@@ -1104,8 +1431,10 @@ namespace Xdows_Security.Views
                         await dlg.ShowAsync();
                     }
                 }
-                if (isDetailsPause)
-                    OnResumeScanClick(new Object(), new RoutedEventArgs());
+                else if (isZipEntry)
+                {
+                    await dialog.ShowAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -1124,6 +1453,21 @@ namespace Xdows_Security.Views
                     await failDlg.ShowAsync();
                 }
                 catch { }
+            }
+            finally
+            {
+                if (isDetailsPause && !scanWasResumed)
+                {
+                    try
+                    {
+                        OnResumeScanClick(new Object(), new RoutedEventArgs());
+                        scanWasResumed = true;
+                    }
+                    catch (Exception resumeEx)
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "Security - ResumeFailed", resumeEx.Message);
+                    }
+                }
             }
         }
 

@@ -97,6 +97,18 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
+                           l:Uids.Uid="SettingsPage_Scan_ScanInside"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
+                    <ToggleSwitch x:Name="ScanInsideToggle" Tag="ScanInside" Toggled="Toggled_SaveToggleData"  />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_ScanInside_Nested"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
+                            <ToggleSwitch x:Name="ScanInsideNestedToggle" Tag="ScanInsideNested" Toggled="Toggled_SaveToggleData"  />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+                <controls:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Scan_SouXiao"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF22C;}"
