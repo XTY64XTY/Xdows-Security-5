@@ -16,6 +16,8 @@
     <a href="README.md">English</a>
     ·
     简体中文
+    ·
+    <a href="README.zh-HANT.md">繁體中文</a>
   </p>
 
 </p>
