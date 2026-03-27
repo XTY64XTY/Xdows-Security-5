@@ -147,15 +147,6 @@
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>获取失败</value>
   </data>
-  <data name="SecurityPage_ScanStatusHeader.Text" xml:space="preserve">
-    <value>扫描状态</value>
-  </data>
-  <data name="SecurityPage_CurrentScanAreaText.Text" xml:space="preserve">
-    <value>准备开始扫描</value>
-  </data>
-  <data name="SecurityPage_ScanProgressDetailText.Text" xml:space="preserve">
-    <value>等待用户选择扫描类型</value>
-  </data>
   <data name="SecurityPage_ProgressHeader.Text" xml:space="preserve">
     <value>扫描进度</value>
   </data>
@@ -243,36 +234,6 @@
   <data name="SecurityPage_Status_Processing" xml:space="preserve">
     <value>正在处理文件...</value>
   </data>
-  <data name="SecurityPage_Area_Quick_Title" xml:space="preserve">
-    <value>快速扫描系统关键区域</value>
-  </data>
-  <data name="SecurityPage_Area_Quick_Detail" xml:space="preserve">
-    <value>正在检测系统关键文件和目录</value>
-  </data>
-  <data name="SecurityPage_Area_Full_Title" xml:space="preserve">
-    <value>全面扫描所有磁盘</value>
-  </data>
-  <data name="SecurityPage_Area_Full_Detail" xml:space="preserve">
-    <value>正在检测所有磁盘的文件</value>
-  </data>
-  <data name="SecurityPage_Area_File_Title" xml:space="preserve">
-    <value>单独扫描指定文件</value>
-  </data>
-  <data name="SecurityPage_Area_File_Detail" xml:space="preserve">
-    <value>正在检测：</value>
-  </data>
-  <data name="SecurityPage_Area_Folder_Title" xml:space="preserve">
-    <value>单独扫描指定目录</value>
-  </data>
-  <data name="SecurityPage_Area_Folder_Detail" xml:space="preserve">
-    <value>正在检测：</value>
-  </data>
-  <data name="SecurityPage_Area_More_Title" xml:space="preserve">
-    <value>更多扫描 - 自定义路径</value>
-  </data>
-  <data name="SecurityPage_Area_More_Detail" xml:space="preserve">
-    <value>共 {0} 个路径</value>
-  </data>
   <data name="SecurityPage_Status_Scanning" xml:space="preserve">
     <value>正在扫描：{0}</value>
   </data>
@@ -335,12 +296,6 @@
   </data>
   <data name="SecurityPage_BackToVirusList_Show" xml:space="preserve">
     <value>查看列表</value>
-  </data>
-  <data name="SecurityPage_Area_Paused_Title" xml:space="preserve">
-    <value>扫描已暂停</value>
-  </data>
-  <data name="SecurityPage_Area_Paused_Detail" xml:space="preserve">
-    <value>扫描已暂停，点击继续按钮恢复扫描</value>
   </data>
   <data name="SecurityPage_FilesScanned_Format" xml:space="preserve">
     <value>{0} 个文件</value>
@@ -944,12 +899,6 @@
   </data>
   <data name="SecurityPage_HandleFailed_Title" xml:space="preserve">
     <value>处理失败</value>
-  </data>
-  <data name="SecurityPage_Area_Resume_Title" xml:space="preserve">
-    <value>扫描已恢复</value>
-  </data>
-  <data name="SecurityPage_Area_Resume_Detail" xml:space="preserve">
-    <value>扫描已恢复，正在继续扫描</value>
   </data>
   <data name="Common_OperationSuccess" xml:space="preserve">
     <value>操作成功</value>

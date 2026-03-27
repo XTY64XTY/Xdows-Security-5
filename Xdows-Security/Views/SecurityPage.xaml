@@ -57,22 +57,6 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Border BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}" Grid.Row="0" Grid.ColumnSpan="2" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,16">
-                <StackPanel>
-                <TextBlock x:Name="ScanStatusHeader" l:Uids.Uid="SecurityPage_ScanStatusHeader" FontSize="16" FontWeight="Bold" Margin="0,0,0,16"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <FontIcon x:Name="ScanAreaIcon" Grid.Column="0" Glyph="&#xE721;" FontSize="24" Margin="0,0,12,0"/>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock x:Name="CurrentScanAreaText" l:Uids.Uid="SecurityPage_CurrentScanAreaText" FontSize="14" FontWeight="SemiBold"/>
-                            <TextBlock x:Name="ScanProgressDetailText" l:Uids.Uid="SecurityPage_ScanProgressDetailText" FontSize="12" Opacity="0.7"/>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </Border>
             <Border BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}" Grid.Row="3" Grid.ColumnSpan="2" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,8">
                 <StackPanel>
                     <Grid Margin="0,0,0,2">

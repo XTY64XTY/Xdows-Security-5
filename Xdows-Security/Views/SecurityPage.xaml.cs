@@ -98,7 +98,6 @@ namespace Xdows_Security.Views
             this.InitializeComponent();
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
             PathText.Text = Localizer.Get().GetLocalizedString("SecurityPage_PathText_Default");
-            ScanStatusHeader.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanStatusHeader");
             ProgressHeader.Text = Localizer.Get().GetLocalizedString("SecurityPage_ProgressHeader");
             ScanSpeedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), 0.0);
             FilesScannedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), 0);
@@ -462,15 +461,6 @@ namespace Xdows_Security.Views
             _dispatcherQueue.TryEnqueue(() =>
             {
                 RadarScanStoryboard.Resume();
-            });
-        }
-
-        private void UpdateScanAreaInfo(String areaName, String detailInfo)
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                CurrentScanAreaText.Text = areaName;
-                ScanProgressDetailText.Text = detailInfo;
             });
         }
 
@@ -1049,18 +1039,7 @@ namespace Xdows_Security.Views
                     }
                     DateTime startTime = DateTime.Now;
                     Int32 finished = 0;
-                    Int32 currentItemIndex = 0;
-                    (String title, String detail) = mode switch
-                    {
-                        ScanMode.Quick => (Localizer.Get().GetLocalizedString("SecurityPage_Area_Quick_Title"), Localizer.Get().GetLocalizedString("SecurityPage_Area_Quick_Detail")),
-                        ScanMode.Full => (Localizer.Get().GetLocalizedString("SecurityPage_Area_Full_Title"), Localizer.Get().GetLocalizedString("SecurityPage_Area_Full_Detail")),
-                        ScanMode.File => (Localizer.Get().GetLocalizedString("SecurityPage_Area_File_Title"), String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Area_File_Detail"), userPath)),
-                        ScanMode.Folder => (Localizer.Get().GetLocalizedString("SecurityPage_Area_Folder_Title"), String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Area_Folder_Detail"), userPath)),
-                        ScanMode.More => (Localizer.Get().GetLocalizedString("SecurityPage_Area_More_Title"), String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Area_More_Detail"), customPaths?.Count ?? 0)),
-                        _ => (Localizer.Get().GetLocalizedString("SecurityPage_Area_Quick_Title"), Localizer.Get().GetLocalizedString("SecurityPage_Area_Quick_Detail"))
-                    };
-
-                    currentItemIndex = mode switch
+                    Int32 currentItemIndex = mode switch
                     {
                         ScanMode.Quick => 0,
                         ScanMode.Full => 1,
@@ -1069,8 +1048,6 @@ namespace Xdows_Security.Views
                         ScanMode.More => 0,
                         _ => 0
                     };
-
-                    UpdateScanAreaInfo(title, detail);
 
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning"), true);
 
@@ -1314,7 +1291,6 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = true;
             PauseScanButton.Visibility = Visibility.Collapsed;
             ResumeScanButton.Visibility = Visibility.Visible;
-            UpdateScanAreaInfo(Localizer.Get().GetLocalizedString("SecurityPage_Area_Paused_Title"), Localizer.Get().GetLocalizedString("SecurityPage_Area_Paused_Detail"));
             PauseRadarAnimation();
         }
 
@@ -1324,7 +1300,6 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = false;
             PauseScanButton.Visibility = Visibility.Visible;
             ResumeScanButton.Visibility = Visibility.Collapsed;
-            UpdateScanAreaInfo(Localizer.Get().GetLocalizedString("SecurityPage_Area_Resume_Title"), Localizer.Get().GetLocalizedString("SecurityPage_Area_Resume_Detail"));
             ResumeRadarAnimation();
         }
 
