@@ -214,11 +214,27 @@ namespace Xdows_Security.Views
             Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
             if (zipIndex > 0)
             {
-                zipPath = displayPath.Substring(0, zipIndex + 4);
-                entryPath = displayPath.Substring(zipIndex + 5);
+                zipPath = displayPath[..(zipIndex + 4)];
+                entryPath = displayPath[(zipIndex + 5)..];
             }
 
-            ContentDialog dialog = new()
+            var progressContent = new StackPanel
+            {
+                Spacing = 16,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Children =
+                   {
+                       new ProgressRing { IsActive = true, Width = 40, Height = 40 },
+                       new TextBlock
+                         {
+                            Text = Localizer.Get().GetLocalizedString("SecurityPage_HandleProcessing"),
+                            HorizontalAlignment = HorizontalAlignment.Center,
+                            Style = Application.Current.Resources["BodyTextBlockStyle"] as Style
+                         }
+                   }
+            };
+
+            var dialog = new ContentDialog
             {
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Title"),
                 Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Content"), displayPath),
@@ -229,136 +245,160 @@ namespace Xdows_Security.Views
                 DefaultButton = ContentDialogButton.Primary
             };
 
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            dialog.PrimaryButtonClick += async (s, args) =>
             {
+                args.Cancel = true;
+
+                dialog.PrimaryButtonText = null;
+                dialog.CloseButtonText = null;
+                dialog.Content = progressContent;
+
                 try
                 {
-                    Boolean handled = false;
-                    String actionTaken = "";
-
-                    if (zipPath != null && entryPath != null && _zipFileThreats.ContainsKey(zipPath))
+                    var result = await Task.Run(async () =>
                     {
-                        var threatsInZip = _zipFileThreats[zipPath];
-                        var entriesToDelete = new List<String>();
-                        Int32 quarantinedCount = 0;
+                        Boolean handled = false;
+                        String actionTaken = "";
 
-                        foreach (var (EntryPath, VirusName) in threatsInZip)
+                        if (zipPath != null && entryPath != null && _zipFileThreats.ContainsKey(zipPath))
                         {
-                            if (EntryPath == entryPath || threatsInZip.Any(t => t.EntryPath.StartsWith(entryPath + "\\")))
-                            {
-                                entriesToDelete.Add(EntryPath);
-                            }
-                        }
+                            var threatsInZip = _zipFileThreats[zipPath];
+                            var entriesToDelete = new List<String>();
+                            Int32 quarantinedCount = 0;
 
-                        if (entriesToDelete.Count > 0)
-                        {
-                            foreach (var entry in entriesToDelete)
+                            foreach (var (EntryPath, VirusName) in threatsInZip)
                             {
-                                try
+                                if (EntryPath == entryPath || threatsInZip.Any(t => t.EntryPath.StartsWith(entryPath + "\\")))
                                 {
-                                    var fileData = await ZipScanner.ExtractEntryAsync(zipPath, entry);
-                                    if (fileData != null && fileData.Length > 0)
+                                    entriesToDelete.Add(EntryPath);
+                                }
+                            }
+
+                            if (entriesToDelete.Count > 0)
+                            {
+                                foreach (var entry in entriesToDelete)
+                                {
+                                    try
                                     {
-                                        var threatInfo = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
-                                        String virusName = threatInfo.VirusName ?? row.VirusName ?? "Unknown";
-                                        String sourcePath = Path.GetDirectoryName(zipPath) + "\\" + Path.GetFileName(entry);
-
-                                        LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Quarantining {sourcePath} from {zipPath}, size: {fileData.Length} bytes");
-
-                                        if (await QuarantineManager.AddToQuarantineFromBytes(fileData, sourcePath, virusName, false))
+                                        var fileData = await ZipScanner.ExtractEntryAsync(zipPath, entry);
+                                        if (fileData != null && fileData.Length > 0)
                                         {
-                                            quarantinedCount++;
-                                            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Successfully quarantined {sourcePath}");
+                                            var threatInfo = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
+                                            String virusName = threatInfo.VirusName ?? row.VirusName ?? "Unknown";
+                                            String sourcePath = Path.GetDirectoryName(zipPath) + "\\" + Path.GetFileName(entry);
+
+                                            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Quarantining {sourcePath} from {zipPath}, size: {fileData.Length} bytes");
+
+                                            if (await QuarantineManager.AddToQuarantineFromBytes(fileData, sourcePath, virusName, false))
+                                            {
+                                                quarantinedCount++;
+                                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Successfully quarantined {sourcePath}");
+                                            }
+                                            else
+                                            {
+                                                LogText.AddNewLog(LogText.LogLevel.WARN, "Security - QuarantineZipEntry", $"Failed to quarantine {sourcePath}");
+                                            }
                                         }
                                         else
                                         {
-                                            LogText.AddNewLog(LogText.LogLevel.WARN, "Security - QuarantineZipEntry", $"Failed to quarantine {sourcePath}");
+                                            LogText.AddNewLog(LogText.LogLevel.WARN, "Security - QuarantineZipEntry", $"Failed to extract {entry} from {zipPath}");
                                         }
                                     }
-                                    else
+                                    catch (Exception ex)
                                     {
-                                        LogText.AddNewLog(LogText.LogLevel.WARN, "Security - QuarantineZipEntry", $"Failed to extract {entry} from {zipPath}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    LogText.AddNewLog(LogText.LogLevel.ERROR, "Security - QuarantineZipEntry", $"Exception quarantining {entry}: {ex.Message}");
-                                }
-                            }
-
-                            // Then delete from ZIP
-                            Int32 deletedCount = 0;
-                            if (quarantinedCount > 0)
-                            {
-                                deletedCount = await ZipScanner.DeleteMultipleEntriesFromZipAsync(zipPath, entriesToDelete);
-                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - DeleteZipEntries", $"Deleted {deletedCount} entries from {zipPath}");
-                            }
-
-                            if (deletedCount > 0 || quarantinedCount > 0)
-                            {
-                                actionTaken = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_ZipEntriesQuarantined"), quarantinedCount, deletedCount);
-                                handled = true;
-
-                                foreach (var entry in entriesToDelete)
-                                {
-                                    VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == $"{zipPath}\\{entry}");
-                                    if (itemToRemove != null)
-                                    {
-                                        CurrentResults.Remove(itemToRemove);
-                                        _threatsFound--;
+                                        LogText.AddNewLog(LogText.LogLevel.ERROR, "Security - QuarantineZipEntry", $"Exception quarantining {entry}: {ex.Message}");
                                     }
                                 }
 
-                                _zipFileThreats.Remove(zipPath);
+                                Int32 deletedCount = 0;
+                                if (quarantinedCount > 0)
+                                {
+                                    deletedCount = await ZipScanner.DeleteMultipleEntriesFromZipAsync(zipPath, entriesToDelete);
+                                    LogText.AddNewLog(LogText.LogLevel.INFO, "Security - DeleteZipEntries", $"Deleted {deletedCount} entries from {zipPath}");
+                                }
+
+                                if (deletedCount > 0 || quarantinedCount > 0)
+                                {
+                                    actionTaken = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_ZipEntriesQuarantined"), quarantinedCount, deletedCount);
+                                    handled = true;
+                                }
                             }
                         }
-                    }
-                    else if (await QuarantineManager.AddToQuarantine(row.FilePath, row.VirusName))
-                    {
-                        actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Quarantined");
-                        handled = true;
-                    }
-                    else if (File.Exists(row.FilePath))
-                    {
-                        try
+                        else if (await QuarantineManager.AddToQuarantine(row.FilePath, row.VirusName))
                         {
-                            File.Delete(row.FilePath);
-                            actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Deleted");
+                            actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Quarantined");
                             handled = true;
                         }
-                        catch
+                        else if (File.Exists(row.FilePath))
                         {
                             try
                             {
-                                if (await QuarantineManager.AddToQuarantine(row.FilePath, row.VirusName))
+                                File.Delete(row.FilePath);
+                                actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Deleted");
+                                handled = true;
+                            }
+                            catch
+                            {
+                                try
                                 {
-                                    actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Quarantined");
-                                    handled = true;
+                                    if (await QuarantineManager.AddToQuarantine(row.FilePath, row.VirusName))
+                                    {
+                                        actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Quarantined");
+                                        handled = true;
+                                    }
+                                    else
+                                    {
+                                        actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Failed");
+                                    }
                                 }
-                                else
+                                catch
                                 {
                                     actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Failed");
                                 }
                             }
-                            catch
+                        }
+
+                        return (handled, actionTaken, zipPath, entryPath);
+                    });
+
+                    if (result.handled && result.zipPath != null && result.entryPath != null)
+                    {
+                        var entriesToDelete = new List<String>();
+                        if (_zipFileThreats.ContainsKey(result.zipPath))
+                        {
+                            var threatsInZip = _zipFileThreats[result.zipPath];
+                            foreach (var (EntryPath, VirusName) in threatsInZip)
                             {
-                                actionTaken = Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_Failed");
+                                if (EntryPath == result.entryPath || threatsInZip.Any(t => t.EntryPath.StartsWith(result.entryPath + "\\")))
+                                {
+                                    entriesToDelete.Add(EntryPath);
+                                }
                             }
+
+                            foreach (var entry in entriesToDelete)
+                            {
+                                VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == $"{result.zipPath}\\{entry}");
+                                if (itemToRemove != null)
+                                {
+                                    CurrentResults.Remove(itemToRemove);
+                                    _threatsFound--;
+                                }
+                            }
+
+                            _zipFileThreats.Remove(result.zipPath);
                         }
                     }
 
-                    ContentDialog resultDialog = new()
+                    dialog.Content = new TextBlock
                     {
-                        Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleResult_Title"),
-                        Content = actionTaken,
-                        CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                        XamlRoot = this.XamlRoot,
-                        RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                        DefaultButton = ContentDialogButton.Close
+                        Text = result.actionTaken,
+                        TextWrapping = TextWrapping.Wrap
                     };
-                    await resultDialog.ShowAsync();
 
-                    if (handled)
+                    dialog.CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm");
+                    dialog.DefaultButton = ContentDialogButton.Close;
+
+                    if (result.handled)
                     {
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
                         StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults.Count);
@@ -366,19 +406,18 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    await new ContentDialog
+                    dialog.Content = new TextBlock
                     {
-                        Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleFailed_Title"),
-                        Content = ex.Message,
-                        CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                        RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                        XamlRoot = this.XamlRoot,
-                        DefaultButton = ContentDialogButton.Close
-                    }.ShowAsync();
+                        Text = ex.Message,
+                        TextWrapping = TextWrapping.Wrap
+                    };
+                    dialog.Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleFailed_Title");
+                    dialog.CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm");
                 }
-            }
-        }
+            };
 
+            await dialog.ShowAsync();
+        }
         private void InitializeScanItems()
         {
             _scanItems =
