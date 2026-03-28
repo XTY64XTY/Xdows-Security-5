@@ -95,6 +95,11 @@
 	  </Content>
 	</ItemGroup>
 	<ItemGroup>
+	  <Page Update="Style\InfoCard.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </Page>
+	</ItemGroup>
+	<ItemGroup>
 	  <Page Update="Style\CopyButton.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </Page>

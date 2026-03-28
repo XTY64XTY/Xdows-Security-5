@@ -98,7 +98,6 @@ namespace Xdows_Security.Views
             this.InitializeComponent();
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
             PathText.Text = Localizer.Get().GetLocalizedString("SecurityPage_PathText_Default");
-            ProgressHeader.Text = Localizer.Get().GetLocalizedString("SecurityPage_ProgressHeader");
             ScanSpeedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), 0.0);
             FilesScannedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), 0);
             FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);

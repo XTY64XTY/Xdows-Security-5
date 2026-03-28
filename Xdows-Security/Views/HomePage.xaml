@@ -49,15 +49,8 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
             <StackPanel Spacing="10">
                 <!-- ===== 统计卡片 ===== -->
-                <Border BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}"
-                        Background="{ThemeResource ControlFillColorDefaultBrush}"
-                        CornerRadius="8" Padding="16">
+                <local:InfoCard Icon="&#xE9D2;" l:Uids.Uid="HomePage_Scan">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <FontIcon Glyph="&#xE9D2;" FontSize="20" 
-                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock l:Uids.Uid="HomePage_Scan" FontSize="18" FontWeight="Bold"/>
-                        </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -87,18 +80,11 @@
                             </Button>
                         </StackPanel>
                     </StackPanel>
-                </Border>
+                </local:InfoCard>
 
                 <!-- ===== 防护状态 ===== -->
-                <Border BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}"
-                        Background="{ThemeResource ControlFillColorDefaultBrush}"
-                        CornerRadius="8" Padding="16">
+                <local:InfoCard Icon="&#xF738;" l:Uids.Uid="HomePage_ProtectionStatus">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <FontIcon Glyph="&#xF738;" FontSize="20" 
-                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock l:Uids.Uid="HomePage_ProtectionStatus" FontSize="18" FontWeight="Bold"/>
-                        </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -128,20 +114,11 @@
                                        Text="{x:Bind Vm.ThreatCount, Mode=OneWay}"/>
                         </Grid>
                     </StackPanel>
-                </Border>
+                </local:InfoCard>
 
                 <!-- ===== 系统信息 ===== -->
-                <Border BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}"
-                        Background="{ThemeResource ControlFillColorDefaultBrush}"
-                        CornerRadius="8" Padding="16">
+                <local:InfoCard Icon="&#xE770;" l:Uids.Uid="HomePage_SystemInfo">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                            <FontIcon Glyph="&#xE770;" FontSize="20" 
-                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock l:Uids.Uid="HomePage_SystemInfo" 
-                                           FontSize="18" FontWeight="Bold" 
-                                           VerticalAlignment="Center"/>
-                        </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
@@ -167,13 +144,13 @@
                             <TextBlock Grid.Column="1" Text="{x:Bind Vm.MemoryUsage, Mode=OneWay}"/>
                         </Grid>
                         <StackPanel Orientation="Horizontal" FlowDirection="RightToLeft">
-                            <Button Command="{x:Bind Vm.RefreshSysInfoCommand}" Margin="0,16,8,0" HorizontalAlignment="Left">
+                            <Button Command="{x:Bind Vm.RefreshSysInfoCommand}" HorizontalAlignment="Left">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <TextBlock l:Uids.Uid="HomePage_RefreshSystemInfo"/>
                                     <FontIcon Glyph="&#xE72C;" FontSize="16"/>
                                 </StackPanel>
                             </Button>
-                            <Button Command="{x:Bind Vm.CopySysInfoCommand}" Margin="0,16,0,0" HorizontalAlignment="Left">
+                            <Button Command="{x:Bind Vm.CopySysInfoCommand}" HorizontalAlignment="Left">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <TextBlock l:Uids.Uid="HomePage_CopySystemInfo"/>
                                     <FontIcon Glyph="&#xE8C8;" FontSize="16"/>
@@ -181,27 +158,16 @@
                             </Button>
                         </StackPanel>
                     </StackPanel>
-                </Border>
+                </local:InfoCard>
 
                 <!-- ===== 运行日志 ===== -->
-                <Border Margin="0,0,0,16"
-                        BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}"
-                        Background="{ThemeResource ControlFillColorDefaultBrush}"
-                        CornerRadius="8" Padding="16">
+                <local:InfoCard Icon="&#xE8F1;" l:Uids.Uid="HomePage_LogsHeader" Margin="0,0,0,16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal">
-                            <FontIcon Glyph="&#xE8F1;" FontSize="20" 
-                                          VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock l:Uids.Uid="HomePage_LogsHeader" 
-                                           FontSize="18" FontWeight="Bold" 
-                                           VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" Margin="0,8,0,8">
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
                             <Button Command="{x:Bind Vm.ClearLogCommand}">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <FontIcon Glyph="&#xE74D;" FontSize="16"/>
@@ -257,7 +223,7 @@
                             </DropDownButton>
                         </StackPanel>
 
-                        <ScrollViewer Grid.Row="2" Height="216" x:Name="LogScroll">
+                        <ScrollViewer Grid.Row="1" Height="216" x:Name="LogScroll">
                             <ItemsRepeater ItemsSource="{x:Bind Vm.LogLines}">
                                 <ItemsRepeater.Layout>
                                     <StackLayout Spacing="0"/>
@@ -275,7 +241,7 @@
                             </ItemsRepeater>
                         </ScrollViewer>
                     </Grid>
-                </Border>
+                </local:InfoCard>
             </StackPanel>
         </ScrollViewer>
     </Grid>

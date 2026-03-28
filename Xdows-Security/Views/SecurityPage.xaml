@@ -3,10 +3,10 @@
     x:Class="Xdows_Security.Views.SecurityPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Xdows_Security.Views"
+    xmlns:local="using:Xdows_Security"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:l="using:WinUI3Localizer"
+    xmlns:l="using:WinUI3Localizer" xmlns:local.Views="using:Xdows_Security.Views"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -28,7 +28,7 @@
                          From="0.8" To="0" Duration="0:0:0.2"/>
         </Storyboard>
 
-        <DataTemplate x:Key="MoreScanListTemplate" x:DataType="local:MoreScanItem">
+        <DataTemplate x:Key="MoreScanListTemplate" x:DataType="local.Views:MoreScanItem">
             <Grid Padding="0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -57,14 +57,13 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Border BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}" Grid.Row="3" Grid.ColumnSpan="2" Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,8">
+            <local:InfoCard Icon="&#xE8FE;" l:Uids.Uid="SecurityPage_ProgressHeader" Grid.Row="3" Grid.ColumnSpan="2" Margin="0,0,0,8">
                 <StackPanel>
                     <Grid Margin="0,0,0,2">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="ProgressHeader" Grid.Column="0" l:Uids.Uid="SecurityPage_ProgressHeader" FontSize="16" FontWeight="Bold"/>
                         <TextBlock Grid.Column="1" x:Name="ProgressPercentText" Text="0%" FontSize="14" FontWeight="Bold"/>
                     </Grid>
 
@@ -116,7 +115,7 @@
                         </StackPanel>
                     </Grid>
                 </StackPanel>
-            </Border>
+            </local:InfoCard>
 
             <TextBlock Name="PathText" l:Uids.Uid="SecurityPage_PathText" Grid.Row="4" Grid.Column="0" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,16"/>
 
@@ -190,7 +189,7 @@
           DoubleTapped="VirusList_DoubleTapped" 
           Grid.ColumnSpan="2">
                 <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:VirusRow">
+                    <DataTemplate x:DataType="local.Views:VirusRow">
                         <Grid Padding="12,6">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="2*" MinWidth="300"/>

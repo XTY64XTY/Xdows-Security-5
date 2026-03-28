@@ -147,7 +147,7 @@
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>获取失败</value>
   </data>
-  <data name="SecurityPage_ProgressHeader.Text" xml:space="preserve">
+  <data name="SecurityPage_ProgressHeader.Title" xml:space="preserve">
     <value>扫描进度</value>
   </data>
   <data name="SecurityPage_PathText.Text" xml:space="preserve">
@@ -651,7 +651,7 @@
   <data name="HomePage_RefreshSystemInfo.Text" xml:space="preserve">
     <value>刷新系统信息</value>
   </data>
-  <data name="HomePage_SystemInfo.Text" xml:space="preserve">
+  <data name="HomePage_SystemInfo.Title" xml:space="preserve">
     <value>系统信息</value>
   </data>
   <data name="HomePage_OSName.Text" xml:space="preserve">
@@ -666,7 +666,7 @@
   <data name="AllPage_Loading" xml:space="preserve">
     <value>正在加载...</value>
   </data>
-  <data name="HomePage_ProtectionStatus.Text" xml:space="preserve">
+  <data name="HomePage_ProtectionStatus.Title" xml:space="preserve">
     <value>防护状态</value>
   </data>
   <data name="HomePage_Protection.Text" xml:space="preserve">
@@ -729,7 +729,7 @@
   <data name="HomePage_CopySystemInfo.Text" xml:space="preserve">
     <value>复制系统信息</value>
   </data>
-  <data name="HomePage_Scan.Text" xml:space="preserve">
+  <data name="HomePage_Scan.Title" xml:space="preserve">
     <value>扫描统计</value>
   </data>
   <data name="HomePage_TotalScans.Text" xml:space="preserve">
@@ -741,7 +741,7 @@
   <data name="HomePage_RefreshStatistics.Text" xml:space="preserve">
     <value>刷新统计信息</value>
   </data>
-  <data name="HomePage_LogsHeader.Text" xml:space="preserve">
+  <data name="HomePage_LogsHeader.Title" xml:space="preserve">
     <value>运行日志</value>
   </data>
   <data name="HomePage_ClearLog.Text" xml:space="preserve">

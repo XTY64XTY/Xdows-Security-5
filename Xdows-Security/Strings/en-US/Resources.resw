@@ -147,7 +147,7 @@
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>Get Failed</value>
   </data>
-  <data name="SecurityPage_ProgressHeader.Text" xml:space="preserve">
+  <data name="SecurityPage_ProgressHeader.Title" xml:space="preserve">
     <value>Scan Progress</value>
   </data>
   <data name="SecurityPage_PathText.Text" xml:space="preserve">
@@ -651,7 +651,7 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_RefreshSystemInfo.Text" xml:space="preserve">
     <value>Refresh System Info</value>
   </data>
-  <data name="HomePage_SystemInfo.Text" xml:space="preserve">
+  <data name="HomePage_SystemInfo.Title" xml:space="preserve">
     <value>System Info</value>
   </data>
   <data name="HomePage_OSName.Text" xml:space="preserve">
@@ -666,7 +666,7 @@ Why not try XIGUA Security?</value>
   <data name="AllPage_Loading" xml:space="preserve">
     <value>Loading...</value>
   </data>
-  <data name="HomePage_ProtectionStatus.Text" xml:space="preserve">
+  <data name="HomePage_ProtectionStatus.Title" xml:space="preserve">
     <value>Protection Status</value>
   </data>
   <data name="HomePage_Protection.Text" xml:space="preserve">
@@ -729,7 +729,7 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_CopySystemInfo.Text" xml:space="preserve">
     <value>Copy System Info</value>
   </data>
-  <data name="HomePage_Scan.Text" xml:space="preserve">
+  <data name="HomePage_Scan.Title" xml:space="preserve">
     <value>Scan Statistics</value>
   </data>
   <data name="HomePage_TotalScans.Text" xml:space="preserve">
@@ -741,7 +741,7 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_RefreshStatistics.Text" xml:space="preserve">
     <value>Refresh stats</value>
   </data>
-  <data name="HomePage_LogsHeader.Text" xml:space="preserve">
+  <data name="HomePage_LogsHeader.Title" xml:space="preserve">
     <value>Logs</value>
   </data>
   <data name="HomePage_ClearLog.Text" xml:space="preserve">
