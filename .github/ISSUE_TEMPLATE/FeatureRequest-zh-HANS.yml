@@ -1,0 +1,58 @@
+name: 功能提交 (zh-HANS)
+description: 提交功能建议
+title: "[Feature] "
+labels: ["enhancement", "zh-HANS"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您花时间提交这个功能建议！
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: 功能评估
+      description: 请选择适用的选项
+      options:
+        - label: 是否包含破坏性更改（如删除核心功能）
+        - label: 是否为 UI 界面的建议（样式、文本）
+        - label: 是否需要接入第三方项目或服务（如第三方引擎）
+
+  - type: checkboxes
+    id: dev_info
+    attributes:
+      label: 开发者信息（可选）
+      description: 如果您能看懂相关代码，请选择适用的选项
+      options:
+        - label: 是否需要更改底层内容（编程软件、编译器等）
+        - label: 是否需要添加其它资源文件（图片、视频等）
+
+  - type: input
+    id: version
+    attributes:
+      label: 使用版本
+      description: 请填写您当前使用的 Xdows Security 版本
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: 增加功能
+      description: 请详细描述您建议的功能
+      placeholder: |
+        请描述：
+        1. 您希望实现什么功能？
+        2. 这个功能能解决什么问题？
+        3. 您期望的使用场景是什么？
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其它信息
+      description: 请提供任何其他相关信息，如参考资料、示例等

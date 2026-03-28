@@ -1,0 +1,58 @@
+name: Feature Request (en-US)
+description: Submit a feature suggestion
+title: "[Feature] "
+labels: ["enhancement", "en-US"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to submit this feature suggestion!
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Feature Assessment
+      description: Please select applicable options
+      options:
+        - label: Does it include breaking changes (e.g., deleting core functionality)
+        - label: Is it a UI interface suggestion (style, text)
+        - label: Does it require integration with third-party projects or services (e.g., third-party engine)
+
+  - type: checkboxes
+    id: dev_info
+    attributes:
+      label: Developer Information (Optional)
+      description: If you can understand the code, please select applicable options
+      options:
+        - label: Does it require changes to underlying content (programming software, compiler, etc.)
+        - label: Does it require additional resource files (images, videos, etc.)
+
+  - type: input
+    id: version
+    attributes:
+      label: Version Used
+      description: Please enter the Xdows Security version you are currently using
+      placeholder: e.g., v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: Feature Description
+      description: Please describe in detail your suggested feature
+      placeholder: |
+        Please describe:
+        1. What feature do you want to implement?
+        2. What problem does this feature solve?
+        3. What is your expected usage scenario?
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Please provide any other relevant information, such as references, examples, etc.

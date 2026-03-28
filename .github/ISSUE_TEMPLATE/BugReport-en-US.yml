@@ -1,0 +1,58 @@
+name: Bug Report (en-US)
+description: Submit a bug for us to fix
+title: "[Bug] "
+labels: ["bug", "en-US"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to fill out this bug report!
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Impact Assessment
+      description: Please select applicable options
+      options:
+        - label: Does it affect normal use (e.g., cannot start scan, etc.)
+        - label: Is it a minor issue (style, text, etc.)
+        - label: Is there a workaround (e.g., refresh, restart, etc.)
+
+  - type: checkboxes
+    id: dev_info
+    attributes:
+      label: Developer Information (Optional)
+      description: If you can understand the code, please select applicable options
+      options:
+        - label: Does it require changes to underlying content (programming software, compiler, etc.)
+        - label: Does it require additional resource files (images, videos, etc.)
+        - label: Does the issue still occur after using the latest pre-release version
+
+  - type: input
+    id: version
+    attributes:
+      label: Version Used
+      description: Please enter the Xdows Security version you are using
+      placeholder: e.g., v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Please describe in detail how to reproduce this issue
+      placeholder: |
+        1. Open...
+        2. Click...
+        3. Error occurs...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Information
+      description: Please provide any other relevant information, such as screenshots, logs, etc.

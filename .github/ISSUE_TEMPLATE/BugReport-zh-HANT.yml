@@ -1,0 +1,58 @@
+name: Bug 反饋 (zh-HANT)
+description: 提交 Bug 以便修復
+title: "[Bug] "
+labels: ["bug", "zh-HANT"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您花時間填寫這個 Bug 反饋！
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: 影響評估
+      description: 請選擇適用的選項
+      options:
+        - label: 是否影響正常使用（如無法啟動掃描等）
+        - label: 是否為小問題（樣式、文本等）
+        - label: 是否存在解決方法（如刷新、重啟等）
+
+  - type: checkboxes
+    id: dev_info
+    attributes:
+      label: 開發者資訊（可選）
+      description: 如果您能看懂相關代碼，請選擇適用的選項
+      options:
+        - label: 是否需要更改底層內容（編程軟件、編譯器等）
+        - label: 是否需要添加其它資源文件（圖片、視頻等）
+        - label: 是否使用最新預發布版本後仍然出現問題
+
+  - type: input
+    id: version
+    attributes:
+      label: 使用版本
+      description: 請填寫您使用的 Xdows Security 版本
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 復現方式
+      description: 請詳細描述如何復現這個問題
+      placeholder: |
+        1. 打開...
+        2. 點擊...
+        3. 出現錯誤...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其它資訊
+      description: 請提供任何其他相關資訊，如截圖、日誌等

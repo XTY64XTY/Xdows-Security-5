@@ -1,0 +1,58 @@
+name: 功能提交 (zh-HANT)
+description: 提交功能建議
+title: "[Feature] "
+labels: ["enhancement", "zh-HANT"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您花時間提交這個功能建議！
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: 功能評估
+      description: 請選擇適用的選項
+      options:
+        - label: 是否包含破壞性更改（如刪除核心功能）
+        - label: 是否為 UI 界面的建議（樣式、文本）
+        - label: 是否需要接入第三方項目或服務（如第三方引擎）
+
+  - type: checkboxes
+    id: dev_info
+    attributes:
+      label: 開發者資訊（可選）
+      description: 如果您能看懂相關代碼，請選擇適用的選項
+      options:
+        - label: 是否需要更改底層內容（編程軟件、編譯器等）
+        - label: 是否需要添加其它資源文件（圖片、視頻等）
+
+  - type: input
+    id: version
+    attributes:
+      label: 使用版本
+      description: 請填寫您當前使用的 Xdows Security 版本
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: feature
+    attributes:
+      label: 增加功能
+      description: 請詳細描述您建議的功能
+      placeholder: |
+        請描述：
+        1. 您希望實現什麼功能？
+        2. 這個功能能解決什麼問題？
+        3. 您期望的使用場景是什麼？
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其它資訊
+      description: 請提供任何其他相關資訊，如參考資料、範例等

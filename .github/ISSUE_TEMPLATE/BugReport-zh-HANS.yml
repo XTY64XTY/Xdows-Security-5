@@ -1,0 +1,58 @@
+name: Bug 反馈 (zh-HANS)
+description: 提交 Bug 以便修复
+title: "[Bug] "
+labels: ["bug", "zh-HANS"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢您花时间填写这个 Bug 反馈！
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: 影响评估
+      description: 请选择适用的选项
+      options:
+        - label: 是否影响正常使用（如无法启动扫描等）
+        - label: 是否为小问题（样式、文本等）
+        - label: 是否存在解决方法（如刷新、重启等）
+
+  - type: checkboxes
+    id: dev_info
+    attributes:
+      label: 开发者信息（可选）
+      description: 如果您能看懂相关代码，请选择适用的选项
+      options:
+        - label: 是否需要更改底层内容（编程软件、编译器等）
+        - label: 是否需要添加其它资源文件（图片、视频等）
+        - label: 是否使用最新预发布版本后仍然出现问题
+
+  - type: input
+    id: version
+    attributes:
+      label: 使用版本
+      description: 请填写您使用的 Xdows Security 版本
+      placeholder: 例如：v1.0.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现方式
+      description: 请详细描述如何复现这个问题
+      placeholder: |
+        1. 打开...
+        2. 点击...
+        3. 出现错误...
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 其它信息
+      description: 请提供任何其他相关信息，如截图、日志等
