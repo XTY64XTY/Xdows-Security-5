@@ -80,7 +80,7 @@ namespace Xdows_Security
     }
     public class AppInfo
     {
-        public static readonly string AppName = "Xdows Security";
+        public static readonly string AppName = "IceZero AntiVirus";
         public static readonly string AppId = "Xdows-Security";
         public static readonly string AppVersion = "4.1.2";
         public static readonly string AppFeedback = "https://github.com/LoveProgrammingMint/Xdows-Security/issues/new/choose";
