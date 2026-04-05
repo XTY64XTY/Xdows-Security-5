@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
@@ -64,7 +64,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\ICEX\XShark\XShark.csproj" />
 		<ProjectReference Include="..\Helper\Helper.csproj" />
 		<ProjectReference Include="..\Protection\Protection.csproj" />
 		<ProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />

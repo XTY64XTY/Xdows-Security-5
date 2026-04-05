@@ -2,23 +2,22 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using ProcessManagerSharp;
 
 namespace Xdows_Security.Views
 {
     public sealed partial class ProcessManagerView : UserControl
     {
         private List<ProcessInfoEx> _allProcesses = [];
-        private readonly ProcessManager _pm;
 
         public ProcessManagerView()
         {
             this.InitializeComponent();
-            _pm = new ProcessManager();
             SortCombo.SelectedIndex = 0;
             _ = RefreshProcesses();
         }
@@ -29,11 +28,11 @@ namespace Xdows_Security.Views
             {
                 var list = await Task.Run(() =>
                 {
-              
-                    var processes = _pm.GetProcessList();
-                    return processes.Select(p => new ProcessInfoEx(p, _pm))
-                                   .OrderBy(p => p.Name)
-                                   .ToList();
+                    var processes = Process.GetProcesses()
+                        .Select(p => new ProcessInfoEx(p))
+                        .OrderBy(p => p.Name)
+                        .ToList();
+                    return processes;
                 });
 
                 _allProcesses = list;
@@ -56,7 +55,6 @@ namespace Xdows_Security.Views
 
         private async void Refresh_Click(object sender, RoutedEventArgs e)
         {
-            // 刷新不需要特定的进程，直接刷新整个列表
             await RefreshProcesses();
         }
 
@@ -103,7 +101,6 @@ namespace Xdows_Security.Views
                 });
             }
 
-         
             AddLine("进程名称", info.Name);
             AddLine("进程编号", info.Id.ToString());
             AddLine("父进程ID", info.ParentId.ToString());
@@ -114,10 +111,7 @@ namespace Xdows_Security.Views
             AddLine("句柄数", info.HandleCount.ToString());
             AddLine("优先级", info.PriorityClass.ToString());
             AddLine("架构", info.IsWow64 ? "32位 (WOW64)" : "64位");
-            AddLine("受保护", info.IsProtected ? "是" : "否");
-            AddLine("被调试", info.IsBeingDebugged ? "是" : "否");
 
-          
             if (!string.IsNullOrEmpty(info.ImagePath))
             {
                 AddLine("文件路径", info.ImagePath);
@@ -146,7 +140,6 @@ namespace Xdows_Security.Views
                 AddLine("文件路径", "拒绝访问或已退出");
             }
 
-           
             if (!string.IsNullOrEmpty(info.CommandLine))
             {
                 AddLine("命令行", info.CommandLine);
@@ -172,7 +165,6 @@ namespace Xdows_Security.Views
 
             if (result == ContentDialogResult.Primary)
             {
-            
                 if (string.IsNullOrEmpty(info.ImagePath))
                 {
                     await new ContentDialog
@@ -214,7 +206,6 @@ namespace Xdows_Security.Views
             }
             else if (result == ContentDialogResult.Secondary)
             {
-               
                 await KillProcessAsync(info);
             }
         }
@@ -241,12 +232,10 @@ namespace Xdows_Security.Views
 
         private ProcessInfoEx? GetProcessInfoFromSender(object sender)
         {
-          
             if (sender is MenuFlyoutItem menuItem)
             {
                 return menuItem.DataContext as ProcessInfoEx;
             }
-     
             return ProcessList.SelectedItem as ProcessInfoEx;
         }
 
@@ -299,13 +288,10 @@ namespace Xdows_Security.Views
         {
             try
             {
-           
-                _pm.TerminateProcess(pid, 0);
+                var process = Process.GetProcessById((int)pid);
+                process.Kill();
+                process.WaitForExit(5000);
                 return new KillResult { Success = true };
-            }
-            catch (ProcessManagerException ex)
-            {
-                return new KillResult { Success = false, Error = ex.Message };
             }
             catch (Exception ex)
             {
@@ -322,12 +308,8 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    _pm.SuspendProcess(info.Id);
+                    SuspendProcess((int)info.Id);
                     return (Success: true, Error: "");
-                }
-                catch (ProcessManagerException ex)
-                {
-                    return (Success: false, Error: ex.Message);
                 }
                 catch (Exception ex)
                 {
@@ -368,12 +350,8 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    _pm.ResumeProcess(info.Id);
+                    ResumeProcess((int)info.Id);
                     return (Success: true, Error: "");
-                }
-                catch (ProcessManagerException ex)
-                {
-                    return (Success: false, Error: ex.Message);
                 }
                 catch (Exception ex)
                 {
@@ -410,6 +388,75 @@ namespace Xdows_Security.Views
             public bool Success { get; init; }
             public string Error { get; init; } = "";
         }
+
+        // P/Invoke for suspending and resuming processes
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr OpenThread(uint dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
+
+        [DllImport("kernel32.dll")]
+        private static extern uint SuspendThread(IntPtr hThread);
+
+        [DllImport("kernel32.dll")]
+        private static extern uint ResumeThread(IntPtr hThread);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hHandle);
+
+        [DllImport("ntdll.dll")]
+        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref PROCESS_BASIC_INFORMATION processInformation, uint processInformationLength, out uint returnLength);
+
+        private const uint THREAD_SUSPEND_RESUME = 0x0002;
+        private const int ProcessBasicInformation = 0;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PROCESS_BASIC_INFORMATION
+        {
+            public IntPtr Reserved1;
+            public IntPtr PebBaseAddress;
+            public IntPtr Reserved2_0;
+            public IntPtr Reserved2_1;
+            public IntPtr UniqueProcessId;
+            public IntPtr InheritedFromUniqueProcessId;
+        }
+
+        public static void SuspendProcess(int processId)
+        {
+            var process = Process.GetProcessById(processId);
+            foreach (ProcessThread thread in process.Threads)
+            {
+                var hThread = OpenThread(THREAD_SUSPEND_RESUME, false, (uint)thread.Id);
+                if (hThread != IntPtr.Zero)
+                {
+                    SuspendThread(hThread);
+                    CloseHandle(hThread);
+                }
+            }
+        }
+
+        public static void ResumeProcess(int processId)
+        {
+            var process = Process.GetProcessById(processId);
+            foreach (ProcessThread thread in process.Threads)
+            {
+                var hThread = OpenThread(THREAD_SUSPEND_RESUME, false, (uint)thread.Id);
+                if (hThread != IntPtr.Zero)
+                {
+                    ResumeThread(hThread);
+                    CloseHandle(hThread);
+                }
+            }
+        }
+
+        public static uint GetParentProcessId(int processId)
+        {
+            var pbi = new PROCESS_BASIC_INFORMATION();
+            uint returnLength;
+            var process = Process.GetProcessById(processId);
+            int status = NtQueryInformationProcess(process.Handle, ProcessBasicInformation, ref pbi, (uint)Marshal.SizeOf(pbi), out returnLength);
+            if (status != 0)
+                throw new Win32Exception(status);
+            return (uint)pbi.InheritedFromUniqueProcessId.ToInt32();
+        }
     }
 
     public sealed class ProcessInfoEx
@@ -425,51 +472,59 @@ namespace Xdows_Security.Views
         public uint HandleCount { get; }
         public uint PriorityClass { get; }
         public bool IsWow64 { get; }
-        public bool IsProtected { get; }
-        public bool IsBeingDebugged { get; }
         public string ImagePath { get; }
         public string CommandLine { get; }
 
-        public ProcessInfoEx(ProcessManagerSharp.ProcessInfo p, ProcessManager pm)
+        public ProcessInfoEx(Process process)
         {
-            var processName = p.ProcessName ?? "";
-            if (string.IsNullOrEmpty(processName))
-            {
- 
-                if (!string.IsNullOrEmpty(p.ImagePath))
-                {
-                    Name = System.IO.Path.GetFileName(p.ImagePath);
-                }
-                else
-                {
-                    Name = $"PID {p.ProcessId}";
-                }
-            }
-            else
-            {
-                Name = processName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
-                    ? processName
-                    : $"{processName}.exe";
-            }
-
-            Id = p.ProcessId;
-            ParentId = p.ParentProcessId;
-            SessionId = p.SessionId;
-            ThreadCount = p.ThreadCount;
-            HandleCount = p.HandleCount;
-            PriorityClass = p.PriorityClass;
-            IsWow64 = p.IsWow64;
-            IsProtected = p.IsProtected;
-            IsBeingDebugged = p.IsBeingDebugged;
-            ImagePath = p.ImagePath ?? "";
-            CommandLine = p.CommandLine ?? "";
+            Name = process.ProcessName + ".exe";
+            Id = (uint)process.Id;
+            SessionId = (uint)process.SessionId;
+            ThreadCount = (uint)process.Threads.Count;
+            HandleCount = (uint)process.HandleCount;
+            PriorityClass = (uint)process.BasePriority;
 
             try
             {
-                var memInfo = pm.GetProcessMemoryInfo(p.ProcessId);
-                MemoryBytes = (long)memInfo.WorkingSetSize;
+                ParentId = ProcessManagerView.GetParentProcessId(process.Id);
+            }
+            catch
+            {
+                ParentId = 0;
+            }
+
+            try
+            {
+                ImagePath = process.MainModule?.FileName ?? "";
+            }
+            catch
+            {
+                ImagePath = "";
+            }
+
+            try
+            {
+                CommandLine = GetCommandLine(process.Id);
+            }
+            catch
+            {
+                CommandLine = "";
+            }
+
+            try
+            {
+                IsWow64 = IsWow64Process(process.Handle);
+            }
+            catch
+            {
+                IsWow64 = false;
+            }
+
+            try
+            {
+                MemoryBytes = process.WorkingSet64;
                 Memory = $"{MemoryBytes / 1024 / 1024} MB";
-                PrivateMemory = $"{memInfo.PrivateUsageMB:F2} MB";
+                PrivateMemory = $"{process.PrivateMemorySize64 / 1024 / 1024} MB";
             }
             catch
             {
@@ -478,5 +533,79 @@ namespace Xdows_Security.Views
                 PrivateMemory = "N/A";
             }
         }
+
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWow64Process([In] IntPtr process, [Out] out bool wow64Process);
+
+        private static bool IsWow64Process(IntPtr hProcess)
+        {
+            if (!Environment.Is64BitOperatingSystem)
+                return false;
+            bool isWow64;
+            return IsWow64Process(hProcess, out isWow64) && isWow64;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
+
+        [DllImport("ntdll.dll")]
+        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref IntPtr processInformation, uint processInformationLength, out uint returnLength);
+
+        private const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        private const uint PROCESS_VM_READ = 0x0010;
+        private const int ProcessCommandLineInformation = 60;
+
+        private static string GetCommandLine(int processId)
+        {
+            try
+            {
+                var processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, processId);
+                if (processHandle == IntPtr.Zero)
+                    return "";
+
+                try
+                {
+                    IntPtr commandLineInfo = IntPtr.Zero;
+                    uint returnLength;
+                    int status = NtQueryInformationProcess(processHandle, ProcessCommandLineInformation, ref commandLineInfo, (uint)IntPtr.Size, out returnLength);
+                    
+                    if (status != 0 || commandLineInfo == IntPtr.Zero)
+                        return "";
+
+                    // Read UNICODE_STRING structure
+                    var buffer = new byte[returnLength];
+                    if (ReadProcessMemory(processHandle, commandLineInfo, buffer, buffer.Length, out int bytesRead))
+                    {
+                        // UNICODE_STRING: Length(2), MaximumLength(2), Buffer(4/8)
+                        int length = BitConverter.ToUInt16(buffer, 0);
+                        IntPtr stringBuffer = IntPtr.Size == 8 
+                            ? (IntPtr)BitConverter.ToInt64(buffer, 8) 
+                            : (IntPtr)BitConverter.ToInt32(buffer, 4);
+                        
+                        var stringBytes = new byte[length];
+                        if (ReadProcessMemory(processHandle, stringBuffer, stringBytes, length, out bytesRead))
+                        {
+                            return System.Text.Encoding.Unicode.GetString(stringBytes);
+                        }
+                    }
+                    return "";
+                }
+                finally
+                {
+                    CloseHandle(processHandle);
+                }
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hHandle);
     }
 }

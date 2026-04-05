@@ -13,11 +13,7 @@
   <Folder Name="/解决方案项/">
     <File Path="LICENSE.txt" />
   </Folder>
-  <Project Path="../ICEX/ProcessManager/ProcessManager.vcxproj" Id="cc86d3c6-b0c4-4574-bce3-0789299d1e11">
-    <Platform Solution="*|ARM64" Project="x64" />
-  </Project>
-  <Project Path="../ICEX/ProcessManagerSharp/ProcessManagerSharp.csproj" />
-  <Project Path="../ICEX/XShark/XShark.csproj" />
+
   <Project Path="../SouXiaoAVEngine/LiuLiAVHeuristic/LiuLiAVHeuristic.csproj" />
   <Project Path="../SouXiaoAVEngine/PublicPart/PublicPart.csproj" />
   <Project Path="../SouXiaoAVEngine/SouRLib/SouRLib.csproj" />

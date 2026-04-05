@@ -44,7 +44,6 @@
       ```sh
       git clone https://github.com/XTY64XTY/Xdows-Security-5
       git clone https://github.com/LoveProgrammingMint/SouXiaoAVEngine
-      git clone https://github.com/LoveProgrammingMint/ICEX
       git clone https://github.com/XTY64XTY/Xdows-Model
       ```
 
