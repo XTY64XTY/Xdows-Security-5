@@ -1,17 +1,17 @@
 <p align="center">
-  <a href="https://github.com/XTY64XTY/Xdows-Security-5">
+  <a href="https://github.com/LoveProgrammingMint/Xdows-Security">
     <img src=".\Xdows-Security\logo.ico" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Xdows Security 5</h3>
+  <h3 align="center">Xdows Security 4.1</h3>
   <p align="center">
     来看看下一代基于 WinUI3 + C# 技术构建的杀毒软件
     <br />
     <a href="https://docs.xiguastudio.top/zh-HANS/Xdows-Security-4.1/get-started.html">文档</a>
     ·
-    <a href="https://github.com/XTY64XTY/Xdows-Security-5/issues">反馈</a>
+    <a href="https://github.com/LoveProgrammingMint/Xdows-Security/issues">反馈</a>
     ·
-    <a href="https://github.com/XTY64XTY/Xdows-Security-5/releases">下载</a>
+    <a href="https://github.com/LoveProgrammingMint/Xdows-Security/releases">下载</a>
     <br />
     <a href="README.md">English</a>
     ·
@@ -26,7 +26,7 @@
 
 #### 直接使用
 
-1. 打开 [Releases](https://github.com/XTY64XTY/Xdows-Security-5/releases) 下载最新版本的 `Xdows-Security.zip`
+1. 打开 [Releases](https://github.com/LoveProgrammingMint/Xdows-Security/releases) 下载最新版本的 `Xdows-Security.zip`
 2. 解压压缩包到目标位置，运行 `Xdows-Security.exe`
 
 #### 编译运行
@@ -42,7 +42,7 @@
     1. 克隆仓库
 
       ```sh
-      git clone https://github.com/XTY64XTY/Xdows-Security-5
+      git clone https://github.com/LoveProgrammingMint/Xdows-Security
       git clone https://github.com/LoveProgrammingMint/SouXiaoAVEngine
       git clone https://github.com/LoveProgrammingMint/ICEX
       git clone https://github.com/XTY64XTY/Xdows-Model
@@ -56,4 +56,4 @@
 
 ### 版权说明
 
-该项目签署了 MIT 授权许可，详情请参阅 [LICENSE](LICENSE.txt)
+该项目签署了 AGPL-3.0 授权许可，详情请参阅 [LICENSE](LICENSE.txt)

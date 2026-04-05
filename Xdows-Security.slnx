@@ -10,9 +10,6 @@
     <File Path="README.zh-HANS.md" />
     <File Path="README.zh-HANT.md" />
   </Folder>
-  <Folder Name="/解决方案项/">
-    <File Path="LICENSE.txt" />
-  </Folder>
   <Project Path="../ICEX/ProcessManager/ProcessManager.vcxproj" Id="cc86d3c6-b0c4-4574-bce3-0789299d1e11">
     <Platform Solution="*|ARM64" Project="x64" />
   </Project>
