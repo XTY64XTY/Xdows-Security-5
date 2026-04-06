@@ -55,7 +55,7 @@ namespace TrustQuarantine
 
             try
             {
-                string? fileHash = await CalculateFileHashAsync(filePath);
+                string? fileHash = await TrustManagerHelper.CalculateFileHashAsync(filePath);
                 if (fileHash == null)
                     return false;
 
@@ -141,63 +141,12 @@ namespace TrustQuarantine
 
         public static bool IsPathTrusted(string filePath)
         {
-            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-                return false;
-
-            try
-            {
-                bool nativeResult = Native_TrustManager.IsPathTrustedManaged(filePath, TrustFolderPath);
-                if (nativeResult)
-                    return true;
-            }
-            catch
-            {
-            }
-
-            return IsPathTrustedFallback(filePath);
-        }
-
-        private static bool IsPathTrustedFallback(string filePath)
-        {
-            try
-            {
-                using var sha256 = SHA256.Create();
-                using var stream = File.OpenRead(filePath);
-                var hashBytes = sha256.ComputeHash(stream);
-                string hash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-
-                var trustItems = GetTrustItems();
-                return trustItems.Any(item => string.Equals(item.Hash, hash, StringComparison.OrdinalIgnoreCase));
-            }
-            catch
-            {
-                return false;
-            }
+            return TrustManagerHelper.IsPathTrusted(filePath, TrustFolderPath);
         }
 
         private static async Task<string?> CalculateFileHashAsync(string filePath)
         {
-            try
-            {
-                string? nativeHash = await Native_TrustManager.CalculateFileHashAsyncManaged(filePath);
-                if (!string.IsNullOrEmpty(nativeHash))
-                {
-                    return nativeHash;
-                }
-            }
-            catch
-            {
-            }
-
-            return await CalculateFileHashAsyncFallback(filePath);
-        }
-
-        private static async Task<string?> CalculateFileHashAsyncFallback(string filePath)
-        {
-            using var sha256 = SHA256.Create();
-            using var stream = File.OpenRead(filePath);
-            var hashBytes = await sha256.ComputeHashAsync(stream);
-            return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+            return await TrustManagerHelper.CalculateFileHashAsync(filePath);
         }
     }
 }

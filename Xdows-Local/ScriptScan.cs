@@ -7,18 +7,6 @@ namespace Xdows_Local
     {
         public static (Int32 score, String extra) ScanScriptFile(String filePath, Byte[] fileContent)
         {
-            try
-            {
-                var nativeResult = Native_ScriptScanner.ScanScriptFileManaged(filePath, fileContent);
-                if (nativeResult.score > 0)
-                {
-                    return nativeResult;
-                }
-            }
-            catch
-            {
-            }
-
             return ScanScriptFileManaged(filePath, fileContent);
         }
 

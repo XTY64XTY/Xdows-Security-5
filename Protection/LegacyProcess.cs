@@ -132,100 +132,12 @@ namespace Protection
 
         private static List<int> GetProcessIdList()
         {
-            try
-            {
-                var result = Native_ProcessMonitor.GetProcessIdListManaged();
-                if (result.Count > 0)
-                {
-                    return result;
-                }
-            }
-            catch
-            {
-            }
-
-            return GetProcessIdListFallback();
+            return ProcessMonitorHelper.GetProcessIdList();
         }
-
-        private static List<int> GetProcessIdListFallback()
-        {
-            const int maxCount = 512;
-            int[] pids = new int[maxCount];
-
-            while (true)
-            {
-                if (!EnumProcesses(pids, pids.Length * 4, out int neededBytes))
-                    throw new Win32Exception();
-
-                int returnedCount = neededBytes / 4;
-                if (returnedCount < pids.Length)
-                {
-                    Array.Resize(ref pids, returnedCount);
-                    break;
-                }
-
-                Array.Resize(ref pids, pids.Length + 128);
-            }
-
-            return [.. pids.Where(id => id > 0).Distinct()];
-        }
-
-        [DllImport("psapi.dll", SetLastError = true)]
-        private static extern bool EnumProcesses(int[] lpidProcess, int cb, out int lpcbNeeded);
 
         private static string ProcessPidToPath(int pid)
         {
-            try
-            {
-                string nativePath = Native_ProcessMonitor.GetProcessPathByIdManaged(pid);
-                if (!string.IsNullOrEmpty(nativePath))
-                {
-                    return nativePath;
-                }
-            }
-            catch
-            {
-            }
-
-            return ProcessPidToPathFallback(pid);
+            return ProcessMonitorHelper.GetProcessPathById(pid);
         }
-
-        private static string ProcessPidToPathFallback(int pid)
-        {
-            const int PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
-
-            IntPtr hProc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
-            if (hProc == IntPtr.Zero)
-                return string.Empty;
-
-            try
-            {
-                var sb = new StringBuilder(1024);
-                int capacity = sb.Capacity;
-                if (QueryFullProcessImageName(hProc, 0, sb, ref capacity))
-                    return sb.ToString();
-            }
-            finally
-            {
-                CloseHandle(hProc);
-            }
-
-            return string.Empty;
-        }
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr OpenProcess(int dwDesiredAccess, bool bInheritHandle, int dwProcessId);
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool QueryFullProcessImageName(
-            IntPtr hProcess,
-            int dwFlags,
-            [Out] StringBuilder lpExeName,
-            ref int lpdwSize);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool CloseHandle(IntPtr hObject);
     }
 }
