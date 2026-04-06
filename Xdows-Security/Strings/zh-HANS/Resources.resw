@@ -219,9 +219,7 @@
   <data name="SecurityPage_DuplicatePath_Content" xml:space="preserve">
     <value>该路径已在列表中：{0}</value>
   </data>
-  <data name="SecurityPage_SouXiao_InitFailed_Title" xml:space="preserve">
-    <value>无法初始化 SouXiaoEngine</value>
-  </data>
+
   <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
     <value>请转到 设置 - 扫描引擎 取消这个引擎的选中。</value>
   </data>
@@ -687,12 +685,8 @@
   <data name="AllPage_Undefined" xml:space="preserve">
     <value>未定义</value>
   </data>
-  <data name="SettingsPage_Scan_SouXiao.Header" xml:space="preserve">
-    <value>SouXiao 本地引擎</value>
-  </data>
-  <data name="SettingsPage_Scan_SouXiao_Develop.Description" xml:space="preserve">
-    <value>由 零度枫铸工作室 维护</value>
-  </data>
+
+
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>修改主窗口的不透明度</value>
   </data>
@@ -702,9 +696,7 @@
   <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
     <value>云端引擎来自第三方且需要连接至互联网，但是能提高查杀率</value>
   </data>
-  <data name="SettingsPage_Scan_SouXiao.Description" xml:space="preserve">
-    <value>零度枫铸提供的飕萧高精度查杀引擎</value>
-  </data>
+
   <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
     <value>关于引擎</value>
   </data>
@@ -801,9 +793,7 @@
   <data name="SettingsPage_Search.PlaceholderText" xml:space="preserve">
     <value>搜索设置...</value>
   </data>
-  <data name="SettingsPage_Scan_SouXiao_Develop.Header" xml:space="preserve">
-    <value>关于引擎</value>
-  </data>
+
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Header" xml:space="preserve">
     <value>不透明度</value>
   </data>
@@ -997,7 +987,7 @@
     <value>开发团队</value>
   </data>
   <data name="SettingsPage_Other_About_Developer_Text.Text" xml:space="preserve">
-    <value>零度枫铸</value>
+    <value>Xdows Software</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>关闭</value>

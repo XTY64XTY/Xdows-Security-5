@@ -202,7 +202,6 @@ namespace Xdows_Security.Views
                 ScanInsideNestedToggle,
                 LocalScanToggle,
                 CzkCloudScanToggle,
-                SouXiaoScanToggle,
                 ModelScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,

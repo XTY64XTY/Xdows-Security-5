@@ -14,10 +14,6 @@
     <File Path="LICENSE.txt" />
   </Folder>
 
-  <Project Path="../SouXiaoAVEngine/LiuLiAVHeuristic/LiuLiAVHeuristic.csproj" />
-  <Project Path="../SouXiaoAVEngine/PublicPart/PublicPart.csproj" />
-  <Project Path="../SouXiaoAVEngine/SouRLib/SouRLib.csproj" />
-  <Project Path="../SouXiaoAVEngine/SouXiao/SouXiao.csproj" />
   <Project Path="../Xdows-Model/Xdows-Model-Caller/Xdows-Model-Caller.csproj">
     <Platform Solution="*|x64" Project="x64" />
   </Project>

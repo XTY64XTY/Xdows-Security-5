@@ -8,15 +8,13 @@ namespace Protection
         private static InterceptCallBack? _toastCallBack;
         private static Thread? _monitorThread;
         private static bool _isMonitoring = false;
-        private static Helper.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
         public const string Name = "Files";
         string IProtectionModel.Name => Name;
         public bool Run(InterceptCallBack toastCallBack)
         {
-            SouXiaoEngine ??= new Helper.ScanEngine.SouXiaoEngineScan();
-            SouXiaoEngine.Initialize();
+            Helper.ScanEngine.ModelEngineScan.Initialize();
 
-            if (_isMonitoring || SouXiaoEngine == null)
+            if (_isMonitoring)
             {
                 return false;
             }
@@ -124,8 +122,7 @@ namespace Protection
             {
                 if (
                     e.FullPath.Contains("\\AppData\\Local\\Temp", StringComparison.OrdinalIgnoreCase) ||
-                    !IsFileAccessible(e.FullPath) ||
-                    SouXiaoEngine == null
+                    !IsFileAccessible(e.FullPath)
                 )
                 {
                     return;
@@ -136,7 +133,7 @@ namespace Protection
                     return;
                 }
 
-                var (isVirus, result) = SouXiaoEngine.ScanFile(e.FullPath);
+                var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(e.FullPath);
 
                 if (isVirus)
                 {

@@ -1,4 +1,4 @@
-﻿using Microsoft.Diagnostics.Tracing.Parsers;
+using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
 using System.Diagnostics;
@@ -26,7 +26,7 @@ namespace Protection
 
                     try
                     {
-                        SouXiaoEngine.Initialize();
+                        Helper.ScanEngine.ModelEngineScan.Initialize();
 
                         isRunning = true;
 
@@ -109,7 +109,7 @@ namespace Protection
                     if (string.IsNullOrEmpty(path) || TrustManager.IsPathTrusted(path))
                         return;
 
-                    var (isVirus, result) = SouXiaoEngine.ScanFile(path);
+                    var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
                     if (!isVirus)
                         return;
 

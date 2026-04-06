@@ -1,4 +1,4 @@
-﻿using Microsoft.Diagnostics.Tracing.Parsers;
+using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
 using System.Diagnostics;
@@ -26,7 +26,7 @@ namespace Protection
 
                     try
                     {
-                        SouXiaoEngine.Initialize();
+                        Helper.ScanEngine.ModelEngineScan.Initialize();
 
                         monitoringSession = new TraceEventSession("Xdows-Security", null);
                         monitoringSession.EnableKernelProvider(
@@ -134,7 +134,7 @@ namespace Protection
             {
                 try
                 {
-                    var (isFileVirus, fileResult) = SouXiaoEngine.ScanFile(filePath);
+                    var (isFileVirus, fileResult) = Helper.ScanEngine.ModelEngineScan.ScanFile(filePath);
                     if (isFileVirus)
                     {
                         bool isInTempList = TempList.Contains(filePath);
@@ -163,36 +163,6 @@ namespace Protection
                     }
                 }
                 catch { }
-
-                //string? creatorPath = null;
-                //try
-                //{
-                //    using var proc = Process.GetProcessById(creatorProcessId);
-                //    creatorPath = proc.MainModule?.FileName;
-                //}
-                //catch
-                //{
-                //    return;
-                //}
-
-                //if (string.IsNullOrEmpty(creatorPath))
-                //    return;
-
-                //var (isProcessVirus, processResult) = SouXiaoEngine.ScanFile(creatorPath);
-                //if (isProcessVirus)
-                //{
-                //    try
-                //    {
-                //        using var proc = Process.GetProcessById(creatorProcessId);
-                //        proc.Kill();
-                //    }
-                //    catch
-                //    {
-                //    }
-
-                //    _ = QuarantineManager.AddToQuarantine(creatorPath, processResult);
-                //    interceptCallBack(true, creatorPath, Name);
-                //}
             }
 
             private static void TerminateProcessByPath(string filePath)

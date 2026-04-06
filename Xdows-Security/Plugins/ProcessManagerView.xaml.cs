@@ -284,7 +284,7 @@ namespace Xdows_Security.Views
             await RefreshProcesses();
         }
 
-        private KillResult TryKill(uint pid)
+        private static KillResult TryKill(uint pid)
         {
             try
             {
@@ -572,7 +572,7 @@ namespace Xdows_Security.Views
                     IntPtr commandLineInfo = IntPtr.Zero;
                     uint returnLength;
                     int status = NtQueryInformationProcess(processHandle, ProcessCommandLineInformation, ref commandLineInfo, (uint)IntPtr.Size, out returnLength);
-                    
+
                     if (status != 0 || commandLineInfo == IntPtr.Zero)
                         return "";
 
@@ -582,10 +582,10 @@ namespace Xdows_Security.Views
                     {
                         // UNICODE_STRING: Length(2), MaximumLength(2), Buffer(4/8)
                         int length = BitConverter.ToUInt16(buffer, 0);
-                        IntPtr stringBuffer = IntPtr.Size == 8 
-                            ? (IntPtr)BitConverter.ToInt64(buffer, 8) 
-                            : (IntPtr)BitConverter.ToInt32(buffer, 4);
-                        
+                        IntPtr stringBuffer = IntPtr.Size == 8
+                            ? (IntPtr)BitConverter.ToInt64(buffer, 8)
+                            : BitConverter.ToInt32(buffer, 4);
+
                         var stringBytes = new byte[length];
                         if (ReadProcessMemory(processHandle, stringBuffer, stringBytes, length, out bytesRead))
                         {

@@ -113,20 +113,6 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
-                <controls:SettingsExpander
-                           VerticalAlignment="Top"
-                           l:Uids.Uid="SettingsPage_Scan_SouXiao"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xF22C;}"
-                           x:Name="Scan_SouXiao"
-                           Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="SouXiaoScanToggle" Tag="SouXiaoScan" Toggled="Toggled_SaveToggleData"  />
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_SouXiao_Develop"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
                 <controls:SettingsCard
                    l:Uids.Uid="SettingsPage_Scan_Xdows_Model"
                    x:Name="SettingsPage_Scan_Xdows_Model"

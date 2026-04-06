@@ -219,9 +219,7 @@
   <data name="SecurityPage_DuplicatePath_Content" xml:space="preserve">
     <value>The path is already in the list: {0}</value>
   </data>
-  <data name="SecurityPage_SouXiao_InitFailed_Title" xml:space="preserve">
-    <value>Cannot initialize SouXiaoEngine</value>
-  </data>
+
   <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
     <value>Please go to Settings - Scan and uncheck this engine.</value>
   </data>
@@ -687,12 +685,8 @@ Why not try XIGUA Security?</value>
   <data name="AllPage_Undefined" xml:space="preserve">
     <value>Undefined</value>
   </data>
-  <data name="SettingsPage_Scan_SouXiao.Header" xml:space="preserve">
-    <value>SouXiao Engine</value>
-  </data>
-  <data name="SettingsPage_Scan_SouXiao_Develop.Description" xml:space="preserve">
-    <value>Officially maintained by IceZero Studio.</value>
-  </data>
+
+
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>Modify the opacity of the main window</value>
   </data>
@@ -702,9 +696,7 @@ Why not try XIGUA Security?</value>
   <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
     <value>Connecting to the cloud engine improves detection accuracy but requires an internet connection.</value>
   </data>
-  <data name="SettingsPage_Scan_SouXiao.Description" xml:space="preserve">
-    <value>IceZero Studio provides the Souxiao high-precision engine.</value>
-  </data>
+
   <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
     <value>About this Engine</value>
   </data>
@@ -801,9 +793,7 @@ Why not try XIGUA Security?</value>
   <data name="SettingsPage_Search.PlaceholderText" xml:space="preserve">
     <value>Search settings...</value>
   </data>
-  <data name="SettingsPage_Scan_SouXiao_Develop.Header" xml:space="preserve">
-    <value>About this Engine</value>
-  </data>
+
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Header" xml:space="preserve">
     <value>Opacity</value>
   </data>
@@ -998,7 +988,7 @@ If you do not accept it, please turn off the engine, or stop using and delete th
     <value>Developer</value>
   </data>
   <data name="SettingsPage_Other_About_Developer_Text.Text" xml:space="preserve">
-    <value>IceZero Studio</value>
+    <value>Xdows Software</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>Close</value>

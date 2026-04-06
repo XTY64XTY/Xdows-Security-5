@@ -26,7 +26,7 @@ namespace Protection
 
                     try
                     {
-                        SouXiaoEngine.Initialize();
+                        Helper.ScanEngine.ModelEngineScan.Initialize();
 
                         monitoringSession = new TraceEventSession("Xdows-Security", null);
                         monitoringSession.EnableKernelProvider(
@@ -128,7 +128,7 @@ namespace Protection
                         return;
 
                     }
-                    var (isVirus, result) = SouXiaoEngine.ScanFile(path);
+                    var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
                     if (!isVirus)
                         return;
 

@@ -13,18 +13,12 @@ namespace Protection
 
         private static CancellationTokenSource? _cts = null;
         private static Task? _monitorTask = null;
-        private static Helper.ScanEngine.SouXiaoEngineScan? SouXiaoEngine;
         public const string Name = "Process";
         string IProtectionModel.Name => Name;
 
         public bool Run(InterceptCallBack toastCallBack)
         {
-            SouXiaoEngine ??= new Helper.ScanEngine.SouXiaoEngineScan();
-            SouXiaoEngine.Initialize();
-            if (SouXiaoEngine == null)
-            {
-                return false;
-            }
+            Helper.ScanEngine.ModelEngineScan.Initialize();
 
             if (IsRun())
                 return true;
@@ -94,13 +88,13 @@ namespace Protection
                         foreach (int pid in newPids)
                         {
                             string path = ProcessPidToPath(pid);
-                            if (string.IsNullOrEmpty(path) || SouXiaoEngine == null)
+                            if (string.IsNullOrEmpty(path))
                                 continue;
 
                             if (TrustManager.IsPathTrusted(path))
                                 continue;
 
-                            var (isVirus, result) = SouXiaoEngine.ScanFile(path);
+                            var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
 
                             if (isVirus)
                             {

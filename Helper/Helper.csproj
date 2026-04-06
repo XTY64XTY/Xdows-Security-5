@@ -7,8 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\SouXiaoAVEngine\PublicPart\PublicPart.csproj" />
-    <ProjectReference Include="..\..\SouXiaoAVEngine\SouXiao\SouXiao.csproj" />
     <ProjectReference Include="..\Xdows-Local\Xdows-Local.csproj" />
     <ProjectReference Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Invoker.csproj" />
   </ItemGroup>

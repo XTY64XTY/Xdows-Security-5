@@ -505,9 +505,8 @@ namespace Xdows_Security.Views
             Boolean UseLocalScan = (settings.Values["LocalScan"] as Boolean?).GetValueOrDefault();
             Boolean UseCzkCloudScan = (settings.Values["CzkCloudScan"] as Boolean?).GetValueOrDefault();
             Boolean UseCloudScan = (settings.Values["CloudScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseSouXiaoScan = (settings.Values["SouXiaoScan"] as Boolean?).GetValueOrDefault();
             Boolean UseModelScan = (settings.Values["ModelScan"] as Boolean?).GetValueOrDefault();
-            if (!UseLocalScan && !UseCzkCloudScan && !UseSouXiaoScan && !UseCloudScan && !UseModelScan)
+            if (!UseLocalScan && !UseCzkCloudScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
                 {
@@ -735,8 +734,8 @@ namespace Xdows_Security.Views
 
         // Run configured scan engines against a single file and return the first detection (if any).
         private async Task<ScanResult> RunScansOnFileAsync(String filePath, Boolean deepScan, Boolean extraData,
-            Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useSouXiaoScan, Boolean useModelScan,
-            Helper.ScanEngine.SouXiaoEngineScan? souXiaoEngine, Helper.ScanEngine.ModelEngineScan? modelEngine,
+            Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan,
+            Helper.ScanEngine.ModelEngineScan? modelEngine,
             String czkApiKey, CancellationToken token)
         {
             try
@@ -745,15 +744,6 @@ namespace Xdows_Security.Views
                     return new ScanResult(String.Empty, null);
 
                 var scanTasks = new List<Task<ScanResult>>();
-
-                if (useSouXiaoScan && souXiaoEngine != null)
-                {
-                    scanTasks.Add(Task.Run(() =>
-                    {
-                        (Boolean isVirus, String result) = souXiaoEngine.ScanFile(filePath);
-                        return new ScanResult("SouXiao", isVirus ? result : null);
-                    }));
-                }
 
                 if (useModelScan && modelEngine != null)
                 {
@@ -831,7 +821,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task ScanZipFileAsync(String zipPath, Boolean scanNested, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useSouXiaoScan, Boolean useModelScan, Helper.ScanEngine.SouXiaoEngineScan? souXiaoEngine, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
+        private async Task ScanZipFileAsync(String zipPath, Boolean scanNested, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
         {
             try
             {
@@ -863,7 +853,7 @@ namespace Xdows_Security.Views
                         }
 
                         // Run all configured scans on the extracted entry file
-                        var scanRes = await RunScansOnFileAsync(tempFile, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useSouXiaoScan, useModelScan, souXiaoEngine, modelEngine, czkApiKey, token);
+                        var scanRes = await RunScansOnFileAsync(tempFile, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useModelScan, modelEngine, czkApiKey, token);
                         string? virusResult = scanRes.VirusInfo;
                         if (!String.IsNullOrEmpty(virusResult))
                         {
@@ -923,33 +913,9 @@ namespace Xdows_Security.Views
             bool UseLocalScan = settings.Values["LocalScan"] as bool? ?? false;
             bool UseCzkCloudScan = settings.Values["CzkCloudScan"] as bool? ?? false;
             bool UseCloudScan = settings.Values["CloudScan"] as bool? ?? false;
-            bool UseSouXiaoScan = settings.Values["SouXiaoScan"] as bool? ?? false;
             bool UseModelScan = settings.Values["ModelScan"] as bool? ?? false;
 
-            Helper.ScanEngine.SouXiaoEngineScan? SouXiaoEngine = null;
             Helper.ScanEngine.ModelEngineScan? ModelEngine = null;
-
-            if (UseSouXiaoScan)
-            {
-                SouXiaoEngine = new();
-                if (!SouXiaoEngine.Initialize())
-                {
-                    _dispatcherQueue.TryEnqueue(async () =>
-                    {
-                        var dialog = new ContentDialog
-                        {
-                            Title = Localizer.Get().GetLocalizedString("SecurityPage_SouXiao_InitFailed_Title"),
-                            Content = Localizer.Get().GetLocalizedString("SecurityPage_InitFailed_Content"),
-                            PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                            XamlRoot = this.XamlRoot,
-                            RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                            DefaultButton = ContentDialogButton.Primary
-                        };
-                        await dialog.ShowAsync();
-                    });
-                    return;
-                }
-            }
 
             if (UseModelScan)
             {
@@ -976,7 +942,6 @@ namespace Xdows_Security.Views
             if (UseLocalScan) enginesLog += DeepScan ? " LocalScan-DeepScan" : " LocalScan";
             if (UseCzkCloudScan) enginesLog += " CzkCloudScan";
             if (UseCloudScan) enginesLog += " CloudScan";
-            if (UseSouXiaoScan) enginesLog += " SouXiaoScan";
             if (UseModelScan) enginesLog += " Xdows-Model";
             LogText.AddNewLog(LogText.LogLevel.INFO, "Security - StartScan", enginesLog);
 
@@ -1081,7 +1046,7 @@ namespace Xdows_Security.Views
 
                         if (ScanInside && ZipScanner.IsZipFile(file))
                         {
-                            await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseSouXiaoScan, UseModelScan, SouXiaoEngine, ModelEngine, czkApiKey, token);
+                            await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, token);
                             _filesScanned++;
                             finished++;
                             continue;
@@ -1096,7 +1061,7 @@ namespace Xdows_Security.Views
                                 continue;
                             }
 
-                            var scanRes = await RunScansOnFileAsync(file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseSouXiaoScan, UseModelScan, SouXiaoEngine, ModelEngine, czkApiKey, token);
+                            var scanRes = await RunScansOnFileAsync(file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, token);
                             Statistics.ScansQuantity += 1;
                             if (!String.IsNullOrEmpty(scanRes.VirusInfo))
                             {

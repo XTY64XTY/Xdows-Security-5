@@ -1,4 +1,3 @@
-using PublicPart;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -16,7 +15,6 @@ namespace Helper
                 {
                     Xdows_Model_Invoker.ModelInvoker.Initialize();
                     return true;
-                    //return File.Exists(Path.GetDirectoryName(Environment.ProcessPath) + "\\Xdows-Model-Caller.exe");
                 }
                 catch
                 {
@@ -36,31 +34,6 @@ namespace Helper
                 }
                 catch { }
                 return (false, string.Empty);
-                //try
-                //{
-                //    using var process = new Process();
-                //    process.StartInfo.FileName = Path.GetDirectoryName(Environment.ProcessPath) + "\\Xdows-Model-Caller.exe";
-                //    process.StartInfo.Arguments = $"\"{path}\"";
-                //    process.StartInfo.RedirectStandardOutput = true;
-                //    process.StartInfo.UseShellExecute = false;
-                //    process.StartInfo.CreateNoWindow = true;
-
-                //    process.Start();
-
-                //    string lastLine = string.Empty;
-                //    while (!process.StandardOutput.EndOfStream)
-                //    {
-                //        lastLine = process.StandardOutput.ReadLine() ?? string.Empty;
-                //    }
-
-                //    process.WaitForExit();
-                //    if (lastLine.StartsWith("Virus"))
-                //    {
-                //        return (true, $"Xdows.Model.{lastLine}");
-                //    }
-                //}
-                //catch { }
-                //return (false, string.Empty);
             }
         }
 
@@ -113,53 +86,6 @@ namespace Helper
             await using var stream = File.OpenRead(path);
             var hash = await md5.ComputeHashAsync(stream);
             return Convert.ToHexString(hash);
-        }
-        public class SouXiaoEngineScan
-        {
-            private readonly Boolean IsDebug = true;
-            private readonly SouXiao.EngineEntry SouXiaoCoreV2026 = new();
-
-            public bool Initialize()
-            {
-                try
-                {
-                    return SouXiaoCoreV2026.Initialize();
-                }
-                catch (Exception)
-                {
-                    if (IsDebug) { throw; }
-                    return false;
-                }
-            }
-
-            public (bool IsVirus, string Result) ScanFile(string path)
-            {
-                try
-                {
-                    if (SouXiaoCoreV2026 == null)
-                    {
-                        throw new InvalidOperationException("SouXiaoCore is not initialized.");
-                    }
-                    var scanResult = SouXiaoCoreV2026.Scan(path);
-                    foreach (var item in scanResult)
-                    {
-                        foreach (var item1 in item.Value)
-                        {
-                            if (item1 is not (EngineResult.Safe or EngineResult.UnSupport))
-                            {
-                                return (true, $"SouXiao.Heuristic.{item.Key}");
-                            }
-                        }
-                    }
-                    return (false, string.Empty);
-                }
-                catch (Exception)
-                {
-                    if (IsDebug) { throw; }
-
-                    return (false, string.Empty);
-                }
-            }
         }
     }
 }
