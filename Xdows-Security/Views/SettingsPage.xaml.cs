@@ -335,8 +335,11 @@ namespace Xdows_Security.Views
                 _ => 0
             };
 
-            NavComboBox.SelectedIndex = settings.Values.TryGetValue("AppNavTheme", out Object raw) && raw is Double d ? (Int32)d : 0;
+            Int32 navIndex = settings.Values.TryGetValue("AppNavTheme", out Object raw) && raw is Double d ? (Int32)d : 0;
+            NavComboBox.SelectedIndex = navIndex;
 
+            // 当导航栏在顶部时，禁用紧凑导航栏选项
+            SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.IsEnabled = navIndex == 0;
         }
 
         private async void LanguageComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
@@ -525,6 +528,17 @@ namespace Xdows_Security.Views
                 ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
                 settings.Values["AppNavTheme"] = index;
                 App.MainWindow?.UpdateNavTheme(index);
+
+                // 当导航栏在顶部时，禁用紧凑导航栏选项；在左侧时启用
+                SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.IsEnabled = index == 0;
+
+                // 如果切换到顶部导航栏，重置紧凑导航栏设置为 false
+                if (index == 1)
+                {
+                    SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.IsOn = false;
+                    settings.Values["IsPaneToggleButtonInTitleBar"] = false;
+                    App.MainWindow?.UpdatePaneToggleButtonPosition();
+                }
             }
             catch { }
         }

@@ -235,8 +235,17 @@ namespace Xdows_Security
         }
         public async void UpdatePaneToggleButtonPosition()
         {
-
             var settings = ApplicationData.Current.LocalSettings;
+
+            // 检查导航栏位置，如果在顶部则不应用紧凑导航栏设置
+            Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out object navRaw) && navRaw is double d ? (int)d : 0;
+            if (navTheme == 1) // 顶部导航栏
+            {
+                AppTitleBar.IsPaneToggleButtonVisible = false;
+                nav.IsPaneToggleButtonVisible = true;
+                return;
+            }
+
             if (settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out object isItInTitleBar))
             {
                 AppTitleBar.IsPaneToggleButtonVisible = (bool)isItInTitleBar;
