@@ -70,7 +70,6 @@
 	</ItemGroup>
 
 	<PropertyGroup Label="Globals">
-		<WebView2EnableCsWinRTProjection>False</WebView2EnableCsWinRTProjection>
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
@@ -92,12 +91,6 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <PRIResource Remove="Strings\zh-HANT\Resources.resw" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Content Update="Strings\zh-HANT\Resources.resw">
-	    <Generator>ReswPlusAdvancedGenerator</Generator>
-	    <LastGenOutput>Resources.generated.cs</LastGenOutput>
-	  </Content>
 	</ItemGroup>
 	<ItemGroup>
 	  <Page Update="Style\InfoCard.xaml">

@@ -5,6 +5,14 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/Issues/">
+    <File Path=".github/ISSUE_TEMPLATE/BugReport-en-US.yml" />
+    <File Path=".github/ISSUE_TEMPLATE/BugReport-zh-HANS.yml" />
+    <File Path=".github/ISSUE_TEMPLATE/BugReport-zh-HANT.yml" />
+    <File Path=".github/ISSUE_TEMPLATE/FeatureRequest-en-US.yml" />
+    <File Path=".github/ISSUE_TEMPLATE/FeatureRequest-zh-HANS.yml" />
+    <File Path=".github/ISSUE_TEMPLATE/FeatureRequest-zh-HANT.yml" />
+  </Folder>
   <Folder Name="/Others/">
     <File Path="LICENSE.txt" />
   </Folder>
@@ -17,8 +25,9 @@
     <Project Path="Xdows-Local-Caller/Xdows-Local-Caller.csproj" />
     <Project Path="Xdows-Local/Xdows-Local.csproj" />
   </Folder>
-  <Folder Name="/Xdows-Model/" />
-  <Project Path="../Xdows-Model/Xdows-Model-Invoker/Xdows-Model-Invoker.csproj" />
+  <Folder Name="/Xdows-Model/">
+    <Project Path="../Xdows-Model/Xdows-Model-Invoker/Xdows-Model-Invoker.csproj" />
+  </Folder>
   <Project Path="Helper/Helper.csproj" />
   <Project Path="Protection/Protection.csproj" />
   <Project Path="TrustQuarantine/TrustQuarantine.csproj" />
@@ -29,5 +38,6 @@
     <Deploy Solution="*|ARM64" />
     <Deploy Solution="*|x64" />
     <Deploy Solution="*|x86" />
+    <Deploy Solution="Debug|Any CPU" />
   </Project>
 </Solution>
