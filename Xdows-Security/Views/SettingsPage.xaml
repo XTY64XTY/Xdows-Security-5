@@ -17,6 +17,9 @@
                             VerticalAlignment="Top"
                             HorizontalAlignment="Stretch" />
             <StackPanel x:Name="SettingsContentPanel">
+                <StackPanel.ChildrenTransitions>
+                    <RepositionThemeTransition />
+                </StackPanel.ChildrenTransitions>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Appearance" x:Name="Appearance_Header"/>
                 <controls:SettingsCard
                               l:Uids.Uid="SettingsPage_Appearance_Theme"
