@@ -1206,4 +1206,16 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
     <value>Cannot initialize Xdows Model</value>
   </data>
+  <data name="SettingsPage_Appearance_Sound.Header" xml:space="preserve">
+    <value>Control Sound Effects</value>
+  </data>
+  <data name="SettingsPage_Appearance_Sound.Description" xml:space="preserve">
+    <value>Enable sound effects for control interactions</value>
+  </data>
+  <data name="SettingsPage_Appearance_Sound_SpatialAudio.Header" xml:space="preserve">
+    <value>Spatial Audio</value>
+  </data>
+  <data name="SettingsPage_Appearance_Sound_SpatialAudio.Description" xml:space="preserve">
+    <value>Enable 3D spatial audio effects</value>
+  </data>
 </root>

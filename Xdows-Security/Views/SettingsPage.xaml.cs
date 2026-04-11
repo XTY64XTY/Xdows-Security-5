@@ -55,7 +55,8 @@ namespace Xdows_Security.Views
                         LoadLanguageSettingAsync,
                         LoadThemeSettingAsync,
                         LoadBackdropSettingAsync,
-                        LoadBackgroundImageSettingAsync
+                        LoadBackgroundImageSettingAsync,
+                        LoadSoundSettingAsync
                     );
                     WinUI3Localizer.Localizer.Get().LanguageChanged += (s, e) => UpdateAppText();
                     UpdateAppText();
@@ -110,6 +111,14 @@ namespace Xdows_Security.Views
             get
             {
                 return RunOnDispatcher(LoadBackgroundImageSetting);
+            }
+        }
+
+        private Task LoadSoundSettingAsync
+        {
+            get
+            {
+                return RunOnDispatcher(LoadSoundSetting);
             }
         }
 
@@ -208,7 +217,9 @@ namespace Xdows_Security.Views
                 DisabledVerifyToggle,
                 Process_CompatibilityMode,
                 Files_CompatibilityMode,
-                SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar
+                SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
+                SoundEffectsToggle,
+                SpatialAudioToggle
             ];
 
             foreach (ToggleSwitch toggle in toggles)
@@ -940,6 +951,42 @@ namespace Xdows_Security.Views
         {
             Toggled_SaveToggleData(sender, e);
             App.MainWindow?.UpdatePaneToggleButtonPosition();
+        }
+
+        private void LoadSoundSetting()
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+
+            SoundEffectsToggle.IsOn = settings.Values.TryGetValue("SoundEffects", out var s) && s is bool b && b;
+            SpatialAudioToggle.IsOn = settings.Values.TryGetValue("SpatialAudio", out var sp) && sp is bool bp ? bp : true;
+            SpatialAudioToggle.IsEnabled = SoundEffectsToggle.IsOn;
+
+            ApplySoundSettings();
+        }
+
+        private void SoundEffectsToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize) return;
+            Toggled_SaveToggleData(sender, e);
+            SpatialAudioToggle.IsEnabled = SoundEffectsToggle.IsOn;
+            ApplySoundSettings();
+        }
+
+        private void SpatialAudioToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize) return;
+            Toggled_SaveToggleData(sender, e);
+            ApplySoundSettings();
+        }
+
+        private void ApplySoundSettings()
+        {
+            var s = ApplicationData.Current.LocalSettings;
+            bool sound = s.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
+            bool spatial = s.Values.TryGetValue("SpatialAudio", out var spr) && spr is bool spb && spb;
+
+            ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
+            if (sound) ElementSoundPlayer.SpatialAudioMode = spatial ? ElementSpatialAudioMode.On : ElementSpatialAudioMode.Off;
         }
     }
 }

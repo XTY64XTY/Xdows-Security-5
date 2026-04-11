@@ -371,6 +371,13 @@ namespace Xdows_Security
                 //    isSucceed = true,
                 //});// 测试用的捏（By Shiyi）
 
+                // Initialize sound effects
+                var settings = ApplicationData.Current.LocalSettings;
+                bool sound = settings.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
+                bool spatial = settings.Values.TryGetValue("SpatialAudio", out var spr) && spr is bool spb ? spb : true;
+                ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
+                if (sound) ElementSoundPlayer.SpatialAudioMode = spatial ? ElementSpatialAudioMode.On : ElementSpatialAudioMode.Off;
+
                 MainWindow ??= new MainWindow();
                 MainWindow.Activate();
             }

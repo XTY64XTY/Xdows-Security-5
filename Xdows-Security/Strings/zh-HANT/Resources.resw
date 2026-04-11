@@ -1205,4 +1205,16 @@
   <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
     <value>無法初始化 Xdows Model</value>
   </data>
+  <data name="SettingsPage_Appearance_Sound.Header" xml:space="preserve">
+    <value>控件音效</value>
+  </data>
+  <data name="SettingsPage_Appearance_Sound.Description" xml:space="preserve">
+    <value>啓用控件交互時的音效反饋</value>
+  </data>
+  <data name="SettingsPage_Appearance_Sound_SpatialAudio.Header" xml:space="preserve">
+    <value>空間音頻</value>
+  </data>
+  <data name="SettingsPage_Appearance_Sound_SpatialAudio.Description" xml:space="preserve">
+    <value>啓用 3D 空間音效效果</value>
+  </data>
 </root>

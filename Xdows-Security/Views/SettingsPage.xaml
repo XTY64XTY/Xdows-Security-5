@@ -84,6 +84,20 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+                <controls:SettingsExpander
+                   l:Uids.Uid="SettingsPage_Appearance_Sound"
+                   HeaderIcon="{ui:FontIcon Glyph=&#xE8D6;}"
+                   x:Name="Appearance_Sound"
+                   Margin="0,0,0,4">
+                    <ToggleSwitch x:Name="SoundEffectsToggle" Tag="SoundEffects" Toggled="SoundEffectsToggle_Toggled" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Appearance_Sound_SpatialAudio"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE7F5;}">
+                            <ToggleSwitch x:Name="SpatialAudioToggle" Tag="SpatialAudio" Toggled="SpatialAudioToggle_Toggled" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Scan" x:Name="Scan_Header"/>
                 <controls:SettingsExpander
                            l:Uids.Uid="SettingsPage_Scan_IndexMode"
