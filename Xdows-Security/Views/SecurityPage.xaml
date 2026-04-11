@@ -203,23 +203,23 @@
                             <Grid.ContextFlyout>
                                 <MenuFlyout>
                                     <MenuFlyoutItem  l:Uids.Uid="SecurityPage_MenuItem_Details" 
-                                        Command="{x:Bind ShowDetailsCommand}"
-                                        CommandParameter="{x:Bind}">
+                                        Click="OnVirusRowDetailsClick"
+                                        Tag="{x:Bind}">
                                         <MenuFlyoutItem.Icon>
                                             <FontIcon Glyph="&#xE946;" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
                                     <MenuFlyoutSeparator/>
                                     <MenuFlyoutItem  l:Uids.Uid="SecurityPage_MenuItem_Trust" 
-                                        Command="{x:Bind TrustCommand}"
-                                        CommandParameter="{x:Bind}">
+                                        Click="OnVirusRowTrustClick"
+                                        Tag="{x:Bind}">
                                         <MenuFlyoutItem.Icon>
                                             <FontIcon Glyph="&#xE73E;" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
                                     <MenuFlyoutItem l:Uids.Uid="SecurityPage_MenuItem_Handle" 
-                                        Command="{x:Bind HandleCommand}"
-                                        CommandParameter="{x:Bind}">
+                                        Click="OnVirusRowHandleClick"
+                                        Tag="{x:Bind}">
                                         <MenuFlyoutItem.Icon>
                                             <FontIcon Glyph="&#xE74D;" />
                                         </MenuFlyoutItem.Icon>

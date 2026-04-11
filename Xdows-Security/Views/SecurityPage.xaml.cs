@@ -1,5 +1,3 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using Compatibility.Windows.Storage;
 using Helper;
 using Microsoft.UI;
@@ -25,17 +23,29 @@ using WinUI3Localizer;
 namespace Xdows_Security.Views
 {
     public enum ScanMode { Quick, Full, File, Folder, More }
-    public partial class VirusRow : ObservableObject
+    public class VirusRow : INotifyPropertyChanged
     {
-        [ObservableProperty]
-        public partial String FilePath { get; set; }
+        private String _filePath = String.Empty;
+        private String _virusName = String.Empty;
 
-        [ObservableProperty]
-        public partial String VirusName { get; set; }
+        public String FilePath
+        {
+            get => _filePath;
+            set { _filePath = value; OnPropertyChanged(); }
+        }
 
-        public IRelayCommand? ShowDetailsCommand { get; set; }
-        public IRelayCommand? TrustCommand { get; set; }
-        public IRelayCommand? HandleCommand { get; set; }
+        public String VirusName
+        {
+            get => _virusName;
+            set { _virusName = value; OnPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] String name = null!)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
     }
 
     public record ScanItem
@@ -88,9 +98,6 @@ namespace Xdows_Security.Views
         private Int32 _threatsFound = 0;
         private Int32 ScanId = 0;
         private ContentDialog? _moreScanDialog;
-        private IRelayCommand? _showDetailsCommand;
-        private IRelayCommand? _trustCommand;
-        private IRelayCommand? _handleCommand;
         private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
 
         public SecurityPage()
@@ -102,26 +109,7 @@ namespace Xdows_Security.Views
             FilesScannedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), 0);
             FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);
             ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), 0);
-            InitializeCommands();
             InitializeScanItems();
-        }
-
-        private void InitializeCommands()
-        {
-            _showDetailsCommand = new RelayCommand<VirusRow>(async (row) =>
-            {
-                await ShowDetailsDialog(row);
-            });
-
-            _trustCommand = new RelayCommand<VirusRow>(async (row) =>
-            {
-                await OnTrustClickInternal(row);
-            });
-
-            _handleCommand = new RelayCommand<VirusRow>(async (row) =>
-            {
-                await OnHandleClickInternal(row);
-            });
         }
 
         private void AddVirusResult(String filePath, String virusName)
@@ -129,10 +117,7 @@ namespace Xdows_Security.Views
             VirusRow row = new()
             {
                 FilePath = filePath,
-                VirusName = virusName,
-                ShowDetailsCommand = _showDetailsCommand,
-                TrustCommand = _trustCommand,
-                HandleCommand = _handleCommand
+                VirusName = virusName
             };
 
             CurrentResults?.Add(row);
@@ -1172,6 +1157,30 @@ namespace Xdows_Security.Views
             PauseScanButton.Visibility = Visibility.Visible;
             ResumeScanButton.Visibility = Visibility.Collapsed;
             ResumeRadarAnimation();
+        }
+
+        private async void OnVirusRowDetailsClick(Object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem { Tag: VirusRow row })
+            {
+                await ShowDetailsDialog(row);
+            }
+        }
+
+        private async void OnVirusRowTrustClick(Object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem { Tag: VirusRow row })
+            {
+                await OnTrustClickInternal(row);
+            }
+        }
+
+        private async void OnVirusRowHandleClick(Object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem { Tag: VirusRow row })
+            {
+                await OnHandleClickInternal(row);
+            }
         }
 
         private async void VirusList_DoubleTapped(Object sender, DoubleTappedRoutedEventArgs e)
