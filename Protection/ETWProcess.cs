@@ -1,6 +1,7 @@
 using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using TrustQuarantine;
 using static Protection.CallBack;
@@ -9,13 +10,17 @@ namespace Protection
 {
     public partial class ETW
     {
-        // 进程防护模块
         public class ProcessProtection : IProtectionModel
         {
             private static readonly Lock lockObj = new();
             private static bool isRunning = false;
             public const string Name = "Process";
             string IProtectionModel.Name => Name;
+
+            private static readonly ConcurrentDictionary<int, DateTime> _recentProcesses = new();
+            private static readonly ConcurrentDictionary<string, DateTime> _scannedPaths = new();
+            private static readonly TimeSpan _dedupWindow = TimeSpan.FromSeconds(5);
+            private static readonly TimeSpan _pathCacheWindow = TimeSpan.FromMinutes(1);
 
             public bool Run(InterceptCallBack interceptCallBack)
             {
@@ -51,6 +56,8 @@ namespace Protection
                             }
                         });
 
+                        _ = Task.Run(CleanupLoop);
+
                         return true;
                     }
                     catch
@@ -61,6 +68,7 @@ namespace Protection
                     }
                 }
             }
+
             public bool Stop()
             {
                 lock (lockObj)
@@ -76,15 +84,38 @@ namespace Protection
                     {
                         monitoringSession = null;
                         isRunning = false;
+                        _recentProcesses.Clear();
+                        _scannedPaths.Clear();
                     }
                     return true;
                 }
             }
+
             public bool IsRun()
             {
                 lock (lockObj)
                 {
                     return isRunning;
+                }
+            }
+
+            private static async Task CleanupLoop()
+            {
+                while (isRunning)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30));
+                    
+                    var cutoff = DateTime.UtcNow - _dedupWindow;
+                    foreach (var key in _recentProcesses.Where(x => x.Value < cutoff).Select(x => x.Key).ToList())
+                    {
+                        _recentProcesses.TryRemove(key, out _);
+                    }
+
+                    var pathCutoff = DateTime.UtcNow - _pathCacheWindow;
+                    foreach (var key in _scannedPaths.Where(x => x.Value < pathCutoff).Select(x => x.Key).ToList())
+                    {
+                        _scannedPaths.TryRemove(key, out _);
+                    }
                 }
             }
 
@@ -94,6 +125,15 @@ namespace Protection
                 {
                     if (data.ProcessID is 0 or 4)
                         return;
+
+                    var now = DateTime.UtcNow;
+                    
+                    if (_recentProcesses.TryGetValue(data.ProcessID, out var lastSeen))
+                    {
+                        if (now - lastSeen < _dedupWindow)
+                            return;
+                    }
+                    _recentProcesses[data.ProcessID] = now;
 
                     string? path = null;
                     try
@@ -109,22 +149,31 @@ namespace Protection
                     if (string.IsNullOrEmpty(path) || TrustManager.IsPathTrusted(path))
                         return;
 
-                    var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
-                    if (!isVirus)
-                        return;
-
-                    try
+                    if (_scannedPaths.TryGetValue(path, out var lastScanned))
                     {
-                        using var proc = Process.GetProcessById(data.ProcessID);
-                        proc.Kill();
-                        _ = QuarantineManager.AddToQuarantine(path, result);
-                        interceptCallBack(true, path, Name);
+                        if (now - lastScanned < _pathCacheWindow)
+                            return;
+                    }
+                    _scannedPaths[path] = now;
 
-                    }
-                    catch
+                    await Task.Run(() =>
                     {
-                        interceptCallBack(false, path, Name);
-                    }
+                        var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
+                        if (!isVirus)
+                            return;
+
+                        try
+                        {
+                            using var proc = Process.GetProcessById(data.ProcessID);
+                            proc.Kill();
+                            _ = QuarantineManager.AddToQuarantine(path, result);
+                            interceptCallBack(true, path, Name);
+                        }
+                        catch
+                        {
+                            interceptCallBack(false, path, Name);
+                        }
+                    });
                 }
                 catch { }
             }

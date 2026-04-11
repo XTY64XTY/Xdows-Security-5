@@ -1,5 +1,6 @@
 using PeNet;
 using System.Buffers;
+using System.Collections.Frozen;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using static Xdows_Local.Core;
@@ -65,9 +66,9 @@ namespace Xdows_Local
             new Rule([["DeviceIoControl"]], 15, String.Empty),
             new Rule([["WscGetSecurityProviderHealth", "WscRegisterChanges", "WscUnRegisterChanges"]], 15, String.Empty),
             new Rule([["GetProcessImageFileName", "NtQueueApcThread"]], 5, String.Empty),
-            new Rule([["RegisterServiceProcess"]], 10, String.Empty), //未公开API，注册为系统服务
-            new Rule([["RunFileDlg"]], -5, String.Empty),//未公开API，但是无害，用于窗口“运行对话框”
-            new Rule([["RtlSetProcessIsCritical"]], 20, String.Empty), //未公开API，设置自身为关键系统进程
+            new Rule([["RegisterServiceProcess"]], 10, String.Empty),
+            new Rule([["RunFileDlg"]], -5, String.Empty),
+            new Rule([["RtlSetProcessIsCritical"]], 20, String.Empty),
         ];
 
         public static (Int32 score, String extra) Evaluate(String path, PeFile peFile, PEInfo peInfo, Boolean deepScan)
@@ -152,7 +153,7 @@ namespace Xdows_Local
                     {
                         score += 5;
                     }
-                    if (ContainsSuspiciousApi(peInfo.ImportsDll, ["rpcrt4.dll", "advapi32.dll"])) // Avast 注册安全中心漏洞
+                    if (ContainsSuspiciousApi(peInfo.ImportsDll, ["rpcrt4.dll", "advapi32.dll"]))
                     {
                         score += 5;
                         suspiciousData.Add("LikeBugsExploit");
@@ -240,7 +241,7 @@ namespace Xdows_Local
                 if (t7Result) { suspiciousData.Add("LikeChangeMBR"); score += 20; }
             }
 
-            extra = String.Join(" ", suspiciousData);
+            extra = string.Join(" ", suspiciousData);
 
             return (score, extra);
         }
@@ -302,7 +303,7 @@ namespace Xdows_Local
             return [.. extensions];
         }
 
-        private static readonly HashSet<String> _trustedThumbprints = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly FrozenSet<String> _trustedThumbprints = new HashSet<String>(StringComparer.OrdinalIgnoreCase)
         {
             "3B77DB29AC72AA6B5880ECB2ED5EC1EC6601D847",
             "FACDE3D80E99AFCC15E08AC5A69BD22785287F79",
@@ -442,7 +443,8 @@ namespace Xdows_Local
             "5E32D2C14376A70EFBD34728ED4A8ACEBEFE3592",
             "54CB0488F03C61AFAA04C155B457FE283E6EA02E",
             "0F55B47074C6B8D76B79ECF07EA9FC92BDA8B87D",
-        };
+        }.ToFrozenSet();
+
         public static Int32 FileDigitallySignedAndValid(String filePath, PeFile pe)
         {
             try

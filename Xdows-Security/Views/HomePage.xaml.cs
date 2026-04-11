@@ -8,6 +8,8 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Channels;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using WinRT.Interop;
 using WinUI3Localizer;
@@ -38,28 +40,52 @@ namespace Xdows_Security.Views
             public static ObservableCollection<string> Lines => _lines;
 
             private const int MAX_LINES = 200;
+            private static readonly Channel<(string raw, string[]? filters)> _logChannel = Channel.CreateUnbounded<(string, string[]?)>();
+
+            static LogModel()
+            {
+                _ = ProcessLogQueueAsync();
+            }
+
+            private static async Task ProcessLogQueueAsync()
+            {
+                await foreach (var (raw, filters) in _logChannel.Reader.ReadAllAsync())
+                {
+                    await Task.Run(() => ProcessLogBatch(raw, filters));
+                }
+            }
+
+            private static void ProcessLogBatch(string raw, string[]? filters)
+            {
+                try
+                {
+                    var q = string.IsNullOrEmpty(raw)
+                        ? []
+                        : raw.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
+
+                    if (filters?.Length > 0)
+                        q = [.. q.Where(l => filters.Any(f => l.Contains($"[{f}]")))];
+
+                    var linesToAdd = q.TakeLast(MAX_LINES).ToList();
+
+                    _dq.TryEnqueue(() =>
+                    {
+                        try
+                        {
+                            _lines.Clear();
+                            foreach (var l in linesToAdd)
+                                _lines.Add(l);
+                        }
+                        catch { }
+                    });
+                }
+                catch { }
+            }
 
             public static void Reload(string raw, string[]? filters)
             {
-                _dq.TryEnqueue(() =>
-                {
-                    try
-                    {
-                        var q = string.IsNullOrEmpty(raw)
-                            ? []
-                            : raw.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
-
-                        if (filters?.Length > 0)
-                            q = [.. q.Where(l => filters.Any(f => l.Contains($"[{f}]")))];
-
-                        _lines.Clear();
-                        foreach (var l in q.TakeLast(MAX_LINES))
-                            _lines.Add(l);
-                    }
-                    catch { }
-                });
+                _logChannel.Writer.TryWrite((raw, filters));
             }
-
         }
 
         private static class SystemInfoModel
@@ -87,8 +113,8 @@ namespace Xdows_Security.Views
             }
         }
 
-        private readonly WeakEventTimer _sysTimer = new(TimeSpan.FromSeconds(30));
-        private readonly WeakEventTimer _protTimer = new(TimeSpan.FromSeconds(5));
+        private readonly WeakEventTimer _sysTimer = new(TimeSpan.FromSeconds(60));
+        private readonly WeakEventTimer _protTimer = new(TimeSpan.FromSeconds(10));
 
         public string[] SelectedLogFilters = [];
         public static ObservableCollection<string> LogLines => LogModel.Lines;
@@ -102,10 +128,7 @@ namespace Xdows_Security.Views
 
             LogText.TextChanged += (s, e) =>
             {
-                App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
-                {
-                    LogModel.Reload(LogText.Text, SelectedLogFilters);
-                });
+                LogModel.Reload(LogText.Text, SelectedLogFilters);
             };
 
             LoadData();
@@ -146,7 +169,7 @@ namespace Xdows_Security.Views
 
                 try
                 {
-                    File.WriteAllText(file.Path, LogText.Text);
+                    await File.WriteAllTextAsync(file.Path, LogText.Text);
                 }
                 catch (Exception ex) { LogText.AddNewLog(LogText.LogLevel.WARN, "ExportLog", ex.Message); }
             }
