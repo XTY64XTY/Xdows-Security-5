@@ -38,10 +38,22 @@ namespace Xdows_Security
             manager.TrayIconContextMenu += (w, e) =>
             {
                 var flyout = new MenuFlyout();
-                flyout.Items.Add(new MenuFlyoutItem() { Text = Localizer.Get().GetLocalizedString("TrayMenu_Open") });
-                flyout.Items.Add(new MenuFlyoutItem() { Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings") });
+                flyout.Items.Add(new MenuFlyoutItem()
+                {
+                    Text = Localizer.Get().GetLocalizedString("TrayMenu_Open"),
+                    Icon = new FontIcon() { Glyph = "\uE8A7" }
+                });
+                flyout.Items.Add(new MenuFlyoutItem()
+                {
+                    Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings"),
+                    Icon = new FontIcon() { Glyph = "\uE713" }
+                });
                 flyout.Items.Add(new MenuFlyoutSeparator());
-                flyout.Items.Add(new MenuFlyoutItem() { Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit") });
+                flyout.Items.Add(new MenuFlyoutItem()
+                {
+                    Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit"),
+                    Icon = new FontIcon() { Glyph = "\uE7E8" }
+                });
                 ((MenuFlyoutItem)flyout.Items[0]).Click += (s, e) => this.Activate();
                 ((MenuFlyoutItem)flyout.Items[1]).Click += (s, e) =>
                 {
