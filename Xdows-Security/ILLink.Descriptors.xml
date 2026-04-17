@@ -32,7 +32,8 @@
     <type fullname="Microsoft.UI.Xaml.Controls.StackPanel" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.Border" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ListView" preserve="all" />
-    <type fullname="Microsoft.UI.Xaml.Controls.Primitives.Selector" preserve="all" />
+	<type fullname="Microsoft.UI.Xaml.Controls.TabView" preserve="all" />
+	<type fullname="Microsoft.UI.Xaml.Controls.Primitives.Selector" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ScrollViewer" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ItemsRepeater" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ProgressBar" preserve="all" />
