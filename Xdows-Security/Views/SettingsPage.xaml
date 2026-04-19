@@ -381,9 +381,16 @@
                         <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Version" HeaderIcon="{ui:FontIcon Glyph=&#xE7B8;}">
                             <TextBlock x:Name="Settings_About_Version"/>
                         </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Developer" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
-                            <TextBlock l:Uids.Uid="SettingsPage_Other_About_Developer_Text"/>
-                        </controls:SettingsCard>
+                        <controls:SettingsExpander l:Uids.Uid="SettingsPage_Other_About_Contributors" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
+                            <controls:SettingsExpander.Items>
+                                <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Contributors_XdowsSoftware" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
+                                    <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" NavigateUri="https://github.com/XTY64XTY/Xdows-Security-5" />
+                                </controls:SettingsCard>
+                                <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
+                                    <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" NavigateUri="https://github.com/Gaoyifei1011/WinUI3WindowMenuStyle" />
+                                </controls:SettingsCard>
+                            </controls:SettingsExpander.Items>
+                        </controls:SettingsExpander>
                         <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Feedback" HeaderIcon="{ui:FontIcon Glyph=&#xED15;}">
                             <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" x:Name="Settings_About_Feedback"/>
                         </controls:SettingsCard>

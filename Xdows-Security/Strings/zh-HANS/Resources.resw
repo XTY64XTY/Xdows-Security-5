@@ -983,11 +983,23 @@
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
     <value>无法清空背景图片: {0}</value>
   </data>
-  <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
-    <value>开发团队</value>
+  <data name="SettingsPage_Other_About_Contributors.Header" xml:space="preserve">
+    <value>贡献列表</value>
   </data>
-  <data name="SettingsPage_Other_About_Developer_Text.Text" xml:space="preserve">
+  <data name="SettingsPage_Other_About_Contributors.Description" xml:space="preserve">
+    <value>为这个项目做出贡献的开发者和项目</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Header" xml:space="preserve">
     <value>Xdows Software</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Description" xml:space="preserve">
+    <value>项目主要开发团队</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Header" xml:space="preserve">
+    <value>Gaoyifei1011/WinUI3WindowMenuStyle</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Description" xml:space="preserve">
+    <value>WinUI3 窗口菜单样式</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>关闭</value>
@@ -1217,4 +1229,23 @@
   <data name="SettingsPage_Appearance_Sound_SpatialAudio.Description" xml:space="preserve">
     <value>启用 3D 空间音效效果</value>
   </data>
+  <data name="TitleBarMenu_Restore.Text" xml:space="preserve">
+    <value>还原</value>
+  </data>
+  <data name="TitleBarMenu_Move.Text" xml:space="preserve">
+    <value>移动</value>
+  </data>
+  <data name="TitleBarMenu_Size.Text" xml:space="preserve">
+    <value>大小</value>
+  </data>
+  <data name="TitleBarMenu_Minimize.Text" xml:space="preserve">
+    <value>最小化</value>
+  </data>
+  <data name="TitleBarMenu_Maximize.Text" xml:space="preserve">
+    <value>最大化</value>
+  </data>
+  <data name="TitleBarMenu_Close.Text" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+
 </root>

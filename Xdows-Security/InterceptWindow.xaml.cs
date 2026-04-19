@@ -4,7 +4,9 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using TrustQuarantine;
+using Helper;
 using static Helper.InterceptWindowHelper;
+
 namespace Xdows_Security
 {
     public sealed partial class InterceptWindow : Window
@@ -36,6 +38,7 @@ namespace Xdows_Security
             manager.IsAlwaysOnTop = true;
             this.SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
             _originalFilePath = setting.path;
+
             WinUI3Localizer.Localizer.Get().LanguageChanged += (sender, e) =>
             {
                 ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");

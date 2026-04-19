@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Windows.Security.Credentials.UI;
-using Windows.UI.WindowManagement;
 using WinUI3Localizer;
 using WinUIEx;
 using Xdows_Security.Views;
@@ -26,6 +25,7 @@ namespace Xdows_Security
             this.ExtendsContentIntoTitleBar = true;
             AppWindow.SetIcon("logo.ico");
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
+
             nav.SelectedItem = nav.MenuItems.OfType<NavigationViewItem>().First();
             Activated += MainWindow_Activated_FirstTime;
             Title = AppInfo.AppName;

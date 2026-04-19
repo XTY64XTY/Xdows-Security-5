@@ -984,11 +984,23 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
     <value>Failed to clear background image: {0}</value>
   </data>
-  <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
-    <value>Developer</value>
+  <data name="SettingsPage_Other_About_Contributors.Header" xml:space="preserve">
+    <value>Contributors</value>
   </data>
-  <data name="SettingsPage_Other_About_Developer_Text.Text" xml:space="preserve">
+  <data name="SettingsPage_Other_About_Contributors.Description" xml:space="preserve">
+    <value>Developers and projects that contributed to this project</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Header" xml:space="preserve">
     <value>Xdows Software</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Description" xml:space="preserve">
+    <value>Main development team</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Header" xml:space="preserve">
+    <value>Gaoyifei1011/WinUI3WindowMenuStyle</value>
+  </data>
+  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Description" xml:space="preserve">
+    <value>WinUI3 window menu style</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>Close</value>
@@ -1218,4 +1230,23 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SettingsPage_Appearance_Sound_SpatialAudio.Description" xml:space="preserve">
     <value>Enable 3D spatial audio effects</value>
   </data>
+  <data name="TitleBarMenu_Restore.Text" xml:space="preserve">
+    <value>Restore</value>
+  </data>
+  <data name="TitleBarMenu_Move.Text" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="TitleBarMenu_Size.Text" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="TitleBarMenu_Minimize.Text" xml:space="preserve">
+    <value>Minimize</value>
+  </data>
+  <data name="TitleBarMenu_Maximize.Text" xml:space="preserve">
+    <value>Maximize</value>
+  </data>
+  <data name="TitleBarMenu_Close.Text" xml:space="preserve">
+    <value>Close</value>
+  </data>
+
 </root>

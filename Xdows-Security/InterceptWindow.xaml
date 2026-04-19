@@ -5,9 +5,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:l="using:WinUI3Localizer"
+    xmlns:l="using:WinUI3Localizer" xmlns:local="using:Xdows_Security"
     mc:Ignorable="d">
     <StackPanel x:Name="RootPanel">
+        <local:TitleBarMenu OwnerWindow="{x:Bind Mode=OneWay}" />
         <TitleBar x:Name="TitleBarControl" Height="48" l:Uids.Uid="InterceptWindow_Title"></TitleBar>
         <Border Padding="20,0,20,20">
             <StackPanel>

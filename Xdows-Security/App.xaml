@@ -7,7 +7,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <ResourceDictionary Source="/Style/CopyButton.xaml" />
+                <ResourceDictionary Source="/Styles/CopyButton.xaml" />
+                <ResourceDictionary Source="/Styles/TitleBarMenuResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

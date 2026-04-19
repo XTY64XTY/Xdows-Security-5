@@ -10,6 +10,7 @@
     mc:Ignorable="d">
 
     <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <local:TitleBarMenu OwnerWindow="{x:Bind Mode=OneWay}" />
         <TitleBar
             x:Name="AppTitleBar"
             Height="48"
