@@ -238,7 +238,7 @@ namespace Xdows_Security
             var settings = ApplicationData.Current.LocalSettings;
 
             // 检查导航栏位置，如果在顶部则不应用紧凑导航栏设置
-            Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out object navRaw) && navRaw is double d ? (int)d : 0;
+            Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
             if (navTheme == 1) // 顶部导航栏
             {
                 AppTitleBar.IsPaneToggleButtonVisible = false;
@@ -246,9 +246,9 @@ namespace Xdows_Security
                 return;
             }
 
-            if (settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out object isItInTitleBar))
+            if (settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out var isItInTitleBar) && isItInTitleBar is bool boolValue)
             {
-                AppTitleBar.IsPaneToggleButtonVisible = (bool)isItInTitleBar;
+                AppTitleBar.IsPaneToggleButtonVisible = boolValue;
                 nav.IsPaneToggleButtonVisible = !AppTitleBar.IsPaneToggleButtonVisible;
             }
             else

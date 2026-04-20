@@ -1,3 +1,5 @@
+using Helper.PInvoke.Comctl32;
+using Helper.PInvoke.User32;
 using Microsoft.UI.Content;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -8,8 +10,6 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Windows.Foundation;
 using Windows.Graphics;
-using Helper.PInvoke.Comctl32;
-using Helper.PInvoke.User32;
 
 namespace Xdows_Security
 {
@@ -38,7 +38,7 @@ namespace Xdows_Security
         public event PropertyChangedEventHandler? PropertyChanged;
 
         public static readonly DependencyProperty OwnerWindowProperty =
-            DependencyProperty.Register("OwnerWindow", typeof(Window), typeof(TitleBarMenu), new PropertyMetadata(null, OnOwnerWindowChanged));
+            DependencyProperty.Register("OwnerWindow", typeof(Window), typeof(TitleBarMenu), new PropertyMetadata(null!, OnOwnerWindowChanged));
 
         public Window OwnerWindow
         {
@@ -46,7 +46,7 @@ namespace Xdows_Security
             set { SetValue(OwnerWindowProperty, value); }
         }
 
-        public MenuFlyout MenuFlyout { get; private set; }
+        public MenuFlyout? MenuFlyout { get; private set; }
 
         public TitleBarMenu()
         {
@@ -75,7 +75,7 @@ namespace Xdows_Security
             mainWindowSubClassProc = new SUBCLASSPROC(MainWindowSubClassProc);
             Comctl32Library.SetWindowSubclass((nint)ownerWindow.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(mainWindowSubClassProc), 0, 0);
 
-            nint inputNonClientPointerSourceHandle = User32Library.FindWindowEx((nint)ownerWindow.AppWindow.Id.Value, 0, "InputNonClientPointerSource", null);
+            nint inputNonClientPointerSourceHandle = User32Library.FindWindowEx((nint)ownerWindow.AppWindow.Id.Value, 0, "InputNonClientPointerSource", lpszWindow: null!);
             if (inputNonClientPointerSourceHandle != 0)
             {
                 inputNonClientPointerSourceSubClassProc = new SUBCLASSPROC(InputNonClientPointerSourceSubClassProc);
@@ -101,42 +101,42 @@ namespace Xdows_Security
             }
         }
 
-        internal void OnRestoreClicked(object sender, RoutedEventArgs args)
+        internal void OnRestoreClicked(object _, RoutedEventArgs __)
         {
             overlappedPresenter!.Restore();
         }
 
-        internal void OnMoveClicked(object sender, RoutedEventArgs args)
+        internal void OnMoveClicked(object sender, RoutedEventArgs _)
         {
             var menuItem = sender as MenuFlyoutItem;
-            if (menuItem.Tag is not null)
+            if (menuItem?.Tag is not null)
             {
-                ((MenuFlyout)menuItem.Tag).Hide();
+                (menuItem?.Tag as MenuFlyout)?.Hide();
                 User32Library.SendMessage((nint)OwnerWindow.AppWindow.Id.Value, WindowMessage.WM_SYSCOMMAND, 0xF010, 0);
             }
         }
 
-        internal void OnSizeClicked(object sender, RoutedEventArgs args)
+        internal void OnSizeClicked(object sender, RoutedEventArgs _)
         {
             var menuItem = sender as MenuFlyoutItem;
-            if (menuItem.Tag is not null)
+            if (menuItem?.Tag is not null)
             {
-                ((MenuFlyout)menuItem.Tag).Hide();
+                (menuItem?.Tag as MenuFlyout)?.Hide();
                 User32Library.SendMessage((nint)OwnerWindow.AppWindow.Id.Value, WindowMessage.WM_SYSCOMMAND, 0xF000, 0);
             }
         }
 
-        internal void OnMinimizeClicked(object sender, RoutedEventArgs args)
+        internal void OnMinimizeClicked(object _, RoutedEventArgs __)
         {
             overlappedPresenter!.Minimize();
         }
 
-        internal void OnMaximizeClicked(object sender, RoutedEventArgs args)
+        internal void OnMaximizeClicked(object _, RoutedEventArgs __)
         {
             overlappedPresenter!.Maximize();
         }
 
-        internal void OnCloseClicked(object sender, RoutedEventArgs args)
+        internal void OnCloseClicked(object _, RoutedEventArgs __)
         {
             OwnerWindow.Close();
         }

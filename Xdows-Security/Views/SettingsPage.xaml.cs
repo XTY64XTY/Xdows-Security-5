@@ -227,13 +227,13 @@ namespace Xdows_Security.Views
                 if (toggle == null) continue;
 
                 String key = toggle.Tag as String ?? "";
-                if (!String.IsNullOrWhiteSpace(key) && settings.Values.TryGetValue(key, out Object raw) && raw is Boolean isOn)
+                if (!String.IsNullOrWhiteSpace(key) && settings.Values.TryGetValue(key, out var raw) && raw is Boolean isOn)
                 {
                     toggle.IsOn = isOn;
                 }
             }
 
-            if (settings.Values.TryGetValue("AppBackdropOpacity", out Object opacityRaw) && opacityRaw is Double opacity)
+            if (settings.Values.TryGetValue("AppBackdropOpacity", out object? opacityRaw) && opacityRaw is double opacity)
             {
                 Appearance_Backdrop_Opacity.Value = opacity;
             }
@@ -249,7 +249,7 @@ namespace Xdows_Security.Views
             // Load scan index mode setting (default Parallel) without direct XAML field access
             try
             {
-                String mode = settings.Values.TryGetValue("ScanIndexMode", out Object raw) && raw is String s ? s : "Parallel";
+                string mode = settings.Values.TryGetValue("ScanIndexMode", out object? raw) && raw is string s ? s : "Parallel";
                 ComboBox combo = this.FindName("ScanIndexModeComboBox") as ComboBox ?? new();
                 if (combo != null)
                 {
@@ -315,14 +315,14 @@ namespace Xdows_Security.Views
         private async void LoadLanguageSetting()
         {
             ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
-            if (!settings.Values.TryGetValue("AppLanguage", out Object langRaw) || langRaw is not String savedLanguage)
+            if (!settings.Values.TryGetValue("AppLanguage", out object? langRaw) || langRaw is not string savedLanguage)
             {
                 savedLanguage = "en-US";
             }
 
             foreach (ComboBoxItem item in LanguageComboBox.Items.Cast<ComboBoxItem>())
             {
-                if (item.Tag as String == savedLanguage)
+                if (item.Tag as string == savedLanguage)
                 {
                     LanguageComboBox.SelectedItem = item;
                     break;
@@ -334,7 +334,7 @@ namespace Xdows_Security.Views
         {
             ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
             ElementTheme themeValue = ElementTheme.Default;
-            if (settings.Values.TryGetValue("AppTheme", out Object themeRaw) && themeRaw is String themeString && Enum.TryParse(themeString, out ElementTheme parsedTheme))
+            if (settings.Values.TryGetValue("AppTheme", out object? themeRaw) && themeRaw is string themeString && Enum.TryParse(themeString, out ElementTheme parsedTheme))
             {
                 themeValue = parsedTheme;
             }
@@ -346,7 +346,7 @@ namespace Xdows_Security.Views
                 _ => 0
             };
 
-            Int32 navIndex = settings.Values.TryGetValue("AppNavTheme", out Object raw) && raw is Double d ? (Int32)d : 0;
+            int navIndex = settings.Values.TryGetValue("AppNavTheme", out object? raw) && raw is double d ? (int)d : 0;
             NavComboBox.SelectedIndex = navIndex;
 
             // 当导航栏在顶部时，禁用紧凑导航栏选项
@@ -601,7 +601,7 @@ namespace Xdows_Security.Views
         private void TrayVisibleToggle_Toggled(Object sender, RoutedEventArgs e)
         {
             Toggled_SaveToggleData(sender, e);
-            App.MainWindow?.manager?.IsVisibleInTray = TrayVisibleToggle.IsEnabled;
+            App.MainWindow?.Manager?.IsVisibleInTray = TrayVisibleToggle.IsEnabled;
         }
 
 
@@ -957,8 +957,8 @@ namespace Xdows_Security.Views
         {
             var settings = ApplicationData.Current.LocalSettings;
 
-            SoundEffectsToggle.IsOn = settings.Values.TryGetValue("SoundEffects", out var s) && s is bool b && b;
-            SpatialAudioToggle.IsOn = settings.Values.TryGetValue("SpatialAudio", out var sp) && sp is bool bp ? bp : true;
+            SoundEffectsToggle.IsOn = settings.Values.TryGetValue("SoundEffects", out var s) && s is true;
+            SpatialAudioToggle.IsOn = settings.Values.TryGetValue("SpatialAudio", out var sp) && sp is true || !(settings.Values.ContainsKey("SpatialAudio"));
             SpatialAudioToggle.IsEnabled = SoundEffectsToggle.IsOn;
 
             ApplySoundSettings();
@@ -979,7 +979,7 @@ namespace Xdows_Security.Views
             ApplySoundSettings();
         }
 
-        private void ApplySoundSettings()
+        private static void ApplySoundSettings()
         {
             var s = ApplicationData.Current.LocalSettings;
             bool sound = s.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;

@@ -8,7 +8,7 @@
     xmlns:l="using:WinUI3Localizer" xmlns:local="using:Xdows_Security"
     mc:Ignorable="d">
     <StackPanel x:Name="RootPanel">
-        <local:TitleBarMenu OwnerWindow="{x:Bind Mode=OneWay}" />
+        <local:TitleBarMenu OwnerWindow="{x:Bind Mode=OneTime}" />
         <TitleBar x:Name="TitleBarControl" Height="48" l:Uids.Uid="InterceptWindow_Title"></TitleBar>
         <Border Padding="20,0,20,20">
             <StackPanel>

@@ -219,7 +219,6 @@
   <data name="SecurityPage_DuplicatePath_Content" xml:space="preserve">
     <value>The path is already in the list: {0}</value>
   </data>
-
   <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
     <value>Please go to Settings - Scan and uncheck this engine.</value>
   </data>
@@ -685,8 +684,6 @@ Why not try XIGUA Security?</value>
   <data name="AllPage_Undefined" xml:space="preserve">
     <value>Undefined</value>
   </data>
-
-
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>Modify the opacity of the main window</value>
   </data>
@@ -696,7 +693,6 @@ Why not try XIGUA Security?</value>
   <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
     <value>Connecting to the cloud engine improves detection accuracy but requires an internet connection.</value>
   </data>
-
   <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
     <value>About this Engine</value>
   </data>
@@ -793,7 +789,6 @@ Why not try XIGUA Security?</value>
   <data name="SettingsPage_Search.PlaceholderText" xml:space="preserve">
     <value>Search settings...</value>
   </data>
-
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Header" xml:space="preserve">
     <value>Opacity</value>
   </data>
@@ -983,24 +978,6 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   </data>
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
     <value>Failed to clear background image: {0}</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors.Header" xml:space="preserve">
-    <value>Contributors</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors.Description" xml:space="preserve">
-    <value>Developers and projects that contributed to this project</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Header" xml:space="preserve">
-    <value>Xdows Software</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Description" xml:space="preserve">
-    <value>Main development team</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Header" xml:space="preserve">
-    <value>Gaoyifei1011/WinUI3WindowMenuStyle</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Description" xml:space="preserve">
-    <value>WinUI3 window menu style</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>Close</value>
@@ -1248,5 +1225,10 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="TitleBarMenu_Close.Text" xml:space="preserve">
     <value>Close</value>
   </data>
-
+  <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
+    <value>Developer</value>
+  </data>
+  <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
+    <value>Xdows Software</value>
+  </data>
 </root>

@@ -1,4 +1,3 @@
-// using Windows.ApplicationModel.Resources;//多语言调用
 using Compatibility.Windows.Storage;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -15,13 +14,13 @@ namespace Xdows_Security
 {
     public sealed partial class MainWindow : Window
     {
-        public static string NowPage = "Home";
-        public WinUIEx.WindowManager? manager;
+        public static string NowPage { get; set; } = "Home";
+        public WinUIEx.WindowManager? Manager { get; private set; }
 
         public MainWindow()
         {
             InitializeComponent();
-            manager = WinUIEx.WindowManager.Get(this);
+            Manager = WinUIEx.WindowManager.Get(this);
             this.ExtendsContentIntoTitleBar = true;
             AppWindow.SetIcon("logo.ico");
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
@@ -30,12 +29,12 @@ namespace Xdows_Security
             Activated += MainWindow_Activated_FirstTime;
             Title = AppInfo.AppName;
             TitleText.Text = AppInfo.AppName;
-            manager.AppWindow.Closing += MainWindow_Closing;
-            manager.MinWidth = 650;
-            manager.MinHeight = 530;
+            Manager.AppWindow.Closing += MainWindow_Closing;
+            Manager.MinWidth = 650;
+            Manager.MinHeight = 530;
             Closed += delegate { Window_Closed(); };
             Localizer.Get().LanguageChanged += OnLangChanged;
-            manager.TrayIconContextMenu += (w, e) =>
+            Manager.TrayIconContextMenu += (w, e) =>
             {
                 var flyout = new MenuFlyout();
                 flyout.Items.Add(new MenuFlyoutItem()
@@ -63,9 +62,9 @@ namespace Xdows_Security
                 ((MenuFlyoutItem)flyout.Items[3]).Click += async (s, e) =>
                 {
                     bool disabledVerify = false;
-                    if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify))
+                    if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
                     {
-                        disabledVerify = (bool)isDisabledVerify;
+                        disabledVerify = boolValue;
                     }
                     if (disabledVerify)
                     {
@@ -136,13 +135,13 @@ namespace Xdows_Security
             //    TitleText.Text += " (受限模式)";
             //}
             UpdateNavTheme(
-                settings.Values.TryGetValue("AppNavTheme", out object raw) && raw is double d ?
+                settings.Values.TryGetValue("AppNavTheme", out var raw) && raw is double d ?
                 (int)d : 0
             );
             UpdatePaneToggleButtonPosition();
-            if (settings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle))
+            if (settings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) && trayVisibleToggle is bool boolValue)
             {
-                manager?.IsVisibleInTray = (bool)trayVisibleToggle;
+                Manager?.IsVisibleInTray = boolValue;
             }
             App.PlayEntranceAnimation(navContainer, "up");
         }
@@ -154,7 +153,7 @@ namespace Xdows_Security
         private void LoadLocalizerData()
         {
             var settings = ApplicationData.Current.LocalSettings;
-            int navTheme = settings.Values.TryGetValue("AppNavTheme", out object raw) && raw is double d ?
+            int navTheme = settings.Values.TryGetValue("AppNavTheme", out var raw) && raw is double d ?
                 (int)d : 0;
             if (navTheme == 0)
             {
@@ -255,9 +254,9 @@ namespace Xdows_Security
         }
         private void MainWindow_Closing(object sender, AppWindowClosingEventArgs e)
         {
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle))
+            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) && trayVisibleToggle is bool trayVisibleValue)
             {
-                if ((bool)trayVisibleToggle)
+                if (trayVisibleValue)
                 {
                     e.Cancel = true;
                     this.Hide();
@@ -265,9 +264,9 @@ namespace Xdows_Security
                 }
             }
             bool disabledVerify = false;
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify))
+            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool disabledVerifyValue)
             {
-                disabledVerify = (bool)isDisabledVerify;
+                disabledVerify = disabledVerifyValue;
             }
             if (!disabledVerify)
             {

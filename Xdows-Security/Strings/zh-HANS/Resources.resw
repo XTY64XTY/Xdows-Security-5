@@ -219,7 +219,6 @@
   <data name="SecurityPage_DuplicatePath_Content" xml:space="preserve">
     <value>该路径已在列表中：{0}</value>
   </data>
-
   <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
     <value>请转到 设置 - 扫描引擎 取消这个引擎的选中。</value>
   </data>
@@ -685,8 +684,6 @@
   <data name="AllPage_Undefined" xml:space="preserve">
     <value>未定义</value>
   </data>
-
-
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>修改主窗口的不透明度</value>
   </data>
@@ -696,7 +693,6 @@
   <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
     <value>云端引擎来自第三方且需要连接至互联网，但是能提高查杀率</value>
   </data>
-
   <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
     <value>关于引擎</value>
   </data>
@@ -793,7 +789,6 @@
   <data name="SettingsPage_Search.PlaceholderText" xml:space="preserve">
     <value>搜索设置...</value>
   </data>
-
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Header" xml:space="preserve">
     <value>不透明度</value>
   </data>
@@ -982,24 +977,6 @@
   </data>
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
     <value>无法清空背景图片: {0}</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors.Header" xml:space="preserve">
-    <value>贡献列表</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors.Description" xml:space="preserve">
-    <value>为这个项目做出贡献的开发者和项目</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Header" xml:space="preserve">
-    <value>Xdows Software</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_XdowsSoftware.Description" xml:space="preserve">
-    <value>项目主要开发团队</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Header" xml:space="preserve">
-    <value>Gaoyifei1011/WinUI3WindowMenuStyle</value>
-  </data>
-  <data name="SettingsPage_Other_About_Contributors_WinUI3WindowMenuStyle.Description" xml:space="preserve">
-    <value>WinUI3 窗口菜单样式</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>关闭</value>
@@ -1247,5 +1224,10 @@
   <data name="TitleBarMenu_Close.Text" xml:space="preserve">
     <value>关闭</value>
   </data>
-
+  <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
+    <value>开发团队</value>
+  </data>
+  <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
+    <value>Xdows Software</value>
+  </data>
 </root>
