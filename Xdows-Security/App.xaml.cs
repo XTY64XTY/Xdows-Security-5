@@ -179,7 +179,7 @@ namespace Xdows_Security
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Xdows-Security", "Logs");
         private static readonly Queue<string> _hotLines = new();
-        private static readonly object _lockObj = new();
+        private static readonly Lock _lockObj = new();
         private static readonly Channel<LogRow> _writeChannel = Channel.CreateUnbounded<LogRow>();
         private static readonly Timer _throttleTimer;
         private static bool _isTimerActive;
@@ -374,7 +374,7 @@ namespace Xdows_Security
                 // Initialize sound effects
                 var settings = ApplicationData.Current.LocalSettings;
                 bool sound = settings.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
-                bool spatial = settings.Values.TryGetValue("SpatialAudio", out var spr) && spr is bool spb ? spb : true;
+                bool spatial = !settings.Values.TryGetValue("SpatialAudio", out var spr) || spr is not bool spb || spb;
                 ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
                 if (sound) ElementSoundPlayer.SpatialAudioMode = spatial ? ElementSpatialAudioMode.On : ElementSpatialAudioMode.Off;
 

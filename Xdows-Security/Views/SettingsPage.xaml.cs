@@ -20,11 +20,40 @@ namespace Xdows_Security.Views
     public sealed partial class SettingsPage : Page
     {
         private Boolean IsInitialize = true;
+        private DispatcherTimer? ProtectionStatusTimer;
 
         public SettingsPage()
         {
             this.InitializeComponent();
             _ = InitializeAsync();
+            InitializeProtectionStatusTimer();
+        }
+
+        private void InitializeProtectionStatusTimer()
+        {
+            ProtectionStatusTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5)
+            };
+            ProtectionStatusTimer.Tick += ProtectionStatusTimer_Tick;
+            ProtectionStatusTimer.Start();
+        }
+
+        private void ProtectionStatusTimer_Tick(object? sender, object? e)
+        {
+            if (IsInitialize) return;
+
+            UpdateProtectionToggleState(ProcessToggle, 0);
+            UpdateProtectionToggleState(FilesToggle, 1);
+            UpdateProtectionToggleState(RegistryToggle, 4);
+        }
+
+        private void UpdateProtectionToggleState(ToggleSwitch toggle, Int32 runId)
+        {
+            if (toggle == null) return;
+            toggle.Toggled -= RunProtection;
+            toggle.IsOn = ProtectionStatus.IsRun(runId);
+            toggle.Toggled += RunProtection;
         }
 
         private async Task InitializeAsync()
@@ -987,6 +1016,16 @@ namespace Xdows_Security.Views
 
             ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
             if (sound) ElementSoundPlayer.SpatialAudioMode = spatial ? ElementSpatialAudioMode.On : ElementSpatialAudioMode.Off;
+        }
+
+        protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            if (ProtectionStatusTimer != null)
+            {
+                ProtectionStatusTimer.Stop();
+                ProtectionStatusTimer.Tick -= ProtectionStatusTimer_Tick;
+            }
+            base.OnNavigatedFrom(e);
         }
     }
 }
