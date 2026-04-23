@@ -166,8 +166,8 @@ namespace Xdows_Security
 
     public static class Statistics
     {
-        public static int ScansQuantity { get; set; } = 0;
-        public static int VirusQuantity { get; set; } = 0;
+        public static int ScansQuantity = 0;
+        public static int VirusQuantity = 0;
     }
     public static class LogText
     {

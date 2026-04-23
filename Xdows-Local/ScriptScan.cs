@@ -3,8 +3,38 @@ using System.Text.RegularExpressions;
 
 namespace Xdows_Local
 {
-    public static class ScriptScan
+    public static partial class ScriptScan
     {
+        private static readonly Regex RxDownload = new(@"(download|wget|curl|invoke-webrequest|fetch\s*\()", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxUrl = new(@"(http|https|ftp)://", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxFileOp = new(@"(delete|remove|copy|move|create\s+file|write\s+file)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxRegistry = new(@"(reg\s+|registry|regedit|reg.exe)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxProcessOp = new(@"(start-process|createobject|wscript.shell|shell.application)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPersistence = new(@"(startup|runonce|autorun|msconfig)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxMemz = new(@"(nyancat|rainbow|memz|trollface)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxDestruction = new(@"(delete\s+.*system|format\s+|shutdown|reboot|blue\s+screen)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPsBypass = new(@"-executionpolicy\s+bypass", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPsHidden = new(@"-windowstyle\s+hidden", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPsReflection = new(@"(reflection|assembly.load|loadfrom)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPsWinApi = new(@"(add-type|dllimport|getmodulehandle)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPsCom = new(@"new-object\s+-comobject", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxVbWscript = new(@"createobject\s*\(\s*""wscript.shell""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxVbFso = new(@"createobject\s*\(\s*""scripting.filesystemobject""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxVbShellApp = new(@"createobject\s*\(\s*""shell.application""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxJsActiveX = new(@"new\s+activexobject", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxJsWscript = new(@"wscript.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxBatEchoOff = new(@"@echo\s+off", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxBatPs = new(@"powershell\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxBatCertutil = new(@"certutil\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxBatBitsadmin = new(@"bitsadmin\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxBatDestruction = new(@"(del\s+[/sfq]|format\s+|rmdir\s+[/sq]|shutdown\s+[/sfr])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxBatReg = new(@"(reg\s+(add|delete)|regedit)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPyOs = new(@"os.system\s*\(", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPySubprocess = new(@"subprocess.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPyUrllib = new(@"urllib.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxPyRequests = new(@"requests.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxShDownload = new(@"(wget|curl)\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxShChmod = new(@"chmod\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         public static (Int32 score, String extra) ScanScriptFile(String filePath, Byte[] fileContent)
         {
             return ScanScriptFileManaged(filePath, fileContent);
@@ -193,49 +223,49 @@ namespace Xdows_Local
                 extra.Add("EncodedContent");
             }
 
-            if (Regex.IsMatch(content, @"(download|wget|curl|invoke-webrequest|fetch\s*\()", RegexOptions.IgnoreCase))
+            if (RxDownload.IsMatch(content))
             {
                 score += 20;
                 extra.Add("DownloadBehavior");
             }
 
-            if (Regex.IsMatch(content, @"(http|https|ftp)://", RegexOptions.IgnoreCase))
+            if (RxUrl.IsMatch(content))
             {
                 score += 10;
                 extra.Add("NetworkActivity");
             }
 
-            if (Regex.IsMatch(content, @"(delete|remove|copy|move|create\s+file|write\s+file)", RegexOptions.IgnoreCase))
+            if (RxFileOp.IsMatch(content))
             {
                 score += 10;
                 extra.Add("FileOperation");
             }
 
-            if (Regex.IsMatch(content, @"(reg\s+|registry|regedit|reg.exe)", RegexOptions.IgnoreCase))
+            if (RxRegistry.IsMatch(content))
             {
                 score += 15;
                 extra.Add("RegistryOperation");
             }
 
-            if (Regex.IsMatch(content, @"(start-process|createobject|wscript.shell|shell.application)", RegexOptions.IgnoreCase))
+            if (RxProcessOp.IsMatch(content))
             {
                 score += 15;
                 extra.Add("ProcessOperation");
             }
 
-            if (Regex.IsMatch(content, @"(startup|runonce|autorun|msconfig)", RegexOptions.IgnoreCase))
+            if (RxPersistence.IsMatch(content))
             {
                 score += 20;
                 extra.Add("PersistenceMechanism");
             }
 
-            if (Regex.IsMatch(content, @"(nyancat|rainbow|memz|trollface)", RegexOptions.IgnoreCase))
+            if (RxMemz.IsMatch(content))
             {
                 score += 30;
                 extra.Add("MEMZSignature");
             }
 
-            if (Regex.IsMatch(content, @"(delete\s+.*system|format\s+|shutdown|reboot|blue\s+screen)", RegexOptions.IgnoreCase))
+            if (RxDestruction.IsMatch(content))
             {
                 score += 25;
                 extra.Add("SystemDestruction");
@@ -248,31 +278,31 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"-executionpolicy\s+bypass", RegexOptions.IgnoreCase))
+            if (RxPsBypass.IsMatch(content))
             {
                 score += 20;
                 extra.Add("BypassExecutionPolicy");
             }
 
-            if (Regex.IsMatch(content, @"-windowstyle\s+hidden", RegexOptions.IgnoreCase))
+            if (RxPsHidden.IsMatch(content))
             {
                 score += 15;
                 extra.Add("HiddenWindow");
             }
 
-            if (Regex.IsMatch(content, @"(reflection|assembly.load|loadfrom)", RegexOptions.IgnoreCase))
+            if (RxPsReflection.IsMatch(content))
             {
                 score += 15;
                 extra.Add("ReflectionUsage");
             }
 
-            if (Regex.IsMatch(content, @"(add-type|dllimport|getmodulehandle)", RegexOptions.IgnoreCase))
+            if (RxPsWinApi.IsMatch(content))
             {
                 score += 15;
                 extra.Add("WinAPIUsage");
             }
 
-            if (Regex.IsMatch(content, @"new-object\s+-comobject", RegexOptions.IgnoreCase))
+            if (RxPsCom.IsMatch(content))
             {
                 score += 10;
                 extra.Add("COMObjectUsage");
@@ -285,19 +315,19 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*""wscript.shell""", RegexOptions.IgnoreCase))
+            if (RxVbWscript.IsMatch(content))
             {
                 score += 15;
                 extra.Add("WScriptShellUsage");
             }
 
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*""scripting.filesystemobject""", RegexOptions.IgnoreCase))
+            if (RxVbFso.IsMatch(content))
             {
                 score += 10;
                 extra.Add("FileSystemObjectUsage");
             }
 
-            if (Regex.IsMatch(content, @"createobject\s*\(\s*""shell.application""", RegexOptions.IgnoreCase))
+            if (RxVbShellApp.IsMatch(content))
             {
                 score += 15;
                 extra.Add("ShellApplicationUsage");
@@ -310,13 +340,13 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"new\s+activexobject", RegexOptions.IgnoreCase))
+            if (RxJsActiveX.IsMatch(content))
             {
                 score += 15;
                 extra.Add("ActiveXObjectUsage");
             }
 
-            if (Regex.IsMatch(content, @"wscript.", RegexOptions.IgnoreCase))
+            if (RxJsWscript.IsMatch(content))
             {
                 score += 15;
                 extra.Add("WScriptUsage");
@@ -329,37 +359,37 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"@echo\s+off", RegexOptions.IgnoreCase))
+            if (RxBatEchoOff.IsMatch(content))
             {
                 score += 5;
                 extra.Add("HiddenCommands");
             }
 
-            if (Regex.IsMatch(content, @"powershell\s+", RegexOptions.IgnoreCase))
+            if (RxBatPs.IsMatch(content))
             {
                 score += 10;
                 extra.Add("PowerShellInBatch");
             }
 
-            if (Regex.IsMatch(content, @"certutil\s+", RegexOptions.IgnoreCase))
+            if (RxBatCertutil.IsMatch(content))
             {
                 score += 15;
                 extra.Add("CertutilUsage");
             }
 
-            if (Regex.IsMatch(content, @"bitsadmin\s+", RegexOptions.IgnoreCase))
+            if (RxBatBitsadmin.IsMatch(content))
             {
                 score += 15;
                 extra.Add("BitsadminUsage");
             }
 
-            if (Regex.IsMatch(content, @"(del\s+[/sfq]|format\s+|rmdir\s+[/sq]|shutdown\s+[/sfr])", RegexOptions.IgnoreCase))
+            if (RxBatDestruction.IsMatch(content))
             {
                 score += 25;
                 extra.Add("SystemDestruction");
             }
 
-            if (Regex.IsMatch(content, @"(reg\s+(add|delete)|regedit)", RegexOptions.IgnoreCase))
+            if (RxBatReg.IsMatch(content))
             {
                 score += 20;
                 extra.Add("RegistryModification");
@@ -372,25 +402,25 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"os.system\s*\(", RegexOptions.IgnoreCase))
+            if (RxPyOs.IsMatch(content))
             {
                 score += 10;
                 extra.Add("OSSystemUsage");
             }
 
-            if (Regex.IsMatch(content, @"subprocess.", RegexOptions.IgnoreCase))
+            if (RxPySubprocess.IsMatch(content))
             {
                 score += 10;
                 extra.Add("SubprocessUsage");
             }
 
-            if (Regex.IsMatch(content, @"urllib.", RegexOptions.IgnoreCase))
+            if (RxPyUrllib.IsMatch(content))
             {
                 score += 10;
                 extra.Add("UrllibUsage");
             }
 
-            if (Regex.IsMatch(content, @"requests.", RegexOptions.IgnoreCase))
+            if (RxPyRequests.IsMatch(content))
             {
                 score += 10;
                 extra.Add("RequestsUsage");
@@ -403,13 +433,13 @@ namespace Xdows_Local
         {
             Int32 score = 0;
 
-            if (Regex.IsMatch(content, @"(wget|curl)\s+", RegexOptions.IgnoreCase))
+            if (RxShDownload.IsMatch(content))
             {
                 score += 10;
                 extra.Add("DownloadTool");
             }
 
-            if (Regex.IsMatch(content, @"chmod\s+", RegexOptions.IgnoreCase))
+            if (RxShChmod.IsMatch(content))
             {
                 score += 5;
                 extra.Add("ChmodUsage");
@@ -418,21 +448,22 @@ namespace Xdows_Local
             return score;
         }
 
+        private static readonly HashSet<String> _scriptExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".ps1", ".psm1", ".psd1",
+            ".vbs", ".vbe",
+            ".js", ".jse",
+            ".bat", ".cmd",
+            ".py", ".pyw",
+            ".sh", ".bash", ".zsh",
+            ".pl", ".pm",
+            ".rb",
+            ".php", ".phtml", ".php3", ".php4", ".php5"
+        };
+
         private static Boolean IsScriptFile(String extension)
         {
-            String[] scriptExtensions = [
-                ".ps1", ".psm1", ".psd1",
-                ".vbs", ".vbe",
-                ".js", ".jse",
-                ".bat", ".cmd",
-                ".py", ".pyw",
-                ".sh", ".bash", ".zsh",
-                ".pl", ".pm",
-                ".rb",
-                ".php", ".phtml", ".php3", ".php4", ".php5"
-            ];
-
-            return scriptExtensions.Contains(extension);
+            return _scriptExtensions.Contains(extension);
         }
     }
 }

@@ -93,7 +93,7 @@ namespace Helper
         public static async Task<string> GetFileMD5Async(string path)
         {
             using var md5 = MD5.Create();
-            await using var stream = File.OpenRead(path);
+            await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: true);
             var hash = await md5.ComputeHashAsync(stream);
             return Convert.ToHexString(hash);
         }
