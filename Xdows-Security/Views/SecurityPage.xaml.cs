@@ -718,7 +718,6 @@ namespace Xdows_Security.Views
         private record ScanResult(String EngineName, String? VirusInfo);
 
         // Run configured scan engines against a single file and return the first detection (if any).
-        // Accepts pre-read file bytes and pre-computed MD5 hash to eliminate redundant disk I/O.
         private async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
             Boolean deepScan, Boolean extraData,
             Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan,
@@ -727,6 +726,12 @@ namespace Xdows_Security.Views
         {
             try
             {
+                // 流式计算MD5一次，两个云引擎共享（128KB缓冲，不加载整个文件）
+                if ((useCloudScan || useCzkCloudScan) && md5Hash == null)
+                {
+                    try { md5Hash = await ScanEngine.GetFileMD5Async(filePath); } catch { }
+                }
+
                 var scanTasks = new List<Task<ScanResult>>();
 
                 if (useModelScan && modelEngine != null)
@@ -740,34 +745,18 @@ namespace Xdows_Security.Views
 
                 if (useLocalScan)
                 {
-                    if (fileBytes != null)
-                    {
-                        scanTasks.Add(Helper.ScanEngine.LocalScanFromBytesAsync(fileBytes, filePath, deepScan, extraData)
-                            .ContinueWith(t =>
-                            {
-                                String localResult = t.Result;
-                                String? info = !String.IsNullOrEmpty(localResult) ? (deepScan ? $"{localResult} with DeepScan" : localResult) : null;
-                                return new ScanResult("Local", info);
-                            }, TaskScheduler.Default));
-                    }
-                    else
-                    {
-                        scanTasks.Add(Helper.ScanEngine.LocalScanAsync(filePath, deepScan, extraData)
-                            .ContinueWith(t =>
-                            {
-                                String localResult = t.Result;
-                                String? info = !String.IsNullOrEmpty(localResult) ? (deepScan ? $"{localResult} with DeepScan" : localResult) : null;
-                                return new ScanResult("Local", info);
-                            }, TaskScheduler.Default));
-                    }
+                    scanTasks.Add(Helper.ScanEngine.LocalScanAsync(filePath, deepScan, extraData)
+                        .ContinueWith(t =>
+                        {
+                            String localResult = t.Result;
+                            String? info = !String.IsNullOrEmpty(localResult) ? (deepScan ? $"{localResult} with DeepScan" : localResult) : null;
+                            return new ScanResult("Local", info);
+                        }, TaskScheduler.Default));
                 }
 
-                if (useCloudScan)
+                if (useCloudScan && md5Hash != null)
                 {
-                    var cloudTask = (md5Hash != null)
-                        ? Helper.ScanEngine.CloudScanWithHashAsync(md5Hash)
-                        : Helper.ScanEngine.CloudScanAsync(filePath);
-                    scanTasks.Add(cloudTask.ContinueWith(t =>
+                    scanTasks.Add(Helper.ScanEngine.CloudScanWithHashAsync(md5Hash).ContinueWith(t =>
                     {
                         (Int32? statusCode, String? result) = t.Result;
                         String? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
@@ -775,12 +764,9 @@ namespace Xdows_Security.Views
                     }, TaskScheduler.Default));
                 }
 
-                if (useCzkCloudScan)
+                if (useCzkCloudScan && md5Hash != null)
                 {
-                    var czkTask = (md5Hash != null)
-                        ? Helper.ScanEngine.CzkCloudScanWithHashAsync(md5Hash, czkApiKey)
-                        : Helper.ScanEngine.CzkCloudScanAsync(filePath, czkApiKey);
-                    scanTasks.Add(czkTask.ContinueWith(t =>
+                    scanTasks.Add(Helper.ScanEngine.CzkCloudScanWithHashAsync(md5Hash, czkApiKey).ContinueWith(t =>
                     {
                         (Int32? statusCode, String? result) = t.Result;
                         String? info = (result != "safe") ? (result ?? String.Empty) : null;
@@ -1021,14 +1007,20 @@ namespace Xdows_Security.Views
                     bool ScanInside = settings.Values["ScanInside"] as bool? ?? false;
                     bool ScanInsideNested = settings.Values["ScanInsideNested"] as bool? ?? false;
 
-                    int maxParallelism = Math.Max(8, Environment.ProcessorCount * 4);
+                    // 双层并行架构：
+                    // 外层高并发：枚举+TrustCheck快速跳过 → 维持200+/秒吞吐
+                    // 内层scanGate：限制真正扫描并发(PeFile/模型/云) → 内存<100MB
+                    // 不预读文件到内存，由引擎自行按需读取
+                    int outerParallelism = Math.Max(16, Environment.ProcessorCount * 8);
+                    int scanConcurrency = Math.Clamp(Environment.ProcessorCount, 2, 10);
+                    var scanGate = new SemaphoreSlim(scanConcurrency, scanConcurrency);
                     DateTime lastUiUpdate = DateTime.MinValue;
                     const int UI_UPDATE_INTERVAL_MS = 150;
-                    const long MAX_PREREAD_SIZE = 50 * 1024 * 1024; // 50MB以下预读
+                    int heavyScanCount = 0;
 
                     await Parallel.ForEachAsync(files, new ParallelOptions
                     {
-                        MaxDegreeOfParallelism = maxParallelism,
+                        MaxDegreeOfParallelism = outerParallelism,
                         CancellationToken = token
                     }, async (file, ct) =>
                     {
@@ -1056,31 +1048,34 @@ namespace Xdows_Security.Views
                             });
                         }
 
+                        // 快速路径：受信任文件直接跳过，不进scanGate，零内存开销
+                        if (TrustManager.IsPathTrusted(file))
+                        {
+                            Interlocked.Increment(ref _filesSafe);
+                            int f1 = Interlocked.Increment(ref finished);
+                            Interlocked.Exchange(ref _filesScanned, f1);
+                            if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                            return;
+                        }
+
                         if (ScanInside && ZipScanner.IsZipFile(file))
                         {
-                            await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                            await scanGate.WaitAsync(ct);
+                            try
+                            {
+                                await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                            }
+                            finally { scanGate.Release(); }
                             Interlocked.Increment(ref finished);
                             Interlocked.Exchange(ref _filesScanned, finished);
                             return;
                         }
 
+                        // 重扫描：scanGate限制并发，不预读文件，由引擎按需读取
+                        await scanGate.WaitAsync(ct);
                         try
                         {
-                            // Pre-read file once, compute MD5 once, share with all engines
-                            Byte[]? fileBytes = null;
-                            String? md5Hash = null;
-                            try
-                            {
-                                var fi = new FileInfo(file);
-                                if (fi.Exists && fi.Length <= MAX_PREREAD_SIZE)
-                                {
-                                    fileBytes = await File.ReadAllBytesAsync(file, ct);
-                                    md5Hash = ScanEngine.ComputeMD5(fileBytes);
-                                }
-                            }
-                            catch { }
-
-                            var scanRes = await RunScansOnFileAsync(file, fileBytes, md5Hash, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                            var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
                             Interlocked.Increment(ref Statistics.ScansQuantity);
                             if (!String.IsNullOrEmpty(scanRes.VirusInfo))
                             {
@@ -1103,6 +1098,13 @@ namespace Xdows_Security.Views
                         {
                             LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ScanFailed", ex.Message);
                         }
+                        finally
+                        {
+                            scanGate.Release();
+                            // 每200个重扫描触发GC回收，防止内存堆积
+                            if (Interlocked.Increment(ref heavyScanCount) % 200 == 0)
+                                GC.Collect(0, GCCollectionMode.Optimized, false);
+                        }
 
                         int currentFinished = Interlocked.Increment(ref finished);
                         Interlocked.Exchange(ref _filesScanned, currentFinished);
@@ -1122,6 +1124,7 @@ namespace Xdows_Security.Views
                             try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                         }
                     });
+                    scanGate.Dispose();
 
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed"), false, _threatsFound);
 
