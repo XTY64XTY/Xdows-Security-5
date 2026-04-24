@@ -10,6 +10,11 @@ namespace Helper
             return await Task.Run(() => Xdows_Local.Core.ScanAsync(path, deep, ExtraData));
         }
 
+        public static async Task<string> LocalScanFromBytesAsync(byte[] fileBytes, string path, bool deep, bool ExtraData)
+        {
+            return await Task.Run(() => Xdows_Local.Core.ScanFromBytes(path, fileBytes, deep, ExtraData));
+        }
+
         public class ModelEngineScan
         {
             public static bool Initialize()
@@ -45,6 +50,11 @@ namespace Helper
         public static async Task<(int statusCode, string? result)> CzkCloudScanAsync(string path, string apiKey)
         {
             string hash = await GetFileMD5Async(path);
+            return await CzkCloudScanWithHashAsync(hash, apiKey);
+        }
+
+        public static async Task<(int statusCode, string? result)> CzkCloudScanWithHashAsync(string hash, string apiKey)
+        {
             var client = s_httpClient;
             string url = $"https://cv.szczk.top/scan/{apiKey}/{hash}";
             try
@@ -69,6 +79,11 @@ namespace Helper
         public static async Task<(int statusCode, string? result)> CloudScanAsync(string path)
         {
             string hash = await GetFileMD5Async(path);
+            return await CloudScanWithHashAsync(hash);
+        }
+
+        public static async Task<(int statusCode, string? result)> CloudScanWithHashAsync(string hash)
+        {
             var client = s_httpClient;
             string url = $"http://103.118.245.82:5000/scan/md5?key=my_virus_key_2024&md5={hash}";
             try
@@ -95,6 +110,12 @@ namespace Helper
             using var md5 = MD5.Create();
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: true);
             var hash = await md5.ComputeHashAsync(stream);
+            return Convert.ToHexString(hash);
+        }
+
+        public static string ComputeMD5(byte[] data)
+        {
+            byte[] hash = MD5.HashData(data);
             return Convert.ToHexString(hash);
         }
     }
