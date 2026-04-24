@@ -80,6 +80,7 @@ namespace Xdows_Local
             String[] fileExtension = GetExtStrings(path);
 
             Byte[] fileContent = peFile.RawFile.ToArray();
+            ReadOnlySpan<Byte> rawSpan = fileContent;
             if (fileExtension.Length > 0)
             {
                 String[] docExts = [".doc", ".ppt", ".xls", ".csv"];
@@ -127,7 +128,7 @@ namespace Xdows_Local
                 score -= code;
 
                 Int32 resourceTask = CheckResourceSectionForPacking(peFile);
-                Boolean packingTask = CheckPackingSignatures(peFile);
+                Boolean packingTask = CheckPackingSignatures(peFile, fileContent);
 
                 Int32 tempScore = resourceTask;
                 if (tempScore > 0)
@@ -246,9 +247,9 @@ namespace Xdows_Local
             return (score, extra);
         }
 
-        public static Boolean CheckPackingSignatures(PeFile pe)
+        public static Boolean CheckPackingSignatures(PeFile pe, Byte[]? cachedRaw = null)
         {
-            Byte[] raw = pe.RawFile.ToArray();
+            Byte[] raw = cachedRaw ?? pe.RawFile.ToArray();
             if (raw.Length > 0x40 &&
                 raw[0x40] == 0x55 && raw[0x41] == 0x50 &&
                 raw[0x42] == 0x58 && raw[0x43] == 0x30)
@@ -506,11 +507,19 @@ namespace Xdows_Local
 
         private static Boolean ContainsSuspiciousApi(String[] apis, String[] keywords)
         {
-            if (apis == null)
+            if (apis == null || apis.Length == 0)
             {
                 return false;
             }
-            return keywords.Any(keyword => apis.Any(api => api.Contains(keyword)));
+            foreach (String keyword in keywords)
+            {
+                foreach (String api in apis)
+                {
+                    if (api.Contains(keyword))
+                        return true;
+                }
+            }
+            return false;
         }
 
         private static Int32 CountSuspiciousApiOccurrences(String[] apis, String[] keywords)

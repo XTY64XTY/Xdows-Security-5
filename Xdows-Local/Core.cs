@@ -14,13 +14,23 @@ namespace Xdows_Local
         public static String ScanAsync(String path, Boolean deep, Boolean extraData)
         {
             if (!File.Exists(path)) return String.Empty;
+            try
+            {
+                Byte[] fileBytes = File.ReadAllBytes(path);
+                return ScanFromBytes(path, fileBytes, deep, extraData);
+            }
+            catch { return String.Empty; }
+        }
 
-            if (!PeFile.IsPeFile(path))
+        public static String ScanFromBytes(String path, Byte[] fileBytes, Boolean deep, Boolean extraData)
+        {
+            if (fileBytes.Length == 0) return String.Empty;
+
+            if (!PeFile.IsPeFile(fileBytes))
             {
                 try
                 {
-                    Byte[] fileContent = File.ReadAllBytes(path);
-                    (Int32 score, String extra) scriptScanResult = ScriptScan.ScanScriptFile(path, fileContent);
+                    (Int32 score, String extra) scriptScanResult = ScriptScan.ScanScriptFile(path, fileBytes);
                     if (scriptScanResult.score >= 100)
                     {
                         return extraData ? $"Xdows.script.code{scriptScanResult.score} {scriptScanResult.extra}" : $"Xdows.script.code{scriptScanResult.score}";
@@ -33,7 +43,7 @@ namespace Xdows_Local
                 }
             }
 
-            PeFile peFile = new(path);
+            PeFile peFile = new(fileBytes);
             PEInfo fileInfo = new();
 
             if (peFile.IsDll)

@@ -718,15 +718,19 @@ namespace Xdows_Security.Views
         private record ScanResult(String EngineName, String? VirusInfo);
 
         // Run configured scan engines against a single file and return the first detection (if any).
-        private async Task<ScanResult> RunScansOnFileAsync(String filePath, Boolean deepScan, Boolean extraData,
+        private async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
+            Boolean deepScan, Boolean extraData,
             Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan,
             Helper.ScanEngine.ModelEngineScan? modelEngine,
             String czkApiKey, CancellationToken token)
         {
             try
             {
-                if (TrustManager.IsPathTrusted(filePath))
-                    return new ScanResult(String.Empty, null);
+                // 流式计算MD5一次，两个云引擎共享（128KB缓冲，不加载整个文件）
+                if ((useCloudScan || useCzkCloudScan) && md5Hash == null)
+                {
+                    try { md5Hash = await ScanEngine.GetFileMD5Async(filePath); } catch { }
+                }
 
                 var scanTasks = new List<Task<ScanResult>>();
 
@@ -750,50 +754,43 @@ namespace Xdows_Security.Views
                         }, TaskScheduler.Default));
                 }
 
-                if (useCloudScan)
+                if (useCloudScan && md5Hash != null)
                 {
-                    scanTasks.Add(Helper.ScanEngine.CloudScanAsync(filePath)
-                        .ContinueWith(t =>
-                        {
-                            (Int32? statusCode, String? result) = t.Result;
-                            String? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
-                            return new ScanResult("Cloud", info);
-                        }, TaskScheduler.Default));
+                    scanTasks.Add(Helper.ScanEngine.CloudScanWithHashAsync(md5Hash).ContinueWith(t =>
+                    {
+                        (Int32? statusCode, String? result) = t.Result;
+                        String? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
+                        return new ScanResult("Cloud", info);
+                    }, TaskScheduler.Default));
                 }
 
-                if (useCzkCloudScan)
+                if (useCzkCloudScan && md5Hash != null)
                 {
-                    scanTasks.Add(Helper.ScanEngine.CzkCloudScanAsync(filePath, czkApiKey)
-                        .ContinueWith(t =>
-                        {
-                            (Int32? statusCode, String? result) = t.Result;
-                            String? info = (result != "safe") ? (result ?? String.Empty) : null;
-                            return new ScanResult("CzkCloud", info);
-                        }, TaskScheduler.Default));
+                    scanTasks.Add(Helper.ScanEngine.CzkCloudScanWithHashAsync(md5Hash, czkApiKey).ContinueWith(t =>
+                    {
+                        (Int32? statusCode, String? result) = t.Result;
+                        String? info = (result != "safe") ? (result ?? String.Empty) : null;
+                        return new ScanResult("CzkCloud", info);
+                    }, TaskScheduler.Default));
                 }
 
                 if (scanTasks.Count == 0)
                     return new ScanResult(String.Empty, null);
 
-                var allTask = Task.WhenAll(scanTasks);
-                while (!allTask.IsCompleted)
+                ScanResult[] results;
+                try
                 {
-                    if (token.IsCancellationRequested) break;
-                    if (_isPaused)
-                    {
-                        await Task.Delay(100, token);
-                        continue;
-                    }
-                    await Task.WhenAny(allTask, Task.Delay(100, token));
+                    results = await Task.WhenAll(scanTasks);
+                }
+                catch
+                {
+                    return new ScanResult(String.Empty, null);
                 }
 
-                if (allTask.IsCompleted && !allTask.IsFaulted)
+                foreach (var r in results)
                 {
-                    foreach (var r in allTask.Result)
-                    {
-                        if (!String.IsNullOrEmpty(r.VirusInfo))
-                            return r;
-                    }
+                    if (!String.IsNullOrEmpty(r.VirusInfo))
+                        return r;
                 }
 
                 return new ScanResult(String.Empty, null);
@@ -833,22 +830,25 @@ namespace Xdows_Security.Views
 
                         if (TrustManager.IsPathTrusted(tempFile))
                         {
-                            _filesSafe++;
+                            Interlocked.Increment(ref _filesSafe);
                             continue;
                         }
 
-                        // Run all configured scans on the extracted entry file
-                        var scanRes = await RunScansOnFileAsync(tempFile, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useModelScan, modelEngine, czkApiKey, token);
+                        // ZIP entry already has bytes in memory - compute MD5 once, pass to all engines
+                        string entryMd5 = ScanEngine.ComputeMD5(data);
+                        var scanRes = await RunScansOnFileAsync(tempFile, data, entryMd5, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useModelScan, modelEngine, czkApiKey, token);
                         string? virusResult = scanRes.VirusInfo;
                         if (!String.IsNullOrEmpty(virusResult))
                         {
-                            Statistics.ScansQuantity += 1;
-                            Statistics.VirusQuantity += 1;
+                            Interlocked.Increment(ref Statistics.ScansQuantity);
+                            Interlocked.Increment(ref Statistics.VirusQuantity);
 
-                            if (!_zipFileThreats.ContainsKey(zipPath))
-                                _zipFileThreats[zipPath] = new List<(string, string)>();
-
-                            _zipFileThreats[zipPath].Add((entryPath, virusResult));
+                            lock (_zipFileThreats)
+                            {
+                                if (!_zipFileThreats.ContainsKey(zipPath))
+                                    _zipFileThreats[zipPath] = new List<(string, string)>();
+                                _zipFileThreats[zipPath].Add((entryPath, virusResult));
+                            }
 
                             _dispatcherQueue.TryEnqueue(() =>
                             {
@@ -856,12 +856,12 @@ namespace Xdows_Security.Views
                                 BackToVirusListButton.Visibility = Visibility.Visible;
                             });
 
-                            _threatsFound++;
+                            Interlocked.Increment(ref _threatsFound);
                             LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", $"ZIP Entry: {entryPath} - {virusResult}");
                         }
                         else
                         {
-                            _filesSafe++;
+                            Interlocked.Increment(ref _filesSafe);
                         }
                     }
                     catch (OperationCanceledException) { break; }
@@ -1007,12 +1007,27 @@ namespace Xdows_Security.Views
                     bool ScanInside = settings.Values["ScanInside"] as bool? ?? false;
                     bool ScanInsideNested = settings.Values["ScanInsideNested"] as bool? ?? false;
 
-                    foreach (var file in files)
+                    // 双层并行架构：
+                    // 外层高并发：枚举+TrustCheck快速跳过 → 维持200+/秒吞吐
+                    // 内层scanGate：限制真正扫描并发(PeFile/模型/云) → 内存<100MB
+                    // 不预读文件到内存，由引擎自行按需读取
+                    int outerParallelism = Math.Max(16, Environment.ProcessorCount * 8);
+                    int scanConcurrency = Math.Clamp(Environment.ProcessorCount, 2, 10);
+                    var scanGate = new SemaphoreSlim(scanConcurrency, scanConcurrency);
+                    DateTime lastUiUpdate = DateTime.MinValue;
+                    const int UI_UPDATE_INTERVAL_MS = 150;
+                    int heavyScanCount = 0;
+
+                    await Parallel.ForEachAsync(files, new ParallelOptions
                     {
-                        while (_isPaused && !token.IsCancellationRequested)
+                        MaxDegreeOfParallelism = outerParallelism,
+                        CancellationToken = token
+                    }, async (file, ct) =>
+                    {
+                        while (_isPaused && !ct.IsCancellationRequested)
                         {
                             if (lastPauseTime == DateTime.MinValue) lastPauseTime = DateTime.Now;
-                            await Task.Delay(100, token);
+                            await Task.Delay(100, ct);
                         }
 
                         if (lastPauseTime != DateTime.MinValue)
@@ -1021,73 +1036,95 @@ namespace Xdows_Security.Views
                             lastPauseTime = DateTime.MinValue;
                         }
 
-                        if (token.IsCancellationRequested) break;
+                        if (ct.IsCancellationRequested || MainWindow.NowPage != "Security" || thisId != ScanId) return;
 
-                        _dispatcherQueue.TryEnqueue(() =>
+                        bool shouldUpdateUi = (DateTime.UtcNow - lastUiUpdate).TotalMilliseconds >= UI_UPDATE_INTERVAL_MS;
+                        if (shouldUpdateUi)
                         {
-                            LogText.AddNewLog(LogText.LogLevel.INFO, "Security - ScanFile", file);
-                            try { StatusText.Text = string.Format(tStatusText, file); } catch { }
-                        });
+                            lastUiUpdate = DateTime.UtcNow;
+                            _dispatcherQueue.TryEnqueue(() =>
+                            {
+                                try { StatusText.Text = string.Format(tStatusText, file); } catch { }
+                            });
+                        }
+
+                        // 快速路径：受信任文件直接跳过，不进scanGate，零内存开销
+                        if (TrustManager.IsPathTrusted(file))
+                        {
+                            Interlocked.Increment(ref _filesSafe);
+                            int f1 = Interlocked.Increment(ref finished);
+                            Interlocked.Exchange(ref _filesScanned, f1);
+                            if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                            return;
+                        }
 
                         if (ScanInside && ZipScanner.IsZipFile(file))
                         {
-                            await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, token);
-                            _filesScanned++;
-                            finished++;
-                            continue;
+                            await scanGate.WaitAsync(ct);
+                            try
+                            {
+                                await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                            }
+                            finally { scanGate.Release(); }
+                            Interlocked.Increment(ref finished);
+                            Interlocked.Exchange(ref _filesScanned, finished);
+                            return;
                         }
 
+                        // 重扫描：scanGate限制并发，不预读文件，由引擎按需读取
+                        await scanGate.WaitAsync(ct);
                         try
                         {
-                            if (TrustManager.IsPathTrusted(file))
-                            {
-                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", "Is Trusted");
-                                _filesSafe++;
-                                continue;
-                            }
-
-                            var scanRes = await RunScansOnFileAsync(file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, token);
-                            Statistics.ScansQuantity += 1;
+                            var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                            Interlocked.Increment(ref Statistics.ScansQuantity);
                             if (!String.IsNullOrEmpty(scanRes.VirusInfo))
                             {
-                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", scanRes.VirusInfo);
-                                Statistics.VirusQuantity += 1;
+                                Interlocked.Increment(ref Statistics.VirusQuantity);
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
                                     AddVirusResult(file, scanRes.VirusInfo);
                                     BackToVirusListButton.Visibility = Visibility.Visible;
                                 });
-                                _threatsFound++;
-                                UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, _threatsFound);
+                                int newThreats = Interlocked.Increment(ref _threatsFound);
+                                UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
                             }
                             else
                             {
-                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", "Is Safe");
-                                _filesSafe++;
+                                Interlocked.Increment(ref _filesSafe);
                             }
                         }
+                        catch (OperationCanceledException) { }
                         catch (Exception ex)
                         {
                             LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ScanFailed", ex.Message);
                         }
-
-                        finished++;
-                        _filesScanned = finished;
-                        TimeSpan elapsedTime = DateTime.Now - startTime - pausedTime;
-                        double scanSpeed = elapsedTime.TotalSeconds > 0 ? finished / elapsedTime.TotalSeconds : 0.0;
-                        _dispatcherQueue.TryEnqueue(() => ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed));
-
-                        if (showScanProgress)
+                        finally
                         {
-                            double percent = total == 0 ? 100 : (double)finished / total * 100;
-                            _dispatcherQueue.TryEnqueue(() => { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; });
+                            scanGate.Release();
+                            // 每200个重扫描触发GC回收，防止内存堆积
+                            if (Interlocked.Increment(ref heavyScanCount) % 200 == 0)
+                                GC.Collect(0, GCCollectionMode.Optimized, false);
                         }
 
-                        try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                        int currentFinished = Interlocked.Increment(ref finished);
+                        Interlocked.Exchange(ref _filesScanned, currentFinished);
 
-                        if (MainWindow.NowPage != "Security" || thisId != ScanId) break;
-                        await Task.Delay(1, token);
-                    }
+                        if (shouldUpdateUi)
+                        {
+                            TimeSpan elapsedTime = DateTime.Now - startTime - pausedTime;
+                            double scanSpeed = elapsedTime.TotalSeconds > 0 ? currentFinished / elapsedTime.TotalSeconds : 0.0;
+                            _dispatcherQueue.TryEnqueue(() => ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed));
+
+                            if (showScanProgress)
+                            {
+                                double percent = total == 0 ? 100 : (double)currentFinished / total * 100;
+                                _dispatcherQueue.TryEnqueue(() => { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; });
+                            }
+
+                            try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                        }
+                    });
+                    scanGate.Dispose();
 
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed"), false, _threatsFound);
 
