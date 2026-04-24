@@ -7,7 +7,5 @@ namespace Protection
     public partial class ETW
     {
         public delegate void MonitoringCallback(ProcessTraceData data, InterceptCallBack interceptCallBack);
-
-        internal static TraceEventSession? monitoringSession;
     }
 }

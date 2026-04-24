@@ -14,6 +14,7 @@ namespace Protection
         {
             private static readonly Lock lockObj = new();
             private static bool isRunning = false;
+            private static TraceEventSession? session;
             public const string Name = "Process";
             string IProtectionModel.Name => Name;
 
@@ -35,17 +36,17 @@ namespace Protection
 
                         isRunning = true;
 
-                        monitoringSession = new TraceEventSession("Xdows-Security", null);
-                        monitoringSession.EnableKernelProvider(KernelTraceEventParser.Keywords.Process);
+                        session = new TraceEventSession($"Xdows-Security-{Name}", null);
+                        session.EnableKernelProvider(KernelTraceEventParser.Keywords.Process);
 
-                        var parser = new KernelTraceEventParser(monitoringSession.Source);
+                        var parser = new KernelTraceEventParser(session.Source);
                         parser.ProcessStart += (data) => OnNewProcess(data, interceptCallBack);
 
                         _ = Task.Run(() =>
                         {
                             try
                             {
-                                monitoringSession.Source.Process();
+                                session.Source.Process();
                             }
                             finally
                             {
@@ -62,8 +63,9 @@ namespace Protection
                     }
                     catch
                     {
-                        monitoringSession?.Dispose();
-                        monitoringSession = null;
+                        session?.Dispose();
+                        session = null;
+                        isRunning = false;
                         return false;
                     }
                 }
@@ -78,11 +80,11 @@ namespace Protection
 
                     try
                     {
-                        monitoringSession?.Dispose();
+                        session?.Dispose();
                     }
                     finally
                     {
-                        monitoringSession = null;
+                        session = null;
                         isRunning = false;
                         _recentProcesses.Clear();
                         _scannedPaths.Clear();
@@ -119,7 +121,7 @@ namespace Protection
                 }
             }
 
-            private static async void OnNewProcess(ProcessTraceData data, InterceptCallBack interceptCallBack)
+            private static void OnNewProcess(ProcessTraceData data, InterceptCallBack interceptCallBack)
             {
                 try
                 {
@@ -156,23 +158,30 @@ namespace Protection
                     }
                     _scannedPaths[path] = now;
 
-                    await Task.Run(() =>
+                    _ = Task.Run(() =>
                     {
-                        var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
-                        if (!isVirus)
-                            return;
-
                         try
                         {
-                            using var proc = Process.GetProcessById(data.ProcessID);
-                            proc.Kill();
-                            _ = QuarantineManager.AddToQuarantine(path, result);
-                            interceptCallBack(true, path, Name);
+                            var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
+                            if (!isVirus)
+                                return;
+
+                            try
+                            {
+                                using var proc = Process.GetProcessById(data.ProcessID);
+                                if (!proc.HasExited)
+                                {
+                                    proc.Kill();
+                                }
+                                _ = QuarantineManager.AddToQuarantine(path, result);
+                                interceptCallBack(true, path, Name);
+                            }
+                            catch
+                            {
+                                interceptCallBack(false, path, Name);
+                            }
                         }
-                        catch
-                        {
-                            interceptCallBack(false, path, Name);
-                        }
+                        catch { }
                     });
                 }
                 catch { }

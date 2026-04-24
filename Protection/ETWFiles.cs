@@ -13,7 +13,11 @@ namespace Protection
         {
             private static readonly Lock lockObj = new();
             private static bool isRunning = false;
+            private static TraceEventSession? session;
             public const string Name = "Files";
+
+            private static readonly HashSet<string> _notifiedFiles = new(StringComparer.OrdinalIgnoreCase);
+            private static readonly Lock _notifiedFilesLock = new();
 
             string IProtectionModel.Name => Name;
 
@@ -28,14 +32,14 @@ namespace Protection
                     {
                         Helper.ScanEngine.ModelEngineScan.Initialize();
 
-                        monitoringSession = new TraceEventSession("Xdows-Security", null);
-                        monitoringSession.EnableKernelProvider(
+                        session = new TraceEventSession($"Xdows-Security-{Name}", null);
+                        session.EnableKernelProvider(
                             KernelTraceEventParser.Keywords.FileIO |
                             KernelTraceEventParser.Keywords.FileIOInit,
                             KernelTraceEventParser.Keywords.None
                         );
 
-                        var parser = new KernelTraceEventParser(monitoringSession.Source);
+                        var parser = new KernelTraceEventParser(session.Source);
                         parser.FileIOCreate += (data) => OnFileCreate(data, interceptCallBack);
 
                         isRunning = true;
@@ -43,7 +47,7 @@ namespace Protection
                         {
                             try
                             {
-                                monitoringSession.Source.Process();
+                                session.Source.Process();
                             }
                             finally
                             {
@@ -58,8 +62,8 @@ namespace Protection
                     }
                     catch
                     {
-                        monitoringSession?.Dispose();
-                        monitoringSession = null;
+                        session?.Dispose();
+                        session = null;
                         return false;
                     }
                 }
@@ -74,12 +78,16 @@ namespace Protection
 
                     try
                     {
-                        monitoringSession?.Dispose();
+                        session?.Dispose();
                     }
                     finally
                     {
-                        monitoringSession = null;
+                        session = null;
                         isRunning = false;
+                        lock (_notifiedFilesLock)
+                        {
+                            _notifiedFiles.Clear();
+                        }
                     }
                     return true;
                 }
@@ -93,7 +101,7 @@ namespace Protection
                 }
             }
 
-            private void OnFileCreate(FileIOCreateTraceData data, InterceptCallBack interceptCallBack)
+            private static void OnFileCreate(FileIOCreateTraceData data, InterceptCallBack interceptCallBack)
             {
                 try
                 {
@@ -129,37 +137,41 @@ namespace Protection
                 }
                 catch { }
             }
-            private readonly List<string> TempList = [];
-            private void HandleCreatedFile(string filePath, int creatorProcessId, InterceptCallBack interceptCallBack)
+
+            private static void HandleCreatedFile(string filePath, int creatorProcessId, InterceptCallBack interceptCallBack)
             {
                 try
                 {
                     var (isFileVirus, fileResult) = Helper.ScanEngine.ModelEngineScan.ScanFile(filePath);
                     if (isFileVirus)
                     {
-                        bool isInTempList = TempList.Contains(filePath);
-                        TempList.Add(filePath);
+                        bool alreadyNotified;
+                        lock (_notifiedFilesLock)
+                        {
+                            alreadyNotified = !_notifiedFiles.Add(filePath);
+                        }
+
                         try
                         {
                             TerminateProcessByPath(filePath);
                         }
                         catch { }
+
                         try
                         {
                             _ = QuarantineManager.AddToQuarantine(filePath, fileResult);
-                            if (!isInTempList)
+                            if (!alreadyNotified)
                             {
                                 interceptCallBack(true, filePath, Name);
                             }
                         }
                         catch
                         {
-                            if (!isInTempList)
+                            if (!alreadyNotified)
                             {
                                 interceptCallBack(false, filePath, Name);
                             }
                         }
-
                     }
                 }
                 catch { }
