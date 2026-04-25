@@ -20,8 +20,10 @@ namespace Protection
 
             private static readonly ConcurrentDictionary<int, DateTime> _recentProcesses = new();
             private static readonly ConcurrentDictionary<string, DateTime> _scannedPaths = new();
+            private static readonly ConcurrentDictionary<int, (string? path, DateTime timestamp)> _processPathCache = new();
             private static readonly TimeSpan _dedupWindow = TimeSpan.FromSeconds(5);
             private static readonly TimeSpan _pathCacheWindow = TimeSpan.FromMinutes(1);
+            private static readonly TimeSpan _processPathCacheWindow = TimeSpan.FromSeconds(30);
 
             public bool Run(InterceptCallBack interceptCallBack)
             {
@@ -88,6 +90,7 @@ namespace Protection
                         isRunning = false;
                         _recentProcesses.Clear();
                         _scannedPaths.Clear();
+                        _processPathCache.Clear();
                     }
                     return true;
                 }
@@ -118,6 +121,12 @@ namespace Protection
                     {
                         _scannedPaths.TryRemove(key, out _);
                     }
+
+                    var processPathCutoff = DateTime.UtcNow - _processPathCacheWindow;
+                    foreach (var key in _processPathCache.Where(x => x.Value.timestamp < processPathCutoff).Select(x => x.Key).ToList())
+                    {
+                        _processPathCache.TryRemove(key, out _);
+                    }
                 }
             }
 
@@ -140,8 +149,16 @@ namespace Protection
                     string? path = null;
                     try
                     {
-                        using var process = Process.GetProcessById(data.ProcessID);
-                        path = process.MainModule?.FileName;
+                        if (_processPathCache.TryGetValue(data.ProcessID, out var cachedEntry))
+                        {
+                            path = cachedEntry.path;
+                        }
+                        else
+                        {
+                            using var process = Process.GetProcessById(data.ProcessID);
+                            path = process.MainModule?.FileName;
+                            _processPathCache[data.ProcessID] = (path, now);
+                        }
                     }
                     catch
                     {

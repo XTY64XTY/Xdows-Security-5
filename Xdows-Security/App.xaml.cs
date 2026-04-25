@@ -179,7 +179,7 @@ namespace Xdows_Security
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Xdows-Security", "Logs");
         private static readonly Queue<string> _hotLines = new();
-        private static readonly Lock _lockObj = new();
+        private static readonly ReaderWriterLockSlim _lockObj = new();
         private static readonly Channel<LogRow> _writeChannel = Channel.CreateUnbounded<LogRow>();
         private static readonly Timer _throttleTimer;
         private static bool _isTimerActive;
@@ -189,18 +189,28 @@ namespace Xdows_Security
         {
             get
             {
-                lock (_lockObj)
+                _lockObj.EnterReadLock();
+                try
                 {
                     return string.Join(Environment.NewLine, _hotLines);
+                }
+                finally
+                {
+                    _lockObj.ExitReadLock();
                 }
             }
         }
 
         public static void ClearLog()
         {
-            lock (_lockObj)
+            _lockObj.EnterWriteLock();
+            try
             {
                 _hotLines.Clear();
+            }
+            finally
+            {
+                _lockObj.ExitWriteLock();
             }
             TriggerTextChanged();
         }
@@ -229,7 +239,8 @@ namespace Xdows_Security
         {
             string formatted = FormatRow(row);
 
-            lock (_lockObj)
+            _lockObj.EnterWriteLock();
+            try
             {
                 if (_hotLines.Count >= HOT_MAX_LINES)
                 {
@@ -237,25 +248,39 @@ namespace Xdows_Security
                 }
                 _hotLines.Enqueue(formatted);
             }
+            finally
+            {
+                _lockObj.ExitWriteLock();
+            }
 
             TriggerTextChanged();
         }
 
         private static void TriggerTextChanged()
         {
-            lock (_lockObj)
+            _lockObj.EnterWriteLock();
+            try
             {
                 if (_isTimerActive) return;
                 _isTimerActive = true;
                 _throttleTimer.Change(100, Timeout.Infinite);
             }
+            finally
+            {
+                _lockObj.ExitWriteLock();
+            }
         }
 
         private static void OnTimerCallback(object? state)
         {
-            lock (_lockObj)
+            _lockObj.EnterWriteLock();
+            try
             {
                 _isTimerActive = false;
+            }
+            finally
+            {
+                _lockObj.ExitWriteLock();
             }
             TextChanged?.Invoke(null, EventArgs.Empty);
         }

@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using IO = System.IO;
@@ -140,13 +142,21 @@ namespace Compatibility.Windows.Storage
         /// <returns>清理后的文件名</returns>
         private static string SanitizeFileName(string fileName)
         {
-            // 移除文件路径中的非法字符
-            string invalid = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
-            foreach (char c in invalid)
+            // 移除文件路径中的非法字符 - 使用 StringBuilder 优化
+            var invalidChars = Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).ToArray();
+            var sb = new StringBuilder(fileName.Length);
+            foreach (char c in fileName)
             {
-                fileName = fileName.Replace(c.ToString(), "_");
+                if (Array.IndexOf(invalidChars, c) >= 0)
+                {
+                    sb.Append('_');
+                }
+                else
+                {
+                    sb.Append(c);
+                }
             }
-            return fileName;
+            return sb.ToString();
         }
 
 
@@ -170,27 +180,27 @@ namespace Compatibility.Windows.Storage
         public ApplicationDataContainer()
         {
             Values = new ApplicationDataContainerValues(this);
-            Load();
+            _ = LoadAsync();
         }
 
         public ApplicationDataContainerValues Values { get; }
 
-        internal void Save()
+        internal async Task SaveAsync()
         {
             try
             {
                 var json = JsonSerializer.Serialize(_dict, AppDataJsonContext.Default.DictionaryStringJsonElement);
-                File.WriteAllText(StorePath, json);
+                await File.WriteAllTextAsync(StorePath, json);
             }
             catch { }
         }
 
-        private void Load()
+        private async Task LoadAsync()
         {
             if (!File.Exists(StorePath)) return;
             try
             {
-                var json = File.ReadAllText(StorePath);
+                var json = await File.ReadAllTextAsync(StorePath);
                 var tmp = JsonSerializer.Deserialize(json, AppDataJsonContext.Default.DictionaryStringJsonElement);
                 if (tmp != null)
                     foreach (var kv in tmp)
@@ -203,77 +213,77 @@ namespace Compatibility.Windows.Storage
 
     #region ApplicationDataContainerValues
     public sealed partial class ApplicationDataContainerValues : IDictionary<string, object?>, IReadOnlyDictionary<string, object?>
-{
-    private readonly ApplicationDataContainer _owner;
-    private Dictionary<string, JsonElement> Dict => _owner._dict;
-
-    internal ApplicationDataContainerValues(ApplicationDataContainer owner)
     {
-        _owner = owner;
-    }
+        private readonly ApplicationDataContainer _owner;
+        private Dictionary<string, JsonElement> Dict => _owner._dict;
 
-    public object? this[string key]
-    {
-        get => Dict.TryGetValue(key, out var v) ? ParseJsonElement(v) : null;
-        set
+        internal ApplicationDataContainerValues(ApplicationDataContainer owner)
         {
-            Dict[key] = value == null
-                ? JsonSerializer.SerializeToElement<object?>(null, AppDataJsonContext.Default.Object)
-                : JsonSerializer.SerializeToElement(value, value.GetType(), AppDataJsonContext.Default);
-            _owner.Save();
+            _owner = owner;
         }
-    }
 
-    public ICollection<string> Keys => Dict.Keys;
-    public ICollection<object?> Values => [.. Dict.Values.Select(ParseJsonElement)];
-    public int Count => Dict.Count;
-    public bool IsReadOnly => false;
+        public object? this[string key]
+        {
+            get => Dict.TryGetValue(key, out var v) ? ParseJsonElement(v) : null;
+            set
+            {
+                Dict[key] = value == null
+                    ? JsonSerializer.SerializeToElement<object?>(null, AppDataJsonContext.Default.Object)
+                    : JsonSerializer.SerializeToElement(value, value.GetType(), AppDataJsonContext.Default);
+                _ = _owner.SaveAsync();
+            }
+        }
 
-    public void Add(string key, object? value)
-    {
-        Dict.Add(key, value == null
-            ? JsonSerializer.SerializeToElement<object?>(null, AppDataJsonContext.Default.Object)
-            : JsonSerializer.SerializeToElement(value, value.GetType(), AppDataJsonContext.Default));
-        _owner.Save();
-    }
+        public ICollection<string> Keys => Dict.Keys;
+        public ICollection<object?> Values => [.. Dict.Values.Select(ParseJsonElement)];
+        public int Count => Dict.Count;
+        public bool IsReadOnly => false;
 
-    public bool Remove(string key)
-    {
-        var r = Dict.Remove(key);
-        if (r) _owner.Save();
-        return r;
-    }
+        public void Add(string key, object? value)
+        {
+            Dict.Add(key, value == null
+                ? JsonSerializer.SerializeToElement<object?>(null, AppDataJsonContext.Default.Object)
+                : JsonSerializer.SerializeToElement(value, value.GetType(), AppDataJsonContext.Default));
+            _ = _owner.SaveAsync();
+        }
 
-    public void Clear()
-    {
-        Dict.Clear();
-        _owner.Save();
-    }
+        public bool Remove(string key)
+        {
+            var r = Dict.Remove(key);
+            if (r) _ = _owner.SaveAsync();
+            return r;
+        }
 
-    public bool ContainsKey(string key) => Dict.ContainsKey(key);
-    public bool TryGetValue(string key, out object? value)
-    {
-        var r = Dict.TryGetValue(key, out var v);
-        value = r ? ParseJsonElement(v) : null;
-        return r;
-    }
+        public void Clear()
+        {
+            Dict.Clear();
+            _ = _owner.SaveAsync();
+        }
 
-    public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() =>
-        Dict.Select(kv => new KeyValuePair<string, object?>(kv.Key, ParseJsonElement(kv.Value))).GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        public bool ContainsKey(string key) => Dict.ContainsKey(key);
+        public bool TryGetValue(string key, out object? value)
+        {
+            var r = Dict.TryGetValue(key, out var v);
+            value = r ? ParseJsonElement(v) : null;
+            return r;
+        }
 
-    #region 显式接口实现
-    void ICollection<KeyValuePair<string, object?>>.Add(KeyValuePair<string, object?> item) => Add(item.Key, item.Value);
-    bool ICollection<KeyValuePair<string, object?>>.Contains(KeyValuePair<string, object?> item) =>
-        ((ICollection<KeyValuePair<string, JsonElement>>)Dict).Contains(new KeyValuePair<string, JsonElement>(item.Key, item.Value == null ? JsonSerializer.SerializeToElement<object?>(null, AppDataJsonContext.Default.Object) : JsonSerializer.SerializeToElement(item.Value, item.Value.GetType(), AppDataJsonContext.Default)));
-    void ICollection<KeyValuePair<string, object?>>.CopyTo(KeyValuePair<string, object?>[] array, int arrayIndex) =>
-        Dict.Select(kv => new KeyValuePair<string, object?>(kv.Key, ParseJsonElement(kv.Value)))
-            .ToArray()
-            .CopyTo(array, arrayIndex);
-    bool ICollection<KeyValuePair<string, object?>>.Remove(KeyValuePair<string, object?> item) => Remove(item.Key);
-    IEnumerable<string> IReadOnlyDictionary<string, object?>.Keys => Keys;
-    IEnumerable<object?> IReadOnlyDictionary<string, object?>.Values => Values;
-    #endregion
+        public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() =>
+            Dict.Select(kv => new KeyValuePair<string, object?>(kv.Key, ParseJsonElement(kv.Value))).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        #region 显式接口实现
+        void ICollection<KeyValuePair<string, object?>>.Add(KeyValuePair<string, object?> item) => Add(item.Key, item.Value);
+        bool ICollection<KeyValuePair<string, object?>>.Contains(KeyValuePair<string, object?> item) =>
+            ((ICollection<KeyValuePair<string, JsonElement>>)Dict).Contains(new KeyValuePair<string, JsonElement>(item.Key, item.Value == null ? JsonSerializer.SerializeToElement<object?>(null, AppDataJsonContext.Default.Object) : JsonSerializer.SerializeToElement(item.Value, item.Value.GetType(), AppDataJsonContext.Default)));
+        void ICollection<KeyValuePair<string, object?>>.CopyTo(KeyValuePair<string, object?>[] array, int arrayIndex) =>
+            Dict.Select(kv => new KeyValuePair<string, object?>(kv.Key, ParseJsonElement(kv.Value)))
+                .ToArray()
+                .CopyTo(array, arrayIndex);
+        bool ICollection<KeyValuePair<string, object?>>.Remove(KeyValuePair<string, object?> item) => Remove(item.Key);
+        IEnumerable<string> IReadOnlyDictionary<string, object?>.Keys => Keys;
+        IEnumerable<object?> IReadOnlyDictionary<string, object?>.Values => Values;
+        #endregion
 
         // 关键辅助：把 JsonElement 转成合理 CLR 对象
         private static object? ParseJsonElement(JsonElement element)

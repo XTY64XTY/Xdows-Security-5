@@ -1,4 +1,5 @@
 using CommunityToolkit.WinUI.Controls;
+using CommunityToolkit.WinUI.UI.Controls;
 using Compatibility.Windows.Storage;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
@@ -415,7 +416,7 @@ namespace Xdows_Security.Views
                     UpdateTeachingTip.IsOpen = !UpdateTeachingTip.IsOpen;
                     return;
                 }
-                TextBlock box = new()
+                MarkdownTextBlock box = new()
                 {
                     Text = update.Content,
                     IsTextSelectionEnabled = true,

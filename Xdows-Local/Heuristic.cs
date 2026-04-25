@@ -79,14 +79,14 @@ namespace Xdows_Local
 
             String[] fileExtension = GetExtStrings(path);
 
-            Byte[] fileContent = peFile.RawFile.ToArray();
-            ReadOnlySpan<Byte> rawSpan = fileContent;
+            Byte[] rawBytes = peFile.RawFile.ToArray();
+            ReadOnlySpan<Byte> rawSpan = rawBytes;
             if (fileExtension.Length > 0)
             {
                 String[] docExts = [".doc", ".ppt", ".xls", ".csv"];
                 if (docExts.Any(docExt => path.Contains(docExt)))
                 {
-                    if (IsSuspiciousDoc(fileContent))
+                    if (IsSuspiciousDoc(rawSpan))
                     {
                         score += 10;
                         suspiciousData.Add("DocVirus");
@@ -128,7 +128,7 @@ namespace Xdows_Local
                 score -= code;
 
                 Int32 resourceTask = CheckResourceSectionForPacking(peFile);
-                Boolean packingTask = CheckPackingSignatures(peFile, fileContent);
+                Boolean packingTask = CheckPackingSignatures(peFile, rawBytes);
 
                 Int32 tempScore = resourceTask;
                 if (tempScore > 0)
@@ -201,7 +201,7 @@ namespace Xdows_Local
                     if (Has("SetFilePointer"))
                     {
                         score += 15;
-                        if (deepScan && Has("WriteFile") && ContainsSuspiciousContent(fileContent, ["physicaldrive0"]))
+                        if (deepScan && Has("WriteFile") && ContainsSuspiciousContent(rawBytes, ["physicaldrive0"]))
                         {
                             score += 5;
                             suspiciousData.Add("ModifyMBR");
@@ -219,18 +219,18 @@ namespace Xdows_Local
             {
                 Boolean t1Result = false, t2Result = false, t3Result = false, t4Result = false, t5Result = false, t6Result = false, t7Result = false;
                 Parallel.Invoke(
-                    () => t1Result = ContainsSuspiciousContent(fileContent, [".sys"]),
-                    () => t2Result = ContainsSuspiciousContent(fileContent, ["Virtual"]),
-                    () => t3Result = ContainsSuspiciousContent(fileContent, ["BlackMoon"]),
-                    () => t4Result = ContainsSuspiciousContent(fileContent, [
+                    () => t1Result = ContainsSuspiciousContent(rawBytes, [".sys"]),
+                    () => t2Result = ContainsSuspiciousContent(rawBytes, ["Virtual"]),
+                    () => t3Result = ContainsSuspiciousContent(rawBytes, ["BlackMoon"]),
+                    () => t4Result = ContainsSuspiciousContent(rawBytes, [
                         "wsctrlsvc", "ESET", "zhudongfangyu", "avp", "avconsol",
                         "ASWSCAN", "KWatch", "QQPCTray", "360tray", "360sd", "ccSvcHst",
                         "f-secure", "KvMonXP", "RavMonD", "Mcshield", "ekrn", "kxetray",
                         "avcenter", "avguard", "Sophos", "safedog"
                     ]),
-                    () => t5Result = ContainsSuspiciousContent(fileContent, ["\\\\.\\ASW", "DelegateExecute", "fodhelper.exe", "OSDATA", "wow64log.dll"]),
-                    () => t6Result = ContainsSuspiciousContent(fileContent, ["sandboxie", "vmware - tray", "Detonate", "Vmware", "VMWARE", "Sandbox", "SANDBOX"]),
-                    () => t7Result = ContainsSuspiciousContent(fileContent, ["PhysicalDrive0"])
+                    () => t5Result = ContainsSuspiciousContent(rawBytes, ["\\\\.\\ASW", "DelegateExecute", "fodhelper.exe", "OSDATA", "wow64log.dll"]),
+                    () => t6Result = ContainsSuspiciousContent(rawBytes, ["sandboxie", "vmware - tray", "Detonate", "Vmware", "VMWARE", "Sandbox", "SANDBOX"]),
+                    () => t7Result = ContainsSuspiciousContent(rawBytes, ["PhysicalDrive0"])
                 );
 
                 if (t1Result) { suspiciousData.Add("UseDriver"); score += 10; }
@@ -250,13 +250,14 @@ namespace Xdows_Local
         public static Boolean CheckPackingSignatures(PeFile pe, Byte[]? cachedRaw = null)
         {
             Byte[] raw = cachedRaw ?? pe.RawFile.ToArray();
+            ReadOnlySpan<Byte> rawSpan = raw;
             if (raw.Length > 0x40 &&
                 raw[0x40] == 0x55 && raw[0x41] == 0x50 &&
                 raw[0x42] == 0x58 && raw[0x43] == 0x30)
                 return true;
 
             UInt32 ep = pe.ImageNtHeaders?.OptionalHeader.AddressOfEntryPoint ?? 0;
-            if (ep > raw.Length * 0.8)
+            if (ep > (UInt32)(raw.Length * 0.8))
                 return true;
 
             return false;
@@ -484,10 +485,10 @@ namespace Xdows_Local
             catch { return 0; }
         }
 
-        private static Boolean IsSuspiciousDoc(Byte[] fileContent)
+        private static Boolean IsSuspiciousDoc(ReadOnlySpan<Byte> fileContent)
         {
             if (fileContent.Length == 0) return false;
-            ReadOnlySpan<Byte> data = fileContent.AsSpan();
+            ReadOnlySpan<Byte> data = fileContent;
 
             if (data.IndexOf("This program cannot be run"u8) >= 0) return true;
             if (data.IndexOf("LoadLibraryA"u8) >= 0) return true;
@@ -532,7 +533,7 @@ namespace Xdows_Local
                     keyword != null && api.Contains(keyword)));
         }
 
-        private static Boolean ContainsSuspiciousContent(Byte[] fileContent, String[] keywords)
+        private static Boolean ContainsSuspiciousContent(ReadOnlySpan<Byte> fileContent, String[] keywords)
         {
             if (fileContent.Length == 0) return false;
             ReadOnlySpan<Byte> data = fileContent;

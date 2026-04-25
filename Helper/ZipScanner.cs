@@ -1,9 +1,12 @@
+using System.Buffers;
 using System.IO.Compression;
 
 namespace Helper
 {
     public static class ZipScanner
     {
+        private const Int64 MaxEntrySize = 100 * 1024 * 1024; // 100MB limit per entry
+        private const Int32 BufferSize = 262144; // 256KB buffer for streaming (optimized from 80KB)
         public static Boolean IsZipFile(String filePath)
         {
             if (!File.Exists(filePath)) return false;
@@ -13,11 +16,18 @@ namespace Helper
                 using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
                 if (fs.Length < 4) return false;
 
-                Byte[] header = new Byte[4];
-                Int32 bytesRead = fs.Read(header, 0, 4);
-                if (bytesRead < 4) return false;
+                var buffer = ArrayPool<Byte>.Shared.Rent(4);
+                try
+                {
+                    Int32 bytesRead = fs.Read(buffer, 0, 4);
+                    if (bytesRead < 4) return false;
 
-                return header[0] == 0x50 && header[1] == 0x4B && header[2] == 0x03 && header[3] == 0x04;
+                    return buffer[0] == 0x50 && buffer[1] == 0x4B && buffer[2] == 0x03 && buffer[3] == 0x04;
+                }
+                finally
+                {
+                    ArrayPool<Byte>.Shared.Return(buffer);
+                }
             }
             catch
             {
@@ -38,32 +48,47 @@ namespace Helper
                     {
                         if (entry.Length == 0 || entry.Name.EndsWith("/")) continue;
 
+                        // Skip entries larger than MaxEntrySize
+                        if (entry.Length > MaxEntrySize) continue;
+
                         String entryPath = entry.FullName.Replace('/', '\\');
 
                         if (scanNestedArchives && IsZipEntry(entry))
                         {
                             try
                             {
-                                using var ms = new MemoryStream();
-                                using var stream = entry.Open();
-                                stream.CopyTo(ms);
-                                var nestedEntries = ReadNestedZipEntries(ms.ToArray(), entryPath);
-                                entries.AddRange(nestedEntries);
+                                var data = ReadEntryData(entry);
+                                if (data != null)
+                                {
+                                    var nestedEntries = ReadNestedZipEntries(data, entryPath);
+                                    lock (entries)
+                                    {
+                                        entries.AddRange(nestedEntries);
+                                    }
+                                }
                             }
                             catch
                             {
-                                using var ms = new MemoryStream();
-                                using var stream = entry.Open();
-                                stream.CopyTo(ms);
-                                entries.Add((entryPath, ms.ToArray()));
+                                var data = ReadEntryData(entry);
+                                if (data != null)
+                                {
+                                    lock (entries)
+                                    {
+                                        entries.Add((entryPath, data));
+                                    }
+                                }
                             }
                         }
                         else
                         {
-                            using var ms = new MemoryStream();
-                            using var stream = entry.Open();
-                            stream.CopyTo(ms);
-                            entries.Add((entryPath, ms.ToArray()));
+                            var data = ReadEntryData(entry);
+                            if (data != null)
+                            {
+                                lock (entries)
+                                {
+                                    entries.Add((entryPath, data));
+                                }
+                            }
                         }
                     }
                 }
@@ -78,14 +103,52 @@ namespace Helper
             try
             {
                 using var stream = entry.Open();
-                Byte[] header = new Byte[4];
-                Int32 bytesRead = stream.Read(header, 0, 4);
-                if (bytesRead < 4) return false;
-                return header[0] == 0x50 && header[1] == 0x4B && header[2] == 0x03 && header[3] == 0x04;
+                var buffer = ArrayPool<Byte>.Shared.Rent(4);
+                try
+                {
+                    Int32 bytesRead = stream.Read(buffer, 0, 4);
+                    if (bytesRead < 4) return false;
+                    return buffer[0] == 0x50 && buffer[1] == 0x4B && buffer[2] == 0x03 && buffer[3] == 0x04;
+                }
+                finally
+                {
+                    ArrayPool<Byte>.Shared.Return(buffer);
+                }
             }
             catch
             {
                 return false;
+            }
+        }
+
+        private static Byte[]? ReadEntryData(ZipArchiveEntry entry)
+        {
+            try
+            {
+                if (entry.Length > MaxEntrySize) return null;
+
+                using var stream = entry.Open();
+                var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
+                try
+                {
+                    var ms = new MemoryStream();
+                    Int32 bytesRead;
+                    while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
+                    {
+                        ms.Write(buffer, 0, bytesRead);
+                        // Prevent memory explosion
+                        if (ms.Length > MaxEntrySize) return null;
+                    }
+                    return ms.ToArray();
+                }
+                finally
+                {
+                    ArrayPool<Byte>.Shared.Return(buffer);
+                }
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -99,12 +162,16 @@ namespace Helper
                 foreach (var entry in archive.Entries)
                 {
                     if (entry.Length == 0 || entry.Name.EndsWith("/")) continue;
+                    if (entry.Length > MaxEntrySize) continue;
+
                     String fullPath = entry.FullName.Replace('/', '\\');
                     String entryPath = Path.GetFileName(fullPath);
-                    using var entryMs = new MemoryStream();
-                    using var stream = entry.Open();
-                    stream.CopyTo(entryMs);
-                    entries.Add((entryPath, entryMs.ToArray()));
+                    
+                    var data = ReadEntryData(entry);
+                    if (data != null)
+                    {
+                        entries.Add((entryPath, data));
+                    }
                 }
             }
             catch { }
@@ -199,10 +266,7 @@ namespace Helper
                     {
                         if (String.Equals(entry.FullName, normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
                         {
-                            using var ms = new MemoryStream();
-                            using var stream = entry.Open();
-                            stream.CopyTo(ms);
-                            return ms.ToArray();
+                            return ReadEntryData(entry);
                         }
                     }
                     return null;
@@ -244,18 +308,34 @@ namespace Helper
                         {
                             try
                             {
-                                using var innerMs = new MemoryStream();
-                                using var outerStream = outerEntry.Open();
-                                outerStream.CopyTo(innerMs);
-                                innerMs.Position = 0;
+                                // Check size before loading into memory
+                                if (outerEntry.Length > MaxEntrySize) return null;
 
-                                using var innerArchive = new ZipArchive(innerMs, ZipArchiveMode.Read);
-                                var innerEntry = innerArchive.Entries.FirstOrDefault(e =>
-                                    String.Equals(e.FullName, remainingPath, StringComparison.OrdinalIgnoreCase));
-
-                                if (innerEntry != null)
+                                var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
+                                try
                                 {
-                                    return (innerEntry.Length, innerEntry.LastWriteTime.DateTime, innerEntry.LastWriteTime.DateTime);
+                                    using var innerMs = new MemoryStream();
+                                    using var outerStream = outerEntry.Open();
+                                    Int32 bytesRead;
+                                    while ((bytesRead = outerStream.Read(buffer, 0, BufferSize)) > 0)
+                                    {
+                                        innerMs.Write(buffer, 0, bytesRead);
+                                        if (innerMs.Length > MaxEntrySize) return null;
+                                    }
+                                    innerMs.Position = 0;
+
+                                    using var innerArchive = new ZipArchive(innerMs, ZipArchiveMode.Read);
+                                    var innerEntry = innerArchive.Entries.FirstOrDefault(e =>
+                                        String.Equals(e.FullName, remainingPath, StringComparison.OrdinalIgnoreCase));
+
+                                    if (innerEntry != null)
+                                    {
+                                        return (innerEntry.Length, innerEntry.LastWriteTime.DateTime, innerEntry.LastWriteTime.DateTime);
+                                    }
+                                }
+                                finally
+                                {
+                                    ArrayPool<Byte>.Shared.Return(buffer);
                                 }
                             }
                             catch { }

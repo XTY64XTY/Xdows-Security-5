@@ -1,4 +1,5 @@
 using PeNet;
+using System.Buffers;
 
 namespace Xdows_Local
 {
@@ -16,7 +17,23 @@ namespace Xdows_Local
             if (!File.Exists(path)) return String.Empty;
             try
             {
-                Byte[] fileBytes = File.ReadAllBytes(path);
+                const Int32 BufferSize = 65536; // 64KB buffer
+                using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize);
+                using var ms = new MemoryStream();
+                var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
+                try
+                {
+                    Int32 bytesRead;
+                    while ((bytesRead = fs.Read(buffer, 0, BufferSize)) > 0)
+                    {
+                        ms.Write(buffer, 0, bytesRead);
+                    }
+                }
+                finally
+                {
+                    ArrayPool<Byte>.Shared.Return(buffer);
+                }
+                Byte[] fileBytes = ms.ToArray();
                 return ScanFromBytes(path, fileBytes, deep, extraData);
             }
             catch { return String.Empty; }
