@@ -5,19 +5,19 @@ using System;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeAppearanceSoundPage : OobeStepPageBase
+    public sealed partial class OOBEAppearanceSoundPage : OOBEStepPageBase
     {
         private bool _isInitialize = true;
 
-        public OobeAppearanceSoundPage()
+        public OOBEAppearanceSoundPage()
         {
             InitializeComponent();
-            Loaded += OobeAppearanceSoundPage_Loaded;
+            Loaded += OOBEAppearanceSoundPage_Loaded;
         }
 
-        private async void OobeAppearanceSoundPage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBEAppearanceSoundPage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeAppearanceSoundPage_Loaded;
+            Loaded -= OOBEAppearanceSoundPage_Loaded;
 
             try
             {

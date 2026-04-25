@@ -53,9 +53,9 @@
             <Frame x:Name="navContainer" />
         </NavigationView>
 
-        <Grid x:Name="OobeOverlay" Visibility="Collapsed" IsHitTestVisible="False">
+        <Grid x:Name="OOBEOverlay" Visibility="Collapsed" IsHitTestVisible="False">
             <Grid Background="#FF000000" Opacity="1" IsHitTestVisible="False" />
-            <Frame x:Name="OobeFrame" IsHitTestVisible="True" />
+            <Frame x:Name="OOBEFrame" IsHitTestVisible="True" />
         </Grid>
     </Grid>
 </Window>

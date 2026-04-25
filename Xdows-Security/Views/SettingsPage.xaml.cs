@@ -5,18 +5,15 @@ using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using Windows.Security.Credentials.UI;
-using WinRT.Interop;
 using WinUI3Localizer;
 
 namespace Xdows_Security.Views
@@ -363,11 +360,11 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void RestartOobeButton_Click(object sender, RoutedEventArgs e)
+        private async void RestartOOBEButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                App.SetRunOobe(true);
+                App.SetRunOOBE(true);
                 var currentProcess = Process.GetCurrentProcess();
                 Process.Start(currentProcess.MainModule?.FileName ?? currentProcess.ProcessName);
                 Application.Current.Exit();

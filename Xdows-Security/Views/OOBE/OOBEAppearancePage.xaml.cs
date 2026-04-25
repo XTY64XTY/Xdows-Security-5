@@ -2,17 +2,17 @@ using Microsoft.UI.Xaml;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeAppearancePage : OobeStepPageBase
+    public sealed partial class OOBEAppearancePage : OOBEStepPageBase
     {
-        public OobeAppearancePage()
+        public OOBEAppearancePage()
         {
             InitializeComponent();
-            Loaded += OobeAppearancePage_Loaded;
+            Loaded += OOBEAppearancePage_Loaded;
         }
 
-        private async void OobeAppearancePage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBEAppearancePage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeAppearancePage_Loaded;
+            Loaded -= OOBEAppearancePage_Loaded;
             await PlayTitleAndContentEntranceAsync(TitleText, ContentRoot);
         }
 

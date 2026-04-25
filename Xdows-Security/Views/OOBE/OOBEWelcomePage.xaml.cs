@@ -2,19 +2,19 @@ using Microsoft.UI.Xaml;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeWelcomePage : OobeStepPageBase
+    public sealed partial class OOBEWelcomePage : OOBEStepPageBase
     {
         public override bool ShowBackButton => false;
 
-        public OobeWelcomePage()
+        public OOBEWelcomePage()
         {
             InitializeComponent();
-            Loaded += OobeWelcomePage_Loaded;
+            Loaded += OOBEWelcomePage_Loaded;
         }
 
-        private async void OobeWelcomePage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBEWelcomePage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeWelcomePage_Loaded;
+            Loaded -= OOBEWelcomePage_Loaded;
             await PlayTitleAndContentEntranceAsync(TitleText, ContentText);
         }
     }

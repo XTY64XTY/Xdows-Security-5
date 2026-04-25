@@ -8,38 +8,38 @@ using System.Threading.Tasks;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeShellPage : Page
+    public sealed partial class OOBEShellPage : Page
     {
         private readonly List<Type> _mainFlow =
         [
-            typeof(OobeWelcomePage),
-            typeof(OobeLanguagePage),
-            typeof(OobeAppearancePage),
-            typeof(OobeFinishPage)
+            typeof(OOBEWelcomePage),
+            typeof(OOBELanguagePage),
+            typeof(OOBEAppearancePage),
+            typeof(OOBEFinishPage)
         ];
 
         private readonly List<Type> _appearanceDetailFlow =
         [
-            typeof(OobeAppearanceThemePage),
-            typeof(OobeAppearanceBackdropPage),
-            typeof(OobeAppearanceNavPage),
-            typeof(OobeAppearanceSoundPage)
+            typeof(OOBEAppearanceThemePage),
+            typeof(OOBEAppearanceBackdropPage),
+            typeof(OOBEAppearanceNavPage),
+            typeof(OOBEAppearanceSoundPage)
         ];
 
         private int _mainIndex;
         private int _detailIndex;
         private bool _inDetailFlow;
 
-        public OobeShellPage()
+        public OOBEShellPage()
         {
             InitializeComponent();
-            Loaded += OobeShellPage_Loaded;
+            Loaded += OOBEShellPage_Loaded;
         }
 
-        private async void OobeShellPage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBEShellPage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeShellPage_Loaded;
-            await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Next, initial: true);
+            Loaded -= OOBEShellPage_Loaded;
+            await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next, initial: true);
         }
 
         private Type GetCurrentPageType()
@@ -78,17 +78,17 @@ namespace Xdows_Security.Views.OOBE
                 if (_detailIndex > 0)
                 {
                     _detailIndex--;
-                    await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Back);
+                    await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Back);
                     return;
                 }
 
                 _inDetailFlow = false;
-                await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Back);
+                await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Back);
                 return;
             }
 
             _mainIndex--;
-            await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Back);
+            await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Back);
         }
 
         private async void NextButton_Click(object sender, RoutedEventArgs e)
@@ -100,33 +100,33 @@ namespace Xdows_Security.Views.OOBE
                 if (_detailIndex < _appearanceDetailFlow.Count - 1)
                 {
                     _detailIndex++;
-                    await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Next);
+                    await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next);
                     return;
                 }
 
                 _inDetailFlow = false;
                 _mainIndex++;
-                await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Next);
+                await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next);
                 return;
             }
 
-            if (_mainFlow[_mainIndex] == typeof(OobeAppearancePage))
+            if (_mainFlow[_mainIndex] == typeof(OOBEAppearancePage))
             {
                 _inDetailFlow = true;
                 _detailIndex = 0;
-                await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Next);
+                await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next);
                 return;
             }
 
             _mainIndex++;
-            await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Next);
+            await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next);
         }
 
-        private async Task NavigateToAsync(Type pageType, OobeNavKind kind, bool initial = false)
+        private async Task NavigateToAsync(Type pageType, OOBENavKind kind, bool initial = false)
         {
             ContentFrame.Navigate(pageType);
 
-            if (ContentFrame.Content is IOobeStepPage step)
+            if (ContentFrame.Content is IOOBEStepPage step)
             {
                 step.RequestSkipToFinish -= Step_RequestSkipToFinish;
                 step.RequestComplete -= Step_RequestComplete;
@@ -156,15 +156,15 @@ namespace Xdows_Security.Views.OOBE
         private async void Step_RequestSkipToFinish(object? sender, EventArgs e)
         {
             _inDetailFlow = false;
-            _mainIndex = _mainFlow.IndexOf(typeof(OobeFinishPage));
-            await NavigateToAsync(GetCurrentPageType(), OobeNavKind.Next);
+            _mainIndex = _mainFlow.IndexOf(typeof(OOBEFinishPage));
+            await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next);
         }
 
         private async void Step_RequestComplete(object? sender, EventArgs e)
         {
             if (App.MainWindow != null)
             {
-                await App.MainWindow.CloseOobeAsync(markCompleted: true);
+                await App.MainWindow.CloseOOBEAsync(markCompleted: true);
             }
         }
 
@@ -234,7 +234,7 @@ namespace Xdows_Security.Views.OOBE
                 visual.StartAnimation("Opacity", opacityAnimation);
             }
         }
-        private Task PlayPageTransitionAsync(OobeNavKind kind, bool initial)
+        private Task PlayPageTransitionAsync(OOBENavKind kind, bool initial)
         {
             if (initial) return Task.CompletedTask;
 
@@ -243,7 +243,7 @@ namespace Xdows_Security.Views.OOBE
             var visual = ElementCompositionPreview.GetElementVisual(root);
             var compositor = visual.Compositor;
 
-            float x = kind == OobeNavKind.Next ? 40f : -40f;
+            float x = kind == OOBENavKind.Next ? 40f : -40f;
             visual.Opacity = 0;
             visual.Offset = new Vector3(x, 0, 0);
 

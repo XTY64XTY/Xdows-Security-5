@@ -5,19 +5,19 @@ using System;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeAppearanceNavPage : OobeStepPageBase
+    public sealed partial class OOBEAppearanceNavPage : OOBEStepPageBase
     {
         private bool _isInitialize = true;
 
-        public OobeAppearanceNavPage()
+        public OOBEAppearanceNavPage()
         {
             InitializeComponent();
-            Loaded += OobeAppearanceNavPage_Loaded;
+            Loaded += OOBEAppearanceNavPage_Loaded;
         }
 
-        private async void OobeAppearanceNavPage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBEAppearanceNavPage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeAppearanceNavPage_Loaded;
+            Loaded -= OOBEAppearanceNavPage_Loaded;
 
             try
             {

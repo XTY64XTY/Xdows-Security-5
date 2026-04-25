@@ -342,7 +342,7 @@
                            l:Uids.Uid="SettingsPage_Other_RestartOOBE"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE7B3;}"
                            Margin="0,0,0,4">
-                    <Button l:Uids.Uid="SettingsPage_Other_RestartOOBE_Button" Click="RestartOobeButton_Click" />
+                    <Button l:Uids.Uid="AllPage_OpenLink" Click="RestartOOBEButton_Click" />
                 </controls:SettingsCard>
                 <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_Feedback" x:Name="SettingsPage_Other_Feedback" HeaderIcon="{ui:FontIcon Glyph=&#xED15;}" Margin="0,0,0,4">
                     <Button l:Uids.Uid="AllPage_OpenLink" Click="Settings_Feedback_Click"/>

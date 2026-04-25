@@ -8,19 +8,19 @@ using WinUI3Localizer;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeLanguagePage : OobeStepPageBase
+    public sealed partial class OOBELanguagePage : OOBEStepPageBase
     {
         private bool _isInitialize = true;
 
-        public OobeLanguagePage()
+        public OOBELanguagePage()
         {
             InitializeComponent();
-            Loaded += OobeLanguagePage_Loaded;
+            Loaded += OOBELanguagePage_Loaded;
         }
 
-        private async void OobeLanguagePage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBELanguagePage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeLanguagePage_Loaded;
+            Loaded -= OOBELanguagePage_Loaded;
 
             try
             {

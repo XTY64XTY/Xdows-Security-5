@@ -2,23 +2,22 @@ using Compatibility.Windows.Storage;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public sealed partial class OobeAppearanceBackdropPage : OobeStepPageBase
+    public sealed partial class OOBEAppearanceBackdropPage : OOBEStepPageBase
     {
         private bool _isInitialize = true;
 
-        public OobeAppearanceBackdropPage()
+        public OOBEAppearanceBackdropPage()
         {
             InitializeComponent();
-            Loaded += OobeAppearanceBackdropPage_Loaded;
+            Loaded += OOBEAppearanceBackdropPage_Loaded;
         }
 
-        private async void OobeAppearanceBackdropPage_Loaded(object sender, RoutedEventArgs e)
+        private async void OOBEAppearanceBackdropPage_Loaded(object sender, RoutedEventArgs e)
         {
-            Loaded -= OobeAppearanceBackdropPage_Loaded;
+            Loaded -= OOBEAppearanceBackdropPage_Loaded;
 
             try
             {

@@ -19,7 +19,7 @@ namespace Xdows_Security
         public static string NowPage { get; set; } = "Home";
         public WinUIEx.WindowManager? Manager { get; private set; }
 
-        private bool _isOobeShown;
+        private bool _isOOBEShown;
 
         public MainWindow()
         {
@@ -149,41 +149,41 @@ namespace Xdows_Security
             }
             App.PlayEntranceAnimation(navContainer, "up");
 
-            if (App.GetRunOobe())
+            if (App.GetRunOOBE())
             {
-                _ = DispatcherQueue.TryEnqueue(async () => await ShowOobeAsync());
+                _ = DispatcherQueue.TryEnqueue(async () => await ShowOOBEAsync());
             }
         }
 
-        public async Task ShowOobeAsync()
+        public async Task ShowOOBEAsync()
         {
-            if (_isOobeShown) return;
-            _isOobeShown = true;
+            if (_isOOBEShown) return;
+            _isOOBEShown = true;
 
-            OobeOverlay.Opacity = 1;
-            OobeOverlay.Visibility = Visibility.Visible;
-            OobeOverlay.IsHitTestVisible = true;
+            OOBEOverlay.Opacity = 1;
+            OOBEOverlay.Visibility = Visibility.Visible;
+            OOBEOverlay.IsHitTestVisible = true;
 
-            OobeFrame.Navigate(typeof(OobeShellPage));
+            OOBEFrame.Navigate(typeof(OOBEShellPage));
         }
 
-        public async Task CloseOobeAsync(bool markCompleted)
+        public async Task CloseOOBEAsync(bool markCompleted)
         {
-            if (!_isOobeShown) return;
+            if (!_isOOBEShown) return;
 
             if (markCompleted)
             {
-                App.SetRunOobe(false);
+                App.SetRunOOBE(false);
             }
 
-            App.PlayExitDownFadeAnimation(OobeOverlay);
+            App.PlayExitDownFadeAnimation(OOBEOverlay);
             await Task.Delay(420);
 
-            OobeFrame.Content = null;
-            OobeOverlay.Visibility = Visibility.Collapsed;
-            OobeOverlay.IsHitTestVisible = false;
-            OobeOverlay.Opacity = 1;
-            _isOobeShown = false;
+            OOBEFrame.Content = null;
+            OOBEOverlay.Visibility = Visibility.Collapsed;
+            OOBEOverlay.IsHitTestVisible = false;
+            OOBEOverlay.Opacity = 1;
+            _isOOBEShown = false;
         }
         public void UpdateNavTheme(int index)
         {

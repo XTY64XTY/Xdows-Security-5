@@ -240,9 +240,6 @@
   <data name="SettingsPage_Other_RestartOOBE.Description" xml:space="preserve">
     <value>重新執行開箱體驗流程</value>
   </data>
-  <data name="SettingsPage_Other_RestartOOBE_Button.Content" xml:space="preserve">
-    <value>開始</value>
-  </data>
   <data name="MainWindow_Nav_Security.Content" xml:space="preserve">
     <value>安全</value>
   </data>

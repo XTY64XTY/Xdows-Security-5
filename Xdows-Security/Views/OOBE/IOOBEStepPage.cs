@@ -2,13 +2,13 @@ using System;
 
 namespace Xdows_Security.Views.OOBE
 {
-    internal enum OobeNavKind
+    internal enum OOBENavKind
     {
         Next,
         Back
     }
 
-    internal interface IOobeStepPage
+    internal interface IOOBEStepPage
     {
         bool ShowBackButton { get; }
         bool ShowNextButton { get; }

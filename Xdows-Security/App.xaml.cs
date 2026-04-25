@@ -353,7 +353,7 @@ namespace Xdows_Security
         public static MainWindow? MainWindow { get; private set; } // 主窗口实例
 
         private static readonly object _settingsLock = new();
-        private const string RunOobeSettingKey = "RunOOBE";
+        private const string RunOOBESettingKey = "RunOOBE";
 
         public App()
         {
@@ -390,12 +390,12 @@ namespace Xdows_Security
             }
         }
 
-        public static bool GetRunOobe()
+        public static bool GetRunOOBE()
         {
             lock (_settingsLock)
             {
                 var settings = ApplicationData.Current.LocalSettings;
-                if (settings.Values.TryGetValue(RunOobeSettingKey, out var raw) && raw is bool b)
+                if (settings.Values.TryGetValue(RunOOBESettingKey, out var raw) && raw is bool b)
                 {
                     return b;
                 }
@@ -403,11 +403,11 @@ namespace Xdows_Security
             }
         }
 
-        public static void SetRunOobe(bool value)
+        public static void SetRunOOBE(bool value)
         {
             lock (_settingsLock)
             {
-                ApplicationData.Current.LocalSettings.Values[RunOobeSettingKey] = value;
+                ApplicationData.Current.LocalSettings.Values[RunOOBESettingKey] = value;
             }
         }
 

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Xdows_Security.Views.OOBE
 {
-    public abstract class OobeStepPageBase : Page, IOobeStepPage
+    public abstract class OOBEStepPageBase : Page, IOOBEStepPage
     {
         public virtual bool ShowBackButton => true;
         public virtual bool ShowNextButton => true;
