@@ -126,8 +126,125 @@
   <data name="Button_No" xml:space="preserve">
     <value>否</value>
   </data>
+  <data name="OOBE_Button_Previous.Content" xml:space="preserve">
+    <value>上一步</value>
+  </data>
+  <data name="OOBE_Button_Next.Content" xml:space="preserve">
+    <value>下一步</value>
+  </data>
+  <data name="OOBE_Welcome_Title.Text" xml:space="preserve">
+    <value>歡迎使用 Xdows Security</value>
+  </data>
+  <data name="OOBE_Welcome_Content.Text" xml:space="preserve">
+    <value>單擊 下一步 以繼續</value>
+  </data>
+  <data name="OOBE_Language_Title.Text" xml:space="preserve">
+    <value>先從選擇語言開始</value>
+  </data>
+  <data name="OOBE_Language_Content.Text" xml:space="preserve">
+    <value>請選擇您偏好的語言</value>
+  </data>
+  <data name="OOBE_Language_Option_English.Content" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="OOBE_Language_Option_zh-HANS.Content" xml:space="preserve">
+    <value>简体中文</value>
+  </data>
+  <data name="OOBE_Language_Option_zh-HANT.Content" xml:space="preserve">
+    <value>繁體中文</value>
+  </data>
+  <data name="OOBE_Appearance_Title.Text" xml:space="preserve">
+    <value>自訂您的 Xdows Security</value>
+  </data>
+  <data name="OOBE_Appearance_Content.Text" xml:space="preserve">
+    <value>自訂外觀設定或使用預設配置</value>
+  </data>
+  <data name="OOBE_Appearance_Skip.Content" xml:space="preserve">
+    <value>跳過</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Title.Text" xml:space="preserve">
+    <value>選擇主題</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Content.Text" xml:space="preserve">
+    <value>選擇應用程式的顯示主題</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_System.Content" xml:space="preserve">
+    <value>跟隨系統</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Light.Content" xml:space="preserve">
+    <value>淺色</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Dark.Content" xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Title.Text" xml:space="preserve">
+    <value>選擇背景效果</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Content.Text" xml:space="preserve">
+    <value>選擇應用程式的背景材質</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Solid.Content" xml:space="preserve">
+    <value>純色</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Mica.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_MicaAlt.Content" xml:space="preserve">
+    <value>Mica Alt</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Acrylic.Content" xml:space="preserve">
+    <value>壓克力</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Title.Text" xml:space="preserve">
+    <value>選擇導航欄位置</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Content.Text" xml:space="preserve">
+    <value>選擇導航欄放置的位置</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Left.Content" xml:space="preserve">
+    <value>左側</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Top.Content" xml:space="preserve">
+    <value>頂部</value>
+  </data>
+  <data name="OOBE_AppearanceSound_Title.Text" xml:space="preserve">
+    <value>聲音效果</value>
+  </data>
+  <data name="OOBE_AppearanceSound_Content.Text" xml:space="preserve">
+    <value>設定應用程式互動的聲音回饋</value>
+  </data>
+  <data name="OOBE_AppearanceSound_EffectsToggle.OnContent" xml:space="preserve">
+    <value>啟用聲音效果</value>
+  </data>
+  <data name="OOBE_AppearanceSound_EffectsToggle.OffContent" xml:space="preserve">
+    <value>啟用聲音效果</value>
+  </data>
+  <data name="OOBE_AppearanceSound_SpatialToggle.OnContent" xml:space="preserve">
+    <value>空間音訊</value>
+  </data>
+  <data name="OOBE_AppearanceSound_SpatialToggle.OffContent" xml:space="preserve">
+    <value>空間音訊</value>
+  </data>
+  <data name="OOBE_Finish_Title.Text" xml:space="preserve">
+    <value>讓我們開始！</value>
+  </data>
+  <data name="OOBE_Finish_Content.Text" xml:space="preserve">
+    <value>點擊 完成 以繼續</value>
+  </data>
+  <data name="OOBE_Finish_Button.Content" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="SettingsPage_Other_RestartOOBE.Header" xml:space="preserve">
+    <value>重新啟動 OOBE</value>
+  </data>
+  <data name="SettingsPage_Other_RestartOOBE.Description" xml:space="preserve">
+    <value>重新執行開箱體驗流程</value>
+  </data>
+  <data name="SettingsPage_Other_RestartOOBE_Button.Content" xml:space="preserve">
+    <value>開始</value>
+  </data>
   <data name="MainWindow_Nav_Security.Content" xml:space="preserve">
-    <value>殺毒</value>
+    <value>安全</value>
   </data>
   <data name="SecurityPage_PathText_Default" xml:space="preserve">
     <value>掃描模式：未指定</value>

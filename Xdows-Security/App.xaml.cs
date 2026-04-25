@@ -352,6 +352,9 @@ namespace Xdows_Security
     {
         public static MainWindow? MainWindow { get; private set; } // 主窗口实例
 
+        private static readonly object _settingsLock = new();
+        private const string RunOobeSettingKey = "RunOOBE";
+
         public App()
         {
             LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "Attempting to load the MainWindow...");
@@ -385,6 +388,51 @@ namespace Xdows_Security
             {
                 LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Error in OnLaunched: {ex.Message}");
             }
+        }
+
+        public static bool GetRunOobe()
+        {
+            lock (_settingsLock)
+            {
+                var settings = ApplicationData.Current.LocalSettings;
+                if (settings.Values.TryGetValue(RunOobeSettingKey, out var raw) && raw is bool b)
+                {
+                    return b;
+                }
+                return true;
+            }
+        }
+
+        public static void SetRunOobe(bool value)
+        {
+            lock (_settingsLock)
+            {
+                ApplicationData.Current.LocalSettings.Values[RunOobeSettingKey] = value;
+            }
+        }
+
+        public static void PlayExitDownFadeAnimation(UIElement uIElement, float verticalOffset = 40f)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(uIElement);
+            var compositor = visual.Compositor;
+
+            Vector3 startOffset = visual.Offset;
+            Vector3 endOffset = startOffset + new Vector3(0, verticalOffset, 0);
+
+            var easing = compositor.CreateCubicBezierEasingFunction(new Vector2(0, 0), new Vector2(0, 1));
+
+            var offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
+            offsetAnimation.Target = "Offset";
+            offsetAnimation.InsertKeyFrame(1.0f, endOffset, easing);
+            offsetAnimation.Duration = TimeSpan.FromMilliseconds(400);
+
+            var opacityAnimation = compositor.CreateScalarKeyFrameAnimation();
+            opacityAnimation.Target = "Opacity";
+            opacityAnimation.InsertKeyFrame(1.0f, 0.0f, easing);
+            opacityAnimation.Duration = TimeSpan.FromMilliseconds(400);
+
+            visual.StartAnimation("Offset", offsetAnimation);
+            visual.StartAnimation("Opacity", opacityAnimation);
         }
         private static void InitializeMainWindow()
         {
@@ -424,12 +472,12 @@ namespace Xdows_Security
         }
         private static async Task InitializeLocalizer()
         {
-            ApplicationLanguages.PrimaryLanguageOverride = "en-US";
-
             string stringsPath = Path.Combine(AppContext.BaseDirectory, "Strings");
 
             var settings = ApplicationData.Current.LocalSettings;
             string lastLang = settings.Values["AppLanguage"] as string ?? "en-US";
+
+            ApplicationLanguages.PrimaryLanguageOverride = lastLang;
 
             ILocalizer localizer = await new LocalizerBuilder()
                 .AddStringResourcesFolderForLanguageDictionaries(stringsPath)

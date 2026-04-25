@@ -52,5 +52,10 @@
             </NavigationView.MenuItems>
             <Frame x:Name="navContainer" />
         </NavigationView>
+
+        <Grid x:Name="OobeOverlay" Visibility="Collapsed" IsHitTestVisible="False">
+            <Grid Background="#FF000000" Opacity="1" IsHitTestVisible="False" />
+            <Frame x:Name="OobeFrame" IsHitTestVisible="True" />
+        </Grid>
     </Grid>
 </Window>

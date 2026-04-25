@@ -5,10 +5,12 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
 using WinUIEx;
 using Xdows_Security.Views;
+using Xdows_Security.Views.OOBE;
 
 namespace Xdows_Security
 {
@@ -16,6 +18,8 @@ namespace Xdows_Security
     {
         public static string NowPage { get; set; } = "Home";
         public WinUIEx.WindowManager? Manager { get; private set; }
+
+        private bool _isOobeShown;
 
         public MainWindow()
         {
@@ -62,7 +66,7 @@ namespace Xdows_Security
                 ((MenuFlyoutItem)flyout.Items[3]).Click += async (s, e) =>
                 {
                     bool disabledVerify = false;
-                    if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
+                    if (Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
                     {
                         disabledVerify = boolValue;
                     }
@@ -92,7 +96,7 @@ namespace Xdows_Security
 
         private async void MainWindow_Activated_FirstTime(object sender, WindowActivatedEventArgs args)
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
 
             if (settings.Values.TryGetValue("AppTheme", out object? theme))
             {
@@ -117,9 +121,9 @@ namespace Xdows_Security
                     {
                         ApplyBackdrop(backdrop, false);
 
-                        if (ApplicationData.HasFile("background_image"))
+                        if (Compatibility.Windows.Storage.ApplicationData.HasFile("background_image"))
                         {
-                            var backgroundImagePath = await ApplicationData.ReadFileAsync("background_image");
+                            var backgroundImagePath = await Compatibility.Windows.Storage.ApplicationData.ReadFileAsync("background_image");
                             if (backgroundImagePath != null)
                             {
                                 _ = ApplyBackgroundImageAsync(backgroundImagePath);
@@ -144,6 +148,42 @@ namespace Xdows_Security
                 Manager?.IsVisibleInTray = boolValue;
             }
             App.PlayEntranceAnimation(navContainer, "up");
+
+            if (App.GetRunOobe())
+            {
+                _ = DispatcherQueue.TryEnqueue(async () => await ShowOobeAsync());
+            }
+        }
+
+        public async Task ShowOobeAsync()
+        {
+            if (_isOobeShown) return;
+            _isOobeShown = true;
+
+            OobeOverlay.Opacity = 1;
+            OobeOverlay.Visibility = Visibility.Visible;
+            OobeOverlay.IsHitTestVisible = true;
+
+            OobeFrame.Navigate(typeof(OobeShellPage));
+        }
+
+        public async Task CloseOobeAsync(bool markCompleted)
+        {
+            if (!_isOobeShown) return;
+
+            if (markCompleted)
+            {
+                App.SetRunOobe(false);
+            }
+
+            App.PlayExitDownFadeAnimation(OobeOverlay);
+            await Task.Delay(420);
+
+            OobeFrame.Content = null;
+            OobeOverlay.Visibility = Visibility.Collapsed;
+            OobeOverlay.IsHitTestVisible = false;
+            OobeOverlay.Opacity = 1;
+            _isOobeShown = false;
         }
         public void UpdateNavTheme(int index)
         {
@@ -152,7 +192,7 @@ namespace Xdows_Security
         private void OnLangChanged(object? sender, LanguageChangedEventArgs e) => LoadLocalizerData();
         private void LoadLocalizerData()
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
             int navTheme = settings.Values.TryGetValue("AppNavTheme", out var raw) && raw is double d ?
                 (int)d : 0;
             if (navTheme == 0)

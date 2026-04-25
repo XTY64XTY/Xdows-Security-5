@@ -126,6 +126,123 @@
   <data name="Button_No" xml:space="preserve">
     <value>No</value>
   </data>
+  <data name="OOBE_Button_Previous.Content" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="OOBE_Button_Next.Content" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="OOBE_Welcome_Title.Text" xml:space="preserve">
+    <value>Welcome to Xdows Security</value>
+  </data>
+  <data name="OOBE_Welcome_Content.Text" xml:space="preserve">
+    <value>Click Next to continue</value>
+  </data>
+  <data name="OOBE_Language_Title.Text" xml:space="preserve">
+    <value>Start by choosing a language</value>
+  </data>
+  <data name="OOBE_Language_Content.Text" xml:space="preserve">
+    <value>Select your preferred language</value>
+  </data>
+  <data name="OOBE_Language_Option_English.Content" xml:space="preserve">
+    <value>English</value>
+  </data>
+  <data name="OOBE_Language_Option_zh-HANS.Content" xml:space="preserve">
+    <value>简体中文</value>
+  </data>
+  <data name="OOBE_Language_Option_zh-HANT.Content" xml:space="preserve">
+    <value>繁體中文</value>
+  </data>
+  <data name="OOBE_Appearance_Title.Text" xml:space="preserve">
+    <value>Customize your Xdows Security</value>
+  </data>
+  <data name="OOBE_Appearance_Content.Text" xml:space="preserve">
+    <value>Customize appearance settings or use the defaults</value>
+  </data>
+  <data name="OOBE_Appearance_Skip.Content" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Title.Text" xml:space="preserve">
+    <value>Choose a theme</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Content.Text" xml:space="preserve">
+    <value>Select how the app should look</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_System.Content" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Light.Content" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="OOBE_AppearanceTheme_Dark.Content" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Title.Text" xml:space="preserve">
+    <value>Choose background effect</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Content.Text" xml:space="preserve">
+    <value>Select the background material for the app</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Solid.Content" xml:space="preserve">
+    <value>Solid color</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Mica.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_MicaAlt.Content" xml:space="preserve">
+    <value>Mica Alt</value>
+  </data>
+  <data name="OOBE_AppearanceBackdrop_Acrylic.Content" xml:space="preserve">
+    <value>Acrylic</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Title.Text" xml:space="preserve">
+    <value>Choose navigation position</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Content.Text" xml:space="preserve">
+    <value>Select where the navigation bar should be placed</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Left.Content" xml:space="preserve">
+    <value>Left side</value>
+  </data>
+  <data name="OOBE_AppearanceNav_Top.Content" xml:space="preserve">
+    <value>Top</value>
+  </data>
+  <data name="OOBE_AppearanceSound_Title.Text" xml:space="preserve">
+    <value>Sound effects</value>
+  </data>
+  <data name="OOBE_AppearanceSound_Content.Text" xml:space="preserve">
+    <value>Configure sound feedback for app interactions</value>
+  </data>
+  <data name="OOBE_AppearanceSound_EffectsToggle.OnContent" xml:space="preserve">
+    <value>Enable sound effects</value>
+  </data>
+  <data name="OOBE_AppearanceSound_EffectsToggle.OffContent" xml:space="preserve">
+    <value>Enable sound effects</value>
+  </data>
+  <data name="OOBE_AppearanceSound_SpatialToggle.OnContent" xml:space="preserve">
+    <value>Spatial audio</value>
+  </data>
+  <data name="OOBE_AppearanceSound_SpatialToggle.OffContent" xml:space="preserve">
+    <value>Spatial audio</value>
+  </data>
+  <data name="OOBE_Finish_Title.Text" xml:space="preserve">
+    <value>Let's get started!</value>
+  </data>
+  <data name="OOBE_Finish_Content.Text" xml:space="preserve">
+    <value>Click Finish to continue</value>
+  </data>
+  <data name="OOBE_Finish_Button.Content" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="SettingsPage_Other_RestartOOBE.Header" xml:space="preserve">
+    <value>Restart OOBE</value>
+  </data>
+  <data name="SettingsPage_Other_RestartOOBE.Description" xml:space="preserve">
+    <value>Run the out-of-box experience again</value>
+  </data>
+  <data name="SettingsPage_Other_RestartOOBE_Button.Content" xml:space="preserve">
+    <value>Start</value>
+  </data>
   <data name="MainWindow_Nav_Security.Content" xml:space="preserve">
     <value>Security</value>
   </data>

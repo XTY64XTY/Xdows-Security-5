@@ -180,7 +180,7 @@ namespace Compatibility.Windows.Storage
         public ApplicationDataContainer()
         {
             Values = new ApplicationDataContainerValues(this);
-            _ = LoadAsync();
+            Load();
         }
 
         public ApplicationDataContainerValues Values { get; }
@@ -195,12 +195,12 @@ namespace Compatibility.Windows.Storage
             catch { }
         }
 
-        private async Task LoadAsync()
+        private void Load()
         {
             if (!File.Exists(StorePath)) return;
             try
             {
-                var json = await File.ReadAllTextAsync(StorePath);
+                var json = File.ReadAllText(StorePath);
                 var tmp = JsonSerializer.Deserialize(json, AppDataJsonContext.Default.DictionaryStringJsonElement);
                 if (tmp != null)
                     foreach (var kv in tmp)

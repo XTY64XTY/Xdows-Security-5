@@ -39,6 +39,11 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
             <StackPanel Spacing="10">
+                <StackPanel.ChildrenTransitions>
+                    <TransitionCollection>
+                        <EntranceThemeTransition IsStaggeringEnabled="True" />
+                    </TransitionCollection>
+                </StackPanel.ChildrenTransitions>
                 <!-- ===== 统计卡片 ===== -->
                 <local:InfoCard Icon="&#xE9D2;" l:Uids.Uid="HomePage_Scan">
                     <StackPanel>
