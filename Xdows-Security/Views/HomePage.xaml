@@ -45,7 +45,7 @@
                     </TransitionCollection>
                 </StackPanel.ChildrenTransitions>
                 <!-- ===== 统计卡片 ===== -->
-                <local:InfoCard Icon="&#xE9D2;" l:Uids.Uid="HomePage_Scan">
+                <local:InfoCard Icon="&#xE9D2;" l:Uids.Uid="HomePage_Scan" Visibility="Collapsed">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -79,7 +79,7 @@
                 </local:InfoCard>
 
                 <!-- ===== 防护状态 ===== -->
-                <local:InfoCard Icon="&#xF738;" l:Uids.Uid="HomePage_ProtectionStatus">
+                <local:InfoCard Icon="&#xF738;" l:Uids.Uid="HomePage_ProtectionStatus" Visibility="Collapsed">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -109,7 +109,7 @@
                 </local:InfoCard>
 
                 <!-- ===== 系统信息 ===== -->
-                <local:InfoCard Icon="&#xE770;" l:Uids.Uid="HomePage_SystemInfo">
+                <local:InfoCard Icon="&#xE770;" l:Uids.Uid="HomePage_SystemInfo" Visibility="Collapsed">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -153,7 +153,7 @@
                 </local:InfoCard>
 
                 <!-- ===== 运行日志 ===== -->
-                <local:InfoCard Icon="&#xE8F1;" l:Uids.Uid="HomePage_LogsHeader" Margin="0,0,0,16">
+                <local:InfoCard Icon="&#xE8F1;" l:Uids.Uid="HomePage_LogsHeader" Margin="0,0,0,16" Visibility="Collapsed">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
