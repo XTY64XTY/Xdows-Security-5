@@ -7,7 +7,7 @@
   <p align="center">
     Check out the next-generation antivirus software built with WinUI3 + C#
     <br />
-    <a href="https://docs.xiguastudio.top/en-US/Xdows-Security-4.1/get-started.html   ">Documentation</a>
+    <a href="https://docs.xiguastudio.top/en-US/Xdows-Security-5/get-started.html   ">Documentation</a>
     ·
     <a href="https://github.com/XTY64XTY/Xdows-Security-5/issues">Feedback</a>
     ·
