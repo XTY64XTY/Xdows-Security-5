@@ -189,12 +189,12 @@ namespace Xdows_Security.Views.OOBE
             if (showNext && !_lastShowNext)
                 await FadeButtonAsync(NextButton, showNext, fadeIn: true);
             else if (!showNext && _lastShowNext)
-                FadeButtonAsync(NextButton, showNext, fadeIn: false);
+                _ = FadeButtonAsync(NextButton, showNext, fadeIn: false);
 
             if (showBack && !_lastShowBack)
                 await FadeButtonAsync(BackButton, showBack, fadeIn: true);
             else if (!showBack && _lastShowBack)
-                FadeButtonAsync(BackButton, showBack, fadeIn: false);
+                _ = FadeButtonAsync(BackButton, showBack, fadeIn: false);
 
             _lastShowBack = showBack;
             _lastShowNext = showNext;

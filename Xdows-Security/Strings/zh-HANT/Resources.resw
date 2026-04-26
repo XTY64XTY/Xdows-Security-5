@@ -1344,4 +1344,13 @@
   <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
     <value>Xdows Software</value>
   </data>
+  <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
+    <value>右鍵選單掃描</value>
+  </data>
+  <data name="SettingsPage_Other_ContextMenuScan.Description" xml:space="preserve">
+    <value>在文件和資料夾的右鍵選單中添加掃描選項</value>
+  </data>
+  <data name="ContextMenu_ScanWith" xml:space="preserve">
+    <value>使用 Xdows Security 掃描</value>
+  </data>
 </root>

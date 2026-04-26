@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using TrustQuarantine;
 using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
+using Xdows_Security.Services;
 
 namespace Xdows_Security.Views
 {
@@ -244,6 +245,7 @@ namespace Xdows_Security.Views
                 ModelScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,
+                ContextMenuScanToggle,
                 DisabledVerifyToggle,
                 Process_CompatibilityMode,
                 Files_CompatibilityMode,
@@ -275,6 +277,7 @@ namespace Xdows_Security.Views
             ProcessToggle.IsOn = ProtectionStatus.IsRun(0);
             FilesToggle.IsOn = ProtectionStatus.IsRun(1);
             RegistryToggle.IsOn = ProtectionStatus.IsRun(4);
+            ContextMenuScanToggle.IsOn = ContextMenuService.IsEnabled();
 
             // Load scan index mode setting (default Parallel) without direct XAML field access
             try
@@ -406,6 +409,7 @@ namespace Xdows_Security.Views
                 {
                     ApplicationData.Current.LocalSettings.Values["AppLanguage"] = newLanguage;
                     await Localizer.Get().SetLanguage(newLanguage);
+                    ContextMenuService.UpdateMenuText();
                 }
             }
         }
@@ -644,6 +648,23 @@ namespace Xdows_Security.Views
         {
             Toggled_SaveToggleData(sender, e);
             App.MainWindow?.Manager?.IsVisibleInTray = TrayVisibleToggle.IsEnabled;
+        }
+
+        private void ContextMenuScanToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize) return;
+            if (ContextMenuScanToggle.IsOn)
+            {
+                bool success = ContextMenuService.Register();
+                if (!success)
+                {
+                    ContextMenuScanToggle.IsOn = false;
+                }
+            }
+            else
+            {
+                ContextMenuService.Unregister();
+            }
         }
 
 

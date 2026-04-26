@@ -882,7 +882,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task StartScanAsync(String displayName, ScanMode mode, IReadOnlyList<String>? customPaths = null)
+        public async Task StartScanAsync(String displayName, ScanMode mode, IReadOnlyList<String>? customPaths = null)
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();

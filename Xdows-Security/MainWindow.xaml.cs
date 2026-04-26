@@ -91,6 +91,23 @@ namespace Xdows_Security
                 };
                 e.Flyout = flyout;
             };
+
+            // 处理启动时的扫描请求
+            if (App.ScanTargetPaths.Count > 0)
+            {
+                _ = DispatcherQueue.TryEnqueue(async () =>
+                {
+                    // 确保 UI 基础架构已经完成加载
+                    await Task.Delay(1500); 
+                    var scanPaths = App.ScanTargetPaths.ToList();
+                    if (scanPaths.Count > 0)
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.INFO, "MainWindow", $"Starting startup scan for {scanPaths.Count} items");
+                        App.ClearScanTargetPaths();
+                        TriggerScanForPaths(scanPaths);
+                    }
+                });
+            }
             LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "MainWindow loaded successfully");
         }
 
@@ -153,6 +170,113 @@ namespace Xdows_Security
             {
                 _ = DispatcherQueue.TryEnqueue(async () => await ShowOOBEAsync());
             }
+        }
+
+        public void TriggerScanForPath(string scanPath)
+        {
+            if (string.IsNullOrWhiteSpace(scanPath))
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Invalid scan path");
+                return;
+            }
+
+            if (!System.IO.Directory.Exists(scanPath) && !System.IO.File.Exists(scanPath))
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"Path does not exist: {scanPath}");
+                return;
+            }
+
+            _ = DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    GoToPage("Security");
+
+                    int maxRetries = 50;
+                    int delayMs = 50;
+                    SecurityPage? securityPage = null;
+
+                    for (int i = 0; i < maxRetries; i++)
+                    {
+                        if (navContainer.Content is SecurityPage page)
+                        {
+                            securityPage = page;
+                            break;
+                        }
+                        await Task.Delay(delayMs);
+                    }
+
+                    if (securityPage != null)
+                    {
+                        string displayName = System.IO.Path.GetFileName(scanPath);
+                        if (string.IsNullOrEmpty(displayName))
+                            displayName = scanPath;
+                        await securityPage.StartScanAsync(displayName, ScanMode.More, new List<string> { scanPath });
+                    }
+                    else
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Failed to get SecurityPage for scanning");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"TriggerScanForPath failed: {ex.Message}");
+                }
+            });
+        }
+
+        public void TriggerScanForPaths(IReadOnlyList<string> scanPaths)
+        {
+            if (scanPaths == null || scanPaths.Count == 0)
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Invalid scan paths");
+                return;
+            }
+
+            var validPaths = scanPaths.Where(p => System.IO.Directory.Exists(p) || System.IO.File.Exists(p)).ToList();
+            if (validPaths.Count == 0)
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "No valid paths to scan");
+                return;
+            }
+
+            _ = DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    GoToPage("Security");
+
+                    int maxRetries = 50;
+                    int delayMs = 50;
+                    SecurityPage? securityPage = null;
+
+                    for (int i = 0; i < maxRetries; i++)
+                    {
+                        if (navContainer.Content is SecurityPage page)
+                        {
+                            securityPage = page;
+                            break;
+                        }
+                        await Task.Delay(delayMs);
+                    }
+
+                    if (securityPage != null)
+                    {
+                        string displayName = validPaths.Count == 1
+                            ? System.IO.Path.GetFileName(validPaths[0]) ?? validPaths[0]
+                            : $"{validPaths.Count} items";
+                        await securityPage.StartScanAsync(displayName, ScanMode.More, validPaths);
+                    }
+                    else
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Failed to get SecurityPage for scanning");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"TriggerScanForPaths failed: {ex.Message}");
+                }
+            });
         }
 
         public async Task ShowOOBEAsync()
@@ -294,6 +418,8 @@ namespace Xdows_Security
         }
         private void MainWindow_Closing(object sender, AppWindowClosingEventArgs e)
         {
+            App.ReleaseResources();
+
             if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) && trayVisibleToggle is bool trayVisibleValue)
             {
                 if (trayVisibleValue)

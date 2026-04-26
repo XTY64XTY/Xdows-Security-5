@@ -1345,4 +1345,13 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
     <value>Xdows Software</value>
   </data>
+  <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
+    <value>Context Menu Scan</value>
+  </data>
+  <data name="SettingsPage_Other_ContextMenuScan.Description" xml:space="preserve">
+    <value>Add a scan option to the file and folder context menu</value>
+  </data>
+  <data name="ContextMenu_ScanWith" xml:space="preserve">
+    <value>Scan with Xdows Security</value>
+  </data>
 </root>

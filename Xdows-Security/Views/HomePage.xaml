@@ -38,7 +38,7 @@
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden">
-            <StackPanel Spacing="10">
+            <StackPanel x:Name="CardsPanel" Spacing="10">
                 <StackPanel.ChildrenTransitions>
                     <TransitionCollection>
                         <EntranceThemeTransition IsStaggeringEnabled="True" />

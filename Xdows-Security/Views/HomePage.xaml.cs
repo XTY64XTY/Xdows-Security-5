@@ -18,6 +18,8 @@ namespace Xdows_Security.Views
 {
     public sealed partial class HomePage : Page
     {
+        private bool _entrancePlayed;
+
         private sealed class WeakEventTimer
         {
             private readonly DispatcherQueueTimer _timer;
@@ -124,6 +126,8 @@ namespace Xdows_Security.Views
         {
             InitializeComponent();
 
+            Loaded += HomePage_Loaded;
+
             LogRepeater.ItemsSource = LogLines;
 
             LogText.TextChanged += (s, e) =>
@@ -134,6 +138,22 @@ namespace Xdows_Security.Views
             LoadData();
             InitTimers();
             RefreshPomes();
+        }
+
+        private async void HomePage_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (_entrancePlayed) return;
+            _entrancePlayed = true;
+
+            if (CardsPanel is null) return;
+
+            var cards = CardsPanel.Children.OfType<InfoCard>().ToArray();
+            for (int i = 0; i < cards.Length; i++)
+            {
+                var card = cards[i];
+                card.Visibility = Visibility.Visible;
+                await Task.Delay(70);
+            }
         }
 
         private void RefreshPomes_Click(object sender, RoutedEventArgs e) => RefreshPomes();

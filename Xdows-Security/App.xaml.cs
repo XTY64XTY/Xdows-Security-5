@@ -2,11 +2,13 @@ using Compatibility.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.Globalization;
 using Protection;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Net.Http;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -72,8 +74,9 @@ namespace Xdows_Security
                     DownloadUrl = downloadUrl ?? string.Empty
                 };
             }
-            catch
+            catch (Exception ex)
             {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "Updater", $"Failed to check update: {ex.Message}");
                 return null; // 或可抛出异常，依需求而定
             }
         }
@@ -350,10 +353,66 @@ namespace Xdows_Security
     }
     public partial class App : Application
     {
-        public static MainWindow? MainWindow { get; private set; } // 主窗口实例
+        public static MainWindow? MainWindow { get; private set; }
+
+        private static List<string> _scanTargetPaths = new();
+        private static readonly object _scanPathLock = new();
+        private const string PathSeparator = "\t";
+
+        public static IReadOnlyList<string> ScanTargetPaths
+        {
+            get
+            {
+                lock (_scanPathLock)
+                {
+                    return _scanTargetPaths.AsReadOnly();
+                }
+            }
+        }
+
+        public static void SetScanTargetPaths(IEnumerable<string> paths)
+        {
+            lock (_scanPathLock)
+            {
+                _scanTargetPaths = new List<string>(paths);
+            }
+        }
+
+        public static void ClearScanTargetPaths()
+        {
+            lock (_scanPathLock)
+            {
+                _scanTargetPaths.Clear();
+            }
+        }
 
         private static readonly object _settingsLock = new();
         private const string RunOOBESettingKey = "RunOOBE";
+
+        private static Mutex? _singleInstanceMutex;
+        private static bool _ownsMutex;
+        private const string MutexName = "Xdows_Security_SingleInstance";
+        private const string PipeName = "Xdows_Security_IPC";
+
+        private static CancellationTokenSource? _pipeListenerCts;
+
+        public static void ReleaseResources()
+        {
+            _pipeListenerCts?.Cancel();
+            _pipeListenerCts?.Dispose();
+            _pipeListenerCts = null;
+
+            if (_ownsMutex && _singleInstanceMutex != null)
+            {
+                try
+                {
+                    _singleInstanceMutex.ReleaseMutex();
+                }
+                catch { }
+                _singleInstanceMutex.Dispose();
+                _singleInstanceMutex = null;
+            }
+        }
 
         public App()
         {
@@ -364,29 +423,180 @@ namespace Xdows_Security
         {
             try
             {
-                //Helper.Linker.Start(async (interceptWindowSetting) =>
-                //{
-                //    var tcs = new TaskCompletionSource<string>();
-                //    App.MainWindow?.DispatcherQueue?.TryEnqueue(async () =>
-                //    {
-                //        try
-                //        {
-                //            var result = await InterceptWindow.ShowOrActivate(interceptWindowSetting);
-                //            tcs.TrySetResult(result);
-                //        }
-                //        catch (Exception ex)
-                //        {
-                //            tcs.TrySetException(ex);
-                //        }
-                //    });
-                //    return await tcs.Task;
-                //});
+                ParseCommandLineArgs();
+
+                if (!TryAcquireSingleInstance())
+                {
+                    // 即使主进程还没完全启动监听，SendScanPathsToExistingInstanceAsync 内部的重试机制也会等待。
+                    if (await SendScanPathsToExistingInstanceAsync())
+                    {
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                        return;
+                    }
+                    LogText.AddNewLog(LogText.LogLevel.ERROR, "App", "Failed to communicate with existing instance. Exit.");
+                    System.Diagnostics.Process.GetCurrentProcess().Kill();
+                    return;
+                }
+
+                StartPipeListener();
+
                 await InitializeLocalizer();
+                Services.ContextMenuService.ValidateOnStartup();
                 InitializeMainWindow();
             }
             catch (Exception ex)
             {
                 LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Error in OnLaunched: {ex.Message}");
+            }
+        }
+
+        private static bool TryAcquireSingleInstance()
+        {
+            try
+            {
+                _singleInstanceMutex = new Mutex(true, MutexName, out _ownsMutex);
+                if (!_ownsMutex)
+                {
+                    _singleInstanceMutex.Dispose();
+                    _singleInstanceMutex = null;
+                }
+                return _ownsMutex;
+            }
+            catch (Exception ex)
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Failed to create mutex: {ex.Message}");
+                return false;
+            }
+        }
+
+        private static async Task<bool> SendScanPathsToExistingInstanceAsync()
+        {
+            List<string> pathsToSend;
+            lock (_scanPathLock)
+            {
+                pathsToSend = new List<string>(_scanTargetPaths);
+            }
+
+            if (pathsToSend.Count == 0) return false;
+
+            int retryCount = 0;
+            const int maxRetries = 20;
+            const int retryDelayMs = 200;
+
+            while (retryCount < maxRetries)
+            {
+                try
+                {
+                    using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+                    await client.ConnectAsync(500);
+                    using var writer = new StreamWriter(client) { AutoFlush = true };
+                    string pathsLine = string.Join(PathSeparator, pathsToSend);
+                    await writer.WriteLineAsync(pathsLine);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    retryCount++;
+                    if (retryCount < maxRetries)
+                    {
+                        await Task.Delay(retryDelayMs);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static void StartPipeListener()
+        {
+            _pipeListenerCts = new CancellationTokenSource();
+            var token = _pipeListenerCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        var server = new NamedPipeServerStream(PipeName, PipeDirection.In, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                        await server.WaitForConnectionAsync(token);
+
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                using (server)
+                                using (var reader = new StreamReader(server))
+                                {
+                                    string? pathsLine = await reader.ReadLineAsync();
+                                    if (!string.IsNullOrEmpty(pathsLine))
+                                    {
+                                        string[] paths = pathsLine.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries);
+                                        if (paths.Length > 0)
+                                        {
+                                            MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+                                            {
+                                                try
+                                                {
+                                                    MainWindow?.Activate();
+                                                    MainWindow?.TriggerScanForPaths(paths);
+                                                }
+                                                catch { }
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }, token);
+                    }
+                    catch (OperationCanceledException) { break; }
+                    catch (Exception ex)
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Pipe listener error: {ex.Message}");
+                        await Task.Delay(100, token);
+                    }
+                }
+            }, token);
+        }
+
+        private static void ParseCommandLineArgs()
+        {
+            string[] cmdArgs = Environment.GetCommandLineArgs();
+
+            if (cmdArgs.Length <= 1)
+            {
+                var activatedArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
+                if (activatedArgs.Kind == ExtendedActivationKind.Launch)
+                {
+                    if (activatedArgs.Data is Windows.ApplicationModel.Activation.LaunchActivatedEventArgs launchArgs)
+                    {
+                        string argStr = launchArgs.Arguments;
+                        if (!string.IsNullOrWhiteSpace(argStr))
+                        {
+                            cmdArgs = argStr.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        }
+                    }
+                }
+            }
+
+            LogText.AddNewLog(LogText.LogLevel.DEBUG, "App", $"Raw CommandLine: {string.Join(" ", cmdArgs)}");
+
+            var paths = new List<string>();
+            for (int i = 1; i < cmdArgs.Length; i++)
+            {
+                string path = cmdArgs[i].Trim('\"');
+                if (!string.IsNullOrWhiteSpace(path) &&
+                    (System.IO.File.Exists(path) || System.IO.Directory.Exists(path)))
+                {
+                    paths.Add(path);
+                    LogText.AddNewLog(LogText.LogLevel.INFO, "App", $"Parsed scan path: {path}");
+                }
+            }
+
+            if (paths.Count > 0)
+            {
+                SetScanTargetPaths(paths);
             }
         }
 

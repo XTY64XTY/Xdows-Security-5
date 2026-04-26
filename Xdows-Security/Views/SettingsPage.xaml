@@ -333,6 +333,12 @@
                     <ToggleSwitch x:Name="TrayVisibleToggle" Tag="TrayVisibleToggle" Toggled="TrayVisibleToggle_Toggled" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Other_ContextMenuScan"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}"
+                           Margin="0,0,0,4">
+                    <ToggleSwitch x:Name="ContextMenuScanToggle" Tag="ContextMenuScan" Toggled="ContextMenuScanToggle_Toggled" />
+                </controls:SettingsCard>
+                <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_DisabledVerify"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE72E;}"
                            Margin="0,0,0,4">

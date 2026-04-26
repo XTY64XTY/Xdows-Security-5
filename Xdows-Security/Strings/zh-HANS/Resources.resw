@@ -1344,4 +1344,13 @@
   <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
     <value>Xdows Software</value>
   </data>
+  <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
+    <value>右键菜单扫描</value>
+  </data>
+  <data name="SettingsPage_Other_ContextMenuScan.Description" xml:space="preserve">
+    <value>在文件和文件夹的右键菜单中添加扫描选项</value>
+  </data>
+  <data name="ContextMenu_ScanWith" xml:space="preserve">
+    <value>使用 Xdows Security 扫描</value>
+  </data>
 </root>
