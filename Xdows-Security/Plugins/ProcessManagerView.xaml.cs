@@ -2,11 +2,11 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Xdows_Security.Views
@@ -14,200 +14,192 @@ namespace Xdows_Security.Views
     public sealed partial class ProcessManagerView : UserControl
     {
         private List<ProcessInfoEx> _allProcesses = [];
+        private bool _isTreeView;
 
         public ProcessManagerView()
         {
-            this.InitializeComponent();
+            InitializeComponent();
             SortCombo.SelectedIndex = 0;
             _ = RefreshProcesses();
         }
 
+        private bool IsTreeView
+        {
+            get => _isTreeView;
+            set
+            {
+                _isTreeView = value;
+                ProcessList.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+                ProcessTree.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+                ListHeader.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+                SortCombo.IsEnabled = !value;
+            }
+        }
+
         private async Task RefreshProcesses()
         {
+            LoadingPanel.Visibility = Visibility.Visible;
+            ProcessList.Visibility = Visibility.Collapsed;
+            ProcessTree.Visibility = Visibility.Collapsed;
+
             try
             {
                 var list = await Task.Run(() =>
-                {
-                    var processes = Process.GetProcesses()
+                    Process.GetProcesses()
                         .Select(p => new ProcessInfoEx(p))
                         .OrderBy(p => p.Name)
-                        .ToList();
-                    return processes;
-                });
+                        .ToList()
+                );
 
                 _allProcesses = list;
-                ApplyFilterAndSort();
+
+                if (IsTreeView)
+                {
+                    await LoadParentIdsAsync();
+                    BuildProcessTree();
+                }
+                else
+                {
+                    ApplyFilterAndSort();
+                }
             }
             catch (Exception ex)
             {
-                var dialog = new ContentDialog
-                {
-                    Title = "刷新失败",
-                    Content = ex.Message,
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot
-                };
-
-                await dialog.ShowAsync();
+                await ShowDialogAsync("刷新失败", ex.Message);
+            }
+            finally
+            {
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                if (IsTreeView)
+                    ProcessTree.Visibility = Visibility.Visible;
+                else
+                    ProcessList.Visibility = Visibility.Visible;
             }
         }
 
         private async void Refresh_Click(object sender, RoutedEventArgs e)
+            => await RefreshProcesses();
+
+        private async void ViewModeToggle_Toggled(object sender, RoutedEventArgs e)
         {
-            await RefreshProcesses();
+            IsTreeView = ViewModeToggle.IsOn;
+
+            if (IsTreeView)
+            {
+                LoadingPanel.Visibility = Visibility.Visible;
+                ProcessTree.Visibility = Visibility.Collapsed;
+
+                try
+                {
+                    await LoadParentIdsAsync();
+                    BuildProcessTree();
+                }
+                catch (Exception ex)
+                {
+                    await ShowDialogAsync("切换失败", $"无法加载树状图: {ex.Message}");
+                    ViewModeToggle.IsOn = false;
+                    IsTreeView = false;
+                    ApplyFilterAndSort();
+                    return;
+                }
+
+                LoadingPanel.Visibility = Visibility.Collapsed;
+                ProcessTree.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ApplyFilterAndSort();
+            }
+        }
+
+        private async Task LoadParentIdsAsync()
+        {
+            var needLoad = _allProcesses.Where(p => !p.IsParentIdLoaded).ToList();
+            if (needLoad.Count == 0) return;
+
+            await Task.Run(() =>
+            {
+                Parallel.ForEach(needLoad, p => p.LoadParentId());
+            });
+        }
+
+        private void BuildProcessTree()
+        {
+            ProcessTree.RootNodes.Clear();
+
+            var lookup = _allProcesses.ToDictionary(p => p.Id);
+            var childrenMap = new Dictionary<uint, List<ProcessInfoEx>>();
+            var roots = new List<ProcessInfoEx>();
+
+            foreach (var proc in _allProcesses)
+            {
+                if (proc.ParentId == 0 || !lookup.ContainsKey(proc.ParentId))
+                {
+                    roots.Add(proc);
+                }
+                else
+                {
+                    if (!childrenMap.TryGetValue(proc.ParentId, out var children))
+                    {
+                        children = [];
+                        childrenMap[proc.ParentId] = children;
+                    }
+                    children.Add(proc);
+                }
+            }
+
+            var visited = new HashSet<uint>();
+
+            foreach (var root in roots.OrderBy(p => p.Name))
+            {
+                var node = CreateTreeNode(root, childrenMap, visited);
+                if (node != null)
+                    ProcessTree.RootNodes.Add(node);
+            }
+        }
+
+        private TreeViewNode? CreateTreeNode(ProcessInfoEx process, Dictionary<uint, List<ProcessInfoEx>> childrenMap, HashSet<uint> visited)
+        {
+            if (!visited.Add(process.Id))
+                return null;
+
+            var node = new TreeViewNode { Content = process };
+
+            if (childrenMap.TryGetValue(process.Id, out var children))
+            {
+                foreach (var child in children.OrderBy(p => p.Name))
+                {
+                    var childNode = CreateTreeNode(child, childrenMap, visited);
+                    if (childNode != null)
+                        node.Children.Add(childNode);
+                }
+            }
+
+            return node;
         }
 
         private void SortCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
             => ApplyFilterAndSort();
 
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
             => ApplyFilterAndSort();
 
         private void ApplyFilterAndSort()
         {
+            if (IsTreeView) return;
+
             var keyword = SearchBox.Text?.Trim() ?? "";
             IEnumerable<ProcessInfoEx> filtered = _allProcesses;
 
             if (!string.IsNullOrEmpty(keyword))
             {
                 if (uint.TryParse(keyword, out var pid))
-                {
                     filtered = _allProcesses.Where(p => p.Id == pid);
-                }
                 else
-                {
-                    filtered = _allProcesses
-                        .Where(p => p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
-                }
+                    filtered = _allProcesses.Where(p => p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
             }
 
             ProcessList.ItemsSource = ApplySort(filtered).ToList();
-        }
-
-        private async void ShowProcessDetail_Click(object sender, RoutedEventArgs e)
-        {
-            var info = GetProcessInfoFromSender(sender);
-            if (info == null) return;
-
-            var sp = new StackPanel { Spacing = 8 };
-            void AddLine(string key, string value)
-            {
-                sp.Children.Add(new TextBlock
-                {
-                    Text = $"{key}: {value}",
-                    IsTextSelectionEnabled = true,
-                    TextWrapping = TextWrapping.Wrap
-                });
-            }
-
-            AddLine("进程名称", info.Name);
-            AddLine("进程编号", info.Id.ToString());
-            AddLine("父进程ID", info.ParentId.ToString());
-            AddLine("会话ID", info.SessionId.ToString());
-            AddLine("使用内存", info.Memory);
-            AddLine("私有内存", info.PrivateMemory);
-            AddLine("线程数", info.ThreadCount.ToString());
-            AddLine("句柄数", info.HandleCount.ToString());
-            AddLine("优先级", info.PriorityClass.ToString());
-            AddLine("架构", info.IsWow64 ? "32位 (WOW64)" : "64位");
-
-            if (!string.IsNullOrEmpty(info.ImagePath))
-            {
-                AddLine("文件路径", info.ImagePath);
-
-                try
-                {
-                    var fi = new FileInfo(info.ImagePath);
-                    if (fi.Exists)
-                    {
-                        AddLine("创建时间", fi.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                        AddLine("修改时间", fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                        AddLine("文件大小", $"{fi.Length / 1024.0 / 1024.0:F2} MB");
-
-                        var versionInfo = System.Diagnostics.FileVersionInfo.GetVersionInfo(fi.FullName);
-                        AddLine("文件版本", versionInfo.FileVersion ?? "-");
-                        AddLine("产品版本", versionInfo.ProductVersion ?? "-");
-                        AddLine("公司名称", versionInfo.CompanyName ?? "-");
-                        AddLine("产品名称", versionInfo.ProductName ?? "-");
-                        AddLine("文件描述", versionInfo.FileDescription ?? "-");
-                    }
-                }
-                catch { }
-            }
-            else
-            {
-                AddLine("文件路径", "拒绝访问或已退出");
-            }
-
-            if (!string.IsNullOrEmpty(info.CommandLine))
-            {
-                AddLine("命令行", info.CommandLine);
-            }
-
-            var dialog = new ContentDialog
-            {
-                Title = "详细信息",
-                Content = new ScrollViewer
-                {
-                    Content = sp,
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-                },
-                CloseButtonText = "关闭",
-                XamlRoot = this.XamlRoot,
-                PrimaryButtonText = "定位文件",
-                SecondaryButtonText = "结束进程",
-                RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                DefaultButton = ContentDialogButton.Close
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary)
-            {
-                if (string.IsNullOrEmpty(info.ImagePath))
-                {
-                    await new ContentDialog
-                    {
-                        Title = "无法定位文件",
-                        Content = "无法访问此进程的文件路径。",
-                        CloseButtonText = "确定",
-                        RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                        XamlRoot = this.XamlRoot,
-                        DefaultButton = ContentDialogButton.Close
-                    }.ShowAsync();
-                }
-                else
-                {
-                    try
-                    {
-                        var safeFilePath = info.ImagePath.Replace("\"", "\\\"");
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = "explorer.exe",
-                            Arguments = $"/select,\"{safeFilePath}\"",
-                            UseShellExecute = true
-                        };
-                        Process.Start(psi);
-                    }
-                    catch (Exception ex)
-                    {
-                        await new ContentDialog
-                        {
-                            Title = "无法定位文件",
-                            Content = $"无法定位文件，因为{ex.Message}",
-                            CloseButtonText = "确定",
-                            RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                            XamlRoot = this.XamlRoot,
-                            DefaultButton = ContentDialogButton.Close
-                        }.ShowAsync();
-                    }
-                }
-            }
-            else if (result == ContentDialogResult.Secondary)
-            {
-                await KillProcessAsync(info);
-            }
         }
 
         private IEnumerable<ProcessInfoEx> ApplySort(IEnumerable<ProcessInfoEx> src)
@@ -223,20 +215,26 @@ namespace Xdows_Security.Views
             };
         }
 
+        private ProcessInfoEx? GetProcessInfoFromSender(object sender)
+        {
+            if (sender is MenuFlyoutItem menuItem)
+                return menuItem.DataContext as ProcessInfoEx;
+
+            if (IsTreeView)
+            {
+                if (ProcessTree.SelectedNode?.Content is ProcessInfoEx treeInfo)
+                    return treeInfo;
+                return null;
+            }
+
+            return ProcessList.SelectedItem as ProcessInfoEx;
+        }
+
         private async void Kill_Click(object sender, RoutedEventArgs e)
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
             await KillProcessAsync(info);
-        }
-
-        private ProcessInfoEx? GetProcessInfoFromSender(object sender)
-        {
-            if (sender is MenuFlyoutItem menuItem)
-            {
-                return menuItem.DataContext as ProcessInfoEx;
-            }
-            return ProcessList.SelectedItem as ProcessInfoEx;
         }
 
         private async Task KillProcessAsync(ProcessInfoEx info)
@@ -248,55 +246,33 @@ namespace Xdows_Security.Views
                 PrimaryButtonText = "结束",
                 CloseButtonText = "取消",
                 XamlRoot = this.XamlRoot,
-                RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
+                RequestedTheme = GetDialogTheme(),
                 DefaultButton = ContentDialogButton.Primary
             };
 
             if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
 
-            var result = await Task.Run(() => TryKill(info.Id));
+            var result = await Task.Run(() =>
+            {
+                try
+                {
+                    using var process = Process.GetProcessById((int)info.Id);
+                    process.Kill();
+                    process.WaitForExit(5000);
+                    return (Success: true, Error: "");
+                }
+                catch (Exception ex)
+                {
+                    return (Success: false, Error: ex.Message);
+                }
+            });
 
             if (result.Success)
-            {
-                await new ContentDialog
-                {
-                    Title = "结束成功",
-                    Content = $"进程 {info.Name} 已成功结束。",
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot,
-                    DefaultButton = ContentDialogButton.Close
-                }.ShowAsync();
-            }
+                await ShowDialogAsync("结束成功", $"进程 {info.Name} 已成功结束。");
             else
-            {
-                await new ContentDialog
-                {
-                    Title = "结束失败",
-                    Content = $"不能结束这个进程，因为 {result.Error}。",
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot,
-                    DefaultButton = ContentDialogButton.Close
-                }.ShowAsync();
-            }
+                await ShowDialogAsync("结束失败", $"不能结束这个进程，因为 {result.Error}。");
 
             await RefreshProcesses();
-        }
-
-        private static KillResult TryKill(uint pid)
-        {
-            try
-            {
-                var process = Process.GetProcessById((int)pid);
-                process.Kill();
-                process.WaitForExit(5000);
-                return new KillResult { Success = true };
-            }
-            catch (Exception ex)
-            {
-                return new KillResult { Success = false, Error = ex.Message };
-            }
         }
 
         private async void Suspend_Click(object sender, RoutedEventArgs e)
@@ -318,27 +294,9 @@ namespace Xdows_Security.Views
             });
 
             if (result.Success)
-            {
-                await new ContentDialog
-                {
-                    Title = "挂起成功",
-                    Content = $"进程 {info.Name} 已挂起。",
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot
-                }.ShowAsync();
-            }
+                await ShowDialogAsync("挂起成功", $"进程 {info.Name} 已挂起。");
             else
-            {
-                await new ContentDialog
-                {
-                    Title = "挂起失败",
-                    Content = $"无法挂起进程: {result.Error}",
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot
-                }.ShowAsync();
-            }
+                await ShowDialogAsync("挂起失败", $"无法挂起进程: {result.Error}");
         }
 
         private async void Resume_Click(object sender, RoutedEventArgs e)
@@ -360,36 +318,170 @@ namespace Xdows_Security.Views
             });
 
             if (result.Success)
+                await ShowDialogAsync("恢复成功", $"进程 {info.Name} 已恢复。");
+            else
+                await ShowDialogAsync("恢复失败", $"无法恢复进程: {result.Error}");
+        }
+
+        private async void ShowProcessDetail_Click(object sender, RoutedEventArgs e)
+        {
+            var info = GetProcessInfoFromSender(sender);
+            if (info == null) return;
+
+            await info.EnsureExtendedInfoLoadedAsync();
+
+            var items = new List<(string Key, string Value)>
             {
-                await new ContentDialog
+                ("进程名称", info.Name),
+                ("进程编号", info.Id.ToString()),
+                ("父进程ID", info.ParentId.ToString()),
+                ("会话ID", info.SessionId.ToString()),
+                ("使用内存", info.Memory),
+                ("私有内存", info.PrivateMemory),
+                ("线程数", info.ThreadCount.ToString()),
+                ("句柄数", info.HandleCount.ToString()),
+                ("优先级", info.PriorityClass.ToString()),
+                ("架构", info.IsWow64 ? "32位 (WOW64)" : "64位")
+            };
+
+            if (!string.IsNullOrEmpty(info.ImagePath))
+            {
+                items.Add(("文件路径", info.ImagePath));
+
+                try
                 {
-                    Title = "恢复成功",
-                    Content = $"进程 {info.Name} 已恢复。",
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot
-                }.ShowAsync();
+                    var fi = new FileInfo(info.ImagePath);
+                    if (fi.Exists)
+                    {
+                        items.Add(("创建时间", fi.CreationTime.ToString("yyyy-MM-dd HH:mm:ss")));
+                        items.Add(("修改时间", fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")));
+                        items.Add(("文件大小", $"{fi.Length / 1024.0 / 1024.0:F2} MB"));
+
+                        var versionInfo = FileVersionInfo.GetVersionInfo(fi.FullName);
+                        items.Add(("文件版本", versionInfo.FileVersion ?? "-"));
+                        items.Add(("产品版本", versionInfo.ProductVersion ?? "-"));
+                        items.Add(("公司名称", versionInfo.CompanyName ?? "-"));
+                        items.Add(("产品名称", versionInfo.ProductName ?? "-"));
+                        items.Add(("文件描述", versionInfo.FileDescription ?? "-"));
+                    }
+                }
+                catch { }
             }
             else
             {
-                await new ContentDialog
+                items.Add(("文件路径", "拒绝访问或已退出"));
+            }
+
+            if (!string.IsNullOrEmpty(info.CommandLine))
+                items.Add(("命令行", info.CommandLine));
+
+            var listView = new ListView
+            {
+                SelectionMode = ListViewSelectionMode.None,
+                IsItemClickEnabled = false,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0)
+            };
+
+            var compactStyle = new Style(typeof(ListViewItem));
+            compactStyle.Setters.Add(new Setter { Property = ListViewItem.PaddingProperty, Value = new Thickness(0) });
+            compactStyle.Setters.Add(new Setter { Property = ListViewItem.MinHeightProperty, Value = 0d });
+            compactStyle.Setters.Add(new Setter { Property = ListViewItem.MarginProperty, Value = new Thickness(0) });
+            listView.ItemContainerStyle = compactStyle;
+
+            foreach (var (key, value) in items)
+            {
+                var keyBlock = new TextBlock
                 {
-                    Title = "恢复失败",
-                    Content = $"无法恢复进程: {result.Error}",
-                    CloseButtonText = "确定",
-                    RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    XamlRoot = this.XamlRoot
-                }.ShowAsync();
+                    Text = key,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    VerticalAlignment = VerticalAlignment.Top
+                };
+                Grid.SetColumn(keyBlock, 0);
+
+                var valueBlock = new TextBlock
+                {
+                    Text = value,
+                    IsTextSelectionEnabled = true,
+                    TextWrapping = TextWrapping.Wrap
+                };
+                Grid.SetColumn(valueBlock, 1);
+
+                var row = new Grid
+                {
+                    ColumnDefinitions =
+                    {
+                        new ColumnDefinition { Width = new GridLength(100) },
+                        new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                    },
+                    Padding = new Thickness(0, 2, 0, 2),
+                    ColumnSpacing = 16,
+                    Children = { keyBlock, valueBlock }
+                };
+
+                listView.Items.Add(row);
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "详细信息",
+                Content = listView,
+                CloseButtonText = "关闭",
+                XamlRoot = this.XamlRoot,
+                PrimaryButtonText = "定位文件",
+                SecondaryButtonText = "结束进程",
+                RequestedTheme = GetDialogTheme(),
+                DefaultButton = ContentDialogButton.Close
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                if (string.IsNullOrEmpty(info.ImagePath))
+                {
+                    await ShowDialogAsync("无法定位文件", "无法访问此进程的文件路径。");
+                }
+                else
+                {
+                    try
+                    {
+                        var safeFilePath = info.ImagePath.Replace("\"", "\\\"");
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "explorer.exe",
+                            Arguments = $"/select,\"{safeFilePath}\"",
+                            UseShellExecute = true
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        await ShowDialogAsync("无法定位文件", $"无法定位文件，因为{ex.Message}");
+                    }
+                }
+            }
+            else if (result == ContentDialogResult.Secondary)
+            {
+                await KillProcessAsync(info);
             }
         }
 
-        private record KillResult
+        private async Task ShowDialogAsync(string title, string content)
         {
-            public bool Success { get; init; }
-            public string Error { get; init; } = "";
+            await new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                CloseButtonText = "确定",
+                XamlRoot = this.XamlRoot,
+                RequestedTheme = GetDialogTheme(),
+                DefaultButton = ContentDialogButton.Close
+            }.ShowAsync();
         }
 
-        // P/Invoke for suspending and resuming processes
+        private ElementTheme GetDialogTheme()
+            => (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
+
         [DllImport("kernel32.dll")]
         private static extern IntPtr OpenThread(uint dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
 
@@ -401,23 +493,6 @@ namespace Xdows_Security.Views
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool CloseHandle(IntPtr hHandle);
-
-        [DllImport("ntdll.dll")]
-        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref PROCESS_BASIC_INFORMATION processInformation, uint processInformationLength, out uint returnLength);
-
-        private const uint THREAD_SUSPEND_RESUME = 0x0002;
-        private const int ProcessBasicInformation = 0;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct PROCESS_BASIC_INFORMATION
-        {
-            public IntPtr Reserved1;
-            public IntPtr PebBaseAddress;
-            public IntPtr Reserved2_0;
-            public IntPtr Reserved2_1;
-            public IntPtr UniqueProcessId;
-            public IntPtr InheritedFromUniqueProcessId;
-        }
 
         public static void SuspendProcess(int processId)
         {
@@ -447,23 +522,13 @@ namespace Xdows_Security.Views
             }
         }
 
-        public static uint GetParentProcessId(int processId)
-        {
-            var pbi = new PROCESS_BASIC_INFORMATION();
-            uint returnLength;
-            var process = Process.GetProcessById(processId);
-            int status = NtQueryInformationProcess(process.Handle, ProcessBasicInformation, ref pbi, (uint)Marshal.SizeOf(pbi), out returnLength);
-            if (status != 0)
-                throw new Win32Exception(status);
-            return (uint)pbi.InheritedFromUniqueProcessId.ToInt32();
-        }
+        private const uint THREAD_SUSPEND_RESUME = 0x0002;
     }
 
     public sealed class ProcessInfoEx
     {
         public string Name { get; }
         public uint Id { get; }
-        public uint ParentId { get; }
         public uint SessionId { get; }
         public string Memory { get; }
         public string PrivateMemory { get; }
@@ -471,9 +536,21 @@ namespace Xdows_Security.Views
         public uint ThreadCount { get; }
         public uint HandleCount { get; }
         public uint PriorityClass { get; }
-        public bool IsWow64 { get; }
-        public string ImagePath { get; }
-        public string CommandLine { get; }
+
+        private uint _parentId;
+        private bool _parentIdLoaded;
+        private string _imagePath = "";
+        private string _commandLine = "";
+        private bool _isWow64;
+        private bool _extendedLoaded;
+
+        public uint ParentId => _parentId;
+        public bool IsParentIdLoaded => _parentIdLoaded;
+        public string ImagePath => _imagePath;
+        public string CommandLine => _commandLine;
+        public bool IsWow64 => _isWow64;
+
+        public override string ToString() => $"{Name}   PID: {Id}   {Memory}";
 
         public ProcessInfoEx(Process process)
         {
@@ -486,45 +563,9 @@ namespace Xdows_Security.Views
 
             try
             {
-                ParentId = ProcessManagerView.GetParentProcessId(process.Id);
-            }
-            catch
-            {
-                ParentId = 0;
-            }
-
-            try
-            {
-                ImagePath = process.MainModule?.FileName ?? "";
-            }
-            catch
-            {
-                ImagePath = "";
-            }
-
-            try
-            {
-                CommandLine = GetCommandLine(process.Id);
-            }
-            catch
-            {
-                CommandLine = "";
-            }
-
-            try
-            {
-                IsWow64 = IsWow64Process(process.Handle);
-            }
-            catch
-            {
-                IsWow64 = false;
-            }
-
-            try
-            {
                 MemoryBytes = process.WorkingSet64;
-                Memory = $"{MemoryBytes / 1024 / 1024} MB";
-                PrivateMemory = $"{process.PrivateMemorySize64 / 1024 / 1024} MB";
+                Memory = FormatSize(MemoryBytes);
+                PrivateMemory = FormatSize(process.PrivateMemorySize64);
             }
             catch
             {
@@ -534,78 +575,175 @@ namespace Xdows_Security.Views
             }
         }
 
-        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsWow64Process([In] IntPtr process, [Out] out bool wow64Process);
+        public void LoadParentId()
+        {
+            if (_parentIdLoaded) return;
+            _parentIdLoaded = true;
 
-        private static bool IsWow64Process(IntPtr hProcess)
+            var hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, (int)Id);
+            if (hProcess == IntPtr.Zero)
+                hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, false, (int)Id);
+
+            if (hProcess != IntPtr.Zero)
+            {
+                try
+                {
+                    _parentId = QueryParentProcessId(hProcess);
+                }
+                finally
+                {
+                    CloseHandle(hProcess);
+                }
+            }
+        }
+
+        public async Task EnsureExtendedInfoLoadedAsync()
+        {
+            if (_extendedLoaded) return;
+            _extendedLoaded = true;
+
+            if (!_parentIdLoaded)
+                LoadParentId();
+
+            await Task.Run(() =>
+            {
+                var hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, (int)Id);
+
+                if (hProcess == IntPtr.Zero)
+                    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, false, (int)Id);
+
+                if (hProcess != IntPtr.Zero)
+                {
+                    try
+                    {
+                        if (!_parentIdLoaded)
+                            _parentId = QueryParentProcessId(hProcess);
+                        _imagePath = QueryFullProcessImageName(hProcess);
+                        _commandLine = QueryCommandLine(hProcess);
+                        _isWow64 = QueryIsWow64(hProcess);
+                    }
+                    finally
+                    {
+                        CloseHandle(hProcess);
+                    }
+                }
+            });
+        }
+
+        private static uint QueryParentProcessId(IntPtr hProcess)
+        {
+            try
+            {
+                var pbi = new PROCESS_BASIC_INFORMATION();
+                uint returnLength;
+                int status = NtQueryInformationProcess(hProcess, ProcessBasicInformation, ref pbi, (uint)Marshal.SizeOf(pbi), out returnLength);
+                if (status == 0)
+                    return (uint)pbi.InheritedFromUniqueProcessId.ToInt32();
+            }
+            catch { }
+            return 0;
+        }
+
+        private static string QueryFullProcessImageName(IntPtr hProcess)
+        {
+            try
+            {
+                uint size = 1024;
+                var builder = new StringBuilder((int)size);
+                if (QueryFullProcessImageNameW(hProcess, 0, builder, ref size))
+                    return builder.ToString();
+            }
+            catch { }
+            return "";
+        }
+
+        private static string QueryCommandLine(IntPtr hProcess)
+        {
+            try
+            {
+                IntPtr commandLineInfo = IntPtr.Zero;
+                uint returnLength;
+                int status = NtQueryInformationProcess(hProcess, ProcessCommandLineInformation, ref commandLineInfo, (uint)IntPtr.Size, out returnLength);
+
+                if (status != 0 || commandLineInfo == IntPtr.Zero)
+                    return "";
+
+                var buffer = new byte[returnLength];
+                if (ReadProcessMemory(hProcess, commandLineInfo, buffer, buffer.Length, out int bytesRead))
+                {
+                    int length = BitConverter.ToUInt16(buffer, 0);
+                    IntPtr stringBuffer = IntPtr.Size == 8
+                        ? (IntPtr)BitConverter.ToInt64(buffer, 8)
+                        : BitConverter.ToInt32(buffer, 4);
+
+                    var stringBytes = new byte[length];
+                    if (ReadProcessMemory(hProcess, stringBuffer, stringBytes, length, out bytesRead))
+                        return Encoding.Unicode.GetString(stringBytes);
+                }
+            }
+            catch { }
+            return "";
+        }
+
+        private static bool QueryIsWow64(IntPtr hProcess)
         {
             if (!Environment.Is64BitOperatingSystem)
                 return false;
-            bool isWow64;
-            return IsWow64Process(hProcess, out isWow64) && isWow64;
+            try
+            {
+                return IsWow64Process(hProcess, out bool isWow64) && isWow64;
+            }
+            catch { }
+            return false;
+        }
+
+        private static string FormatSize(long bytes)
+        {
+            if (bytes >= 1073741824)
+                return $"{bytes / 1073741824.0:F2} GB";
+            if (bytes >= 1048576)
+                return $"{bytes / 1048576.0:F2} MB";
+            if (bytes >= 1024)
+                return $"{bytes / 1024.0:F2} KB";
+            return $"{bytes} B";
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hHandle);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool QueryFullProcessImageNameW(IntPtr hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
+
+        [DllImport("ntdll.dll")]
+        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref PROCESS_BASIC_INFORMATION processInformation, uint processInformationLength, out uint returnLength);
 
         [DllImport("ntdll.dll")]
         private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref IntPtr processInformation, uint processInformationLength, out uint returnLength);
 
-        private const uint PROCESS_QUERY_INFORMATION = 0x0400;
-        private const uint PROCESS_VM_READ = 0x0010;
-        private const int ProcessCommandLineInformation = 60;
-
-        private static string GetCommandLine(int processId)
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PROCESS_BASIC_INFORMATION
         {
-            try
-            {
-                var processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, false, processId);
-                if (processHandle == IntPtr.Zero)
-                    return "";
-
-                try
-                {
-                    IntPtr commandLineInfo = IntPtr.Zero;
-                    uint returnLength;
-                    int status = NtQueryInformationProcess(processHandle, ProcessCommandLineInformation, ref commandLineInfo, (uint)IntPtr.Size, out returnLength);
-
-                    if (status != 0 || commandLineInfo == IntPtr.Zero)
-                        return "";
-
-                    // Read UNICODE_STRING structure
-                    var buffer = new byte[returnLength];
-                    if (ReadProcessMemory(processHandle, commandLineInfo, buffer, buffer.Length, out int bytesRead))
-                    {
-                        // UNICODE_STRING: Length(2), MaximumLength(2), Buffer(4/8)
-                        int length = BitConverter.ToUInt16(buffer, 0);
-                        IntPtr stringBuffer = IntPtr.Size == 8
-                            ? (IntPtr)BitConverter.ToInt64(buffer, 8)
-                            : BitConverter.ToInt32(buffer, 4);
-
-                        var stringBytes = new byte[length];
-                        if (ReadProcessMemory(processHandle, stringBuffer, stringBytes, length, out bytesRead))
-                        {
-                            return System.Text.Encoding.Unicode.GetString(stringBytes);
-                        }
-                    }
-                    return "";
-                }
-                finally
-                {
-                    CloseHandle(processHandle);
-                }
-            }
-            catch
-            {
-                return "";
-            }
+            public IntPtr Reserved1;
+            public IntPtr PebBaseAddress;
+            public IntPtr Reserved2_0;
+            public IntPtr Reserved2_1;
+            public IntPtr UniqueProcessId;
+            public IntPtr InheritedFromUniqueProcessId;
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hHandle);
+        private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+        private const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        private const int ProcessBasicInformation = 0;
+        private const int ProcessCommandLineInformation = 60;
     }
 }

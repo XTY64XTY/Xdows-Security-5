@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,59 +13,80 @@ namespace Xdows_Security.Views
 {
     public sealed partial class PopupBlockerView : UserControl
     {
-        private List<PopupRule> _popupRules = new();
-        private readonly PopupBlocker _popupBlocker = new();
-        private bool _isPopupBlockingEnabled = false;
+        private List<PopupRule> _rules = [];
+        private readonly PopupBlockerEngine _blocker = new();
+        private bool _isMonitoring;
 
         public PopupBlockerView()
         {
-            this.InitializeComponent();
-            PopupSortCombo.SelectedIndex = 0;
-            InitializePopupRules();
+            InitializeComponent();
         }
 
-        private void InitializePopupRules()
+        private void MasterToggle_Toggled(object sender, RoutedEventArgs e)
         {
-            _popupRules = new List<PopupRule> { };
-            ApplyPopupFilterAndSort();
+            if (MasterToggle.IsOn)
+                StartMonitoring();
+            else
+                StopMonitoring();
         }
 
-        private void PopupSortCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => ApplyPopupFilterAndSort();
+        private void StartMonitoring()
+        {
+            var enabledRules = _rules.Where(r => r.IsEnabled).ToList();
+            if (enabledRules.Count == 0)
+            {
+                MasterToggle.IsOn = false;
+                return;
+            }
 
-        private void PopupSearchBox_TextChanged(object sender, TextChangedEventArgs e)
-            => ApplyPopupFilterAndSort();
+            _blocker.Start(enabledRules);
+            _isMonitoring = true;
+        }
 
-        private void ApplyPopupFilterAndSort()
+        private void StopMonitoring()
+        {
+            _blocker.Stop();
+            _isMonitoring = false;
+        }
+
+        private void UpdateMonitoring()
+        {
+            if (!_isMonitoring) return;
+
+            var enabledRules = _rules.Where(r => r.IsEnabled).ToList();
+            if (enabledRules.Count == 0)
+            {
+                StopMonitoring();
+                MasterToggle.IsOn = false;
+            }
+            else
+            {
+                _blocker.UpdateRules(enabledRules);
+            }
+        }
+
+        private void PopupSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+            => ApplyFilter();
+
+        private void ApplyFilter()
         {
             var keyword = PopupSearchBox.Text?.Trim() ?? "";
-            IEnumerable<PopupRule> filtered = _popupRules;
+            IEnumerable<PopupRule> filtered = _rules;
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                filtered = _popupRules
-                    .Where(p => p.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                               p.ProcessName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+                filtered = _rules.Where(p =>
+                    p.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                    p.ProcessName.Contains(keyword, StringComparison.OrdinalIgnoreCase));
             }
 
-            PopupRuleList.ItemsSource = ApplyPopupSort(filtered).ToList();
-        }
-
-        private IEnumerable<PopupRule> ApplyPopupSort(IEnumerable<PopupRule> src)
-        {
-            var tag = (PopupSortCombo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "Title";
-            return tag switch
-            {
-                "Status" => src.OrderBy(p => p.Status),
-                "Process" => src.OrderBy(p => p.ProcessName),
-                _ => src.OrderBy(p => p.Title)
-            };
+            PopupRuleList.ItemsSource = filtered.ToList();
         }
 
         private async void AddPopupRule_Click(object sender, RoutedEventArgs e)
         {
-            var titleTextBox = new TextBox { PlaceholderText = "输入要拦截的弹窗标题", Margin = new Thickness(0, 0, 0, 16) };
-            var processTextBox = new TextBox { PlaceholderText = "输入进程名称（可选）", Margin = new Thickness(0, 0, 0, 16) };
+            var titleBox = new TextBox { PlaceholderText = "输入要拦截的弹窗标题" };
+            var processBox = new TextBox { PlaceholderText = "输入进程名称（* 表示所有进程）", Text = "*" };
             var enabledToggle = new ToggleSwitch { IsOn = true };
 
             var dialog = new ContentDialog
@@ -72,68 +94,70 @@ namespace Xdows_Security.Views
                 Title = "添加弹窗拦截规则",
                 Content = new StackPanel
                 {
+                    Spacing = 12,
                     Children =
                     {
-                        new TextBlock { Text = "弹窗标题:", Margin = new Thickness(0, 0, 0, 8) },
-                        titleTextBox,
-                        new TextBlock { Text = "进程名称:", Margin = new Thickness(0, 0, 0, 8) },
-                        processTextBox,
-                        new TextBlock { Text = "是否启用:", Margin = new Thickness(0, 0, 0, 8) },
+                        new TextBlock { Text = "弹窗标题", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                        titleBox,
+                        new TextBlock { Text = "进程名称", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                        processBox,
+                        new TextBlock { Text = "是否启用", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
                         enabledToggle
                     }
                 },
                 PrimaryButtonText = "添加",
                 CloseButtonText = "取消",
                 XamlRoot = this.XamlRoot,
-                RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+                RequestedTheme = GetDialogTheme()
             };
 
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
-            {
-                if (!string.IsNullOrWhiteSpace(titleTextBox.Text))
-                {
-                    var newRule = new PopupRule
-                    {
-                        Title = titleTextBox.Text.Trim(),
-                        ProcessName = string.IsNullOrWhiteSpace(processTextBox.Text) ? "*" : processTextBox.Text.Trim(),
-                        IsEnabled = enabledToggle.IsOn
-                    };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            if (string.IsNullOrWhiteSpace(titleBox.Text)) return;
 
-                    _popupRules.Add(newRule);
-                    ApplyPopupFilterAndSort();
-                    UpdatePopupBlocking();
-                }
-            }
+            var rule = new PopupRule
+            {
+                Title = titleBox.Text.Trim(),
+                ProcessName = string.IsNullOrWhiteSpace(processBox.Text) ? "*" : processBox.Text.Trim(),
+                IsEnabled = enabledToggle.IsOn
+            };
+
+            _rules.Add(rule);
+            ApplyFilter();
+            UpdateMonitoring();
+
+            if (MasterToggle.IsOn && !_isMonitoring)
+                StartMonitoring();
         }
 
         private async void DeletePopupRule_Click(object sender, RoutedEventArgs e)
         {
-            if (PopupRuleList.SelectedItem is not PopupRule rule) return;
+            var rule = GetRuleFromSender(sender);
+            if (rule == null) return;
 
             var confirm = new ContentDialog
             {
-                Title = $"删除规则",
+                Title = "删除规则",
                 Content = $"确定要删除规则 \"{rule.Title}\" 吗？",
                 PrimaryButtonText = "删除",
                 CloseButtonText = "取消",
                 XamlRoot = this.XamlRoot,
-                RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+                RequestedTheme = GetDialogTheme()
             };
 
-            if (await confirm.ShowAsync() == ContentDialogResult.Primary)
-            {
-                _popupRules.Remove(rule);
-                ApplyPopupFilterAndSort();
-                UpdatePopupBlocking();
-            }
+            if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
+
+            _rules.Remove(rule);
+            ApplyFilter();
+            UpdateMonitoring();
         }
 
         private async void EditPopupRule_Click(object sender, RoutedEventArgs e)
         {
-            if (PopupRuleList.SelectedItem is not PopupRule rule) return;
+            var rule = GetRuleFromSender(sender);
+            if (rule == null) return;
 
-            var titleTextBox = new TextBox { Text = rule.Title, Margin = new Thickness(0, 0, 0, 16) };
-            var processTextBox = new TextBox { Text = rule.ProcessName, Margin = new Thickness(0, 0, 0, 16) };
+            var titleBox = new TextBox { Text = rule.Title };
+            var processBox = new TextBox { Text = rule.ProcessName };
             var enabledToggle = new ToggleSwitch { IsOn = rule.IsEnabled };
 
             var dialog = new ContentDialog
@@ -141,34 +165,32 @@ namespace Xdows_Security.Views
                 Title = "编辑弹窗拦截规则",
                 Content = new StackPanel
                 {
+                    Spacing = 12,
                     Children =
                     {
-                        new TextBlock { Text = "弹窗标题:", Margin = new Thickness(0, 0, 0, 8) },
-                        titleTextBox,
-                        new TextBlock { Text = "进程名称:", Margin = new Thickness(0, 0, 0, 8) },
-                        processTextBox,
-                        new TextBlock { Text = "是否启用:", Margin = new Thickness(0, 0, 0, 8) },
+                        new TextBlock { Text = "弹窗标题", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                        titleBox,
+                        new TextBlock { Text = "进程名称", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                        processBox,
+                        new TextBlock { Text = "是否启用", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
                         enabledToggle
                     }
                 },
                 PrimaryButtonText = "保存",
                 CloseButtonText = "取消",
                 XamlRoot = this.XamlRoot,
-                RequestedTheme = (this.XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+                RequestedTheme = GetDialogTheme()
             };
 
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
-            {
-                if (!string.IsNullOrWhiteSpace(titleTextBox.Text))
-                {
-                    rule.Title = titleTextBox.Text.Trim();
-                    rule.ProcessName = string.IsNullOrWhiteSpace(processTextBox.Text) ? "*" : processTextBox.Text.Trim();
-                    rule.IsEnabled = enabledToggle.IsOn;
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+            if (string.IsNullOrWhiteSpace(titleBox.Text)) return;
 
-                    ApplyPopupFilterAndSort();
-                    UpdatePopupBlocking();
-                }
-            }
+            rule.Title = titleBox.Text.Trim();
+            rule.ProcessName = string.IsNullOrWhiteSpace(processBox.Text) ? "*" : processBox.Text.Trim();
+            rule.IsEnabled = enabledToggle.IsOn;
+
+            ApplyFilter();
+            UpdateMonitoring();
         }
 
         private void PopupRuleToggle_Toggled(object sender, RoutedEventArgs e)
@@ -176,41 +198,19 @@ namespace Xdows_Security.Views
             if (sender is ToggleSwitch toggle && toggle.DataContext is PopupRule rule)
             {
                 rule.IsEnabled = toggle.IsOn;
-                UpdatePopupBlocking();
+                UpdateMonitoring();
             }
         }
 
-        private void UpdatePopupBlocking()
+        private PopupRule? GetRuleFromSender(object sender)
         {
-            var enabledRules = _popupRules.Where(r => r.IsEnabled).ToList();
-
-            if (enabledRules.Any())
-            {
-                if (!_isPopupBlockingEnabled)
-                {
-                    _popupBlocker.Start(enabledRules);
-                    _isPopupBlockingEnabled = true;
-                }
-                else
-                {
-                    _popupBlocker.UpdateRules(enabledRules);
-                }
-            }
-            else
-            {
-                if (_isPopupBlockingEnabled)
-                {
-                    _popupBlocker.Stop();
-                    _isPopupBlockingEnabled = false;
-                }
-            }
+            if (sender is MenuFlyoutItem menuItem)
+                return menuItem.DataContext as PopupRule;
+            return PopupRuleList.SelectedItem as PopupRule;
         }
 
-        private void RefreshPopupList_Click(object sender, RoutedEventArgs e)
-        {
-            ApplyPopupFilterAndSort();
-            UpdatePopupBlocking();
-        }
+        private ElementTheme GetDialogTheme()
+            => (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
     }
 
     public sealed class PopupRule
@@ -221,36 +221,33 @@ namespace Xdows_Security.Views
         public string Status => IsEnabled ? "已启用" : "已禁用";
     }
 
-    public class PopupBlocker
+    public sealed class PopupBlockerEngine
     {
         private CancellationTokenSource? _cts;
         private Task? _monitorTask;
-        private List<PopupRule> _rules = new();
+        private volatile List<PopupRule> _activeRules = [];
 
         public void Start(List<PopupRule> rules)
         {
             Stop();
-            _rules = rules;
+            _activeRules = new List<PopupRule>(rules);
             _cts = new CancellationTokenSource();
-            _monitorTask = Task.Run(async () => await MonitorLoop(_cts.Token), _cts.Token);
+            _monitorTask = Task.Run(() => MonitorLoop(_cts.Token), _cts.Token);
         }
 
         public void Stop()
         {
-            if (_cts != null)
-            {
-                _cts.Cancel();
-                _monitorTask?.Wait(1000);
-                _cts.Dispose();
-                _cts = null;
-                _monitorTask = null;
-            }
+            if (_cts == null) return;
+
+            _cts.Cancel();
+            _monitorTask?.Wait(2000);
+            _cts.Dispose();
+            _cts = null;
+            _monitorTask = null;
         }
 
         public void UpdateRules(List<PopupRule> rules)
-        {
-            _rules = rules;
-        }
+            => _activeRules = new List<PopupRule>(rules);
 
         private async Task MonitorLoop(CancellationToken token)
         {
@@ -258,55 +255,57 @@ namespace Xdows_Security.Views
             {
                 try
                 {
+                    var currentRules = _activeRules;
+
                     await Task.Run(() =>
                     {
-                        EnumWindows((hWnd, lParam) =>
+                        EnumWindows((hWnd, _) =>
                         {
-                            if (IsWindowVisible(hWnd) && !IsIconic(hWnd))
-                            {
-                                var title = GetWindowTitle(hWnd);
-                                var processName = GetWindowProcessName(hWnd);
+                            if (!IsWindowVisible(hWnd) || IsIconic(hWnd))
+                                return true;
 
-                                foreach (var rule in _rules)
+                            var title = GetWindowText(hWnd);
+                            if (string.IsNullOrEmpty(title))
+                                return true;
+
+                            var processName = GetWindowProcessName(hWnd);
+
+                            foreach (var rule in currentRules)
+                            {
+                                if (title.Contains(rule.Title, StringComparison.OrdinalIgnoreCase) &&
+                                    (rule.ProcessName == "*" || processName.Contains(rule.ProcessName, StringComparison.OrdinalIgnoreCase)))
                                 {
-                                    if (title.Contains(rule.Title, StringComparison.OrdinalIgnoreCase) &&
-                                        (rule.ProcessName == "*" || processName.Contains(rule.ProcessName, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                        PostMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-                                        break;
-                                    }
+                                    PostMessage(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+                                    break;
                                 }
                             }
+
                             return true;
                         }, IntPtr.Zero);
                     }, token);
                 }
-                catch
-                {
-                }
+                catch (OperationCanceledException) { break; }
+                catch { }
 
                 try
                 {
                     await Task.Delay(500, token);
                 }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
+                catch (OperationCanceledException) { break; }
             }
         }
 
-        private string GetWindowTitle(IntPtr hWnd)
+        private static string GetWindowText(IntPtr hWnd)
         {
             int length = GetWindowTextLength(hWnd);
             if (length == 0) return string.Empty;
 
-            StringBuilder builder = new StringBuilder(length + 1);
+            var builder = new StringBuilder(length + 1);
             GetWindowText(hWnd, builder, builder.Capacity);
             return builder.ToString();
         }
 
-        private string GetWindowProcessName(IntPtr hWnd)
+        private static string GetWindowProcessName(IntPtr hWnd)
         {
             GetWindowThreadProcessId(hWnd, out uint pid);
             try
@@ -320,28 +319,27 @@ namespace Xdows_Security.Views
             }
         }
 
-        // Windows API
         private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        [DllImport("user32.dll")]
         private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         private static extern int GetWindowTextLength(IntPtr hWnd);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool IsIconic(IntPtr hWnd);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)]
+        [DllImport("user32.dll", SetLastError = true)]
         private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         private const uint WM_CLOSE = 0x0010;

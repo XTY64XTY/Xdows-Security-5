@@ -9,12 +9,15 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <CommandBar Grid.Row="0">
             <CommandBar.Content>
                 <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -34,14 +37,20 @@
                         <ComboBoxItem Content="线程" Tag="Threads"/>
                         <ComboBoxItem Content="句柄" Tag="Handles"/>
                     </ComboBox>
-                    <TextBox x:Name="SearchBox"
-                             Grid.Column="2"
-                             PlaceholderText="键入要搜索的内容..."
-                             HorizontalAlignment="Center"
-                             Width="Auto"
-                             MinWidth="240"
-                             Margin="16,12,0,0"
-                             TextChanged="SearchBox_TextChanged"/>
+                    <ToggleSwitch x:Name="ViewModeToggle"
+                                  Grid.Column="2"
+                                  Margin="16,8,0,0"
+                                  OffContent="列表"
+                                  OnContent="树状图"
+                                  Toggled="ViewModeToggle_Toggled"/>
+                    <AutoSuggestBox x:Name="SearchBox"
+                                    Grid.Column="3"
+                                    PlaceholderText="搜索进程名称或 PID..."
+                                    HorizontalAlignment="Center"
+                                    MinWidth="260"
+                                    Margin="16,12,0,8"
+                                    TextChanged="SearchBox_TextChanged"
+                                    QueryIcon="Find"/>
                 </Grid>
             </CommandBar.Content>
             <AppBarButton Icon="Refresh" Label="刷新列表" Click="Refresh_Click"/>
@@ -56,64 +65,91 @@
                     <FontIcon Glyph="&#xE768;"/>
                 </AppBarButton.Icon>
             </AppBarButton>
-
             <AppBarButton Label="详细信息" Click="ShowProcessDetail_Click">
                 <AppBarButton.Icon>
                     <FontIcon Glyph="&#xE946;"/>
                 </AppBarButton.Icon>
             </AppBarButton>
         </CommandBar>
-        <ListView x:Name="ProcessList" Grid.Row="1" SelectionMode="Single" DoubleTapped="ShowProcessDetail_Click">
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:ProcessInfoEx">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="100"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{x:Bind Name}" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{x:Bind Id}" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="{x:Bind ThreadCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                        <TextBlock Grid.Column="3" Text="{x:Bind HandleCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                        <TextBlock Grid.Column="4" Text="{x:Bind Memory}" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                        <Grid.ContextFlyout>
-                            <MenuFlyout x:Name="ItemMenuFlyout">
-                                <MenuFlyoutItem Text="刷新列表" Click="Refresh_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE72C;"  />
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutSeparator/>
-                                <MenuFlyoutItem Text="详细信息" Click="ShowProcessDetail_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE946;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
 
-                                <MenuFlyoutItem Text="挂起进程" Click="Suspend_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE769;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="恢复进程" Click="Resume_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE768;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutSeparator/>
-                                <MenuFlyoutItem Text="终止进程" Click="Kill_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xF140;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                            </MenuFlyout>
-                        </Grid.ContextFlyout>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        <Grid x:Name="ListHeader" Grid.Row="1" Padding="16,8,16,4" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="名称" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="1" Text="PID" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="2" Text="线程" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="3" Text="句柄" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="4" Text="内存" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <ListView x:Name="ProcessList" SelectionMode="Single" DoubleTapped="ShowProcessDetail_Click">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:ProcessInfoEx">
+                        <Grid Padding="0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{x:Bind Name}" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="1" Text="{x:Bind Id}" FontSize="14" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{x:Bind ThreadCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Grid.Column="3" Text="{x:Bind HandleCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            <TextBlock Grid.Column="4" Text="{x:Bind Memory}" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <Grid.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="刷新列表" Click="Refresh_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE72C;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator/>
+                                    <MenuFlyoutItem Text="详细信息" Click="ShowProcessDetail_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE946;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="挂起进程" Click="Suspend_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE769;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="恢复进程" Click="Resume_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE768;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator/>
+                                    <MenuFlyoutItem Text="终止进程" Click="Kill_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xF140;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </Grid.ContextFlyout>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <TreeView x:Name="ProcessTree" Visibility="Collapsed" DoubleTapped="ShowProcessDetail_Click"/>
+
+            <StackPanel x:Name="LoadingPanel"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="12"
+                        Visibility="Visible">
+                <ProgressRing IsActive="True" Width="40" Height="40"/>
+                <TextBlock Text="正在加载进程列表..." Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

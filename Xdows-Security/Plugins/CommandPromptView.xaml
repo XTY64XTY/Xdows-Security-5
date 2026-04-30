@@ -8,7 +8,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="300"/>
+            <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <CommandBar Grid.Row="0">
@@ -18,45 +18,58 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="CmdTabTitle"
+                    <TextBlock Text="命令提示符"
                                Margin="12,16,0,0"
                                FontSize="16"
-                               Text="命令提示符"/>
+                               Style="{StaticResource CaptionTextBlockStyle}"/>
                 </Grid>
             </CommandBar.Content>
             <AppBarButton Icon="Clear" Label="清空输出" Click="ClearOutput_Click"/>
             <AppBarButton Icon="Copy" Label="复制输出" Click="CopyOutput_Click"/>
+            <AppBarButton Label="重启终端" Click="RestartCmd_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE72C;"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
         </CommandBar>
-        <Border Grid.Row="1" Margin="16,8,16,0" BorderThickness="1">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Border Grid.Row="1" Margin="16,8,16,0" BorderThickness="1"
+                BorderBrush="{ThemeResource ControlElevationBorderBrush}"
+                Background="{ThemeResource ControlFillColorDefaultBrush}"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+            <ScrollViewer x:Name="OutputScrollViewer"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Auto"
+                          HorizontalScrollMode="Auto">
                 <TextBox x:Name="CmdOutput"
                          IsReadOnly="True"
-                         TextWrapping="Wrap"
-                         FontSize="12"
-                         Text="命令提示符启动成功，请输入相关命令。"
+                         TextWrapping="NoWrap"
+                         FontSize="13"
+                         FontFamily="Cascadia Code, Consolas"
+                         Text="命令提示符已就绪，请输入命令。"
                          AcceptsReturn="True"
                          VerticalAlignment="Stretch"
                          HorizontalAlignment="Stretch"
                          Padding="12"
-                         Margin="0"/>
+                         Margin="0"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Foreground="{ThemeResource TextFillColorPrimaryBrush}"/>
             </ScrollViewer>
         </Border>
-        <Grid Grid.Row="2" Margin="16,5,16,16">
+        <Grid Grid.Row="2" Margin="16,8,16,16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBox x:Name="CmdInput"
-                     PlaceholderText="输入命令..."
+                     PlaceholderText="输入命令... (↑↓ 浏览历史)"
                      KeyDown="CmdInput_KeyDown"
-                     VerticalAlignment="Center"
-                     Height="30"/>
+                     VerticalAlignment="Center"/>
             <Button x:Name="ExecuteButton"
                     Grid.Column="1"
                     Content="执行"
                     Click="ExecuteButton_Click"
                     MinWidth="80"
-                    Height="30"
                     Style="{StaticResource AccentButtonStyle}"
                     Margin="8,0,0,0"/>
         </Grid>

@@ -9,8 +9,10 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+
         <CommandBar Grid.Row="0">
             <CommandBar.Content>
                 <Grid HorizontalAlignment="Stretch" VerticalAlignment="Center">
@@ -19,38 +21,63 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="PopupTabTitle" Style="{StaticResource CaptionTextBlockStyle}" Margin="12,16,0,0" Text="弹窗拦截器" FontSize="16"/>
-                    <ComboBox x:Name="PopupSortCombo" Grid.Column="1" Margin="16,12,0,0" Width="120" SelectionChanged="PopupSortCombo_SelectionChanged">
-                        <ComboBoxItem Content="标题" Tag="Title"/>
-                        <ComboBoxItem Content="状态" Tag="Status"/>
-                        <ComboBoxItem Content="进程" Tag="Process"/>
-                    </ComboBox>
-                    <TextBox x:Name="PopupSearchBox" Grid.Column="2" PlaceholderText="键入要搜索的内容..." HorizontalAlignment="Center" MinWidth="240" Margin="16,12,0,0" TextChanged="PopupSearchBox_TextChanged"/>
+                    <TextBlock Text="弹窗拦截器"
+                               Style="{StaticResource CaptionTextBlockStyle}"
+                               Margin="12,16,0,0"
+                               FontSize="16"/>
+                    <ToggleSwitch x:Name="MasterToggle"
+                                  Grid.Column="1"
+                                  Margin="16,8,0,0"
+                                  OffContent="已停止"
+                                  OnContent="监控中"
+                                  Toggled="MasterToggle_Toggled"/>
+                    <AutoSuggestBox x:Name="PopupSearchBox"
+                                    Grid.Column="2"
+                                    PlaceholderText="搜索规则..."
+                                    HorizontalAlignment="Center"
+                                    MinWidth="240"
+                                    Margin="16,12,0,0"
+                                    TextChanged="PopupSearchBox_TextChanged"
+                                    QueryIcon="Find"/>
                 </Grid>
             </CommandBar.Content>
             <AppBarButton Icon="Add" Label="添加规则" Click="AddPopupRule_Click"/>
             <AppBarButton Icon="Delete" Label="删除规则" Click="DeletePopupRule_Click"/>
-            <AppBarButton Icon="Refresh" Label="刷新列表" Click="RefreshPopupList_Click"/>
+            <AppBarButton Icon="Edit" Label="编辑规则" Click="EditPopupRule_Click"/>
         </CommandBar>
-        <ListView x:Name="PopupRuleList" Grid.Row="1" SelectionMode="Single" Margin="0,16,0,0">
+
+        <Grid Grid.Row="1" Padding="16,8,16,4" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="120"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="标题" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="1" Text="进程" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="2" Text="状态" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="3" Text="启用" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
+        </Grid>
+
+        <ListView x:Name="PopupRuleList" Grid.Row="2" SelectionMode="Single" DoubleTapped="EditPopupRule_Click">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:PopupRule">
-                    <Grid>
+                    <Grid Padding="0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="100"/>
                             <ColumnDefinition Width="120"/>
                             <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="80"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{x:Bind Title}" FontSize="14" TextWrapping="Wrap"/>
-                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind ProcessName}" FontSize="14"/>
-                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{x:Bind Status}" FontSize="14"/>
-                        <ToggleSwitch Grid.Column="3" IsOn="{x:Bind IsEnabled, Mode=TwoWay}" Toggled="PopupRuleToggle_Toggled" MinWidth="60"/>
+                        <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{x:Bind Title}" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{x:Bind ProcessName}" FontSize="14" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{x:Bind Status}" FontSize="14" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        <ToggleSwitch Grid.Column="3" IsOn="{x:Bind IsEnabled, Mode=TwoWay}" Toggled="PopupRuleToggle_Toggled" MinWidth="60" HorizontalAlignment="Center"/>
                         <Grid.ContextFlyout>
                             <MenuFlyout>
                                 <MenuFlyoutItem Text="编辑规则" Click="EditPopupRule_Click">
                                     <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE70F;" />
+                                        <FontIcon Glyph="&#xE70F;"/>
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
                                 <MenuFlyoutSeparator/>
