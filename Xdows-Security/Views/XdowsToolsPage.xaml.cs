@@ -1,8 +1,4 @@
 using Microsoft.UI.Xaml.Controls;
-using System.Linq;
-using System.Collections.Generic;
-using Xdows_Security.Services;
-using Xdows_Security.PluginsLoader;
 
 namespace Xdows_Security.Views
 {
@@ -12,33 +8,31 @@ namespace Xdows_Security.Views
         {
             InitializeComponent();
         }
-        private async void Page_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        private void Page_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
         {
-            try
+            TabView.TabItems.Add(new TabViewItem
             {
-                PluginLoader loader = new();
-                List<IPlugin> plugins = [.. loader.LoadPlugins(this)];
-                foreach (IPlugin plugin in plugins)
-                {
-                    try
-                    {
-                        TabViewItem tab = new()
-                        {
-                            Header = new TextBlock
-                            {
-                                Text = plugin.Name ?? plugin.Metadata?.Name ?? plugin.Id,
-                                FontSize = 14
-                            },
-                            IconSource = plugin.Icon,
-                            IsClosable = false,
-                            Content = plugin.GetView() ?? new TextBlock { Text = WinUI3Localizer.Localizer.Get().GetLocalizedString("AllPage_Undefined") }
-                        };
-                        TabView.TabItems.Add(tab);
-                    }
-                    catch { }
-                }
-            }
-            catch { }
+                Header = new TextBlock { Text = "进程管理器", FontSize = 14 },
+                IconSource = new FontIconSource { Glyph = "\uE9D9" },
+                IsClosable = false,
+                Content = new ProcessManagerView()
+            });
+
+            TabView.TabItems.Add(new TabViewItem
+            {
+                Header = new TextBlock { Text = "命令提示符", FontSize = 14 },
+                IconSource = new FontIconSource { Glyph = "\uE756" },
+                IsClosable = false,
+                Content = new CommandPromptView()
+            });
+
+            TabView.TabItems.Add(new TabViewItem
+            {
+                Header = new TextBlock { Text = "弹窗拦截器", FontSize = 14 },
+                IconSource = new FontIconSource { Glyph = "\uEA0D" },
+                IsClosable = false,
+                Content = new PopupBlockerView()
+            });
         }
     }
 }
