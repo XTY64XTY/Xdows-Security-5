@@ -968,23 +968,32 @@ namespace Xdows_Security.Views
                 ResumeScanButton.Visibility = Visibility.Collapsed;
                 StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Processing");
                 OnBackList(false);
-                StartRadarAnimation();
             });
-
-            ScanId++;
 
             await Task.Run(async () =>
             {
                 try
                 {
-                    var filesList = EnumerateFiles(mode, userPath, customPaths);
                     bool parallelIndex = scanIndexMode == "Parallel";
 
-                    IEnumerable<string> files = parallelIndex ? EnumerateFilesStreaming(mode, userPath, customPaths) : filesList;
-                    int total = parallelIndex ? 0 : filesList.Count;
+                    IEnumerable<string> files;
+                    int total;
+
+                    if (parallelIndex)
+                    {
+                        files = EnumerateFilesStreaming(mode, userPath, customPaths);
+                        total = 0;
+                    }
+                    else
+                    {
+                        var filesList = EnumerateFiles(mode, userPath, customPaths);
+                        files = filesList;
+                        total = filesList.Count;
+                    }
 
                     DateTime startTime = DateTime.Now;
                     int finished = 0;
+
                     int currentItemIndex = mode switch
                     {
                         ScanMode.Quick => 0,
