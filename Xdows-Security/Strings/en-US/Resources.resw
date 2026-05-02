@@ -720,17 +720,29 @@
   <data name="SettingsPage_Scan_Local_ExtraData.Description" xml:space="preserve">
     <value>Add extra metadata to detected virus names</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_BuiltInRuleEngine.Header" xml:space="preserve">
+    <value>Built-in Rule Engine</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine.Description" xml:space="preserve">
+    <value>Enable built-in rule-based scanning engines</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_InfectorCleaner.Header" xml:space="preserve">
+    <value>Malicious Code Stripping Engine</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_InfectorCleaner.Description" xml:space="preserve">
+    <value>Detect and strip infector virus code from PE files, restoring the original entry point</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ScanInside.Header" xml:space="preserve">
     <value>Scan Inside Files</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ScanInside.Description" xml:space="preserve">
     <value>Scan files inside ZIP archives, threats will be quarantined and removed from the archive</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside_Nested.Header" xml:space="preserve">
-    <value>Scan Nested Archives</value>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily.Header" xml:space="preserve">
+    <value>Built-in Family Rule Engine</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside_Nested.Description" xml:space="preserve">
-    <value>Scan archive files inside archives</value>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily.Description" xml:space="preserve">
+    <value>After other engines detect a threat, use built-in pattern rules to identify the virus family name</value>
   </data>
   <data name="HomePage_Pomes" xml:space="preserve">
     <value>Light—cosmic dot; black hole its plotted ellipsis.

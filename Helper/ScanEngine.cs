@@ -15,6 +15,35 @@ namespace Helper
             return await Task.Run(() => Xdows_Local.Core.ScanFromBytes(path, fileBytes, deep, ExtraData));
         }
 
+        public static async Task<(bool IsInfected, string? Result)> InfectorScanAsync(string path)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    var detection = InfectorCleaner.InfectorDetector.DetectInfector(path);
+                    if (detection.IsInfected)
+                    {
+                        return (true, "HEUR:Infector.EP_Hijack!ml");
+                    }
+                }
+                catch { }
+                return (false, (string?)null);
+            });
+        }
+
+        public static async Task<InfectorCleaner.CleaningResult?> InfectorCleanAsync(string path)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    return InfectorCleaner.InfectorCleaner.CleanInfectedFile(path);
+                }
+                catch { return null; }
+            });
+        }
+
         public class ModelEngineScan
         {
             public static bool Initialize()

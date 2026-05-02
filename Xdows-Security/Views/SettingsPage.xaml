@@ -118,15 +118,26 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
-                           l:Uids.Uid="SettingsPage_Scan_ScanInside"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xF012;}"
+                           VerticalAlignment="Top"
+                           l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE945;}"
+                           x:Name="Scan_BuiltInRuleEngine"
                            Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="ScanInsideToggle" Tag="ScanInside" Toggled="Toggled_SaveToggleData"  />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_ScanInside_Nested"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
-                            <ToggleSwitch x:Name="ScanInsideNestedToggle" Tag="ScanInsideNested" Toggled="Toggled_SaveToggleData"  />
+                           l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_ScanInside"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xF012;}">
+                            <ToggleSwitch x:Name="ScanInsideToggle" Tag="ScanInside" Toggled="Toggled_SaveToggleData" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xEBDA;}">
+                            <ToggleSwitch x:Name="VirusFamilyToggle" Tag="VirusFamily" Toggled="VirusFamilyToggle_Toggled" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_InfectorCleaner"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xEA99;}">
+                            <ToggleSwitch x:Name="InfectorCleanerToggle" Tag="InfectorCleaner" Toggled="Toggled_SaveToggleData" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

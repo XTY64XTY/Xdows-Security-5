@@ -720,17 +720,29 @@
   <data name="SettingsPage_Scan_Local_ExtraData.Description" xml:space="preserve">
     <value>病毒名稱中顯示威脅文件額外數據</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_BuiltInRuleEngine.Header" xml:space="preserve">
+    <value>內置規則引擎</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine.Description" xml:space="preserve">
+    <value>啟用基於內置規則的掃描引擎</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_InfectorCleaner.Header" xml:space="preserve">
+    <value>惡意代碼剝離引擎</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_InfectorCleaner.Description" xml:space="preserve">
+    <value>檢測並剝離 PE 文件中的感染型病毒代碼，恢復原始入口點</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ScanInside.Header" xml:space="preserve">
     <value>掃描文件內部</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ScanInside.Description" xml:space="preserve">
     <value>掃描 ZIP 壓縮包內部文件，掃描出威脅時會將文件隔離並從壓縮包中刪除</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside_Nested.Header" xml:space="preserve">
-    <value>掃描嵌套壓縮包</value>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily.Header" xml:space="preserve">
+    <value>內置家族規則引擎</value>
   </data>
-  <data name="SettingsPage_Scan_ScanInside_Nested.Description" xml:space="preserve">
-    <value>掃描壓縮包內部的壓縮包文件</value>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily.Description" xml:space="preserve">
+    <value>在其他引擎報毒後，使用內置特徵規則識別病毒家族名稱</value>
   </data>
   <data name="HomePage_Pomes" xml:space="preserve">
     <value>光是宇宙的標點，黑洞是它故意留的省略號.

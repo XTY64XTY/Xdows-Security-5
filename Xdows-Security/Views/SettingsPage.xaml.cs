@@ -229,6 +229,28 @@ namespace Xdows_Security.Views
             settings.Values[key] = toggle.IsOn;
         }
 
+        private void VirusFamilyToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            Toggled_SaveToggleData(sender, e);
+
+            if (sender is not ToggleSwitch virusToggle) return;
+
+            if (virusToggle.IsOn)
+            {
+                InfectorCleanerToggle.IsEnabled = true;
+            }
+            else
+            {
+                if (InfectorCleanerToggle.IsOn)
+                {
+                    InfectorCleanerToggle.IsOn = false;
+                    var settings = ApplicationData.Current.LocalSettings;
+                    settings.Values["InfectorCleaner"] = false;
+                }
+                InfectorCleanerToggle.IsEnabled = false;
+            }
+        }
+
         private void LoadScanSetting()
         {
             var settings = ApplicationData.Current.LocalSettings;
@@ -239,7 +261,8 @@ namespace Xdows_Security.Views
                 DeepScanToggle,
                 ExtraDataToggle,
                 ScanInsideToggle,
-                ScanInsideNestedToggle,
+                VirusFamilyToggle,
+                InfectorCleanerToggle,
                 LocalScanToggle,
                 CzkCloudScanToggle,
                 ModelScanToggle,
@@ -264,6 +287,8 @@ namespace Xdows_Security.Views
                     toggle.IsOn = isOn;
                 }
             }
+
+            InfectorCleanerToggle.IsEnabled = VirusFamilyToggle.IsOn;
 
             if (settings.Values.TryGetValue("AppBackdropOpacity", out object? opacityRaw) && opacityRaw is double opacity)
             {

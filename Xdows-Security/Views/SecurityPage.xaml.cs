@@ -27,6 +27,7 @@ namespace Xdows_Security.Views
     {
         private String _filePath = String.Empty;
         private String _virusName = String.Empty;
+        private String _familyName = String.Empty;
 
         public String FilePath
         {
@@ -39,6 +40,14 @@ namespace Xdows_Security.Views
             get => _virusName;
             set { _virusName = value; OnPropertyChanged(); }
         }
+
+        public String FamilyName
+        {
+            get => _familyName;
+            set { _familyName = value; OnPropertyChanged(); OnPropertyChanged(nameof(FamilyNameVisibility)); }
+        }
+
+        public Visibility FamilyNameVisibility => String.IsNullOrWhiteSpace(_familyName) ? Visibility.Collapsed : Visibility.Visible;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -96,7 +105,7 @@ namespace Xdows_Security.Views
         private Int32 _filesScanned = 0;
         private Int32 _filesSafe = 0;
         private Int32 _threatsFound = 0;
-        private Int32 ScanId = 0;
+        private readonly Int32 ScanId = 0;
         private ContentDialog? _moreScanDialog;
         private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
 
@@ -112,12 +121,13 @@ namespace Xdows_Security.Views
             InitializeScanItems();
         }
 
-        private void AddVirusResult(String filePath, String virusName)
+        private void AddVirusResult(String filePath, String virusName, String? familyName = null)
         {
             VirusRow row = new()
             {
                 FilePath = filePath,
-                VirusName = virusName
+                VirusName = virusName,
+                FamilyName = familyName ?? String.Empty
             };
 
             CurrentResults?.Add(row);
@@ -715,12 +725,13 @@ namespace Xdows_Security.Views
             return null;
         }
 
-        private record ScanResult(String EngineName, String? VirusInfo);
+        private record ScanResult(String EngineName, String? VirusInfo, String? FamilyInfo = null);
 
         // Run configured scan engines against a single file and return the first detection (if any).
         private async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
             Boolean deepScan, Boolean extraData,
             Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan,
+            Boolean useInfectorCleaner, Boolean useVirusFamily,
             Helper.ScanEngine.ModelEngineScan? modelEngine,
             String czkApiKey, CancellationToken token)
         {
@@ -790,7 +801,20 @@ namespace Xdows_Security.Views
                 foreach (var r in results)
                 {
                     if (!String.IsNullOrEmpty(r.VirusInfo))
+                    {
+                        if (useVirusFamily)
+                        {
+                            try
+                            {
+                                String familyResult = Xdows_Local.VirusFamilyEngine.GetVirusFamily(filePath, 0.8f);
+                                if (!familyResult.StartsWith("HEUR:Malware"))
+                                    return r with { FamilyInfo = familyResult };
+                                return r with { FamilyInfo = Localizer.Get().GetLocalizedString("AllPage_Undefined") };
+                            }
+                            catch { }
+                        }
                         return r;
+                    }
                 }
 
                 return new ScanResult(String.Empty, null);
@@ -803,11 +827,11 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task ScanZipFileAsync(String zipPath, Boolean scanNested, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
+        private async Task ScanZipFileAsync(String zipPath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
         {
             try
             {
-                var entries = await ZipScanner.ReadZipEntriesAsync(zipPath, scanNested);
+                var entries = await ZipScanner.ReadZipEntriesAsync(zipPath, true);
 
                 foreach (var (entryPath, data) in entries)
                 {
@@ -836,7 +860,7 @@ namespace Xdows_Security.Views
 
                         // ZIP entry already has bytes in memory - compute MD5 once, pass to all engines
                         string entryMd5 = ScanEngine.ComputeMD5(data);
-                        var scanRes = await RunScansOnFileAsync(tempFile, data, entryMd5, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useModelScan, modelEngine, czkApiKey, token);
+                        var scanRes = await RunScansOnFileAsync(tempFile, data, entryMd5, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useModelScan, useInfectorCleaner, useVirusFamily, modelEngine, czkApiKey, token);
                         string? virusResult = scanRes.VirusInfo;
                         if (!String.IsNullOrEmpty(virusResult))
                         {
@@ -852,7 +876,7 @@ namespace Xdows_Security.Views
 
                             _dispatcherQueue.TryEnqueue(() =>
                             {
-                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult);
+                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo);
                                 BackToVirusListButton.Visibility = Visibility.Visible;
                             });
 
@@ -899,6 +923,8 @@ namespace Xdows_Security.Views
             bool UseCzkCloudScan = settings.Values["CzkCloudScan"] as bool? ?? false;
             bool UseCloudScan = settings.Values["CloudScan"] as bool? ?? false;
             bool UseModelScan = settings.Values["ModelScan"] as bool? ?? false;
+            bool UseInfectorCleaner = settings.Values["InfectorCleaner"] as bool? ?? false;
+            bool UseVirusFamily = settings.Values["VirusFamily"] as bool? ?? false;
 
             Helper.ScanEngine.ModelEngineScan? ModelEngine = null;
 
@@ -928,7 +954,16 @@ namespace Xdows_Security.Views
             if (UseCzkCloudScan) enginesLog += " CzkCloudScan";
             if (UseCloudScan) enginesLog += " CloudScan";
             if (UseModelScan) enginesLog += " Xdows-Model";
+            if (UseInfectorCleaner) enginesLog += " InfectorCleaner";
+            if (UseVirusFamily) enginesLog += " VirusFamily";
             LogText.AddNewLog(LogText.LogLevel.INFO, "Security - StartScan", enginesLog);
+
+            _dispatcherQueue.TryEnqueue(() =>
+            {
+                VirusList.ItemTemplate = UseVirusFamily
+                    ? (DataTemplate)Resources["VirusRowWithFamilyTemplate"]
+                    : (DataTemplate)Resources["VirusRowTemplate"];
+            });
 
             string? userPath = null;
             if (mode is ScanMode.File or ScanMode.Folder)
@@ -1014,7 +1049,6 @@ namespace Xdows_Security.Views
                     DateTime lastPauseTime = DateTime.MinValue;
                     string czkApiKey = App.GetCzkCloudApiKey();
                     bool ScanInside = settings.Values["ScanInside"] as bool? ?? false;
-                    bool ScanInsideNested = settings.Values["ScanInsideNested"] as bool? ?? false;
 
                     // 双层并行架构：
                     // 外层高并发：枚举+TrustCheck快速跳过 → 维持200+/秒吞吐
@@ -1036,7 +1070,8 @@ namespace Xdows_Security.Views
                         while (_isPaused && !ct.IsCancellationRequested)
                         {
                             if (lastPauseTime == DateTime.MinValue) lastPauseTime = DateTime.Now;
-                            await Task.Delay(100, ct);
+                            try { await Task.Delay(100, ct); }
+                            catch (OperationCanceledException) { return; }
                         }
 
                         if (lastPauseTime != DateTime.MinValue)
@@ -1072,7 +1107,7 @@ namespace Xdows_Security.Views
                             await scanGate.WaitAsync(ct);
                             try
                             {
-                                await ScanZipFileAsync(file, ScanInsideNested, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                                await ScanZipFileAsync(file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
                             }
                             finally { scanGate.Release(); }
                             Interlocked.Increment(ref finished);
@@ -1084,14 +1119,46 @@ namespace Xdows_Security.Views
                         await scanGate.WaitAsync(ct);
                         try
                         {
-                            var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, ModelEngine, czkApiKey, ct);
+                            var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
                             Interlocked.Increment(ref Statistics.ScansQuantity);
                             if (!String.IsNullOrEmpty(scanRes.VirusInfo))
                             {
                                 Interlocked.Increment(ref Statistics.VirusQuantity);
+
+                                if (UseInfectorCleaner)
+                                {
+                                    try
+                                    {
+                                        var detection = Helper.InfectorCleaner.InfectorDetector.DetectInfector(file);
+                                        if (detection.IsInfected)
+                                        {
+                                            var cleanResult = Helper.InfectorCleaner.InfectorCleaner.CleanInfectedFile(file);
+                                            if (cleanResult.Success)
+                                            {
+                                                if (cleanResult.OriginalFileData != null)
+                                                {
+                                                    String threatName = $"Infector.{cleanResult.MaliciousSection?.TrimStart('.') ?? "Unknown"}!ml";
+                                                    _ = TrustQuarantine.QuarantineManager.AddToQuarantineFromBytes(
+                                                        cleanResult.OriginalFileData, file, threatName, false);
+                                                }
+                                                scanRes = new ScanResult(scanRes.EngineName, $"{scanRes.VirusInfo} [Cleaned: OEP=0x{cleanResult.OriginalEntryPoint:X8}, Section={cleanResult.MaliciousSection}]");
+                                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - InfectorCleaned", cleanResult.Message);
+                                            }
+                                            else
+                                            {
+                                                LogText.AddNewLog(LogText.LogLevel.WARN, "Security - InfectorCleanFailed", cleanResult.Message);
+                                            }
+                                        }
+                                    }
+                                    catch (Exception cleanEx)
+                                    {
+                                        LogText.AddNewLog(LogText.LogLevel.WARN, "Security - InfectorCleanError", cleanEx.Message);
+                                    }
+                                }
+
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
-                                    AddVirusResult(file, scanRes.VirusInfo);
+                                    AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo);
                                     BackToVirusListButton.Visibility = Visibility.Visible;
                                 });
                                 int newThreats = Interlocked.Increment(ref _threatsFound);
