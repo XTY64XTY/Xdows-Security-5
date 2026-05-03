@@ -744,6 +744,12 @@
   <data name="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily.Description" xml:space="preserve">
     <value>After other engines detect a threat, use built-in pattern rules to identify the virus family name</value>
   </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ExactRule.Header" xml:space="preserve">
+    <value>Exact Rule Engine</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ExactRule.Description" xml:space="preserve">
+    <value>Cloud hash-based exact matching engine, scans before other engines</value>
+  </data>
   <data name="HomePage_Pomes" xml:space="preserve">
     <value>Light—cosmic dot; black hole its plotted ellipsis.
 Screens fake light with filters, like résumés fake life.

@@ -28,7 +28,7 @@ namespace Helper
                     }
                 }
                 catch { }
-                return (false, (string?)null);
+                return (false, null);
             });
         }
 
@@ -75,7 +75,7 @@ namespace Helper
         }
 
         private static readonly System.Net.Http.HttpClient s_httpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
-        
+
         public static async Task<(int statusCode, string? result)> CzkCloudScanAsync(string path, string apiKey)
         {
             string hash = await GetFileMD5Async(path);
@@ -146,6 +146,141 @@ namespace Helper
         {
             byte[] hash = MD5.HashData(data);
             return Convert.ToHexString(hash);
+        }
+
+        public static async Task<string> GetFileSHA256Async(string path)
+        {
+            using var sha256 = SHA256.Create();
+            await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: true);
+            var hash = await sha256.ComputeHashAsync(stream);
+            return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        public static string ComputeSHA256(byte[] data)
+        {
+            byte[] hash = SHA256.HashData(data);
+            return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        public static async Task<(int statusCode, string? result, string? family)> ExactRuleEngineScanAsync(string path)
+        {
+            string hash = await GetFileSHA256Async(path);
+            return await ExactRuleEngineScanWithHashAsync(hash);
+        }
+
+        public static async Task<(int statusCode, string? result, string? family)> ExactRuleEngineScanWithHashAsync(string hash)
+        {
+            var client = s_httpClient;
+            string url = "http://103.118.245.82:7050/api/check";
+            try
+            {
+                string jsonBody = $"{{\"hash\":\"{hash}\"}}";
+                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
+                var resp = await client.PostAsync(url, content);
+                resp.EnsureSuccessStatusCode();
+                string json = await resp.Content.ReadAsStringAsync();
+                using JsonDocument doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.TryGetProperty("result", out JsonElement resultProp))
+                {
+                    string result = resultProp.GetString() ?? "unknown";
+                    if (result == "black")
+                    {
+                        string? family = root.TryGetProperty("family", out JsonElement familyProp) ? familyProp.GetString() : null;
+                        return (200, family ?? "ExactRule.Malware", family);
+                    }
+                    else if (result == "white")
+                    {
+                        return (200, "safe", null);
+                    }
+                    else
+                    {
+                        return (200, null, null);
+                    }
+                }
+            }
+            catch
+            {
+                return (-1, null, null);
+            }
+            return (-1, null, null);
+        }
+
+        public static async Task<Dictionary<string, (string? result, string? family)>> ExactRuleEngineBatchScanAsync(List<string> filePaths, CancellationToken token = default)
+        {
+            var results = new Dictionary<string, (string? result, string? family)>(StringComparer.OrdinalIgnoreCase);
+            if (filePaths.Count == 0) return results;
+
+            var hashEntries = new List<(string filePath, string hash)>();
+            foreach (var path in filePaths)
+            {
+                try
+                {
+                    string hash = await GetFileSHA256Async(path);
+                    hashEntries.Add((path, hash));
+                }
+                catch { }
+            }
+
+            if (hashEntries.Count == 0) return results;
+
+            return await ExactRuleEngineBatchScanHashesAsync(hashEntries, token);
+        }
+
+        public static async Task<Dictionary<string, (string? result, string? family)>> ExactRuleEngineBatchScanHashesAsync(List<(string filePath, string hash)> hashEntries, CancellationToken token = default)
+        {
+            var results = new Dictionary<string, (string? result, string? family)>(StringComparer.OrdinalIgnoreCase);
+            if (hashEntries.Count == 0) return results;
+
+            var client = s_httpClient;
+            string url = "http://103.118.245.82:7050/api/batch_check";
+            try
+            {
+                var hashes = hashEntries.Select(e => e.hash).ToList();
+                var sb = new System.Text.StringBuilder();
+                sb.Append("{\"hashes\":[");
+                for (int h = 0; h < hashes.Count; h++)
+                {
+                    if (h > 0) sb.Append(',');
+                    sb.Append('\"');
+                    sb.Append(hashes[h]);
+                    sb.Append('\"');
+                }
+                sb.Append("]}");
+                string jsonBody = sb.ToString();
+                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
+                var resp = await client.PostAsync(url, content, token);
+                resp.EnsureSuccessStatusCode();
+                string json = await resp.Content.ReadAsStringAsync(token);
+                if (String.IsNullOrWhiteSpace(json)) return results;
+                using JsonDocument doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("results", out JsonElement resultsArray) && resultsArray.ValueKind == JsonValueKind.Array)
+                {
+                    int i = 0;
+                    foreach (JsonElement item in resultsArray.EnumerateArray())
+                    {
+                        if (i >= hashEntries.Count) break;
+                        var (filePath, _) = hashEntries[i];
+                        string result = item.TryGetProperty("result", out JsonElement rProp) && rProp.ValueKind == JsonValueKind.String ? (rProp.GetString() ?? "unknown") : "unknown";
+                        if (result == "black")
+                        {
+                            string? family = item.TryGetProperty("family", out JsonElement fProp) && fProp.ValueKind == JsonValueKind.String ? fProp.GetString() : null;
+                            results[filePath] = (family ?? "ExactRule.Malware", family);
+                        }
+                        else if (result == "white")
+                        {
+                            results[filePath] = ("safe", null);
+                        }
+                        else
+                        {
+                            results[filePath] = (null, null);
+                        }
+                        i++;
+                    }
+                }
+            }
+            catch { }
+            return results;
         }
     }
 }

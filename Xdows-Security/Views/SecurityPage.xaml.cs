@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using WinUI3Localizer;
@@ -925,6 +926,7 @@ namespace Xdows_Security.Views
             bool UseModelScan = settings.Values["ModelScan"] as bool? ?? false;
             bool UseInfectorCleaner = settings.Values["InfectorCleaner"] as bool? ?? false;
             bool UseVirusFamily = settings.Values["VirusFamily"] as bool? ?? false;
+            bool UseExactRule = settings.Values["ExactRuleScan"] as bool? ?? false;
 
             Helper.ScanEngine.ModelEngineScan? ModelEngine = null;
 
@@ -956,6 +958,7 @@ namespace Xdows_Security.Views
             if (UseModelScan) enginesLog += " Xdows-Model";
             if (UseInfectorCleaner) enginesLog += " InfectorCleaner";
             if (UseVirusFamily) enginesLog += " VirusFamily";
+            if (UseExactRule) enginesLog += " ExactRule";
             LogText.AddNewLog(LogText.LogLevel.INFO, "Security - StartScan", enginesLog);
 
             _dispatcherQueue.TryEnqueue(() =>
@@ -1061,6 +1064,63 @@ namespace Xdows_Security.Views
                     const int UI_UPDATE_INTERVAL_MS = 150;
                     int heavyScanCount = 0;
 
+                    // 精准规则引擎批量预检通道
+                    int hashConcurrency = Math.Clamp(Environment.ProcessorCount, 2, 8);
+                    var hashGate = new SemaphoreSlim(hashConcurrency, hashConcurrency);
+                    var exactRuleChannel = Channel.CreateUnbounded<(string filePath, string sha256, TaskCompletionSource<(string? result, string? family)> tcs)>();
+                    Task? exactRuleBatchTask = null;
+                    if (UseExactRule)
+                    {
+                        exactRuleBatchTask = Task.Run(async () =>
+                        {
+                            var batch = new List<(string filePath, string sha256, TaskCompletionSource<(string? result, string? family)> tcs)>();
+                            var reader = exactRuleChannel.Reader;
+                            try
+                            {
+                                while (await reader.WaitToReadAsync(token))
+                                {
+                                    while (reader.TryRead(out var item))
+                                    {
+                                        batch.Add(item);
+                                        if (batch.Count >= 50) break;
+                                    }
+                                    if (batch.Count > 0)
+                                    {
+                                        try
+                                        {
+                                            var hashEntries = batch.Select(b => (b.filePath, b.sha256)).ToList();
+                                            var batchResults = await Helper.ScanEngine.ExactRuleEngineBatchScanHashesAsync(hashEntries, token);
+                                            foreach (var b in batch)
+                                            {
+                                                if (batchResults.TryGetValue(b.filePath, out var r)) b.tcs.TrySetResult(r);
+                                                else b.tcs.TrySetResult((null, null));
+                                            }
+                                        }
+                                        catch { }
+                                        batch.Clear();
+                                    }
+                                }
+                            }
+                            catch (OperationCanceledException) { }
+                            catch (ChannelClosedException) { }
+                            catch { }
+                            if (batch.Count > 0)
+                            {
+                                try
+                                {
+                                    var hashEntries = batch.Select(b => (b.filePath, b.sha256)).ToList();
+                                    var batchResults = await Helper.ScanEngine.ExactRuleEngineBatchScanHashesAsync(hashEntries, token);
+                                    foreach (var b in batch)
+                                    {
+                                        if (batchResults.TryGetValue(b.filePath, out var r)) b.tcs.TrySetResult(r);
+                                        else b.tcs.TrySetResult((null, null));
+                                    }
+                                }
+                                catch { }
+                            }
+                        }, token);
+                    }
+
                     await Parallel.ForEachAsync(files, new ParallelOptions
                     {
                         MaxDegreeOfParallelism = outerParallelism,
@@ -1100,6 +1160,62 @@ namespace Xdows_Security.Views
                             Interlocked.Exchange(ref _filesScanned, f1);
                             if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                             return;
+                        }
+
+                        // 快速路径：精准规则引擎批量预检，在scanGate外执行
+                        if (UseExactRule)
+                        {
+                            try
+                            {
+                                string sha256Hash;
+                                await hashGate.WaitAsync(ct);
+                                try { sha256Hash = await Helper.ScanEngine.GetFileSHA256Async(file); }
+                                finally { hashGate.Release(); }
+
+                                var tcs = new TaskCompletionSource<(string? result, string? family)>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                try { exactRuleChannel.Writer.TryWrite((file, sha256Hash, tcs)); } catch { }
+
+                                string? result = null;
+                                string? family = null;
+                                try
+                                {
+                                    var (r, f) = await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(800), ct);
+                                    result = r;
+                                    family = f;
+                                }
+                                catch { }
+
+                                if (!String.IsNullOrEmpty(result) && result != "safe")
+                                {
+                                    Interlocked.Increment(ref Statistics.ScansQuantity);
+                                    Interlocked.Increment(ref Statistics.VirusQuantity);
+                                    string familyInfo = (UseVirusFamily && !String.IsNullOrEmpty(family)) ? family : String.Empty;
+                                    _dispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        try
+                                        {
+                                            AddVirusResult(file, result, familyInfo);
+                                            BackToVirusListButton.Visibility = Visibility.Visible;
+                                        }
+                                        catch { }
+                                    });
+                                    int newThreats = Interlocked.Increment(ref _threatsFound);
+                                    UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
+                                    int f2 = Interlocked.Increment(ref finished);
+                                    Interlocked.Exchange(ref _filesScanned, f2);
+                                    if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                                    return;
+                                }
+                                else if (result == "safe")
+                                {
+                                    Interlocked.Increment(ref _filesSafe);
+                                    int f2 = Interlocked.Increment(ref finished);
+                                    Interlocked.Exchange(ref _filesScanned, f2);
+                                    if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                                    return;
+                                }
+                            }
+                            catch { }
                         }
 
                         if (ScanInside && ZipScanner.IsZipFile(file))
@@ -1189,18 +1305,31 @@ namespace Xdows_Security.Views
                         {
                             TimeSpan elapsedTime = DateTime.Now - startTime - pausedTime;
                             double scanSpeed = elapsedTime.TotalSeconds > 0 ? currentFinished / elapsedTime.TotalSeconds : 0.0;
-                            _dispatcherQueue.TryEnqueue(() => ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed));
+                            _dispatcherQueue.TryEnqueue(() =>
+                            {
+                                try { ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed); } catch { }
+                            });
 
                             if (showScanProgress)
                             {
                                 double percent = total == 0 ? 100 : (double)currentFinished / total * 100;
-                                _dispatcherQueue.TryEnqueue(() => { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; });
+                                _dispatcherQueue.TryEnqueue(() =>
+                                {
+                                    try { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; } catch { }
+                                });
                             }
 
                             try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                         }
                     });
                     scanGate.Dispose();
+                    hashGate.Dispose();
+
+                    if (UseExactRule)
+                    {
+                        try { exactRuleChannel.Writer.Complete(); } catch { }
+                        try { if (exactRuleBatchTask != null) await exactRuleBatchTask.WaitAsync(TimeSpan.FromSeconds(10)); } catch { }
+                    }
 
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed"), false, _threatsFound);
 

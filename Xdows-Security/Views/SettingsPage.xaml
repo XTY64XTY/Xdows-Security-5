@@ -139,6 +139,11 @@
                            HeaderIcon="{ui:FontIcon Glyph=&#xEA99;}">
                             <ToggleSwitch x:Name="InfectorCleanerToggle" Tag="InfectorCleaner" Toggled="Toggled_SaveToggleData" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_ExactRule"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE71C;}">
+                            <ToggleSwitch x:Name="ExactRuleToggle" Tag="ExactRuleScan" Toggled="Toggled_SaveToggleData" />
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsCard

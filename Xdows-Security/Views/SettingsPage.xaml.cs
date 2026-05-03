@@ -213,7 +213,7 @@ namespace Xdows_Security.Views
 
             String key = toggle.Tag as String ?? toggle.Name;
             if (String.IsNullOrWhiteSpace(key)) return;
-            if (toggle.IsOn && (key == "CzkCloudScan" || key == "CloudScan"))
+            if (toggle.IsOn && (key == "CzkCloudScan" || key == "CloudScan" || key == "ExactRuleScan"))
             {
                 _ = new ContentDialog
                 {
@@ -263,6 +263,7 @@ namespace Xdows_Security.Views
                 ScanInsideToggle,
                 VirusFamilyToggle,
                 InfectorCleanerToggle,
+                ExactRuleToggle,
                 LocalScanToggle,
                 CzkCloudScanToggle,
                 ModelScanToggle,
