@@ -17,7 +17,7 @@ namespace Helper
 
         public static async Task<(bool IsInfected, string? Result)> InfectorScanAsync(string path)
         {
-            return await Task.Run(() =>
+            return await Task.Run<(bool IsInfected, string? Result)>(() =>
             {
                 try
                 {
@@ -74,7 +74,7 @@ namespace Helper
             }
         }
 
-        private static readonly System.Net.Http.HttpClient s_httpClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+        private static readonly System.Net.Http.HttpClient s_httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
 
         public static async Task<(int statusCode, string? result)> CzkCloudScanAsync(string path, string apiKey)
         {
@@ -148,11 +148,11 @@ namespace Helper
             return Convert.ToHexString(hash);
         }
 
-        public static async Task<string> GetFileSHA256Async(string path)
+        public static async Task<string> GetFileSHA256Async(string path, CancellationToken token = default)
         {
             using var sha256 = SHA256.Create();
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: true);
-            var hash = await sha256.ComputeHashAsync(stream);
+            var hash = await sha256.ComputeHashAsync(stream, token);
             return Convert.ToHexString(hash).ToLowerInvariant();
         }
 
@@ -160,50 +160,6 @@ namespace Helper
         {
             byte[] hash = SHA256.HashData(data);
             return Convert.ToHexString(hash).ToLowerInvariant();
-        }
-
-        public static async Task<(int statusCode, string? result, string? family)> ExactRuleEngineScanAsync(string path)
-        {
-            string hash = await GetFileSHA256Async(path);
-            return await ExactRuleEngineScanWithHashAsync(hash);
-        }
-
-        public static async Task<(int statusCode, string? result, string? family)> ExactRuleEngineScanWithHashAsync(string hash)
-        {
-            var client = s_httpClient;
-            string url = "http://103.118.245.82:7050/api/check";
-            try
-            {
-                string jsonBody = $"{{\"hash\":\"{hash}\"}}";
-                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
-                var resp = await client.PostAsync(url, content);
-                resp.EnsureSuccessStatusCode();
-                string json = await resp.Content.ReadAsStringAsync();
-                using JsonDocument doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                if (root.TryGetProperty("result", out JsonElement resultProp))
-                {
-                    string result = resultProp.GetString() ?? "unknown";
-                    if (result == "black")
-                    {
-                        string? family = root.TryGetProperty("family", out JsonElement familyProp) ? familyProp.GetString() : null;
-                        return (200, family ?? "ExactRule.Malware", family);
-                    }
-                    else if (result == "white")
-                    {
-                        return (200, "safe", null);
-                    }
-                    else
-                    {
-                        return (200, null, null);
-                    }
-                }
-            }
-            catch
-            {
-                return (-1, null, null);
-            }
-            return (-1, null, null);
         }
 
         public static async Task<Dictionary<string, (string? result, string? family)>> ExactRuleEngineBatchScanAsync(List<string> filePaths, CancellationToken token = default)
@@ -216,10 +172,17 @@ namespace Helper
             {
                 try
                 {
-                    string hash = await GetFileSHA256Async(path);
+                    string hash = await GetFileSHA256Async(path, token);
                     hashEntries.Add((path, hash));
                 }
-                catch { }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"ExactRuleEngine hash computation failed for {path}: {ex.Message}");
+                }
             }
 
             if (hashEntries.Count == 0) return results;
@@ -279,7 +242,14 @@ namespace Helper
                     }
                 }
             }
-            catch { }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ExactRuleEngine batch scan failed: {ex.Message}");
+            }
             return results;
         }
     }

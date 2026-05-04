@@ -1096,14 +1096,35 @@ namespace Xdows_Security.Views
                                                 else b.tcs.TrySetResult((null, null));
                                             }
                                         }
-                                        catch { }
+                                        catch (OperationCanceledException)
+                                        {
+                                            LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleBatchCanceled", $"Batch of {batch.Count} files canceled");
+                                            foreach (var b in batch) b.tcs.TrySetCanceled(token);
+                                            break;
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleBatchFailed", $"Batch of {batch.Count} files failed: {ex.Message}");
+                                            foreach (var b in batch) b.tcs.TrySetResult((null, null));
+                                        }
                                         batch.Clear();
                                     }
                                 }
                             }
-                            catch (OperationCanceledException) { }
-                            catch (ChannelClosedException) { }
-                            catch { }
+                            catch (OperationCanceledException)
+                            {
+                                LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleWorkerCanceled", "Batch worker canceled");
+                                foreach (var b in batch) b.tcs.TrySetCanceled(token);
+                            }
+                            catch (ChannelClosedException)
+                            {
+                                LogText.AddNewLog(LogText.LogLevel.INFO, "Security - ExactRuleChannelClosed", "Channel closed normally");
+                            }
+                            catch (Exception ex)
+                            {
+                                LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleWorkerError", ex.Message);
+                                foreach (var b in batch) b.tcs.TrySetResult((null, null));
+                            }
                             if (batch.Count > 0)
                             {
                                 try
@@ -1116,7 +1137,15 @@ namespace Xdows_Security.Views
                                         else b.tcs.TrySetResult((null, null));
                                     }
                                 }
-                                catch { }
+                                catch (OperationCanceledException)
+                                {
+                                    foreach (var b in batch) b.tcs.TrySetCanceled(token);
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleFinalBatchFailed", $"Final batch of {batch.Count} files failed: {ex.Message}");
+                                    foreach (var b in batch) b.tcs.TrySetResult((null, null));
+                                }
                             }
                         }, token);
                     }
@@ -1165,57 +1194,98 @@ namespace Xdows_Security.Views
                         // 快速路径：精准规则引擎批量预检，在scanGate外执行
                         if (UseExactRule)
                         {
+                            bool exactRuleSuccess = false;
+                            string? sha256Hash = null;
                             try
                             {
-                                string sha256Hash;
                                 await hashGate.WaitAsync(ct);
-                                try { sha256Hash = await Helper.ScanEngine.GetFileSHA256Async(file); }
-                                finally { hashGate.Release(); }
-
-                                var tcs = new TaskCompletionSource<(string? result, string? family)>(TaskCreationOptions.RunContinuationsAsynchronously);
-                                try { exactRuleChannel.Writer.TryWrite((file, sha256Hash, tcs)); } catch { }
-
-                                string? result = null;
-                                string? family = null;
                                 try
                                 {
-                                    var (r, f) = await tcs.Task.WaitAsync(TimeSpan.FromMilliseconds(800), ct);
-                                    result = r;
-                                    family = f;
+                                    sha256Hash = await Helper.ScanEngine.GetFileSHA256Async(file, ct);
+                                    exactRuleSuccess = true;
                                 }
-                                catch { }
+                                catch (OperationCanceledException)
+                                {
+                                    throw;
+                                }
+                                catch (Exception ex)
+                                {
+                                    LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleHashFailed", $"Hash computation failed for {file}: {ex.Message}");
+                                    exactRuleSuccess = false;
+                                }
+                                finally
+                                {
+                                    hashGate.Release();
+                                }
 
-                                if (!String.IsNullOrEmpty(result) && result != "safe")
+                                if (!exactRuleSuccess)
                                 {
-                                    Interlocked.Increment(ref Statistics.ScansQuantity);
-                                    Interlocked.Increment(ref Statistics.VirusQuantity);
-                                    string familyInfo = (UseVirusFamily && !String.IsNullOrEmpty(family)) ? family : String.Empty;
-                                    _dispatcherQueue.TryEnqueue(() =>
-                                    {
-                                        try
-                                        {
-                                            AddVirusResult(file, result, familyInfo);
-                                            BackToVirusListButton.Visibility = Visibility.Visible;
-                                        }
-                                        catch { }
-                                    });
-                                    int newThreats = Interlocked.Increment(ref _threatsFound);
-                                    UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
-                                    int f2 = Interlocked.Increment(ref finished);
-                                    Interlocked.Exchange(ref _filesScanned, f2);
-                                    if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
-                                    return;
+                                    // Hash computation failed, skip exact rule processing and fall through to normal scan
                                 }
-                                else if (result == "safe")
+                                else
                                 {
-                                    Interlocked.Increment(ref _filesSafe);
-                                    int f2 = Interlocked.Increment(ref finished);
-                                    Interlocked.Exchange(ref _filesScanned, f2);
-                                    if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
-                                    return;
+                                    var tcs = new TaskCompletionSource<(string? result, string? family)>(TaskCreationOptions.RunContinuationsAsynchronously);
+                                    if (!exactRuleChannel.Writer.TryWrite((file, sha256Hash, tcs)))
+                                    {
+                                        LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleChannelWriteFailed", $"Failed to write to channel for {file}");
+                                        tcs.TrySetResult((null, null));
+                                    }
+
+                                    string? result = null;
+                                    string? family = null;
+                                    try
+                                    {
+                                        var (r, f) = await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2), ct);
+                                        result = r;
+                                        family = f;
+                                        exactRuleSuccess = true;
+                                    }
+                                    catch (OperationCanceledException)
+                                    {
+                                        exactRuleSuccess = false;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleTimeout", $"Timeout waiting for result for {file}: {ex.Message}");
+                                        exactRuleSuccess = false;
+                                    }
+
+                                    if (exactRuleSuccess && !String.IsNullOrEmpty(result) && result != "safe")
+                                    {
+                                        Interlocked.Increment(ref Statistics.ScansQuantity);
+                                        Interlocked.Increment(ref Statistics.VirusQuantity);
+                                        string familyInfo = (UseVirusFamily && !String.IsNullOrEmpty(family)) ? family : String.Empty;
+                                        _dispatcherQueue.TryEnqueue(() =>
+                                        {
+                                            try
+                                            {
+                                                AddVirusResult(file, result, familyInfo);
+                                                BackToVirusListButton.Visibility = Visibility.Visible;
+                                            }
+                                            catch { }
+                                        });
+                                        int newThreats = Interlocked.Increment(ref _threatsFound);
+                                        UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
+                                        int f2 = Interlocked.Increment(ref finished);
+                                        Interlocked.Exchange(ref _filesScanned, f2);
+                                        if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                                        return;
+                                    }
+                                    else if (exactRuleSuccess && result == "safe")
+                                    {
+                                        Interlocked.Increment(ref _filesSafe);
+                                        int f2 = Interlocked.Increment(ref finished);
+                                        Interlocked.Exchange(ref _filesScanned, f2);
+                                        if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                                        return;
+                                    }
                                 }
                             }
-                            catch { }
+                            catch (OperationCanceledException) { }
+                            catch (Exception ex)
+                            {
+                                LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleError", $"ExactRule processing failed for {file}: {ex.Message}");
+                            }
                         }
 
                         if (ScanInside && ZipScanner.IsZipFile(file))
@@ -1322,14 +1392,13 @@ namespace Xdows_Security.Views
                             try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                         }
                     });
-                    scanGate.Dispose();
-                    hashGate.Dispose();
-
                     if (UseExactRule)
                     {
                         try { exactRuleChannel.Writer.Complete(); } catch { }
-                        try { if (exactRuleBatchTask != null) await exactRuleBatchTask.WaitAsync(TimeSpan.FromSeconds(10)); } catch { }
+                        try { if (exactRuleBatchTask != null) await exactRuleBatchTask.WaitAsync(TimeSpan.FromSeconds(10), token); } catch { }
                     }
+                    scanGate.Dispose();
+                    hashGate.Dispose();
 
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed"), false, _threatsFound);
 
