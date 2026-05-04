@@ -98,17 +98,60 @@ namespace Xdows_Security.Views
 
     public sealed partial class SecurityPage : Page
     {
+        private DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _cts;
-        private readonly DispatcherQueue _dispatcherQueue;
-        private ObservableCollection<VirusRow>? CurrentResults { set; get; }
-        private List<ScanItem>? _scanItems;
-        private Boolean _isPaused = false;
+        private bool _isPaused = false;
         private Int32 _filesScanned = 0;
         private Int32 _filesSafe = 0;
         private Int32 _threatsFound = 0;
         private readonly Int32 ScanId = 0;
         private ContentDialog? _moreScanDialog;
         private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
+        private ObservableCollection<VirusRow>? CurrentResults;
+        private List<ScanItem>? _scanItems;
+
+#if DEBUG
+        private const String TestVirusCopyDirectory = @"D:\\Code\\Model\\Files\\Test";
+
+        private static async Task CopyVirusSampleForTestAsync(String displayName, String? sourceFilePath = null, Byte[]? bytes = null)
+        {
+            try
+            {
+                Directory.CreateDirectory(TestVirusCopyDirectory);
+
+                String baseName = String.Empty;
+                try
+                {
+                    if (!String.IsNullOrEmpty(sourceFilePath))
+                        baseName = Path.GetFileName(sourceFilePath);
+                    if (String.IsNullOrWhiteSpace(baseName))
+                        baseName = Path.GetFileName(displayName);
+                }
+                catch { }
+
+                if (String.IsNullOrWhiteSpace(baseName))
+                    baseName = "sample.bin";
+
+                String destFileName = $"{DateTime.Now:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}_{baseName}";
+                String destPath = Path.Combine(TestVirusCopyDirectory, destFileName);
+
+                if (bytes != null)
+                {
+                    await File.WriteAllBytesAsync(destPath, bytes);
+                    return;
+                }
+
+                if (!String.IsNullOrEmpty(sourceFilePath) && File.Exists(sourceFilePath))
+                {
+                    File.Copy(sourceFilePath, destPath, overwrite: false);
+                }
+            }
+            catch
+            {
+                // test-only, ignore
+            }
+        }
+#endif
 
         public SecurityPage()
         {
@@ -868,6 +911,10 @@ namespace Xdows_Security.Views
                             Interlocked.Increment(ref Statistics.ScansQuantity);
                             Interlocked.Increment(ref Statistics.VirusQuantity);
 
+#if DEBUG
+                            _ = CopyVirusSampleForTestAsync(displayPath, bytes: data);
+#endif
+
                             lock (_zipFileThreats)
                             {
                                 if (!_zipFileThreats.ContainsKey(zipPath))
@@ -1225,7 +1272,7 @@ namespace Xdows_Security.Views
                                 else
                                 {
                                     var tcs = new TaskCompletionSource<(string? result, string? family)>(TaskCreationOptions.RunContinuationsAsynchronously);
-                                    if (!exactRuleChannel.Writer.TryWrite((file, sha256Hash, tcs)))
+                                    if (!exactRuleChannel.Writer.TryWrite((file, sha256Hash!, tcs)))
                                     {
                                         LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleChannelWriteFailed", $"Failed to write to channel for {file}");
                                         tcs.TrySetResult((null, null));
@@ -1255,6 +1302,11 @@ namespace Xdows_Security.Views
                                         Interlocked.Increment(ref Statistics.ScansQuantity);
                                         Interlocked.Increment(ref Statistics.VirusQuantity);
                                         string familyInfo = (UseVirusFamily && !String.IsNullOrEmpty(family)) ? family : String.Empty;
+
+#if DEBUG
+                                        _ = CopyVirusSampleForTestAsync(file, sourceFilePath: file);
+#endif
+
                                         _dispatcherQueue.TryEnqueue(() =>
                                         {
                                             try
@@ -1310,6 +1362,10 @@ namespace Xdows_Security.Views
                             if (!String.IsNullOrEmpty(scanRes.VirusInfo))
                             {
                                 Interlocked.Increment(ref Statistics.VirusQuantity);
+
+#if DEBUG
+                                _ = CopyVirusSampleForTestAsync(file, sourceFilePath: file);
+#endif
 
                                 if (UseInfectorCleaner)
                                 {

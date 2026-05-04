@@ -39,6 +39,15 @@ namespace Xdows_Security
             this.SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
             _originalFilePath = setting.path;
 
+            RootPanel.Loaded += (_, _) =>
+            {
+                // Wait for layout to settle, then measure and resize
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    UpdateWindowHeightAndPosition();
+                });
+            };
+
             WinUI3Localizer.Localizer.Get().LanguageChanged += (sender, e) =>
             {
                 ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
@@ -61,6 +70,40 @@ namespace Xdows_Security
             }
             PositionWindowAtBottomRight();
             App.PlayEntranceAnimation(RootPanel, "right");
+        }
+
+        private void UpdateWindowHeightAndPosition()
+        {
+            try
+            {
+                var manager = WinUIEx.WindowManager.Get(this);
+                var displayArea = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(this.AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Nearest);
+                if (displayArea == null)
+                {
+                    return;
+                }
+
+                var workArea = displayArea.WorkArea;
+
+                double desiredHeight = RootPanel.ActualHeight;
+                double minHeight = manager.MinHeight;
+
+                // Keep a small margin so we never touch screen edges
+                double maxHeight = Math.Max(minHeight, workArea.Height - 16);
+                double newHeight = Math.Clamp(desiredHeight, minHeight, maxHeight);
+
+                int newHeightInt = (int)Math.Ceiling(newHeight);
+                if (manager.Height != newHeightInt)
+                {
+                    manager.Height = newHeightInt;
+                }
+
+                PositionWindowAtBottomRight();
+            }
+            catch
+            {
+                // Intentionally ignored: sizing/positioning should never crash the app
+            }
         }
 
         private void PositionWindowAtBottomRight()

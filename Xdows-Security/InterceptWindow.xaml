@@ -23,8 +23,8 @@
                     </Border>
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock x:Name="ThreatTitleText" l:Uids.Uid="InterceptWindow_ThreatTitle" FontSize="18" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
-                        <TextBlock x:Name="ThreatSubtitleText" l:Uids.Uid="InterceptWindow_ThreatSubtitle" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,3,0,0"/>
+                        <TextBlock x:Name="ThreatTitleText" l:Uids.Uid="InterceptWindow_ThreatTitle" FontSize="18" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="ThreatSubtitleText" l:Uids.Uid="InterceptWindow_ThreatSubtitle" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                     </StackPanel>
                 </Grid>
 
@@ -35,8 +35,8 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Name="ProgramNameText" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
-                            <TextBlock x:Name="FilePathText" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="ProgramNameText" FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}" TextWrapping="Wrap" />
+                            <TextBlock x:Name="FilePathText" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="0,3,0,0" TextWrapping="Wrap" />
                         </StackPanel>
                     </Grid>
                 </Border>
