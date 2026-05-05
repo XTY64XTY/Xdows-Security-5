@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Composition;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -389,6 +391,7 @@ namespace Xdows_Security.Views
             compactStyle.Setters.Add(new Setter { Property = ListViewItem.MarginProperty, Value = new Thickness(0) });
             listView.ItemContainerStyle = compactStyle;
 
+            int itemIndex = 0;
             foreach (var (key, value) in items)
             {
                 var keyBlock = new TextBlock
@@ -419,7 +422,11 @@ namespace Xdows_Security.Views
                     Children = { keyBlock, valueBlock }
                 };
 
+                int delay = itemIndex * 15;
+                row.Loaded += (s, e) => App.PlayEntranceAnimation(row, "up", delayMs: delay);
+
                 listView.Items.Add(row);
+                itemIndex++;
             }
 
             var dialog = new ContentDialog

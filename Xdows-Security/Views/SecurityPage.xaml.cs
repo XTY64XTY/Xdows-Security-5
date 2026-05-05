@@ -1621,41 +1621,86 @@ namespace Xdows_Security.Views
                     catch { }
                 }
 
+                var listView = new ListView
+                {
+                    SelectionMode = ListViewSelectionMode.None,
+                    IsItemClickEnabled = false,
+                    Padding = new Thickness(0),
+                    Margin = new Thickness(0),
+                    MaxHeight = 400
+                };
+
+                var compactStyle = new Style(typeof(ListViewItem));
+                compactStyle.Setters.Add(new Setter { Property = ListViewItem.PaddingProperty, Value = new Thickness(0) });
+                compactStyle.Setters.Add(new Setter { Property = ListViewItem.MinHeightProperty, Value = 0d });
+                compactStyle.Setters.Add(new Setter { Property = ListViewItem.MarginProperty, Value = new Thickness(0) });
+                listView.ItemContainerStyle = compactStyle;
+
+                static String ToLabelFromTemplate(String template)
+                {
+                    if (String.IsNullOrWhiteSpace(template)) return template;
+
+                    var label = System.Text.RegularExpressions.Regex.Replace(template, "\\{[^}]*\\}", String.Empty);
+                    label = System.Text.RegularExpressions.Regex.Replace(label, "\\s+", " ").Trim();
+                    label = System.Text.RegularExpressions.Regex.Replace(label, "\\s+\\b(KB|MB|GB|TB|B)\\b\\s*$", String.Empty).Trim();
+
+                    while (label.EndsWith(":", StringComparison.Ordinal) || label.EndsWith("：", StringComparison.Ordinal))
+                        label = label.Substring(0, label.Length - 1).TrimEnd();
+
+                    return label;
+                }
+
+                var items = new List<(string Key, FrameworkElement Value)>
+                {
+                    (Localizer.Get().GetLocalizedString("SecurityPage_Details_FilePath"), new RichTextBlock
+                    {
+                        IsTextSelectionEnabled = true,
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 14,
+                        FontFamily = new FontFamily("Segoe UI"),
+                        Blocks = { new Paragraph { Inlines = { new Run { Text = displayPath } } } }
+                    }),
+                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_VirusName")), new TextBlock { Text = row.VirusName, IsTextSelectionEnabled = true, TextWrapping = TextWrapping.Wrap }),
+                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize")), new TextBlock { Text = fileSizeText, IsTextSelectionEnabled = true }),
+                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime")), new TextBlock { Text = creationTimeText, IsTextSelectionEnabled = true }),
+                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime")), new TextBlock { Text = lastWriteTimeText, IsTextSelectionEnabled = true })
+                };
+
+                int itemIndex = 0;
+                foreach (var (key, valueElement) in items)
+                {
+                    var keyBlock = new TextBlock
+                    {
+                        Text = key,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                        VerticalAlignment = VerticalAlignment.Top
+                    };
+                    Grid.SetColumn(keyBlock, 0);
+                    Grid.SetColumn(valueElement, 1);
+
+                    var detailRow = new Grid
+                    {
+                        ColumnDefinitions =
+                        {
+                            new ColumnDefinition { Width = new GridLength(100) },
+                            new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }
+                        },
+                        Padding = new Thickness(0, 4, 0, 4),
+                        ColumnSpacing = 16,
+                        Children = { keyBlock, valueElement }
+                    };
+
+                    int delay = itemIndex * 15;
+                    detailRow.Loaded += (s, e) => App.PlayEntranceAnimation(detailRow, "up", delayMs: delay);
+
+                    listView.Items.Add(detailRow);
+                    itemIndex++;
+                }
+
                 ContentDialog dialog = new()
                 {
                     Title = Localizer.Get().GetLocalizedString("SecurityPage_Details_Title"),
-                    Content = new ScrollViewer
-                    {
-                        Content = new StackPanel
-                        {
-                            Children =
-                            {
-                                new TextBlock { Text = Localizer.Get().GetLocalizedString("SecurityPage_Details_FilePath"), Margin = new Thickness(0, 8, 0, 0) },
-                                new RichTextBlock
-                                {
-                                    IsTextSelectionEnabled = true,
-                                    TextWrapping = TextWrapping.Wrap,
-                                    FontSize = 14,
-                                    FontFamily = new FontFamily("Segoe UI"),
-                                    Blocks =
-                                    {
-                                        new Paragraph
-                                        {
-                                            Inlines =
-                                            {
-                                                new Run { Text = displayPath },
-                                            }
-                                        }
-                                    }
-                                },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_VirusName"), row.VirusName), Margin = new Thickness(0, 8, 0, 0) },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize"), fileSizeText), Margin = new Thickness(0, 8, 0, 0) },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime"), creationTimeText), Margin = new Thickness(0, 8, 0, 0) },
-                                new TextBlock { Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime"), lastWriteTimeText), Margin = new Thickness(0, 8, 0, 0) }
-                            }
-                        },
-                        MaxHeight = 400
-                    },
+                    Content = new ScrollViewer { Content = listView },
                     PrimaryButtonText = isZipEntry ? null : Localizer.Get().GetLocalizedString("SecurityPage_Details_LocateButton"),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot,

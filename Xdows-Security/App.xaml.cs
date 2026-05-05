@@ -700,7 +700,7 @@ namespace Xdows_Security
             : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macOS" : "Linux";
 
         public static string OsVersion => RuntimeInformation.OSDescription;
-        public static void PlayEntranceAnimation(UIElement uIElement, string kind, float finalVerticalOffset = 0f)
+        public static void PlayEntranceAnimation(UIElement uIElement, string kind, float finalVerticalOffset = 0f, int delayMs = 0)
         {
             var visual = ElementCompositionPreview.GetElementVisual(uIElement);
             var compositor = visual.Compositor;
@@ -718,16 +718,19 @@ namespace Xdows_Security
             visual.Offset = directionOffset + finalOffset;
 
             var easing = compositor.CreateCubicBezierEasingFunction(new Vector2(0, 0), new Vector2(0, 1));
+            var delay = TimeSpan.FromMilliseconds(delayMs);
 
             var offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
             offsetAnimation.Target = "Offset";
             offsetAnimation.InsertKeyFrame(1.0f, finalOffset, easing);
             offsetAnimation.Duration = TimeSpan.FromMilliseconds(400);
+            offsetAnimation.DelayTime = delay;
 
             var opacityAnimation = compositor.CreateScalarKeyFrameAnimation();
             opacityAnimation.Target = "Opacity";
             opacityAnimation.InsertKeyFrame(1.0f, 1.0f, easing);
             opacityAnimation.Duration = TimeSpan.FromMilliseconds(400);
+            opacityAnimation.DelayTime = delay;
 
             visual.StartAnimation("Offset", offsetAnimation);
             visual.StartAnimation("Opacity", opacityAnimation);
