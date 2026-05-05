@@ -104,11 +104,18 @@ namespace Xdows_Security.Views
         private Int32 _filesScanned = 0;
         private Int32 _filesSafe = 0;
         private Int32 _threatsFound = 0;
-        private readonly Int32 ScanId = 0;
+        private Int32 _scanId = 0;
         private ContentDialog? _moreScanDialog;
         private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
         private ObservableCollection<VirusRow>? CurrentResults;
         private List<ScanItem>? _scanItems;
+
+        private Boolean IsCurrentScan(Int32 scanId, CancellationToken token)
+        {
+            if (token.IsCancellationRequested) return false;
+            if (MainWindow.NowPage != "Security") return false;
+            return scanId == _scanId;
+        }
 
 #if DEBUG
         private const String TestVirusCopyDirectory = @"D:\\Code\\Model\\Files\\Test";
@@ -871,7 +878,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task ScanZipFileAsync(String zipPath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
+        private async Task ScanZipFileAsync(Int32 scanId, String zipPath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
         {
             try
             {
@@ -887,6 +894,7 @@ namespace Xdows_Security.Views
                     string displayPath = $"{zipPath}\\{entryPath}";
                     _dispatcherQueue.TryEnqueue(() =>
                     {
+                        if (!IsCurrentScan(scanId, token)) return;
                         LogText.AddNewLog(LogText.LogLevel.INFO, "Security - ScanFile", displayPath);
                         try { StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning"), displayPath); } catch { }
                     });
@@ -924,6 +932,7 @@ namespace Xdows_Security.Views
 
                             _dispatcherQueue.TryEnqueue(() =>
                             {
+                                if (!IsCurrentScan(scanId, token)) return;
                                 AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo);
                                 BackToVirusListButton.Visibility = Visibility.Visible;
                             });
@@ -959,6 +968,7 @@ namespace Xdows_Security.Views
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
+            Int32 thisId = Interlocked.Increment(ref _scanId);
             _isPaused = false;
             _zipFileThreats.Clear();
 
@@ -1092,8 +1102,6 @@ namespace Xdows_Security.Views
                     UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning"), true);
                     _dispatcherQueue.TryEnqueue(() => PauseScanButton.IsEnabled = true);
 
-                    int thisId = ScanId;
-
                     string tStatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning");
                     TimeSpan pausedTime = TimeSpan.Zero;
                     DateTime lastPauseTime = DateTime.MinValue;
@@ -1216,7 +1224,7 @@ namespace Xdows_Security.Views
                             lastPauseTime = DateTime.MinValue;
                         }
 
-                        if (ct.IsCancellationRequested || MainWindow.NowPage != "Security" || thisId != ScanId) return;
+                        if (!IsCurrentScan(thisId, ct)) return;
 
                         bool shouldUpdateUi = (DateTime.UtcNow - lastUiUpdate).TotalMilliseconds >= UI_UPDATE_INTERVAL_MS;
                         if (shouldUpdateUi)
@@ -1224,6 +1232,7 @@ namespace Xdows_Security.Views
                             lastUiUpdate = DateTime.UtcNow;
                             _dispatcherQueue.TryEnqueue(() =>
                             {
+                                if (!IsCurrentScan(thisId, token)) return;
                                 try { StatusText.Text = string.Format(tStatusText, file); } catch { }
                             });
                         }
@@ -1309,6 +1318,7 @@ namespace Xdows_Security.Views
 
                                         _dispatcherQueue.TryEnqueue(() =>
                                         {
+                                            if (!IsCurrentScan(thisId, token)) return;
                                             try
                                             {
                                                 AddVirusResult(file, result, familyInfo);
@@ -1345,7 +1355,7 @@ namespace Xdows_Security.Views
                             await scanGate.WaitAsync(ct);
                             try
                             {
-                                await ScanZipFileAsync(file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
+                                await ScanZipFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
                             }
                             finally { scanGate.Release(); }
                             Interlocked.Increment(ref finished);
@@ -1400,6 +1410,7 @@ namespace Xdows_Security.Views
 
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
+                                    if (!IsCurrentScan(thisId, token)) return;
                                     AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo);
                                     BackToVirusListButton.Visibility = Visibility.Visible;
                                 });
@@ -1460,6 +1471,7 @@ namespace Xdows_Security.Views
 
                     _dispatcherQueue.TryEnqueue(() =>
                     {
+                        if (!IsCurrentScan(thisId, token)) return;
                         ApplicationDataContainer settingsLocal = ApplicationData.Current.LocalSettings;
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
@@ -1473,6 +1485,7 @@ namespace Xdows_Security.Views
                 {
                     _dispatcherQueue.TryEnqueue(() =>
                     {
+                        if (!IsCurrentScan(thisId, token)) return;
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanCancelled");
                         ScanProgress.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
@@ -1483,6 +1496,7 @@ namespace Xdows_Security.Views
                 {
                     _dispatcherQueue.TryEnqueue(() =>
                     {
+                        if (!IsCurrentScan(thisId, token)) return;
                         LogText.AddNewLog(LogText.LogLevel.FATAL, "Security - Failed", ex.Message);
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanFailed_Format"), ex.Message);
                         ScanProgress.Visibility = Visibility.Collapsed;
