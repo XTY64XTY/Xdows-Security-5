@@ -744,6 +744,12 @@
   <data name="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily.Description" xml:space="preserve">
     <value>在其他引擎報毒後，使用內置特徵規則識別病毒家族名稱</value>
   </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ExactRule.Header" xml:space="preserve">
+    <value>精準規則引擎</value>
+  </data>
+  <data name="SettingsPage_Scan_BuiltInRuleEngine_ExactRule.Description" xml:space="preserve">
+    <value>基於雲端哈希庫的精確匹配引擎，優先於其他引擎執行掃描</value>
+  </data>
   <data name="HomePage_Pomes" xml:space="preserve">
     <value>光是宇宙的標點，黑洞是它故意留的省略號.
 現代人用濾鏡僞造光，就像用簡歷僞造人生.
