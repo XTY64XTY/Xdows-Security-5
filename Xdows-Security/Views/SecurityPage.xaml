@@ -68,11 +68,11 @@
                                 <FontIcon Glyph="&#xE73E;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_MenuItem_Handle" 
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_MenuItem_Handle"
                             Click="OnVirusRowHandleClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE9F3;" />
+                                <FontIcon Glyph="&#xE74C;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                     </MenuFlyout>
@@ -112,11 +112,11 @@
                                 <FontIcon Glyph="&#xE73E;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_MenuItem_Handle" 
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_MenuItem_Handle"
                             Click="OnVirusRowHandleClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE9F3;" />
+                                <FontIcon Glyph="&#xE74C;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                     </MenuFlyout>

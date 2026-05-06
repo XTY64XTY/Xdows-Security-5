@@ -532,14 +532,21 @@ namespace Xdows_Security.Views
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
+                Int32 threatForDisplay = CurrentResults?.Count ?? threatsFound;
+
+                // Keep UI counters consistent even under parallel scanning:
+                // safe + threats should match scanned (treat failures/unknown as safe for display).
+                Int32 safeForDisplay = filesScanned - threatForDisplay;
+                if (safeForDisplay < 0) safeForDisplay = 0;
+
                 _filesScanned = filesScanned;
-                _filesSafe = filesSafe;
+                _filesSafe = safeForDisplay;
                 _threatsFound = threatsFound;
                 try
                 {
                     FilesScannedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), filesScanned);
-                    FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), filesSafe);
-                    ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatsFound);
+                    FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), safeForDisplay);
+                    ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatForDisplay);
                 }
                 catch { }
             });
@@ -944,6 +951,9 @@ namespace Xdows_Security.Views
                         {
                             Interlocked.Increment(ref _filesSafe);
                         }
+
+                        // ZIP entry should count as one completed scan unit for UI statistics.
+                        Interlocked.Increment(ref _filesScanned);
                     }
                     catch (OperationCanceledException) { break; }
                     catch (Exception ex)
@@ -1087,7 +1097,8 @@ namespace Xdows_Security.Views
                     }
 
                     DateTime startTime = DateTime.Now;
-                    int finished = 0;
+                    DateTime lastSpeedUpdateUtc = DateTime.UtcNow;
+                    Int32 lastSpeedScanned = 0;
 
                     int currentItemIndex = mode switch
                     {
@@ -1241,8 +1252,7 @@ namespace Xdows_Security.Views
                         if (TrustManager.IsPathTrusted(file))
                         {
                             Interlocked.Increment(ref _filesSafe);
-                            int f1 = Interlocked.Increment(ref finished);
-                            Interlocked.Exchange(ref _filesScanned, f1);
+                            Interlocked.Increment(ref _filesScanned);
                             if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                             return;
                         }
@@ -1328,16 +1338,14 @@ namespace Xdows_Security.Views
                                         });
                                         int newThreats = Interlocked.Increment(ref _threatsFound);
                                         UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
-                                        int f2 = Interlocked.Increment(ref finished);
-                                        Interlocked.Exchange(ref _filesScanned, f2);
+                                        Interlocked.Increment(ref _filesScanned);
                                         if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                                         return;
                                     }
                                     else if (exactRuleSuccess && result == "safe")
                                     {
                                         Interlocked.Increment(ref _filesSafe);
-                                        int f2 = Interlocked.Increment(ref finished);
-                                        Interlocked.Exchange(ref _filesScanned, f2);
+                                        Interlocked.Increment(ref _filesScanned);
                                         if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
                                         return;
                                     }
@@ -1358,8 +1366,6 @@ namespace Xdows_Security.Views
                                 await ScanZipFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
                             }
                             finally { scanGate.Release(); }
-                            Interlocked.Increment(ref finished);
-                            Interlocked.Exchange(ref _filesScanned, finished);
                             return;
                         }
 
@@ -1435,21 +1441,37 @@ namespace Xdows_Security.Views
                                 GC.Collect(0, GCCollectionMode.Optimized, false);
                         }
 
-                        int currentFinished = Interlocked.Increment(ref finished);
-                        Interlocked.Exchange(ref _filesScanned, currentFinished);
+                        Interlocked.Increment(ref _filesScanned);
 
                         if (shouldUpdateUi)
                         {
                             TimeSpan elapsedTime = DateTime.Now - startTime - pausedTime;
-                            double scanSpeed = elapsedTime.TotalSeconds > 0 ? currentFinished / elapsedTime.TotalSeconds : 0.0;
+                            DateTime nowUtc = DateTime.UtcNow;
+                            double scanSpeed = 0.0;
+                            double speedWindowSeconds = (nowUtc - lastSpeedUpdateUtc).TotalSeconds;
+                            if (speedWindowSeconds >= 1.0)
+                            {
+                                Int32 nowScanned = _filesScanned;
+                                Int32 delta = nowScanned - lastSpeedScanned;
+                                scanSpeed = speedWindowSeconds > 0 ? delta / speedWindowSeconds : 0.0;
+                                lastSpeedScanned = nowScanned;
+                                lastSpeedUpdateUtc = nowUtc;
+                            }
                             _dispatcherQueue.TryEnqueue(() =>
                             {
-                                try { ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed); } catch { }
+                                if (!IsCurrentScan(thisId, token)) return;
+                                try
+                                {
+                                    if (speedWindowSeconds >= 1.0)
+                                        ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed);
+                                }
+                                catch { }
                             });
 
                             if (showScanProgress)
                             {
-                                double percent = total == 0 ? 100 : (double)currentFinished / total * 100;
+                                double percent = total == 0 ? 100 : (double)_filesScanned / total * 100;
+                                if (percent > 100) percent = 100;
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
                                     try { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; } catch { }
@@ -1474,6 +1496,7 @@ namespace Xdows_Security.Views
                         if (!IsCurrentScan(thisId, token)) return;
                         ApplicationDataContainer settingsLocal = ApplicationData.Current.LocalSettings;
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                        UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
                         ScanProgress.Visibility = Visibility.Collapsed;
                         PauseScanButton.Visibility = Visibility.Collapsed;
