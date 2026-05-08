@@ -19,6 +19,7 @@ namespace Xdows_Security.Views
     public sealed partial class HomePage : Page
     {
         private bool _entrancePlayed;
+        private bool _langHandlerAttached;
 
         private sealed class WeakEventTimer
         {
@@ -127,6 +128,7 @@ namespace Xdows_Security.Views
             InitializeComponent();
 
             Loaded += HomePage_Loaded;
+            Unloaded += HomePage_Unloaded;
 
             LogRepeater.ItemsSource = LogLines;
 
@@ -140,8 +142,21 @@ namespace Xdows_Security.Views
             RefreshPomes();
         }
 
+        private void HomePage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (!_langHandlerAttached) return;
+            _langHandlerAttached = false;
+            try { Localizer.Get().LanguageChanged -= OnLanguageChanged; } catch { }
+        }
+
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
         {
+            if (!_langHandlerAttached)
+            {
+                _langHandlerAttached = true;
+                try { Localizer.Get().LanguageChanged += OnLanguageChanged; } catch { }
+            }
+
             if (_entrancePlayed) return;
             _entrancePlayed = true;
 
@@ -223,6 +238,25 @@ namespace Xdows_Security.Views
             var all = Localizer.Get().GetLocalizedString("HomePage_Pomes")
                                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
             PomesLine.Text = all.OrderBy(_ => Guid.NewGuid()).FirstOrDefault() ?? "";
+        }
+
+        private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+        {
+            try
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        RefreshPomes();
+                        UpdateMemory();
+                        LoadProtection();
+                        UpdateData();
+                    }
+                    catch { }
+                });
+            }
+            catch { }
         }
 
         private void LogLevelFilter_Internal(string[]? selected)
