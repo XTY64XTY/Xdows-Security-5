@@ -20,6 +20,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using WinUI3Localizer;
+using Xdows_Security.Services;
 
 namespace Xdows_Security.Views
 {
@@ -101,6 +102,9 @@ namespace Xdows_Security.Views
         private DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _cts;
         private bool _isPaused = false;
+        private bool _taskbarProgressActive = false;
+        private bool _lastShowScanProgress = false;
+        private bool _lastShowTaskbarProgress = true;
         private Int32 _filesScanned = 0;
         private Int32 _filesSafe = 0;
         private Int32 _threatsFound = 0;
@@ -113,7 +117,11 @@ namespace Xdows_Security.Views
         private Boolean IsCurrentScan(Int32 scanId, CancellationToken token)
         {
             if (token.IsCancellationRequested) return false;
-            if (MainWindow.NowPage != "Security") return false;
+            if (MainWindow.NowPage != "Security")
+            {
+                ClearTaskbarProgress();
+                return false;
+            }
             return scanId == _scanId;
         }
 
@@ -170,6 +178,45 @@ namespace Xdows_Security.Views
             FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);
             ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), 0);
             InitializeScanItems();
+            Unloaded += SecurityPage_Unloaded;
+        }
+
+        private void SecurityPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            ClearTaskbarProgress();
+        }
+
+        private void ClearTaskbarProgress()
+        {
+            if (!_taskbarProgressActive) return;
+            _taskbarProgressActive = false;
+            try { TaskbarProgressService.TryClear(); } catch { }
+        }
+
+        private void UpdateTaskbarProgressStateForRunning()
+        {
+            if (!_taskbarProgressActive) return;
+
+            try
+            {
+                if (_lastShowScanProgress)
+                {
+                    double percent = 0;
+                    try
+                    {
+                        var total = _scanItems?.Count ?? 0;
+                        percent = total == 0 ? 0 : Math.Min(1.0, (double)_filesScanned / total);
+                    }
+                    catch { }
+
+                    TaskbarProgressService.TrySetNormal(percent);
+                }
+                else
+                {
+                    TaskbarProgressService.TrySetIndeterminate();
+                }
+            }
+            catch { }
         }
 
         private void AddVirusResult(String filePath, String virusName, String? familyName = null)
@@ -984,6 +1031,7 @@ namespace Xdows_Security.Views
 
             var settings = ApplicationData.Current.LocalSettings;
             bool showScanProgress = settings.Values["ShowScanProgress"] as bool? ?? false;
+            bool showTaskbarProgress = settings.Values["ShowTaskbarScanProgress"] as bool? ?? true;
             string scanIndexMode = settings.Values["ScanIndexMode"] as string ?? "Parallel";
             bool DeepScan = settings.Values["DeepScan"] as bool? ?? false;
             bool ExtraData = settings.Values["ExtraData"] as bool? ?? false;
@@ -1034,6 +1082,31 @@ namespace Xdows_Security.Views
                     ? (DataTemplate)Resources["VirusRowWithFamilyTemplate"]
                     : (DataTemplate)Resources["VirusRowTemplate"];
             });
+
+            if (showTaskbarProgress)
+            {
+                _taskbarProgressActive = true;
+                _lastShowScanProgress = showScanProgress;
+                _lastShowTaskbarProgress = showTaskbarProgress;
+                try
+                {
+                    if (showScanProgress)
+                    {
+                        TaskbarProgressService.TrySetNormal(0);
+                    }
+                    else
+                    {
+                        TaskbarProgressService.TrySetIndeterminate();
+                    }
+                }
+                catch { }
+            }
+            else
+            {
+                _lastShowScanProgress = showScanProgress;
+                _lastShowTaskbarProgress = showTaskbarProgress;
+                ClearTaskbarProgress();
+            }
 
             string? userPath = null;
             if (mode is ScanMode.File or ScanMode.Folder)
@@ -1476,6 +1549,11 @@ namespace Xdows_Security.Views
                                 {
                                     try { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; } catch { }
                                 });
+
+                                if (showTaskbarProgress)
+                                {
+                                    try { TaskbarProgressService.TrySetNormal(percent / 100.0); } catch { }
+                                }
                             }
 
                             try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
@@ -1503,6 +1581,7 @@ namespace Xdows_Security.Views
                         ResumeScanButton.Visibility = Visibility.Collapsed;
                         StopRadarAnimation();
                     });
+                    ClearTaskbarProgress();
                 }
                 catch (OperationCanceledException)
                 {
@@ -1514,6 +1593,7 @@ namespace Xdows_Security.Views
                         ResumeScanButton.Visibility = Visibility.Collapsed;
                         StopRadarAnimation();
                     });
+                    ClearTaskbarProgress();
                 }
                 catch (Exception ex)
                 {
@@ -1527,6 +1607,7 @@ namespace Xdows_Security.Views
                         ResumeScanButton.Visibility = Visibility.Collapsed;
                         StopRadarAnimation();
                     });
+                    ClearTaskbarProgress();
                 }
             });
 
@@ -1552,6 +1633,24 @@ namespace Xdows_Security.Views
             PauseScanButton.Visibility = Visibility.Collapsed;
             ResumeScanButton.Visibility = Visibility.Visible;
             PauseRadarAnimation();
+
+            if (_taskbarProgressActive)
+            {
+                try
+                {
+                    if (_lastShowScanProgress)
+                    {
+                        var total = _scanItems?.Count ?? 0;
+                        double progress01 = total == 0 ? 0 : Math.Min(1.0, (double)_filesScanned / total);
+                        TaskbarProgressService.TrySetPaused(progress01);
+                    }
+                    else
+                    {
+                        TaskbarProgressService.TrySetPaused();
+                    }
+                }
+                catch { }
+            }
         }
 
         private void OnResumeScanClick(Object sender, RoutedEventArgs e)
@@ -1561,6 +1660,8 @@ namespace Xdows_Security.Views
             PauseScanButton.Visibility = Visibility.Visible;
             ResumeScanButton.Visibility = Visibility.Collapsed;
             ResumeRadarAnimation();
+
+            UpdateTaskbarProgressStateForRunning();
         }
 
         private async void OnVirusRowDetailsClick(Object sender, RoutedEventArgs e)

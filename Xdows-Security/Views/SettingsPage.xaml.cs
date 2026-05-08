@@ -258,6 +258,7 @@ namespace Xdows_Security.Views
             List<ToggleSwitch> toggles =
             [
                 ScanProgressToggle,
+                TaskbarScanProgressToggle,
                 DeepScanToggle,
                 ExtraDataToggle,
                 ScanInsideToggle,
@@ -287,6 +288,11 @@ namespace Xdows_Security.Views
                 {
                     toggle.IsOn = isOn;
                 }
+            }
+
+            if (!settings.Values.ContainsKey("ShowTaskbarScanProgress"))
+            {
+                settings.Values["ShowTaskbarScanProgress"] = true;
             }
 
             InfectorCleanerToggle.IsEnabled = VirusFamilyToggle.IsOn;

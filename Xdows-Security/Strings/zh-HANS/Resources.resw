@@ -711,6 +711,12 @@
   <data name="SettingsPage_Scan_IndexMode_ScanProgress.Description" xml:space="preserve">
     <value>关闭此项会加快扫描速度，在扫描很多文件时这将会很有用</value>
   </data>
+  <data name="SettingsPage_Scan_IndexMode_TaskbarScanProgress.Header" xml:space="preserve">
+    <value>在任务栏中显示扫描进度</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_TaskbarScanProgress.Description" xml:space="preserve">
+    <value>扫描期间在系统任务栏按钮上显示进度条</value>
+  </data>
   <data name="HomePage_TextBlock_Close" xml:space="preserve">
     <value>当前系统防护未启用</value>
   </data>

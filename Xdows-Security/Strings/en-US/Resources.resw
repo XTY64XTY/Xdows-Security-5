@@ -711,6 +711,12 @@
   <data name="SettingsPage_Scan_IndexMode_ScanProgress.Description" xml:space="preserve">
     <value>Disabling this option will increase the scanning speed, especially when scanning a large number of files</value>
   </data>
+  <data name="SettingsPage_Scan_IndexMode_TaskbarScanProgress.Header" xml:space="preserve">
+    <value>Show progress in taskbar</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_TaskbarScanProgress.Description" xml:space="preserve">
+    <value>Show scan progress on the Windows taskbar button</value>
+  </data>
   <data name="HomePage_TextBlock_Close" xml:space="preserve">
     <value>Protection is not enabled</value>
   </data>

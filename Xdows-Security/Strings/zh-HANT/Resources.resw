@@ -709,10 +709,16 @@
     <value>顯示掃描進度</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode_ScanProgress.Description" xml:space="preserve">
-    <value>關閉此項會加快掃描速度，在掃描很多文件時這將會很有用</value>
+    <value>關閉此選項可提高掃描速度，尤其是在掃描大量檔案時</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_TaskbarScanProgress.Header" xml:space="preserve">
+    <value>在工作列中顯示掃描進度</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_TaskbarScanProgress.Description" xml:space="preserve">
+    <value>掃描期間在系統工作列按鈕上顯示進度列</value>
   </data>
   <data name="HomePage_TextBlock_Close" xml:space="preserve">
-    <value>當前系統防護未啓用</value>
+    <value>保護未啟用</value>
   </data>
   <data name="SettingsPage_Scan_Local_ExtraData.Header" xml:space="preserve">
     <value>額外數據</value>

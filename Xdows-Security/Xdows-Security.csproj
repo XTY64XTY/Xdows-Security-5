@@ -16,6 +16,7 @@
 		<LangVersion>preview</LangVersion>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 		<PublishAot>True</PublishAot>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<PublishTrimmed>true</PublishTrimmed>
 		<EnableMsixTooling>true</EnableMsixTooling>
 		<IsAotCompatible>true</IsAotCompatible>

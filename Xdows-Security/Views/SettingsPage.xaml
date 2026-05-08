@@ -115,6 +115,12 @@
                            x:Name="Scan_ScanProgress">
                             <ToggleSwitch x:Name="ScanProgressToggle" Tag="ShowScanProgress" Toggled="Toggled_SaveToggleData" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_IndexMode_TaskbarScanProgress"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
+                           x:Name="Scan_TaskbarScanProgress">
+                            <ToggleSwitch x:Name="TaskbarScanProgressToggle" Tag="ShowTaskbarScanProgress" IsOn="True" Toggled="Toggled_SaveToggleData" />
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
