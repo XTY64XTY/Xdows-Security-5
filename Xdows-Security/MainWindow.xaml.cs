@@ -20,6 +20,7 @@ namespace Xdows_Security
         public WinUIEx.WindowManager? Manager { get; private set; }
 
         private bool _isOOBEShown;
+        private readonly Stack<string> _navigationHistory = new();
 
         public MainWindow()
         {
@@ -160,6 +161,7 @@ namespace Xdows_Security
                 (int)d : 0
             );
             UpdatePaneToggleButtonPosition();
+            UpdateBackButtonPosition();
             if (settings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) && trayVisibleToggle is bool boolValue)
             {
                 Manager?.IsVisibleInTray = boolValue;
@@ -328,7 +330,7 @@ namespace Xdows_Security
                 }
             }
         }
-        public void GoToPage(string PageName)
+        public void GoToPage(string PageName, bool pushHistory = true)
         {
             if (PageName == "BugReport")
             {
@@ -352,9 +354,20 @@ namespace Xdows_Security
 
                 if (targetItem != null)
                 {
+                    if (pushHistory && !string.IsNullOrEmpty(currentTag) && currentTag != PageName)
+                    {
+                        _navigationHistory.Push(currentTag);
+                        UpdateBackEnabled();
+                    }
                     nav.SelectedItem = targetItem;
                     return;
                 }
+            }
+
+            if (pushHistory && !string.IsNullOrEmpty(NowPage) && NowPage != PageName)
+            {
+                _navigationHistory.Push(NowPage);
+                UpdateBackEnabled();
             }
 
             if (PageName == "Settings")
@@ -378,6 +391,8 @@ namespace Xdows_Security
         }
         public void GoToBugReportPage(string? PageName)
         {
+            _navigationHistory.Clear();
+            UpdateBackEnabled();
             NowPage = "BugReport";
             nav.Header = PageName;
             nav.SelectedItem = null;
@@ -458,6 +473,59 @@ namespace Xdows_Security
         private void AppTitleBar_PaneToggleRequested(Microsoft.UI.Xaml.Controls.TitleBar sender, object args)
         {
             nav.IsPaneOpen = !nav.IsPaneOpen;
+        }
+
+        public void UpdateBackButtonPosition()
+        {
+            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+            Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
+            bool isCompactMode = navTheme == 0 &&
+                settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out var isItInTitleBar) &&
+                isItInTitleBar is bool bv && bv;
+            bool isBackButtonVisible = !settings.Values.TryGetValue("IsBackButtonVisible", out var backVisRaw) || backVisRaw is not false;
+
+            if (!isBackButtonVisible)
+            {
+                AppTitleBar.IsBackButtonVisible = false;
+                nav.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
+            }
+            else if (isCompactMode)
+            {
+                AppTitleBar.IsBackButtonVisible = true;
+                nav.IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed;
+            }
+            else
+            {
+                AppTitleBar.IsBackButtonVisible = false;
+                nav.IsBackButtonVisible = NavigationViewBackButtonVisible.Auto;
+            }
+
+            UpdateBackEnabled();
+        }
+
+        private void UpdateBackEnabled()
+        {
+            bool canGoBack = _navigationHistory.Count > 0;
+            nav.IsBackEnabled = canGoBack;
+            AppTitleBar.IsBackButtonEnabled = canGoBack;
+        }
+
+        private void OnBackRequested(Microsoft.UI.Xaml.Controls.TitleBar sender, object args)
+        {
+            GoBack();
+        }
+
+        private void OnNavBackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
+        {
+            GoBack();
+        }
+
+        private void GoBack()
+        {
+            if (_navigationHistory.Count == 0) return;
+            string previousPage = _navigationHistory.Pop();
+            UpdateBackEnabled();
+            GoToPage(previousPage, false);
         }
     }
 }

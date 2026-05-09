@@ -644,6 +644,31 @@ namespace Xdows_Security.Views
             await StartScanAsync(((MenuFlyoutItem)sender).Text, mode);
         }
 
+        private async void ScanButton_Click(SplitButton sender, SplitButtonClickEventArgs e)
+        {
+            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            Boolean UseLocalScan = (settings.Values["LocalScan"] as Boolean?).GetValueOrDefault();
+            Boolean UseCzkCloudScan = (settings.Values["CzkCloudScan"] as Boolean?).GetValueOrDefault();
+            Boolean UseCloudScan = (settings.Values["CloudScan"] as Boolean?).GetValueOrDefault();
+            Boolean UseModelScan = (settings.Values["ModelScan"] as Boolean?).GetValueOrDefault();
+            if (!UseLocalScan && !UseCzkCloudScan && !UseCloudScan && !UseModelScan)
+            {
+                ContentDialog dialog = new()
+                {
+                    Title = Localizer.Get().GetLocalizedString("SecurityPage_NoEngine_Title"),
+                    Content = Localizer.Get().GetLocalizedString("SecurityPage_NoEngine_Content"),
+                    PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
+                    XamlRoot = this.XamlRoot,
+                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
+                    DefaultButton = ContentDialogButton.Primary
+                };
+                _ = dialog.ShowAsync();
+                return;
+            }
+
+            await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_Quick"), ScanMode.Quick);
+        }
+
         private static IEnumerable<String> EnumerateFilesStreaming(ScanMode mode, String? userPath, IReadOnlyList<String>? customPaths)
         {
             switch (mode)

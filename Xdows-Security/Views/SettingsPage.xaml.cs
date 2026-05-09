@@ -275,6 +275,7 @@ namespace Xdows_Security.Views
                 Process_CompatibilityMode,
                 Files_CompatibilityMode,
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
+                SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
                 SpatialAudioToggle
             ];
@@ -293,6 +294,12 @@ namespace Xdows_Security.Views
             if (!settings.Values.ContainsKey("ShowTaskbarScanProgress"))
             {
                 settings.Values["ShowTaskbarScanProgress"] = true;
+            }
+
+            if (!settings.Values.ContainsKey("IsBackButtonVisible"))
+            {
+                settings.Values["IsBackButtonVisible"] = true;
+                SettingsPage_Appearance_Nav_IsBackButtonVisible.IsOn = true;
             }
 
             InfectorCleanerToggle.IsEnabled = VirusFamilyToggle.IsOn;
@@ -1046,6 +1053,12 @@ namespace Xdows_Security.Views
         {
             Toggled_SaveToggleData(sender, e);
             App.MainWindow?.UpdatePaneToggleButtonPosition();
+        }
+
+        private void SettingsPage_Appearance_Nav_IsBackButtonVisible_Toggled(object sender, RoutedEventArgs e)
+        {
+            Toggled_SaveToggleData(sender, e);
+            App.MainWindow?.UpdateBackButtonPosition();
         }
 
         private void LoadSoundSetting()

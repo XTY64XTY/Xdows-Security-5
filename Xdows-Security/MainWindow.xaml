@@ -16,6 +16,7 @@
             Height="48"
             Margin="1.5,0,0,0"
             PaneToggleRequested="AppTitleBar_PaneToggleRequested"
+            BackRequested="OnBackRequested"
             VerticalAlignment="Top">
             <TitleBar.LeftHeader>
                 <StackPanel Margin="11.5,0,0,0" Orientation="Horizontal" VerticalAlignment="Top">
@@ -31,6 +32,7 @@
                     IsBackButtonVisible="Collapsed"
                     IsBackEnabled="False"
                     IsPaneToggleButtonVisible="False"
+                    BackRequested="OnNavBackRequested"
                     Loaded="Nav_Loaded"
                     Margin="0,48,0,0">
             <NavigationView.MenuItems>

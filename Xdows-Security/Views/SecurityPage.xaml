@@ -225,12 +225,12 @@
                     </StackPanel>
                 </Button>
 
-                <DropDownButton Name="ScanButton">
+                <SplitButton x:Name="ScanButton" Click="ScanButton_Click">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <FontIcon Glyph="&#xE8B7;" FontSize="16"/>
                         <TextBlock x:Name="ScanButtonText" l:Uids.Uid="SecurityPage_ScanButtonText"/>
                     </StackPanel>
-                    <DropDownButton.Flyout>
+                    <SplitButton.Flyout>
                         <MenuFlyout Placement="Bottom">
                             <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Quick" Tag="Quick" Click="OnScanMenuClick">
                                 <MenuFlyoutItem.Icon>
@@ -260,8 +260,8 @@
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                         </MenuFlyout>
-                    </DropDownButton.Flyout>
-                </DropDownButton>
+                    </SplitButton.Flyout>
+                </SplitButton>
             </StackPanel>
 
             <TextBlock Name="StatusText" Grid.Row="5" Margin="0,8,0,0" FontSize="14" TextWrapping="Wrap" Grid.ColumnSpan="2"/>

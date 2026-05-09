@@ -243,6 +243,7 @@ namespace Xdows_Security
             {
                 AppTitleBar.IsPaneToggleButtonVisible = false;
                 nav.IsPaneToggleButtonVisible = true;
+                UpdateBackButtonPosition();
                 return;
             }
 
@@ -257,6 +258,7 @@ namespace Xdows_Security
                 nav.IsPaneToggleButtonVisible = true;
 
             }
+            UpdateBackButtonPosition();
         }
     }
 }

@@ -1330,6 +1330,12 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
     <value>Place the PaneToggleButton in the TitleBar</value>
   </data>
+  <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Header" xml:space="preserve">
+    <value>Back Button</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Description" xml:space="preserve">
+    <value>Show a back button in the title bar or navigation bar</value>
+  </data>
   <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
     <value>Cannot initialize Xdows Model</value>
   </data>

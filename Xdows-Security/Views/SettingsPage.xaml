@@ -47,6 +47,11 @@
                            HeaderIcon="{ui:FontIcon Glyph=&#xF165;}">
                             <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar" Tag="IsPaneToggleButtonInTitleBar" Toggled="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled" />
                         </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Appearance_Nav_IsBackButtonVisible"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE72B;}">
+                            <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsBackButtonVisible" Tag="IsBackButtonVisible" Toggled="SettingsPage_Appearance_Nav_IsBackButtonVisible_Toggled" />
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
