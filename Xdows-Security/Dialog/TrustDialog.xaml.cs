@@ -17,7 +17,9 @@ namespace Xdows_Security
         public TrustDialog()
         {
             this.InitializeComponent();
-            this.PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Close");// 为了资源复用 By Shiyi
+            PrimaryButtonText = Localizer.Get().GetLocalizedString("TrustDialog_AddButton.Content");
+            SecondaryButtonText = Localizer.Get().GetLocalizedString("TrustDialog_DeleteButton.Content");
+            CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
             _ = ReloadAsync();
         }
 
@@ -34,7 +36,6 @@ namespace Xdows_Security
             }
             catch
             {
-                // 忽略加载错误
             }
             return Task.CompletedTask;
         }
@@ -65,6 +66,28 @@ namespace Xdows_Security
             if (file is null) { return; }
             await TrustManager.AddToTrust(file.Path);
             _ = ReloadAsync();
+        }
+
+        private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            args.Cancel = true;
+            PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
+            if (file is null) return;
+            await TrustManager.AddToTrust(file.Path);
+            _ = ReloadAsync();
+        }
+
+        private async void OnSecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            args.Cancel = true;
+            var selectedItems = TrustListView.SelectedItems.Cast<TrustItemModel>().ToList();
+            if (selectedItems.Count == 0) return;
+            foreach (var item in selectedItems)
+            {
+                await TrustManager.RemoveFromTrust(item.SourcePath);
+                _items.Remove(item);
+            }
+            await ReloadAsync();
         }
     }
 }

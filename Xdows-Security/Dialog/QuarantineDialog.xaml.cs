@@ -15,7 +15,9 @@ namespace Xdows_Security
         public QuarantineDialog()
         {
             InitializeComponent();
-            this.PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Close");// 为了资源复用
+            PrimaryButtonText = Localizer.Get().GetLocalizedString("QuarantineDialog_RestoreButton.Content");
+            SecondaryButtonText = Localizer.Get().GetLocalizedString("QuarantineDialog_DeleteButton.Content");
+            CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
             _ = ReloadAsync();
         }
         private Task ReloadAsync()
@@ -53,6 +55,22 @@ namespace Xdows_Security
         private async void ClearMenuItem_Click(object sender, RoutedEventArgs e)
         {
             await QuarantineManager.ClearQuarantine();
+            await ReloadAsync();
+        }
+
+        private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            args.Cancel = true;
+            await RestoreSelectedAsync();
+        }
+
+        private async void OnSecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+        {
+            args.Cancel = true;
+            var selected = QuarantineListView.SelectedItems.Cast<QuarantineItemModel>().ToList();
+            if (selected.Count == 0) return;
+            await QuarantineManager.DeleteItems(selected.Select(x => x.FileHash));
+            foreach (var item in selected) _items.Remove(item);
             await ReloadAsync();
         }
     }

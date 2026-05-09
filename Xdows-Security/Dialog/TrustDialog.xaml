@@ -3,41 +3,34 @@
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                xmlns:l="using:WinUI3Localizer"
                DefaultButton="Primary"
-               CornerRadius="8"
+               CornerRadius="{ThemeResource ControlCornerRadius}"
                l:Uids.Uid="TrustDialog_Dialog"
+               PrimaryButtonClick="OnPrimaryButtonClick"
+               SecondaryButtonClick="OnSecondaryButtonClick"
                xmlns:local="using:TrustQuarantine">
 
-    <StackPanel>
-        <ListView x:Name="TrustListView" 
-                  SelectionMode="Multiple"
-                  Margin="0,0,0,12">
-            <ListView.ContextFlyout>
-                <MenuFlyout>
-                    <MenuFlyoutItem l:Uids.Uid="TrustDialog_DeleteMenuItem" Click="DeleteMenuItem_Click"/>
-                    <MenuFlyoutSeparator />
-                    <MenuFlyoutItem l:Uids.Uid="TrustDialog_AddMenuItem"    Click="AddMenuItem_Click"/>
-                    <MenuFlyoutItem l:Uids.Uid="TrustDialog_ClearMenuItem"  Click="ClearMenuItem_Click"/>
-                </MenuFlyout>
-            </ListView.ContextFlyout>
+    <ListView x:Name="TrustListView" 
+              SelectionMode="Multiple">
+        <ListView.ContextFlyout>
+            <MenuFlyout>
+                <MenuFlyoutItem l:Uids.Uid="TrustDialog_DeleteMenuItem" Click="DeleteMenuItem_Click"/>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem l:Uids.Uid="TrustDialog_AddMenuItem"    Click="AddMenuItem_Click"/>
+                <MenuFlyoutItem l:Uids.Uid="TrustDialog_ClearMenuItem"  Click="ClearMenuItem_Click"/>
+            </MenuFlyout>
+        </ListView.ContextFlyout>
 
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:TrustItemModel">
-                    <StackPanel Spacing="2" Padding="8,6"> 
-                        <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
-                        <TextBlock Text="{x:Bind Hash}" 
-                                   FontSize="10" 
-                                   Opacity="0.75" 
-                                   IsTextSelectionEnabled="True" 
-                                   TextWrapping="NoWrap"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="4">
-            <Button l:Uids.Uid="TrustDialog_AddButton"    Click="AddMenuItem_Click"/>
-            <Button l:Uids.Uid="TrustDialog_DeleteButton" Click="DeleteMenuItem_Click"/>
-            <Button l:Uids.Uid="TrustDialog_ClearButton"  Click="ClearMenuItem_Click"/>
-        </StackPanel>
-    </StackPanel>
+        <ListView.ItemTemplate>
+            <DataTemplate x:DataType="local:TrustItemModel">
+                <StackPanel Spacing="2" Padding="8,6"> 
+                    <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
+                    <TextBlock Text="{x:Bind Hash}" 
+                               FontSize="10" 
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                               IsTextSelectionEnabled="True" 
+                               TextWrapping="NoWrap"/>
+                </StackPanel>
+            </DataTemplate>
+        </ListView.ItemTemplate>
+    </ListView>
 </ContentDialog>

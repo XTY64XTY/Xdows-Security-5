@@ -6,43 +6,36 @@
     xmlns:l="using:WinUI3Localizer"
     l:Uids.Uid="QuarantineDialog_Dialog"
     DefaultButton="Primary"
-    CornerRadius="8">
+    CornerRadius="{ThemeResource ControlCornerRadius}"
+    PrimaryButtonClick="OnPrimaryButtonClick"
+    SecondaryButtonClick="OnSecondaryButtonClick">
 
-    <StackPanel>
-        <ListView x:Name="QuarantineListView"
-                  SelectionMode="Multiple"
-                  Margin="0,0,0,12">
-            <ListView.ContextFlyout>
-                <MenuFlyout>
-                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreMenuItem" Click="RestoreMenuItem_Click"/>
-                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_DeleteMenuItem"  Click="DeleteMenuItem_Click"/>
-                    <MenuFlyoutSeparator />
-                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_ClearMenuItem"   Click="ClearMenuItem_Click"/>
-                </MenuFlyout>
-            </ListView.ContextFlyout>
+    <ListView x:Name="QuarantineListView"
+              SelectionMode="Multiple">
+        <ListView.ContextFlyout>
+            <MenuFlyout>
+                <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreMenuItem" Click="RestoreMenuItem_Click"/>
+                <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_DeleteMenuItem"  Click="DeleteMenuItem_Click"/>
+                <MenuFlyoutSeparator />
+                <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_ClearMenuItem"   Click="ClearMenuItem_Click"/>
+            </MenuFlyout>
+        </ListView.ContextFlyout>
 
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="local:QuarantineItemModel">
-                    <StackPanel Spacing="2" Padding="8,6">
-                        <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
-                        <TextBlock Text="{x:Bind FileHash}" 
-                                   FontSize="10"
-                                   Opacity="0.75"
-                                   IsTextSelectionEnabled="True"
-                                   TextWrapping="NoWrap"/>
-                        <TextBlock Text="{x:Bind ThreatName}"
-                                   FontSize="12"
-                                   Opacity="0.8"
-                                   TextWrapping="NoWrap"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="4">
-            <Button l:Uids.Uid="QuarantineDialog_RestoreButton" Click="RestoreMenuItem_Click"/>
-            <Button l:Uids.Uid="QuarantineDialog_DeleteButton"  Click="DeleteMenuItem_Click"/>
-            <Button l:Uids.Uid="QuarantineDialog_ClearButton"   Click="ClearMenuItem_Click"/>
-        </StackPanel>
-    </StackPanel>
+        <ListView.ItemTemplate>
+            <DataTemplate x:DataType="local:QuarantineItemModel">
+                <StackPanel Spacing="2" Padding="8,6">
+                    <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
+                    <TextBlock Text="{x:Bind FileHash}" 
+                               FontSize="10"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               IsTextSelectionEnabled="True"
+                               TextWrapping="NoWrap"/>
+                    <TextBlock Text="{x:Bind ThreatName}"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               TextWrapping="NoWrap"/>
+                </StackPanel>
+            </DataTemplate>
+        </ListView.ItemTemplate>
+    </ListView>
 </ContentDialog>

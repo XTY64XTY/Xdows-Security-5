@@ -56,7 +56,7 @@
         </NavigationView>
 
         <Grid x:Name="OOBEOverlay" Visibility="Collapsed" IsHitTestVisible="False">
-            <Grid Background="#FF000000" Opacity="1" IsHitTestVisible="False" />
+            <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" IsHitTestVisible="False" />
             <Frame x:Name="OOBEFrame" IsHitTestVisible="True" />
         </Grid>
     </Grid>
