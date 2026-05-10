@@ -8,11 +8,11 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using WinRT.Interop;
 using WinUI3Localizer;
+using Xdows_Security.Services;
 
 namespace Xdows_Security.Views
 {
@@ -34,61 +34,6 @@ namespace Xdows_Security.Views
             }
             public void Start() => _timer.Start();
             public void Stop() => _timer.Stop();
-        }
-
-        private static class LogModel
-        {
-            private static readonly ObservableCollection<string> _lines = [];
-            private static readonly DispatcherQueue _dq = DispatcherQueue.GetForCurrentThread();
-            public static ObservableCollection<string> Lines => _lines;
-
-            private const int MAX_LINES = 200;
-            private static readonly Channel<(string raw, string[]? filters)> _logChannel = Channel.CreateUnbounded<(string, string[]?)>();
-
-            static LogModel()
-            {
-                _ = ProcessLogQueueAsync();
-            }
-
-            private static async Task ProcessLogQueueAsync()
-            {
-                await foreach (var (raw, filters) in _logChannel.Reader.ReadAllAsync())
-                {
-                    await Task.Run(() => ProcessLogBatch(raw, filters));
-                }
-            }
-
-            private static void ProcessLogBatch(string raw, string[]? filters)
-            {
-                try
-                {
-                    var q = string.IsNullOrEmpty(raw)
-                        ? []
-                        : raw.Split(["\r\n", "\n"], StringSplitOptions.RemoveEmptyEntries);
-
-                    if (filters?.Length > 0)
-                        q = [.. q.Where(l => filters.Any(f => l.Contains($"[{f}]")))];
-
-                    var linesToAdd = q.TakeLast(MAX_LINES).ToList();
-
-                    _dq.TryEnqueue(() =>
-                    {
-                        try
-                        {
-                            _lines.Clear();
-                            foreach (var l in linesToAdd)
-                                _lines.Add(l);
-                        }
-                        catch { }
-                    });
-                }
-                catch { }
-            }
-
-            public static void Reload(string raw, string[]? filters)
-            {
-                _logChannel.Writer.TryWrite((raw, filters));
-            }
         }
 
         private static class SystemInfoModel
@@ -119,9 +64,14 @@ namespace Xdows_Security.Views
         private readonly WeakEventTimer _sysTimer = new(TimeSpan.FromSeconds(60));
         private readonly WeakEventTimer _protTimer = new(TimeSpan.FromSeconds(10));
 
-        public string[] SelectedLogFilters = [];
-        public static ObservableCollection<string> LogLines => LogModel.Lines;
-
+        private readonly ObservableCollection<LogEntry> _logEntries = [];
+        private LogText.LogLevel[] _selectedLevels = [];
+        private string? _searchKeyword;
+        private bool _isLoadingOlder;
+        private bool _hasMoreOlder = true;
+        private bool _isAutoScroll = true;
+        private DispatcherQueueTimer? _logThrottleTimer;
+        private LogEntry? _pendingLogEntry;
 
         public HomePage()
         {
@@ -130,12 +80,19 @@ namespace Xdows_Security.Views
             Loaded += HomePage_Loaded;
             Unloaded += HomePage_Unloaded;
 
-            LogRepeater.ItemsSource = LogLines;
+            LogListView.ItemsSource = _logEntries;
 
-            LogText.TextChanged += (s, e) =>
-            {
-                LogModel.Reload(LogText.Text, SelectedLogFilters);
-            };
+            LogScroll.ViewChanged += LogScroll_ViewChanged;
+
+            LogSearchBox.QuerySubmitted += LogSearchBox_QuerySubmitted;
+            LogSearchBox.TextChanged += LogSearchBox_TextChanged;
+
+            LogText.TextChanged += OnLogTextChanged;
+            LogService.LogAdded += OnLogAdded;
+
+            _logThrottleTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
+            _logThrottleTimer.Interval = TimeSpan.FromMilliseconds(100);
+            _logThrottleTimer.Tick += OnLogThrottleTick;
 
             LoadData();
             InitTimers();
@@ -169,6 +126,118 @@ namespace Xdows_Security.Views
                 card.Visibility = Visibility.Visible;
                 await Task.Delay(70);
             }
+
+            await LoadInitialLogsAsync();
+        }
+
+        private async Task LoadInitialLogsAsync()
+        {
+            var count = CalculateInitialCount();
+            var logs = LogService.GetLatestLogs(count, _selectedLevels, _searchKeyword);
+            _logEntries.Clear();
+            foreach (var log in logs)
+                _logEntries.Add(log);
+            _hasMoreOlder = logs.Count >= count;
+
+            await Task.Delay(50);
+            LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
+        }
+
+        private int CalculateInitialCount()
+        {
+            double height = LogScroll.ActualHeight;
+            if (height <= 0) height = 216;
+            return (int)(height / 18) + 20;
+        }
+
+        private async void LogScroll_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+        {
+            if (_isLoadingOlder || !_hasMoreOlder) return;
+
+            if (LogScroll.VerticalOffset <= 5 && LogScroll.ScrollableHeight > 0)
+            {
+                _isLoadingOlder = true;
+                try
+                {
+                    if (_logEntries.Count == 0) return;
+                    long oldestId = _logEntries[0].Id;
+                    var older = LogService.GetOlderLogs(oldestId, 50, _selectedLevels, _searchKeyword);
+                    if (older.Count == 0)
+                    {
+                        _hasMoreOlder = false;
+                        return;
+                    }
+
+                    double prevScrollableHeight = LogScroll.ScrollableHeight;
+
+                    for (int i = 0; i < older.Count; i++)
+                        _logEntries.Insert(i, older[i]);
+
+                    await Task.Delay(10);
+                    double newScrollableHeight = LogScroll.ScrollableHeight;
+                    double offsetAdjustment = newScrollableHeight - prevScrollableHeight;
+                    LogScroll.ChangeView(null, LogScroll.VerticalOffset + offsetAdjustment, null);
+                }
+                finally
+                {
+                    _isLoadingOlder = false;
+                }
+            }
+        }
+
+        private void OnLogTextChanged(object? sender, EventArgs e) { }
+
+        private void OnLogAdded(object? sender, LogEntry entry)
+        {
+            _pendingLogEntry = entry;
+            if (_logThrottleTimer is { IsRunning: false })
+                _logThrottleTimer.Start();
+        }
+
+        private void OnLogThrottleTick(DispatcherQueueTimer sender, object args)
+        {
+            _logThrottleTimer?.Stop();
+            if (_pendingLogEntry is null) return;
+
+            if (_selectedLevels.Length > 0 && !_selectedLevels.Contains(_pendingLogEntry.Level))
+            {
+                _pendingLogEntry = null;
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_searchKeyword) &&
+                !_pendingLogEntry.Text.Contains(_searchKeyword, StringComparison.OrdinalIgnoreCase))
+            {
+                _pendingLogEntry = null;
+                return;
+            }
+
+            var entry = _pendingLogEntry;
+            _pendingLogEntry = null;
+
+            _logEntries.Add(entry);
+            _hasMoreOlder = true;
+
+            if (_isAutoScroll)
+            {
+                LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
+            }
+        }
+
+        private void LogSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            _searchKeyword = string.IsNullOrWhiteSpace(args.QueryText) ? null : args.QueryText.Trim();
+            _ = LoadInitialLogsAsync();
+        }
+
+        private void LogSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput &&
+                string.IsNullOrEmpty(sender.Text))
+            {
+                _searchKeyword = null;
+                _ = LoadInitialLogsAsync();
+            }
         }
 
         private void RefreshPomes_Click(object sender, RoutedEventArgs e) => RefreshPomes();
@@ -183,10 +252,27 @@ namespace Xdows_Security.Views
 
         private void RefreshStatistics_Click(object sender, RoutedEventArgs e) => LoadStatistics();
 
-        private void ClearLog_Click(object sender, RoutedEventArgs e) => LogText.ClearLog();
-
-        private async void ExportLog_Click(object sender, RoutedEventArgs e)
+        private void ClearLog_Click(object sender, RoutedEventArgs e)
         {
+            LogText.ClearLog();
+            _logEntries.Clear();
+            _hasMoreOlder = false;
+        }
+
+        private void ExportLog_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ShowExportDialogAsync();
+        }
+
+        private async Task ShowExportDialogAsync()
+        {
+            var dialog = new LogExportDialog
+            {
+                XamlRoot = this.XamlRoot
+            };
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary) return;
+
             try
             {
                 var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
@@ -202,16 +288,29 @@ namespace Xdows_Security.Views
                 PickFileResult file = await picker.PickSaveFileAsync();
                 if (file is null) return;
 
-                try
-                {
-                    await File.WriteAllTextAsync(file.Path, LogText.Text);
-                }
-                catch (Exception ex) { LogText.AddNewLog(LogText.LogLevel.WARN, "ExportLog", ex.Message); }
+                await LogService.ExportAsync(file.Path,
+                    dialog.SelectedLevels, dialog.SearchKeyword,
+                    dialog.FromDate, dialog.ToDate);
             }
             catch (Exception ex)
             {
                 LogText.AddNewLog(LogText.LogLevel.WARN, "ExportLog", ex.Message);
             }
+        }
+
+        private void LogManage_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ShowLogManagementDialogAsync();
+        }
+
+        private async Task ShowLogManagementDialogAsync()
+        {
+            var dialog = new LogManagementDialog
+            {
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
+            await LoadInitialLogsAsync();
         }
 
         private void CopySysInfo_Click(object sender, RoutedEventArgs e)
@@ -225,11 +324,33 @@ namespace Xdows_Security.Views
         {
             if (sender is not ToggleMenuFlyoutItem item) return;
             var flyout = LogLevelFilter.Flyout as MenuFlyout;
+            var allItem = flyout!.Items.OfType<ToggleMenuFlyoutItem>().FirstOrDefault(t => t.Tag.ToString() == "All");
+
             var selected = flyout!.Items
                                   .OfType<ToggleMenuFlyoutItem>()
                                   .Where(t => t.Tag.ToString() != "All" && t.IsChecked)
                                   .Select(t => t.Tag.ToString()!)
                                   .ToArray();
+
+            if (item.Tag.ToString() == "All")
+            {
+                bool newState = item.IsChecked;
+                foreach (var toggle in flyout.Items.OfType<ToggleMenuFlyoutItem>())
+                    if (toggle.Tag.ToString() != "All") toggle.IsChecked = newState;
+                selected = newState
+                    ? Enum.GetNames(typeof(LogText.LogLevel))
+                    : [];
+            }
+            else
+            {
+                if (allItem is not null)
+                {
+                    var levelItems = flyout.Items.OfType<ToggleMenuFlyoutItem>()
+                        .Where(t => t.Tag.ToString() != "All").ToList();
+                    allItem.IsChecked = levelItems.All(t => t.IsChecked);
+                }
+            }
+
             LogLevelFilter_Internal(selected);
         }
 
@@ -261,8 +382,10 @@ namespace Xdows_Security.Views
 
         private void LogLevelFilter_Internal(string[]? selected)
         {
-            SelectedLogFilters = selected ?? [];
-            LogModel.Reload(LogText.Text, SelectedLogFilters);
+            _selectedLevels = selected?.Length > 0
+                ? selected.Select(s => Enum.Parse<LogText.LogLevel>(s)).ToArray()
+                : [];
+            _ = LoadInitialLogsAsync();
         }
 
         private void InitTimers()
@@ -329,6 +452,5 @@ namespace Xdows_Security.Views
                                                                  : "HomePage_TextBlock_Close");
             HomePageIcon.Glyph = ok ? "\uE73E" : "\uE711";
         }
-
     }
 }

@@ -1,0 +1,43 @@
+<ContentDialog
+    x:Class="Xdows_Security.LogExportDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:WinUI3Localizer"
+    l:Uids.Uid="LogExportDialog_Dialog"
+    PrimaryButtonText="Export"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    CornerRadius="{ThemeResource ControlCornerRadius}">
+
+    <StackPanel Spacing="12" MinWidth="360">
+        <StackPanel Spacing="4">
+            <TextBlock l:Uids.Uid="LogExportDialog_DateRange" FontWeight="SemiBold"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <CalendarDatePicker x:Name="FromDatePicker" PlaceholderText="From"/>
+                <TextBlock Grid.Column="1" Text="–" VerticalAlignment="Center" Margin="8,0"/>
+                <CalendarDatePicker x:Name="ToDatePicker" Grid.Column="2" PlaceholderText="To"/>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock l:Uids.Uid="LogExportDialog_LevelFilter" FontWeight="SemiBold"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <CheckBox x:Name="LevelDebug" Content="DEBUG" IsChecked="True"/>
+                <CheckBox x:Name="LevelInfo" Content="INFO" IsChecked="True"/>
+                <CheckBox x:Name="LevelWarn" Content="WARN" IsChecked="True"/>
+                <CheckBox x:Name="LevelError" Content="ERROR" IsChecked="True"/>
+                <CheckBox x:Name="LevelFatal" Content="FATAL" IsChecked="True"/>
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Spacing="4">
+            <TextBlock l:Uids.Uid="LogExportDialog_Keyword" FontWeight="SemiBold"/>
+            <TextBox x:Name="KeywordBox" PlaceholderText="Optional keyword filter"/>
+        </StackPanel>
+    </StackPanel>
+</ContentDialog>

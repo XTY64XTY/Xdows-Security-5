@@ -1415,4 +1415,37 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="ContextMenu_ScanWith" xml:space="preserve">
     <value>Scan with Xdows Security</value>
   </data>
+  <data name="HomePage_LogSearch.PlaceholderText" xml:space="preserve">
+    <value>Search logs</value>
+  </data>
+  <data name="HomePage_LogManage.Text" xml:space="preserve">
+    <value>Manage</value>
+  </data>
+  <data name="HomePage_ExportLogOptions.Text" xml:space="preserve">
+    <value>Export options</value>
+  </data>
+  <data name="LogManagementDialog_Dialog.Title" xml:space="preserve">
+    <value>Log Management</value>
+  </data>
+  <data name="LogManagementDialog_DeleteSelected.Text" xml:space="preserve">
+    <value>Delete selected</value>
+  </data>
+  <data name="LogManagementDialog_DeleteAll.Text" xml:space="preserve">
+    <value>Delete all</value>
+  </data>
+  <data name="LogExportDialog_Dialog.Title" xml:space="preserve">
+    <value>Export Logs</value>
+  </data>
+  <data name="LogExportDialog_DateRange.Text" xml:space="preserve">
+    <value>Date range</value>
+  </data>
+  <data name="LogExportDialog_LevelFilter.Text" xml:space="preserve">
+    <value>Level filter</value>
+  </data>
+  <data name="LogExportDialog_Keyword.Text" xml:space="preserve">
+    <value>Keyword</value>
+  </data>
+  <data name="LogExportDialog_Export.Content" xml:space="preserve">
+    <value>Export</value>
+  </data>
 </root>

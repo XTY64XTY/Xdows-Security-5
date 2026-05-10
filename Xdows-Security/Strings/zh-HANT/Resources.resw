@@ -1414,4 +1414,37 @@
   <data name="ContextMenu_ScanWith" xml:space="preserve">
     <value>使用 Xdows Security 掃描</value>
   </data>
+  <data name="HomePage_LogSearch.PlaceholderText" xml:space="preserve">
+    <value>搜尋日誌</value>
+  </data>
+  <data name="HomePage_LogManage.Text" xml:space="preserve">
+    <value>管理</value>
+  </data>
+  <data name="HomePage_ExportLogOptions.Text" xml:space="preserve">
+    <value>匯出選項</value>
+  </data>
+  <data name="LogManagementDialog_Dialog.Title" xml:space="preserve">
+    <value>日誌管理</value>
+  </data>
+  <data name="LogManagementDialog_DeleteSelected.Text" xml:space="preserve">
+    <value>刪除選取</value>
+  </data>
+  <data name="LogManagementDialog_DeleteAll.Text" xml:space="preserve">
+    <value>刪除全部</value>
+  </data>
+  <data name="LogExportDialog_Dialog.Title" xml:space="preserve">
+    <value>匯出日誌</value>
+  </data>
+  <data name="LogExportDialog_DateRange.Text" xml:space="preserve">
+    <value>日期範圍</value>
+  </data>
+  <data name="LogExportDialog_LevelFilter.Text" xml:space="preserve">
+    <value>層級篩選</value>
+  </data>
+  <data name="LogExportDialog_Keyword.Text" xml:space="preserve">
+    <value>關鍵詞</value>
+  </data>
+  <data name="LogExportDialog_Export.Content" xml:space="preserve">
+    <value>匯出</value>
+  </data>
 </root>

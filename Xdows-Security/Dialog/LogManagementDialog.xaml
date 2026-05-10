@@ -1,0 +1,45 @@
+<ContentDialog
+    x:Class="Xdows_Security.LogManagementDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:WinUI3Localizer"
+    xmlns:svc="using:Xdows_Security.Services"
+    l:Uids.Uid="LogManagementDialog_Dialog"
+    DefaultButton="Close"
+    CornerRadius="{ThemeResource ControlCornerRadius}">
+
+    <StackPanel Spacing="12" MinWidth="400">
+        <ListView x:Name="DateStatsListView"
+                  SelectionMode="Multiple"
+                  Height="300">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="svc:LogDateStats">
+                    <Grid Padding="4,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="{x:Bind Date}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="{x:Bind Count}" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button x:Name="DeleteSelectedButton" Click="DeleteSelected_Click">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                    <TextBlock l:Uids.Uid="LogManagementDialog_DeleteSelected"/>
+                </StackPanel>
+            </Button>
+            <Button x:Name="DeleteAllButton" Click="DeleteAll_Click">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                    <TextBlock l:Uids.Uid="LogManagementDialog_DeleteAll"/>
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</ContentDialog>

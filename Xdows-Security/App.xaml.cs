@@ -174,166 +174,23 @@ namespace Xdows_Security
     }
     public static class LogText
     {
-        private const int HOT_MAX_LINES = 500;
-        private const int BATCH_SIZE = 50;
-        private const int FLUSH_INTERVAL_MS = 200;
-        private static readonly TimeSpan RetainAge = TimeSpan.FromDays(7);
-        private static readonly string BaseFolder = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Xdows-Security", "Logs");
-        private static readonly Queue<string> _hotLines = new();
-        private static readonly ReaderWriterLockSlim _lockObj = new();
-        private static readonly Channel<LogRow> _writeChannel = Channel.CreateUnbounded<LogRow>();
-        private static readonly Timer _throttleTimer;
-        private static bool _isTimerActive;
-
         public static event EventHandler? TextChanged;
-        public static string Text
+
+        public static void AddNewLog(LogLevel level, string source, string info)
         {
-            get
-            {
-                _lockObj.EnterReadLock();
-                try
-                {
-                    return string.Join(Environment.NewLine, _hotLines);
-                }
-                finally
-                {
-                    _lockObj.ExitReadLock();
-                }
-            }
+            Services.LogService.AddLog(level, source, info);
+            TextChanged?.Invoke(null, EventArgs.Empty);
         }
 
         public static void ClearLog()
         {
-            _lockObj.EnterWriteLock();
-            try
-            {
-                _hotLines.Clear();
-            }
-            finally
-            {
-                _lockObj.ExitWriteLock();
-            }
-            TriggerTextChanged();
-        }
-
-        public static async void AddNewLog(LogLevel level, string source, string info)
-        {
-            var row = new LogRow
-            {
-                Time = DateTime.Now,
-                Level = level,
-                Source = source,
-                Text = info,
-                ThreadId = Environment.CurrentManagedThreadId
-            };
-            UpdateHotCache(row);
-            await _writeChannel.Writer.WriteAsync(row);
-        }
-        static LogText()
-        {
-            Directory.CreateDirectory(BaseFolder);
-            CleanupOldLogs();
-            _ = Task.Run(WritePumpAsync);
-            _throttleTimer = new Timer(OnTimerCallback, null, Timeout.Infinite, Timeout.Infinite);
-        }
-        private static void UpdateHotCache(LogRow row)
-        {
-            string formatted = FormatRow(row);
-
-            _lockObj.EnterWriteLock();
-            try
-            {
-                if (_hotLines.Count >= HOT_MAX_LINES)
-                {
-                    _hotLines.Dequeue();
-                }
-                _hotLines.Enqueue(formatted);
-            }
-            finally
-            {
-                _lockObj.ExitWriteLock();
-            }
-
-            TriggerTextChanged();
-        }
-
-        private static void TriggerTextChanged()
-        {
-            _lockObj.EnterWriteLock();
-            try
-            {
-                if (_isTimerActive) return;
-                _isTimerActive = true;
-                _throttleTimer.Change(100, Timeout.Infinite);
-            }
-            finally
-            {
-                _lockObj.ExitWriteLock();
-            }
-        }
-
-        private static void OnTimerCallback(object? state)
-        {
-            _lockObj.EnterWriteLock();
-            try
-            {
-                _isTimerActive = false;
-            }
-            finally
-            {
-                _lockObj.ExitWriteLock();
-            }
+            Services.LogService.ClearAll();
             TextChanged?.Invoke(null, EventArgs.Empty);
         }
 
-        private static async Task WritePumpAsync()
-        {
-            var batch = new List<LogRow>(BATCH_SIZE);
-            var reader = _writeChannel.Reader;
+        [Obsolete("Use LogService for structured log access.")]
+        public static string Text => "";
 
-            while (await reader.WaitToReadAsync())
-            {
-                batch.Clear();
-
-                while (batch.Count < BATCH_SIZE && reader.TryRead(out var row))
-                {
-                    batch.Add(row);
-                }
-                if (batch.Count == 0) continue;
-                try
-                {
-                    string filePath = GetTodayFilePath();
-                    string content = string.Join(Environment.NewLine, batch.ConvertAll(FormatRow)) + Environment.NewLine;
-                    await File.AppendAllTextAsync(filePath, content);
-                }
-                catch { }
-            }
-        }
-
-        private static void CleanupOldLogs()
-        {
-            try
-            {
-                if (!Directory.Exists(BaseFolder)) return;
-                var dir = new DirectoryInfo(BaseFolder);
-                var cutoff = DateTime.UtcNow - RetainAge;
-
-                foreach (var f in dir.GetFiles("logs-*.txt"))
-                {
-                    if (f.LastWriteTimeUtc < cutoff)
-                    {
-                        f.Delete();
-                    }
-                }
-            }
-            catch { }
-        }
-        private static string GetTodayFilePath() =>
-            Path.Combine(BaseFolder, $"logs-{DateTime.Now:yyyy-MM-dd}.txt");
-        private static string FormatRow(LogRow r) =>
-            $"[{r.Time:yyyy-MM-dd HH:mm:ss}][{r.Level}][{r.Source}][T:{r.ThreadId}]: {r.Text}";
         public enum LogLevel
         {
             DEBUG = 0,
@@ -341,14 +198,6 @@ namespace Xdows_Security
             WARN = 2,
             ERROR = 3,
             FATAL = 4
-        }
-        private record LogRow
-        {
-            public DateTime Time { get; init; }
-            public LogLevel Level { get; init; }
-            public string Source { get; init; } = "";
-            public string Text { get; init; } = "";
-            public int ThreadId { get; init; }
         }
     }
     public partial class App : Application
