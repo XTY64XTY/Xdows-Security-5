@@ -1029,6 +1029,37 @@
   <data name="SecurityPage_HandleFailed_Title" xml:space="preserve">
     <value>處理失敗</value>
   </data>
+  <data name="SecurityPage_HandleAllButtonText.Text" xml:space="preserve">
+    <value>一鍵處理</value>
+  </data>
+  <data name="SecurityPage_HandleAllConfirm_Title" xml:space="preserve">
+    <value>一鍵處理確認</value>
+  </data>
+  <data name="SecurityPage_HandleAllConfirm_Content" xml:space="preserve">
+    <value>確定要處理所有 {0} 個威脅文件嗎？
+處理完成後可在隔離區恢復該文件，部分文件可能會直接刪除</value>
+  </data>
+  <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
+    <value>處理</value>
+  </data>
+  <data name="SecurityPage_HandleAllProgress" xml:space="preserve">
+    <value>正在處理威脅文件...</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_Title" xml:space="preserve">
+    <value>處理完成</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_Success" xml:space="preserve">
+    <value>成功處理 {0} 個文件</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_FailedHeader" xml:space="preserve">
+    <value>以下文件處理失敗：</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_AllFailed_Title" xml:space="preserve">
+    <value>處理失敗</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_FailedTip" xml:space="preserve">
+    <value>失敗的威脅將保留在列表中，可單獨處理</value>
+  </data>
   <data name="Common_OperationSuccess" xml:space="preserve">
     <value>操作成功</value>
   </data>

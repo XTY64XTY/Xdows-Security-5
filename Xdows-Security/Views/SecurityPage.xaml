@@ -72,7 +72,7 @@
                             Click="OnVirusRowHandleClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE74C;" />
+                                <FontIcon Glyph="&#xE74D;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                     </MenuFlyout>
@@ -116,7 +116,7 @@
                             Click="OnVirusRowHandleClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
-                                <FontIcon Glyph="&#xE74C;" />
+                                <FontIcon Glyph="&#xE74D;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                     </MenuFlyout>
@@ -208,6 +208,13 @@
                 <StackPanel Orientation="Horizontal" Tag="Visible" Spacing="8">
                         <FontIcon x:Name="BackToVirusListButtonIcon" Glyph="&#xE890;"/>
                         <TextBlock x:Name="BackToVirusListButtonText" l:Uids.Uid="SecurityPage_BackToVirusListButtonText"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="HandleAllButton" Click="OnHandleAllClick" Visibility="Collapsed">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                        <TextBlock x:Name="HandleAllButtonText" l:Uids.Uid="SecurityPage_HandleAllButtonText"/>
                     </StackPanel>
                 </Button>
 

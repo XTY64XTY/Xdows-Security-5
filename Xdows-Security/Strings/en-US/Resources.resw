@@ -1030,6 +1030,37 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SecurityPage_HandleFailed_Title" xml:space="preserve">
     <value>Handle Failed</value>
   </data>
+  <data name="SecurityPage_HandleAllButtonText.Text" xml:space="preserve">
+    <value>Handle All</value>
+  </data>
+  <data name="SecurityPage_HandleAllConfirm_Title" xml:space="preserve">
+    <value>Handle All Threats</value>
+  </data>
+  <data name="SecurityPage_HandleAllConfirm_Content" xml:space="preserve">
+    <value>Are you sure you want to handle all {0} threat files?
+Files can be restored from quarantine after handling. Some files may be deleted directly.</value>
+  </data>
+  <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
+    <value>Handle</value>
+  </data>
+  <data name="SecurityPage_HandleAllProgress" xml:space="preserve">
+    <value>Processing threat files...</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_Title" xml:space="preserve">
+    <value>Handling Complete</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_Success" xml:space="preserve">
+    <value>Successfully handled {0} file(s)</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_FailedHeader" xml:space="preserve">
+    <value>The following files failed to handle:</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_AllFailed_Title" xml:space="preserve">
+    <value>Handling Failed</value>
+  </data>
+  <data name="SecurityPage_HandleAllResult_FailedTip" xml:space="preserve">
+    <value>Failed threats remain in the list and can be handled individually</value>
+  </data>
   <data name="Common_OperationSuccess" xml:space="preserve">
     <value>Operation Successful</value>
   </data>
