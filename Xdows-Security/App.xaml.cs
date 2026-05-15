@@ -476,11 +476,9 @@ namespace Xdows_Security
         {
             try
             {
-                var settings = ApplicationData.Current.LocalSettings;
-                if (!settings.Values.ContainsKey("Startup"))
+                if (!StartupService.IsStartupEnabled())
                 {
                     StartupService.EnableStartup();
-                    settings.Values["Startup"] = true;
                 }
             }
             catch { }

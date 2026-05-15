@@ -271,7 +271,6 @@ namespace Xdows_Security.Views
                 ModelScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,
-                StartupToggle,
                 ContextMenuScanToggle,
                 DisabledVerifyToggle,
                 Process_CompatibilityMode,
@@ -717,11 +716,6 @@ namespace Xdows_Security.Views
                 toggle.IsOn = !toggle.IsOn;
                 toggle.Toggled += StartupToggle_Toggled;
                 LogText.AddNewLog(LogText.LogLevel.ERROR, "Settings", "Failed to change startup setting");
-            }
-            else
-            {
-                var settings = ApplicationData.Current.LocalSettings;
-                settings.Values["Startup"] = toggle.IsOn;
             }
         }
 

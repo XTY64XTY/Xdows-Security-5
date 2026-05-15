@@ -363,7 +363,7 @@
                            l:Uids.Uid="SettingsPage_Other_Startup"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE7E8;}"
                            Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="StartupToggle" Tag="Startup" IsOn="True" Toggled="StartupToggle_Toggled" />
+                    <ToggleSwitch x:Name="StartupToggle" Tag="Startup" Toggled="StartupToggle_Toggled" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_ContextMenuScan"
