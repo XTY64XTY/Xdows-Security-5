@@ -16,6 +16,7 @@ using TrustQuarantine;
 using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
 using Xdows_Security.Services;
+using static Xdows_Security.LogText;
 
 namespace Xdows_Security.Views
 {
@@ -270,6 +271,7 @@ namespace Xdows_Security.Views
                 ModelScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,
+                StartupToggle,
                 ContextMenuScanToggle,
                 DisabledVerifyToggle,
                 Process_CompatibilityMode,
@@ -289,6 +291,11 @@ namespace Xdows_Security.Views
                 {
                     toggle.IsOn = isOn;
                 }
+            }
+
+            if (!settings.Values.ContainsKey("TrayVisibleToggle"))
+            {
+                settings.Values["TrayVisibleToggle"] = true;
             }
 
             if (!settings.Values.ContainsKey("ShowTaskbarScanProgress"))
@@ -317,6 +324,7 @@ namespace Xdows_Security.Views
             FilesToggle.IsOn = ProtectionStatus.IsRun(1);
             RegistryToggle.IsOn = ProtectionStatus.IsRun(4);
             ContextMenuScanToggle.IsOn = ContextMenuService.IsEnabled();
+            StartupToggle.IsOn = StartupService.IsStartupEnabled();
 
             // Load scan index mode setting (default Parallel) without direct XAML field access
             try
@@ -686,7 +694,35 @@ namespace Xdows_Security.Views
         private void TrayVisibleToggle_Toggled(Object sender, RoutedEventArgs e)
         {
             Toggled_SaveToggleData(sender, e);
-            App.MainWindow?.Manager?.IsVisibleInTray = TrayVisibleToggle.IsEnabled;
+            App.MainWindow?.Manager?.IsVisibleInTray = TrayVisibleToggle.IsOn;
+        }
+
+        private void StartupToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize || sender is not ToggleSwitch toggle) return;
+
+            bool success;
+            if (toggle.IsOn)
+            {
+                success = StartupService.EnableStartup();
+            }
+            else
+            {
+                success = StartupService.DisableStartup();
+            }
+
+            if (!success)
+            {
+                toggle.Toggled -= StartupToggle_Toggled;
+                toggle.IsOn = !toggle.IsOn;
+                toggle.Toggled += StartupToggle_Toggled;
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "Settings", "Failed to change startup setting");
+            }
+            else
+            {
+                var settings = ApplicationData.Current.LocalSettings;
+                settings.Values["Startup"] = toggle.IsOn;
+            }
         }
 
         private void ContextMenuScanToggle_Toggled(Object sender, RoutedEventArgs e)

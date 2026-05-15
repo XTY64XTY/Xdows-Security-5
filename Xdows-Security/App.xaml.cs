@@ -8,6 +8,7 @@ using Protection;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Xdows_Security.Services;
 using System.IO.Pipes;
 using System.Net.Http;
 using System.Numerics;
@@ -291,6 +292,7 @@ namespace Xdows_Security
 
                 await InitializeLocalizer();
                 Services.ContextMenuService.ValidateOnStartup();
+                EnsureDefaultStartup();
                 InitializeMainWindow();
             }
             catch (Exception ex)
@@ -468,6 +470,20 @@ namespace Xdows_Security
             {
                 ApplicationData.Current.LocalSettings.Values[RunOOBESettingKey] = value;
             }
+        }
+
+        private static void EnsureDefaultStartup()
+        {
+            try
+            {
+                var settings = ApplicationData.Current.LocalSettings;
+                if (!settings.Values.ContainsKey("Startup"))
+                {
+                    StartupService.EnableStartup();
+                    settings.Values["Startup"] = true;
+                }
+            }
+            catch { }
         }
 
         public static void PlayExitDownFadeAnimation(UIElement uIElement, float verticalOffset = 40f)

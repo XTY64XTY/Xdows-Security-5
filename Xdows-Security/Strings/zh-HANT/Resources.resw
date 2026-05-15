@@ -1078,6 +1078,12 @@
   <data name="SettingsPage_Other_Tray.Description" xml:space="preserve">
     <value>在任務欄中顯示託盤圖標</value>
   </data>
+  <data name="SettingsPage_Other_Startup.Header" xml:space="preserve">
+    <value>開機自啟</value>
+  </data>
+  <data name="SettingsPage_Other_Startup.Description" xml:space="preserve">
+    <value>在系統開機時自動啟動</value>
+  </data>
   <data name="TrayMenu_Open" xml:space="preserve">
     <value>打開</value>
   </data>

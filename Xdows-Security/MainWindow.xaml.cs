@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
 using WinUIEx;
+using Xdows_Security.Services;
 using Xdows_Security.Views;
 using Xdows_Security.Views.OOBE;
 
@@ -162,11 +163,15 @@ namespace Xdows_Security
             );
             UpdatePaneToggleButtonPosition();
             UpdateBackButtonPosition();
-            if (settings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) && trayVisibleToggle is bool boolValue)
-            {
-                Manager?.IsVisibleInTray = boolValue;
-            }
+            bool isTrayVisible = !settings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) || (trayVisibleToggle is bool trayVal && trayVal);
+            Manager?.IsVisibleInTray = isTrayVisible;
             App.PlayEntranceAnimation(navContainer, "up");
+
+            if (isTrayVisible && StartupService.IsMinimizedStart())
+            {
+                this.Hide();
+                return;
+            }
 
             if (App.GetRunOOBE())
             {
@@ -435,14 +440,12 @@ namespace Xdows_Security
         {
             App.ReleaseResources();
 
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) && trayVisibleToggle is bool trayVisibleValue)
+            bool trayVisible = !ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) || (trayVisibleToggle is bool trayVisibleValue && trayVisibleValue);
+            if (trayVisible)
             {
-                if (trayVisibleValue)
-                {
-                    e.Cancel = true;
-                    this.Hide();
-                    return;
-                }
+                e.Cancel = true;
+                this.Hide();
+                return;
             }
             bool disabledVerify = false;
             if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool disabledVerifyValue)
