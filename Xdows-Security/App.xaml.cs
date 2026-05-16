@@ -95,7 +95,7 @@ namespace Xdows_Security
     {
         public static bool IsOpen()
         {
-            return true;
+            return IsRun(0) || IsRun(1) || IsRun(4);
         }
 
         private static readonly InterceptCallBack interceptCallBack = (isSucceed, path, type) =>
@@ -128,15 +128,65 @@ namespace Xdows_Security
 
             if (protection is null) { return false; }
 
+            bool result;
             if (protection.IsRun())
             {
-                return protection.Stop();
+                result = protection.Stop();
             }
             else
             {
-                return protection.Run(interceptCallBack);
+                result = protection.Run(interceptCallBack);
+            }
+
+            if (result)
+            {
+                SaveProtectionState(RunID, IsRun(RunID));
+            }
+
+            return result;
+        }
+
+        private static void SaveProtectionState(int runId, bool enabled)
+        {
+            ApplicationData.Current.LocalSettings.Values[$"Protection_Enabled_{runId}"] = enabled;
+        }
+
+        public static void RestoreProtections()
+        {
+            RestoreProtection(0);
+            RestoreProtection(1);
+
+            if (App.IsRunAsAdmin())
+            {
+                RestoreProtection(4);
             }
         }
+
+        private static void RestoreProtection(int runId)
+        {
+            try
+            {
+                var settings = ApplicationData.Current.LocalSettings;
+                string key = $"Protection_Enabled_{runId}";
+
+                if (!settings.Values.TryGetValue(key, out var raw) || raw is not bool shouldEnable)
+                    return;
+
+                var protection = RunIdToProtection(runId);
+                if (protection is null) return;
+
+                if (shouldEnable && !protection.IsRun())
+                {
+                    protection.Run(interceptCallBack);
+                }
+                else if (!shouldEnable && protection.IsRun())
+                {
+                    protection.Stop();
+                }
+            }
+            catch { }
+        }
+
         public static bool IsRun(int RunID)
         {
             return RunIdToProtection(RunID)?.IsRun() ?? false;
@@ -294,6 +344,7 @@ namespace Xdows_Security
                 Services.ContextMenuService.ValidateOnStartup();
                 EnsureDefaultStartup();
                 InitializeMainWindow();
+                ProtectionStatus.RestoreProtections();
             }
             catch (Exception ex)
             {
