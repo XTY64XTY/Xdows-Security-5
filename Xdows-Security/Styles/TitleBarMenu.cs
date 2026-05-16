@@ -83,6 +83,7 @@ namespace Xdows_Security
             }
 
             ownerWindow.AppWindow.Changed += OnAppWindowChanged;
+            ownerWindow.Activated += OnOwnerWindowActivated;
         }
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
@@ -98,6 +99,23 @@ namespace Xdows_Security
                 {
                     IsWindowMaximized = overlappedPresenter.State is OverlappedPresenterState.Maximized;
                 }
+            }
+        }
+
+        private void OnOwnerWindowActivated(object sender, WindowActivatedEventArgs args)
+        {
+            if (args.WindowActivationState != WindowActivationState.Deactivated)
+            {
+                DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+                {
+                    nint hwnd = (nint)OwnerWindow.AppWindow.Id.Value;
+                    var pos = OwnerWindow.AppWindow.Position;
+                    var size = OwnerWindow.AppWindow.Size;
+                    int x = pos.X + size.Width / 2;
+                    int y = pos.Y + 24;
+                    nint lParam = (nint)((y << 16) | (x & 0xFFFF));
+                    User32Library.SendMessage(hwnd, WindowMessage.WM_NCMOUSEMOVE, 2, lParam);
+                });
             }
         }
 

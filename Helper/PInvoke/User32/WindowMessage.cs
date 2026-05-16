@@ -90,6 +90,7 @@ namespace Helper.PInvoke.User32
         WM_NCXBUTTONDOWN = 0x00AB,
         WM_NCXBUTTONUP = 0x00AC,
         WM_NCXBUTTONDBLCLK = 0x00AD,
+        WM_NCMOUSELEAVE = 0x02A2,
         WM_KEYFIRST = 0x0100,
         WM_KEYDOWN = 0x0100,
         WM_KEYUP = 0x0101,

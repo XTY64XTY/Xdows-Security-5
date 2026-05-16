@@ -12,5 +12,13 @@ namespace Helper.PInvoke.User32
 
         [LibraryImport(User32, EntryPoint = "SendMessageW", SetLastError = false)]
         public static partial nint SendMessage(nint hWnd, WindowMessage wMsg, int wParam, nint lParam);
+
+        [LibraryImport(User32, EntryPoint = "PostMessageW", SetLastError = false)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool PostMessage(nint hWnd, WindowMessage wMsg, int wParam, nint lParam);
+
+        [LibraryImport(User32, EntryPoint = "TrackMouseEvent", SetLastError = false)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool TrackMouseEvent(ref TRACKMOUSEEVENT lpEventTrack);
     }
 }
