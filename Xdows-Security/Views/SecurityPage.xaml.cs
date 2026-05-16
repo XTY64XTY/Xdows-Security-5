@@ -1,10 +1,12 @@
 using Compatibility.Windows.Storage;
 using Helper;
 using Microsoft.UI;
+using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
+using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.Storage.Pickers;
@@ -18,6 +20,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using System.Numerics;
 using TrustQuarantine;
 using WinUI3Localizer;
 using Xdows_Security.Services;
@@ -114,6 +117,15 @@ namespace Xdows_Security.Views
         private ObservableCollection<VirusRow>? CurrentResults;
         private List<ScanItem>? _scanItems;
 
+        private Compositor? _radarCompositor;
+        private Visual? _scanLineVisual;
+        private Visual? _pulseVisual;
+        private ScalarKeyFrameAnimation? _rotationAnimation;
+        private ScalarKeyFrameAnimation? _pulseScaleAnimation;
+        private ScalarKeyFrameAnimation? _pulseOpacityAnimation;
+        private bool _radarRunning;
+        private float _radarPausedAngle;
+
         private Boolean IsCurrentScan(Int32 scanId, CancellationToken token)
         {
             if (token.IsCancellationRequested) return false;
@@ -178,12 +190,116 @@ namespace Xdows_Security.Views
             FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);
             ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), 0);
             InitializeScanItems();
+            Loaded += SecurityPage_Loaded;
             Unloaded += SecurityPage_Unloaded;
+        }
+
+        private void SecurityPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            SetupRadarAnimations();
         }
 
         private void SecurityPage_Unloaded(object sender, RoutedEventArgs e)
         {
+            StopRadar();
             ClearTaskbarProgress();
+        }
+
+        private void SetupRadarAnimations()
+        {
+            var rootVisual = ElementCompositionPreview.GetElementVisual(this);
+            _radarCompositor = rootVisual.Compositor;
+
+            _scanLineVisual = ElementCompositionPreview.GetElementVisual(ScanLineContainer);
+            _scanLineVisual.CenterPoint = new Vector3(90f, 90f, 0f);
+
+            _pulseVisual = ElementCompositionPreview.GetElementVisual(PulseEllipse);
+            _pulseVisual.CenterPoint = new Vector3(10f, 10f, 0f);
+
+            _rotationAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
+            _rotationAnimation.InsertKeyFrame(0.0f, 0.0f);
+            _rotationAnimation.InsertKeyFrame(1.0f, 360.0f);
+            _rotationAnimation.Duration = TimeSpan.FromSeconds(3);
+            _rotationAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
+
+            _pulseScaleAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
+            _pulseScaleAnimation.InsertKeyFrame(0.0f, 1.0f);
+            _pulseScaleAnimation.InsertKeyFrame(1.0f, 3.0f);
+            _pulseScaleAnimation.Duration = TimeSpan.FromSeconds(1.5);
+            _pulseScaleAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
+
+            _pulseOpacityAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
+            _pulseOpacityAnimation.InsertKeyFrame(0.0f, 0.6f);
+            _pulseOpacityAnimation.InsertKeyFrame(1.0f, 0.0f);
+            _pulseOpacityAnimation.Duration = TimeSpan.FromSeconds(1.5);
+            _pulseOpacityAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
+        }
+
+        private void StartRadar()
+        {
+            if (_radarRunning || _radarCompositor == null) return;
+            _radarRunning = true;
+
+            _scanLineVisual!.RotationAngleInDegrees = 0f;
+            _scanLineVisual.Opacity = 0f;
+
+            var fadeIn = _radarCompositor.CreateScalarKeyFrameAnimation();
+            fadeIn.InsertKeyFrame(1.0f, 1.0f);
+            fadeIn.Duration = TimeSpan.FromSeconds(0.3);
+
+            _scanLineVisual.StartAnimation("Opacity", fadeIn);
+            _scanLineVisual.StartAnimation("RotationAngleInDegrees", _rotationAnimation!);
+
+            _pulseVisual!.StartAnimation("Scale.X", _pulseScaleAnimation!);
+            _pulseVisual.StartAnimation("Scale.Y", _pulseScaleAnimation);
+            _pulseVisual.StartAnimation("Opacity", _pulseOpacityAnimation!);
+        }
+
+        private void StopRadar()
+        {
+            if (!_radarRunning || _radarCompositor == null) return;
+            _radarRunning = false;
+
+            _scanLineVisual!.StopAnimation("RotationAngleInDegrees");
+
+            var fadeOut = _radarCompositor.CreateScalarKeyFrameAnimation();
+            fadeOut.InsertKeyFrame(1.0f, 0.0f);
+            fadeOut.Duration = TimeSpan.FromSeconds(0.2);
+            _scanLineVisual.StartAnimation("Opacity", fadeOut);
+
+            _pulseVisual!.StopAnimation("Scale.X");
+            _pulseVisual.StopAnimation("Scale.Y");
+            _pulseVisual.StopAnimation("Opacity");
+            _pulseVisual.Opacity = 0f;
+        }
+
+        private void PauseRadar()
+        {
+            if (!_radarRunning || _radarCompositor == null) return;
+
+            _radarPausedAngle = _scanLineVisual!.RotationAngleInDegrees;
+            _scanLineVisual.StopAnimation("RotationAngleInDegrees");
+
+            _pulseVisual!.StopAnimation("Scale.X");
+            _pulseVisual.StopAnimation("Scale.Y");
+            _pulseVisual.StopAnimation("Opacity");
+        }
+
+        private void ResumeRadar()
+        {
+            if (!_radarRunning || _radarCompositor == null) return;
+
+            float startAngle = _radarPausedAngle % 360;
+            var resumeAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
+            resumeAnimation.InsertKeyFrame(0.0f, startAngle);
+            resumeAnimation.InsertKeyFrame(1.0f, startAngle + 360.0f);
+            resumeAnimation.Duration = TimeSpan.FromSeconds(3);
+            resumeAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
+            _scanLineVisual!.StartAnimation("RotationAngleInDegrees", resumeAnimation);
+
+            _pulseVisual!.StartAnimation("Scale.X", _pulseScaleAnimation!);
+            _pulseVisual.StartAnimation("Scale.Y", _pulseScaleAnimation);
+            _pulseVisual.StartAnimation("Opacity", _pulseOpacityAnimation!);
         }
 
         private void ClearTaskbarProgress()
@@ -829,42 +945,6 @@ namespace Xdows_Security.Views
             ];
         }
 
-        private void StartRadarAnimation()
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                if (RadarScanLine == null) return;
-                RadarLineAppearStoryboard.Begin();
-                RadarScanStoryboard.Begin();
-            });
-        }
-
-        private void StopRadarAnimation()
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                if (RadarScanLine == null) return;
-                RadarLineDisappearStoryboard.Begin();
-                RadarScanStoryboard.Stop();
-            });
-        }
-
-        private void PauseRadarAnimation()
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                RadarScanStoryboard.Pause();
-            });
-        }
-
-        private void ResumeRadarAnimation()
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                RadarScanStoryboard.Resume();
-            });
-        }
-
         private void UpdateScanItemStatus(Int32 itemIndex, String status, Boolean isActive, Int32 threatCount = 0)
         {
             _dispatcherQueue.TryEnqueue(() =>
@@ -1372,7 +1452,7 @@ namespace Xdows_Security.Views
             bool UseLocalScan = settings.Values["LocalScan"] as bool? ?? false;
             bool UseCzkCloudScan = settings.Values["CzkCloudScan"] as bool? ?? false;
             bool UseCloudScan = settings.Values["CloudScan"] as bool? ?? false;
-            bool UseModelScan = settings.Values["ModelScan"] as bool? ?? false;
+            bool UseModelScan = settings.Values["ModelScan"] as bool? ?? true;
             bool UseInfectorCleaner = settings.Values["InfectorCleaner"] as bool? ?? false;
             bool UseVirusFamily = settings.Values["VirusFamily"] as bool? ?? false;
             bool UseExactRule = settings.Values["ExactRuleScan"] as bool? ?? false;
@@ -1451,7 +1531,7 @@ namespace Xdows_Security.Views
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Cancelled");
-                        StopRadarAnimation();
+                        StopRadar();
                     });
                     return;
                 }
@@ -1481,6 +1561,7 @@ namespace Xdows_Security.Views
                 StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Processing");
                 OnBackList(false);
                 HandleAllButton.Visibility = Visibility.Collapsed;
+                StartRadar();
             });
 
             await Task.Run(async () =>
@@ -1914,7 +1995,7 @@ namespace Xdows_Security.Views
                         ScanProgress.Visibility = Visibility.Collapsed;
                         PauseScanButton.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
-                        StopRadarAnimation();
+                        StopRadar();
                         UpdateHandleAllButtonVisibility();
                     });
                     ClearTaskbarProgress();
@@ -1927,7 +2008,7 @@ namespace Xdows_Security.Views
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanCancelled");
                         ScanProgress.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
-                        StopRadarAnimation();
+                        StopRadar();
                         HandleAllButton.Visibility = Visibility.Collapsed;
                     });
                     ClearTaskbarProgress();
@@ -1942,7 +2023,7 @@ namespace Xdows_Security.Views
                         ScanProgress.Visibility = Visibility.Collapsed;
                         PauseScanButton.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
-                        StopRadarAnimation();
+                        StopRadar();
                         HandleAllButton.Visibility = Visibility.Collapsed;
                     });
                     ClearTaskbarProgress();
@@ -1970,7 +2051,7 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = true;
             PauseScanButton.Visibility = Visibility.Collapsed;
             ResumeScanButton.Visibility = Visibility.Visible;
-            PauseRadarAnimation();
+            PauseRadar();
 
             if (_taskbarProgressActive)
             {
@@ -1997,7 +2078,7 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = false;
             PauseScanButton.Visibility = Visibility.Visible;
             ResumeScanButton.Visibility = Visibility.Collapsed;
-            ResumeRadarAnimation();
+            ResumeRadar();
 
             UpdateTaskbarProgressStateForRunning();
         }

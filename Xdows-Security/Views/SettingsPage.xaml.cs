@@ -292,6 +292,11 @@ namespace Xdows_Security.Views
                 }
             }
 
+            if (!settings.Values.ContainsKey("ModelScan"))
+            {
+                settings.Values["ModelScan"] = true;
+            }
+
             if (!settings.Values.ContainsKey("TrayVisibleToggle"))
             {
                 settings.Values["TrayVisibleToggle"] = true;

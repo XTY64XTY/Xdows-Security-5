@@ -10,24 +10,6 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Storyboard x:Name="RadarScanStoryboard">
-            <DoubleAnimation Storyboard.TargetName="RadarScanLine"
-                         Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                         From="0" To="360" Duration="0:0:3" RepeatBehavior="Forever"/>
-        </Storyboard>
-
-        <Storyboard x:Name="RadarLineAppearStoryboard">
-            <DoubleAnimation Storyboard.TargetName="RadarScanLine"
-                     Storyboard.TargetProperty="Opacity"
-                     From="0" To="0.8" Duration="0:0:0.3"/>
-        </Storyboard>
-
-        <Storyboard x:Name="RadarLineDisappearStoryboard">
-            <DoubleAnimation Storyboard.TargetName="RadarScanLine"
-                         Storyboard.TargetProperty="Opacity"
-                         From="0.8" To="0" Duration="0:0:0.2"/>
-        </Storyboard>
-
         <DataTemplate x:Key="MoreScanListTemplate" x:DataType="local.Views:MoreScanItem">
             <Grid Padding="0,8">
                 <Grid.ColumnDefinitions>
@@ -151,26 +133,64 @@
                         <TextBlock Grid.Column="1" x:Name="ProgressPercentText" Text="0%" FontSize="14" FontWeight="Bold"/>
                     </Grid>
 
-                    <Grid Height="120" Margin="0,8,0,8">
-                        <Ellipse Width="100" Height="100" Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}" StrokeThickness="2" Opacity="0.3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Ellipse Width="80" Height="80" Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}" StrokeThickness="1" Opacity="0.2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Ellipse Width="60" Height="60" Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}" StrokeThickness="1" Opacity="0.2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Ellipse Width="40" Height="40" Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}" StrokeThickness="1" Opacity="0.2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Line x:Name="RadarScanLine" X1="30" Y1="130" X2="0" Y2="0" Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
-                            <Line.RenderTransform>
-                                <RotateTransform CenterX="15" CenterY="65"/>
-                            </Line.RenderTransform>
-                        </Line>
-                        <Ellipse x:Name="RadarPulse" Width="20" Height="20" Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0" HorizontalAlignment="Center" VerticalAlignment="Center">
-                            <Ellipse.RenderTransform>
-                                <TransformGroup>
-                                    <ScaleTransform CenterX="10" CenterY="10"/>
-                                    <RotateTransform CenterX="10" CenterY="10"/>
-                                </TransformGroup>
-                            </Ellipse.RenderTransform>
-                        </Ellipse>
-                        <Ellipse Width="8" Height="8" Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Grid>
+                    <Viewbox Stretch="Uniform" Height="120" Margin="0,8,0,8">
+                        <Grid Width="200" Height="200">
+                            <Ellipse Width="180" Height="180"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
+                                     StrokeThickness="2" Opacity="0.3"/>
+                            <Ellipse Width="135" Height="135"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
+                                     StrokeThickness="1" Opacity="0.2"/>
+                            <Ellipse Width="90" Height="90"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
+                                     StrokeThickness="1" Opacity="0.2"/>
+                            <Ellipse Width="45" Height="45"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
+                                     StrokeThickness="1" Opacity="0.2"/>
+
+                            <Grid x:Name="ScanLineContainer"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Width="180" Height="180"
+                                  Opacity="0">
+                                <Rectangle Width="8" Height="90"
+                                           HorizontalAlignment="Center" VerticalAlignment="Top"
+                                           Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0.06"
+                                           RadiusX="4" RadiusY="4"
+                                           RenderTransformOrigin="0.5,1.0">
+                                    <Rectangle.RenderTransform>
+                                        <RotateTransform Angle="-25"/>
+                                    </Rectangle.RenderTransform>
+                                </Rectangle>
+                                <Rectangle Width="4" Height="90"
+                                           HorizontalAlignment="Center" VerticalAlignment="Top"
+                                           Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0.15"
+                                           RadiusX="2" RadiusY="2"
+                                           RenderTransformOrigin="0.5,1.0">
+                                    <Rectangle.RenderTransform>
+                                        <RotateTransform Angle="-12"/>
+                                    </Rectangle.RenderTransform>
+                                </Rectangle>
+                                <Rectangle Width="2" Height="90"
+                                           HorizontalAlignment="Center" VerticalAlignment="Top"
+                                           Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0.8"
+                                           RadiusX="1" RadiusY="1"/>
+                            </Grid>
+
+                            <Ellipse x:Name="PulseEllipse"
+                                     Width="20" Height="20"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Fill="{ThemeResource AccentTextFillColorTertiaryBrush}"
+                                     Opacity="0"/>
+
+                            <Ellipse Width="8" Height="8"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Fill="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
+                        </Grid>
+                    </Viewbox>
 
                     <ProgressBar x:Name="ScanProgress" Height="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
 

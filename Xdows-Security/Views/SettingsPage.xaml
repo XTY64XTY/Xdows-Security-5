@@ -357,7 +357,7 @@
                            l:Uids.Uid="SettingsPage_Other_Tray"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE90E;}"
                            Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="TrayVisibleToggle" Tag="TrayVisibleToggle" IsOn="True" Toggled="TrayVisibleToggle_Toggled" />
+                    <ToggleSwitch x:Name="TrayVisibleToggle" Tag="TrayVisibleToggle" Toggled="TrayVisibleToggle_Toggled" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_Startup"
