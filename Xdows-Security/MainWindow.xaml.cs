@@ -40,6 +40,10 @@ namespace Xdows_Security
             Manager.MinHeight = 530;
             Closed += delegate { Window_Closed(); };
             Localizer.Get().LanguageChanged += OnLangChanged;
+            Manager.TrayIconSelected += (w, e) =>
+            {
+                this.Activate();
+            };
             Manager.TrayIconContextMenu += (w, e) =>
             {
                 var flyout = new MenuFlyout();
