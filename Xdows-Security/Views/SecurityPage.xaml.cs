@@ -16,11 +16,11 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using System.Numerics;
 using TrustQuarantine;
 using WinUI3Localizer;
 using Xdows_Security.Services;
@@ -102,7 +102,7 @@ namespace Xdows_Security.Views
 
     public sealed partial class SecurityPage : Page
     {
-        private DispatcherQueue _dispatcherQueue;
+        private readonly DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _cts;
         private bool _isPaused = false;
         private bool _taskbarProgressActive = false;
@@ -1551,6 +1551,7 @@ namespace Xdows_Security.Views
                 ScanProgress.IsIndeterminate = !showScanProgress;
                 VirusList.ItemsSource = CurrentResults;
                 ScanProgress.Value = 0;
+                ScanProgress.ShowPaused = false;
                 ScanProgress.Visibility = Visibility.Visible;
                 ProgressPercentText.Text = showScanProgress ? "0%" : string.Empty;
                 PathText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_PathText_Format"), displayName);
@@ -1966,7 +1967,7 @@ namespace Xdows_Security.Views
                                     try { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; } catch { }
                                 });
 
-                                if (showTaskbarProgress)
+                                if (showTaskbarProgress && !_isPaused)
                                 {
                                     try { TaskbarProgressService.TrySetNormal(percent / 100.0); } catch { }
                                 }
@@ -1992,6 +1993,7 @@ namespace Xdows_Security.Views
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
+                        ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
                         PauseScanButton.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
@@ -2006,6 +2008,7 @@ namespace Xdows_Security.Views
                     {
                         if (!IsCurrentScan(thisId, token)) return;
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanCancelled");
+                        ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
                         StopRadar();
@@ -2020,6 +2023,7 @@ namespace Xdows_Security.Views
                         if (!IsCurrentScan(thisId, token)) return;
                         LogText.AddNewLog(LogText.LogLevel.FATAL, "Security - Failed", ex.Message);
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanFailed_Format"), ex.Message);
+                        ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
                         PauseScanButton.Visibility = Visibility.Collapsed;
                         ResumeScanButton.Visibility = Visibility.Collapsed;
@@ -2052,6 +2056,7 @@ namespace Xdows_Security.Views
             PauseScanButton.Visibility = Visibility.Collapsed;
             ResumeScanButton.Visibility = Visibility.Visible;
             PauseRadar();
+            ScanProgress.ShowPaused = true;
 
             if (_taskbarProgressActive)
             {
@@ -2079,6 +2084,7 @@ namespace Xdows_Security.Views
             PauseScanButton.Visibility = Visibility.Visible;
             ResumeScanButton.Visibility = Visibility.Collapsed;
             ResumeRadar();
+            ScanProgress.ShowPaused = false;
 
             UpdateTaskbarProgressStateForRunning();
         }
