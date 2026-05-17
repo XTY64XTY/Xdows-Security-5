@@ -8,7 +8,6 @@ using Protection;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Xdows_Security.Services;
 using System.IO.Pipes;
 using System.Net.Http;
 using System.Numerics;
@@ -16,9 +15,9 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text.Json;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using WinUI3Localizer;
+using Xdows_Security.Services;
 using static Protection.CallBack;
 
 namespace Xdows_Security
@@ -86,7 +85,7 @@ namespace Xdows_Security
     {
         public static readonly string AppName = "Xdows Security";
         public static readonly string AppId = "Xdows-Security";
-        public static readonly string AppVersion = "5.0.0";
+        public static readonly string AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? string.Empty;
         public static readonly string AppFeedback = "https://github.com/XTY64XTY/Xdows-Security-5/issues/new/choose";
         public static readonly string AppWebsite = "https://docs.xiguastudio.top/";
         // 修改 开发团队、Xdows Tools 名称请修改本地化资源文件
@@ -264,8 +263,8 @@ namespace Xdows_Security
     {
         public static MainWindow? MainWindow { get; private set; }
 
-        private static List<string> _scanTargetPaths = new();
-        private static readonly object _scanPathLock = new();
+        private static List<string> _scanTargetPaths = [];
+        private static readonly Lock _scanPathLock = new();
         private const string PathSeparator = "\t";
 
         public static IReadOnlyList<string> ScanTargetPaths
@@ -283,7 +282,7 @@ namespace Xdows_Security
         {
             lock (_scanPathLock)
             {
-                _scanTargetPaths = new List<string>(paths);
+                _scanTargetPaths = [.. paths];
             }
         }
 
@@ -295,7 +294,7 @@ namespace Xdows_Security
             }
         }
 
-        private static readonly object _settingsLock = new();
+        private static readonly Lock _settingsLock = new();
         private const string RunOOBESettingKey = "RunOOBE";
 
         private static Mutex? _singleInstanceMutex;
@@ -385,7 +384,7 @@ namespace Xdows_Security
             List<string> pathsToSend;
             lock (_scanPathLock)
             {
-                pathsToSend = new List<string>(_scanTargetPaths);
+                pathsToSend = [.. _scanTargetPaths];
             }
 
             if (pathsToSend.Count == 0) return false;

@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <Version>5.0.0</Version>
+    <Company>Xdows Software</Company>
+    <Product>Xdows Security</Product>
+    <Copyright>Copyright © 2026 Xdows Software</Copyright>
+    <Description>Xdows Security</Description>
+    <AssemblyVersion>5.0.0.0</AssemblyVersion>
+    <FileVersion>5.0.0.0</FileVersion>
+  </PropertyGroup>
+</Project>
