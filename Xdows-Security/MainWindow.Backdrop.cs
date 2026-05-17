@@ -25,6 +25,8 @@ namespace Xdows_Security
         private ImageBrush? _backgroundImageBrush;
         private string? _currentBackgroundImagePath;
 
+        private UISettings? _uiSettings;
+
         public static void UpdateTheme(ElementTheme selectedTheme)
         {
             App.Theme = selectedTheme;
@@ -42,7 +44,7 @@ namespace Xdows_Security
                 {
                     ElementTheme.Dark => Windows.UI.Color.FromArgb(255, 255, 255, 255),
                     ElementTheme.Light => Windows.UI.Color.FromArgb(255, 0, 0, 0),
-                    _ => GetSystemTheme() == 0
+                    _ => GetSystemTheme() == ApplicationTheme.Light
                         ? Windows.UI.Color.FromArgb(255, 0, 0, 0)
                         : Windows.UI.Color.FromArgb(255, 255, 255, 255)
                 };
@@ -140,11 +142,14 @@ namespace Xdows_Security
                 if (_controller != null && _target != null)
                 {
                     _controller.AddSystemBackdropTarget(_target);
+                    UpdateBackdropTheme();
                     _controller.SetSystemBackdropConfiguration(_config);
                 }
 
                 if (ApplicationData.HasFile("background_image"))
                     UpdateBackgroundImage();
+
+                RegisterSystemThemeListener();
             }
             catch
             {
@@ -170,6 +175,83 @@ namespace Xdows_Security
                 _controller = null;
             }
             _target = null;
+        }
+
+        private void UpdateBackdropTheme()
+        {
+            var currentTheme = GetCurrentTheme();
+            _config.Theme = currentTheme switch
+            {
+                ElementTheme.Dark => SystemBackdropTheme.Dark,
+                ElementTheme.Light => SystemBackdropTheme.Light,
+                _ => SystemBackdropTheme.Default
+            };
+        }
+
+        private void RegisterSystemThemeListener()
+        {
+            if (_uiSettings != null) return;
+            _uiSettings = new UISettings();
+            _uiSettings.ColorValuesChanged += OnSystemThemeChanged;
+        }
+
+        private void UnregisterSystemThemeListener()
+        {
+            if (_uiSettings != null)
+            {
+                _uiSettings.ColorValuesChanged -= OnSystemThemeChanged;
+                _uiSettings = null;
+            }
+        }
+
+        private void OnSystemThemeChanged(UISettings sender, object args)
+        {
+            var dq = DispatcherQueue;
+            if (dq == null) return;
+            dq.TryEnqueue(() =>
+            {
+                if (App.Theme != ElementTheme.Default) return;
+
+                if (this.Content is FrameworkElement rootElement)
+                {
+                    rootElement.RequestedTheme = ElementTheme.Default;
+                }
+
+                UpdateBackdropTheme();
+
+                if (_controller != null)
+                {
+                    _controller.SetSystemBackdropConfiguration(_config);
+                }
+
+                var settings = ApplicationData.Current.LocalSettings;
+                var backdropType = settings.Values["AppBackdrop"] as string ?? "Mica";
+                if (backdropType == "Solid")
+                {
+                    RootGrid.Background = GetCurrentTheme() == ElementTheme.Dark
+                         ? new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20))
+                         : new SolidColorBrush(Colors.White);
+                }
+                else
+                {
+                    if (_controller is MicaController micaController)
+                    {
+                        micaController.TintColor = GetBackgroundColor();
+                    }
+                    else if (_controller is DesktopAcrylicController acrylicController)
+                    {
+                        acrylicController.TintColor = GetBackgroundColor();
+                    }
+                }
+
+                var titleBar = App.MainWindow?.AppWindow.TitleBar;
+                if (titleBar != null)
+                {
+                    titleBar.ButtonForegroundColor = GetSystemTheme() == ApplicationTheme.Light
+                        ? Windows.UI.Color.FromArgb(255, 0, 0, 0)
+                        : Windows.UI.Color.FromArgb(255, 255, 255, 255);
+                }
+            });
         }
 
         public async System.Threading.Tasks.Task ApplyBackgroundImageAsync(string imagePath)

@@ -234,6 +234,9 @@
   <data name="OOBE_Finish_Button.Content" xml:space="preserve">
     <value>Finish</value>
   </data>
+  <data name="OOBE_Finish_Button_Loading.Text" xml:space="preserve">
+    <value>Please wait</value>
+  </data>
   <data name="SettingsPage_Other_RestartOOBE.Header" xml:space="preserve">
     <value>Restart OOBE</value>
   </data>

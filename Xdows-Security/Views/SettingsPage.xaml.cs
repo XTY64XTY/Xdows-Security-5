@@ -297,6 +297,18 @@ namespace Xdows_Security.Views
                 settings.Values["ModelScan"] = true;
             }
 
+            if (!settings.Values.ContainsKey("Process_CompatibilityMode"))
+            {
+                settings.Values["Process_CompatibilityMode"] = true;
+                Process_CompatibilityMode.IsOn = true;
+            }
+
+            if (!settings.Values.ContainsKey("Files_CompatibilityMode"))
+            {
+                settings.Values["Files_CompatibilityMode"] = true;
+                Files_CompatibilityMode.IsOn = true;
+            }
+
             if (!settings.Values.ContainsKey("TrayVisibleToggle"))
             {
                 settings.Values["TrayVisibleToggle"] = true;

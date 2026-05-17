@@ -234,6 +234,9 @@
   <data name="OOBE_Finish_Button.Content" xml:space="preserve">
     <value>完成</value>
   </data>
+  <data name="OOBE_Finish_Button_Loading.Text" xml:space="preserve">
+    <value>請稍等</value>
+  </data>
   <data name="SettingsPage_Other_RestartOOBE.Header" xml:space="preserve">
     <value>重新啟動 OOBE</value>
   </data>

@@ -89,6 +89,7 @@ namespace Xdows_Security.Views
 
             LogText.TextChanged += OnLogTextChanged;
             LogService.LogAdded += OnLogAdded;
+            Xdows_Security.ProtectionStatus.StateChanged += OnProtectionStateChanged;
 
             _logThrottleTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
             _logThrottleTimer.Interval = TimeSpan.FromMilliseconds(100);
@@ -104,6 +105,7 @@ namespace Xdows_Security.Views
             if (!_langHandlerAttached) return;
             _langHandlerAttached = false;
             try { Localizer.Get().LanguageChanged -= OnLanguageChanged; } catch { }
+            try { Xdows_Security.ProtectionStatus.StateChanged -= OnProtectionStateChanged; } catch { }
         }
 
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
@@ -186,6 +188,15 @@ namespace Xdows_Security.Views
         }
 
         private void OnLogTextChanged(object? sender, EventArgs e) { }
+
+        private void OnProtectionStateChanged(object? sender, EventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                LoadProtection();
+                UpdateData();
+            });
+        }
 
         private void OnLogAdded(object? sender, LogEntry entry)
         {

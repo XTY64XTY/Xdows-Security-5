@@ -436,6 +436,7 @@ namespace Xdows_Security
 
         private void Window_Closed()
         {
+            UnregisterSystemThemeListener();
             if (_controller == null) return;
             _controller.Dispose();
             _controller = null;

@@ -93,6 +93,8 @@ namespace Xdows_Security
     }
     public static class ProtectionStatus
     {
+        public static event EventHandler? StateChanged;
+
         public static bool IsOpen()
         {
             return IsRun(0) || IsRun(1) || IsRun(4);
@@ -141,6 +143,7 @@ namespace Xdows_Security
             if (result)
             {
                 SaveProtectionState(RunID, IsRun(RunID));
+                StateChanged?.Invoke(null, EventArgs.Empty);
             }
 
             return result;
@@ -175,13 +178,19 @@ namespace Xdows_Security
                 var protection = RunIdToProtection(runId);
                 if (protection is null) return;
 
+                bool changed = false;
                 if (shouldEnable && !protection.IsRun())
                 {
-                    protection.Run(interceptCallBack);
+                    changed = protection.Run(interceptCallBack);
                 }
                 else if (!shouldEnable && protection.IsRun())
                 {
-                    protection.Stop();
+                    changed = protection.Stop();
+                }
+
+                if (changed)
+                {
+                    StateChanged?.Invoke(null, EventArgs.Empty);
                 }
             }
             catch { }
@@ -202,7 +211,7 @@ namespace Xdows_Security
             };
             if (protection is null) { return null; }
 
-            bool isCompatibilityMode = ApplicationData.Current.LocalSettings.Values[protection.Name + "_CompatibilityMode"] as bool? ?? false;
+            bool isCompatibilityMode = ApplicationData.Current.LocalSettings.Values[protection.Name + "_CompatibilityMode"] as bool? ?? (RunID is 0 or 1);
 
             if (isCompatibilityMode)
             {
