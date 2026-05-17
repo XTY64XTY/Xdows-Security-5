@@ -396,6 +396,12 @@
   <data name="SecurityPage_Details_NotAvailable" xml:space="preserve">
     <value>Not Available</value>
   </data>
+  <data name="SecurityPage_Details_EngineName" xml:space="preserve">
+    <value>Detection Engine:</value>
+  </data>
+  <data name="SecurityPage_Details_SHA256" xml:space="preserve">
+    <value>SHA256:</value>
+  </data>
   <data name="SecurityPage_LocateFailed_Title" xml:space="preserve">
     <value>Locate Failed</value>
   </data>
@@ -870,6 +876,9 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_ClearLog.Text" xml:space="preserve">
     <value>Clear log</value>
   </data>
+  <data name="HomePage_LogEmptyState" xml:space="preserve">
+    <value>No log entries</value>
+  </data>
   <data name="HomePage_ExportLog.Text" xml:space="preserve">
     <value>Export log</value>
   </data>
@@ -1189,6 +1198,12 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="QuarantineDialog_ClearMenuItem.Text" xml:space="preserve">
     <value>Clear</value>
+  </data>
+  <data name="QuarantineDialog_EmptyState" xml:space="preserve">
+    <value>No quarantined files</value>
+  </data>
+  <data name="TrustDialog_EmptyState" xml:space="preserve">
+    <value>No trusted items. Click "Add" to add files to the trust list</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode.Header" xml:space="preserve">
     <value>IndexMode</value>

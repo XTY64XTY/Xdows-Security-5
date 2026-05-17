@@ -33,6 +33,7 @@ namespace Xdows_Security.Views
         private String _filePath = String.Empty;
         private String _virusName = String.Empty;
         private String _familyName = String.Empty;
+        private String _engineName = String.Empty;
 
         public String FilePath
         {
@@ -52,7 +53,15 @@ namespace Xdows_Security.Views
             set { _familyName = value; OnPropertyChanged(); OnPropertyChanged(nameof(FamilyNameVisibility)); }
         }
 
+        public String EngineName
+        {
+            get => _engineName;
+            set { _engineName = value; OnPropertyChanged(); OnPropertyChanged(nameof(EngineNameVisibility)); }
+        }
+
         public Visibility FamilyNameVisibility => String.IsNullOrWhiteSpace(_familyName) ? Visibility.Collapsed : Visibility.Visible;
+
+        public Visibility EngineNameVisibility => String.IsNullOrWhiteSpace(_engineName) ? Visibility.Collapsed : Visibility.Visible;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -335,13 +344,14 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void AddVirusResult(String filePath, String virusName, String? familyName = null)
+        private void AddVirusResult(String filePath, String virusName, String? familyName = null, String? engineName = null)
         {
             VirusRow row = new()
             {
                 FilePath = filePath,
                 VirusName = virusName,
-                FamilyName = familyName ?? String.Empty
+                FamilyName = familyName ?? String.Empty,
+                EngineName = engineName ?? String.Empty
             };
 
             CurrentResults?.Add(row);
@@ -1388,7 +1398,7 @@ namespace Xdows_Security.Views
                             _dispatcherQueue.TryEnqueue(() =>
                             {
                                 if (!IsCurrentScan(scanId, token)) return;
-                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo);
+                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo, scanRes.EngineName);
                                 BackToVirusListButton.Visibility = Visibility.Visible;
                             });
 
@@ -1805,7 +1815,7 @@ namespace Xdows_Security.Views
                                             if (!IsCurrentScan(thisId, token)) return;
                                             try
                                             {
-                                                AddVirusResult(file, result, familyInfo);
+                                                AddVirusResult(file, result, familyInfo, "ExactRule");
                                                 BackToVirusListButton.Visibility = Visibility.Visible;
                                             }
                                             catch { }
@@ -1891,7 +1901,7 @@ namespace Xdows_Security.Views
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
                                     if (!IsCurrentScan(thisId, token)) return;
-                                    AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo);
+                                    AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo, scanRes.EngineName);
                                     BackToVirusListButton.Visibility = Visibility.Visible;
                                 });
                                 int newThreats = Interlocked.Increment(ref _threatsFound);
@@ -2210,8 +2220,30 @@ namespace Xdows_Security.Views
                     (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_VirusName")), new TextBlock { Text = row.VirusName, IsTextSelectionEnabled = true, TextWrapping = TextWrapping.Wrap }),
                     (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize")), new TextBlock { Text = fileSizeText, IsTextSelectionEnabled = true }),
                     (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime")), new TextBlock { Text = creationTimeText, IsTextSelectionEnabled = true }),
-                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime")), new TextBlock { Text = lastWriteTimeText, IsTextSelectionEnabled = true })
+                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime")), new TextBlock { Text = lastWriteTimeText, IsTextSelectionEnabled = true }),
                 };
+
+                if (!String.IsNullOrWhiteSpace(row.EngineName))
+                {
+                    items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_EngineName")), new TextBlock { Text = row.EngineName, IsTextSelectionEnabled = true }));
+                }
+
+                if (!isZipEntry && System.IO.File.Exists(displayPath))
+                {
+                    try
+                    {
+                        String sha256 = await Helper.ScanEngine.GetFileSHA256Async(displayPath);
+                        items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_SHA256")), new TextBlock
+                        {
+                            Text = sha256,
+                            IsTextSelectionEnabled = true,
+                            TextWrapping = TextWrapping.Wrap,
+                            FontFamily = new FontFamily("Consolas"),
+                            FontSize = 12
+                        }));
+                    }
+                    catch { }
+                }
 
                 int itemIndex = 0;
                 foreach (var (key, valueElement) in items)

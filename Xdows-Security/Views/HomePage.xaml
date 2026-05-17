@@ -223,28 +223,47 @@
 
                         <ScrollViewer Grid.Row="1" x:Name="LogScroll" Height="216"
                                       VerticalScrollBarVisibility="Auto">
-                            <ListView x:Name="LogListView"
-                                      SelectionMode="None"
-                                      IsItemClickEnabled="False">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="svc:LogEntry">
-                                        <TextBlock Text="{x:Bind Formatted}"
-                                           TextWrapping="Wrap"
-                                           FontFamily="Consolas"
-                                           FontSize="12"
-                                           Padding="0,1"
-                                           IsTextSelectionEnabled="True"/>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem">
-                                        <Setter Property="Padding" Value="0"/>
-                                        <Setter Property="MinHeight" Value="0"/>
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
-                                    </Style>
-                                </ListView.ItemContainerStyle>
-                            </ListView>
+                            <Grid>
+                                <ListView x:Name="LogListView"
+                                          SelectionMode="None"
+                                          IsItemClickEnabled="False">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="svc:LogEntry">
+                                            <TextBlock Text="{x:Bind Formatted}"
+                                               TextWrapping="Wrap"
+                                               FontFamily="Consolas"
+                                               FontSize="12"
+                                               Padding="0,1"
+                                               IsTextSelectionEnabled="True"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="MinHeight" Value="0"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                </ListView>
+
+                                <StackPanel x:Name="LogEmptyStatePanel"
+                                            Visibility="Collapsed"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Spacing="4"
+                                            Margin="0,16,0,16">
+                                    <FontIcon Glyph="&#xE8F1;" FontSize="28"
+                                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                              HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="LogEmptyStateText"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               FontSize="13"
+                                               TextWrapping="Wrap"
+                                               TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
                         </ScrollViewer>
                     </Grid>
                 </local:InfoCard>

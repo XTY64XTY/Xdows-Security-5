@@ -9,28 +9,46 @@
                SecondaryButtonClick="OnSecondaryButtonClick"
                xmlns:local="using:TrustQuarantine">
 
-    <ListView x:Name="TrustListView" 
-              SelectionMode="Multiple">
-        <ListView.ContextFlyout>
-            <MenuFlyout>
-                <MenuFlyoutItem l:Uids.Uid="TrustDialog_DeleteMenuItem" Click="DeleteMenuItem_Click"/>
-                <MenuFlyoutSeparator />
-                <MenuFlyoutItem l:Uids.Uid="TrustDialog_AddMenuItem"    Click="AddMenuItem_Click"/>
-                <MenuFlyoutItem l:Uids.Uid="TrustDialog_ClearMenuItem"  Click="ClearMenuItem_Click"/>
-            </MenuFlyout>
-        </ListView.ContextFlyout>
+    <Grid>
+        <ListView x:Name="TrustListView" 
+                  SelectionMode="Multiple">
+            <ListView.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem l:Uids.Uid="TrustDialog_DeleteMenuItem" Click="DeleteMenuItem_Click"/>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem l:Uids.Uid="TrustDialog_AddMenuItem"    Click="AddMenuItem_Click"/>
+                    <MenuFlyoutItem l:Uids.Uid="TrustDialog_ClearMenuItem"  Click="ClearMenuItem_Click"/>
+                </MenuFlyout>
+            </ListView.ContextFlyout>
 
-        <ListView.ItemTemplate>
-            <DataTemplate x:DataType="local:TrustItemModel">
-                <StackPanel Spacing="2" Padding="8,6"> 
-                    <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
-                    <TextBlock Text="{x:Bind Hash}" 
-                               FontSize="10" 
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                               IsTextSelectionEnabled="True" 
-                               TextWrapping="NoWrap"/>
-                </StackPanel>
-            </DataTemplate>
-        </ListView.ItemTemplate>
-    </ListView>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:TrustItemModel">
+                    <StackPanel Spacing="2" Padding="8,6"> 
+                        <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
+                        <TextBlock Text="{x:Bind Hash}" 
+                                   FontSize="10" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                   IsTextSelectionEnabled="True" 
+                                   TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel x:Name="EmptyStatePanel"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="8"
+                    Margin="0,32,0,32">
+            <FontIcon Glyph="&#xE8D7;" FontSize="36"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                      HorizontalAlignment="Center"/>
+            <TextBlock x:Name="EmptyStateText"
+                       HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Grid>
 </ContentDialog>

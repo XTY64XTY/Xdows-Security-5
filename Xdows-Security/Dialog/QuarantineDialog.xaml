@@ -10,32 +10,50 @@
     PrimaryButtonClick="OnPrimaryButtonClick"
     SecondaryButtonClick="OnSecondaryButtonClick">
 
-    <ListView x:Name="QuarantineListView"
-              SelectionMode="Multiple">
-        <ListView.ContextFlyout>
-            <MenuFlyout>
-                <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreMenuItem" Click="RestoreMenuItem_Click"/>
-                <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_DeleteMenuItem"  Click="DeleteMenuItem_Click"/>
-                <MenuFlyoutSeparator />
-                <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_ClearMenuItem"   Click="ClearMenuItem_Click"/>
-            </MenuFlyout>
-        </ListView.ContextFlyout>
+    <Grid>
+        <ListView x:Name="QuarantineListView"
+                  SelectionMode="Multiple">
+            <ListView.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreMenuItem" Click="RestoreMenuItem_Click"/>
+                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_DeleteMenuItem"  Click="DeleteMenuItem_Click"/>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_ClearMenuItem"   Click="ClearMenuItem_Click"/>
+                </MenuFlyout>
+            </ListView.ContextFlyout>
 
-        <ListView.ItemTemplate>
-            <DataTemplate x:DataType="local:QuarantineItemModel">
-                <StackPanel Spacing="2" Padding="8,6">
-                    <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
-                    <TextBlock Text="{x:Bind FileHash}" 
-                               FontSize="10"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               IsTextSelectionEnabled="True"
-                               TextWrapping="NoWrap"/>
-                    <TextBlock Text="{x:Bind ThreatName}"
-                               FontSize="12"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               TextWrapping="NoWrap"/>
-                </StackPanel>
-            </DataTemplate>
-        </ListView.ItemTemplate>
-    </ListView>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:QuarantineItemModel">
+                    <StackPanel Spacing="2" Padding="8,6">
+                        <TextBlock Text="{x:Bind SourcePath}" TextWrapping="WrapWholeWords"/>
+                        <TextBlock Text="{x:Bind FileHash}" 
+                                   FontSize="10"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   IsTextSelectionEnabled="True"
+                                   TextWrapping="NoWrap"/>
+                        <TextBlock Text="{x:Bind ThreatName}"
+                                   FontSize="12"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel x:Name="EmptyStatePanel"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="8"
+                    Margin="0,32,0,32">
+            <FontIcon Glyph="&#xE73E;" FontSize="36"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                      HorizontalAlignment="Center"/>
+            <TextBlock x:Name="EmptyStateText"
+                       HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+        </StackPanel>
+    </Grid>
 </ContentDialog>

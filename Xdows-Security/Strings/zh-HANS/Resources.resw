@@ -396,6 +396,12 @@
   <data name="SecurityPage_Details_NotAvailable" xml:space="preserve">
     <value>无法获取</value>
   </data>
+  <data name="SecurityPage_Details_EngineName" xml:space="preserve">
+    <value>检测引擎：</value>
+  </data>
+  <data name="SecurityPage_Details_SHA256" xml:space="preserve">
+    <value>SHA256：</value>
+  </data>
   <data name="SecurityPage_LocateFailed_Title" xml:space="preserve">
     <value>定位失败</value>
   </data>
@@ -870,6 +876,9 @@
   <data name="HomePage_ClearLog.Text" xml:space="preserve">
     <value>清空日志</value>
   </data>
+  <data name="HomePage_LogEmptyState" xml:space="preserve">
+    <value>暂无日志记录</value>
+  </data>
   <data name="HomePage_ExportLog.Text" xml:space="preserve">
     <value>导出日志</value>
   </data>
@@ -1188,6 +1197,12 @@
   </data>
   <data name="QuarantineDialog_ClearMenuItem.Text" xml:space="preserve">
     <value>清空</value>
+  </data>
+  <data name="QuarantineDialog_EmptyState" xml:space="preserve">
+    <value>暂无隔离文件</value>
+  </data>
+  <data name="TrustDialog_EmptyState" xml:space="preserve">
+    <value>暂无信任项，点击"添加"将文件加入信任列表</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode.Header" xml:space="preserve">
     <value>索引模式</value>

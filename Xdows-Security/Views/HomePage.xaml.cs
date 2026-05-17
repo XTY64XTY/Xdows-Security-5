@@ -82,6 +82,8 @@ namespace Xdows_Security.Views
 
             LogListView.ItemsSource = _logEntries;
 
+            UpdateLogEmptyState();
+
             LogScroll.ViewChanged += LogScroll_ViewChanged;
 
             LogSearchBox.QuerySubmitted += LogSearchBox_QuerySubmitted;
@@ -140,6 +142,8 @@ namespace Xdows_Security.Views
             foreach (var log in logs)
                 _logEntries.Add(log);
             _hasMoreOlder = logs.Count >= count;
+
+            UpdateLogEmptyState();
 
             await Task.Delay(50);
             LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
@@ -229,6 +233,8 @@ namespace Xdows_Security.Views
             _logEntries.Add(entry);
             _hasMoreOlder = true;
 
+            UpdateLogEmptyState();
+
             if (_isAutoScroll)
             {
                 LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
@@ -268,6 +274,15 @@ namespace Xdows_Security.Views
             LogText.ClearLog();
             _logEntries.Clear();
             _hasMoreOlder = false;
+            UpdateLogEmptyState();
+        }
+
+        private void UpdateLogEmptyState()
+        {
+            bool isEmpty = _logEntries.Count == 0;
+            LogEmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+            LogListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+            LogEmptyStateText.Text = Localizer.Get().GetLocalizedString("HomePage_LogEmptyState");
         }
 
         private void ExportLog_Click(object sender, RoutedEventArgs e)

@@ -37,7 +37,16 @@ namespace Xdows_Security
             catch
             {
             }
+            UpdateEmptyState();
             return Task.CompletedTask;
+        }
+
+        private void UpdateEmptyState()
+        {
+            bool isEmpty = _items.Count == 0;
+            EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+            TrustListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+            EmptyStateText.Text = Localizer.Get().GetLocalizedString("TrustDialog_EmptyState");
         }
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)

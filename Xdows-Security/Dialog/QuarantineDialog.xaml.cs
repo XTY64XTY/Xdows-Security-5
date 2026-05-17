@@ -24,7 +24,16 @@ namespace Xdows_Security
         {
             _items = new ObservableCollection<QuarantineItemModel>(QuarantineManager.GetQuarantineItems());
             QuarantineListView.ItemsSource = _items;
+            UpdateEmptyState();
             return Task.CompletedTask;
+        }
+
+        private void UpdateEmptyState()
+        {
+            bool isEmpty = _items.Count == 0;
+            EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
+            QuarantineListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
+            EmptyStateText.Text = Localizer.Get().GetLocalizedString("QuarantineDialog_EmptyState");
         }
         private async void RestoreMenuItem_Click(object sender, RoutedEventArgs e)
             => await RestoreSelectedAsync();
