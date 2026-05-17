@@ -198,20 +198,6 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
-                <controls:SettingsExpander
-                           VerticalAlignment="Top"
-                           l:Uids.Uid="SettingsPage_Scan_CzkCloud"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xEDE4;}"
-                           Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="CzkCloudScanToggle" Tag="CzkCloudScan" Toggled="Toggled_SaveToggleData"  />
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_CzkCloud_Develop"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
-                            <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" NavigateUri="https://www.szczk.top/" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Protection" />
                 <controls:SettingsExpander
                VerticalAlignment="Top"

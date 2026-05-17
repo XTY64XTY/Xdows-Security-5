@@ -828,18 +828,6 @@ Why not try XIGUA Security?</value>
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>Modify the opacity of the main window</value>
   </data>
-  <data name="SettingsPage_Scan_CzkCloud.Header" xml:space="preserve">
-    <value>CzkCloud Engine</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
-    <value>Connecting to the cloud engine improves detection accuracy but requires an internet connection.</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
-    <value>About this Engine</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud_Develop.Description" xml:space="preserve">
-    <value>Tianqi StarMap Network Technology is the developer and maintainer of this scanning engine</value>
-  </data>
   <data name="SettingsPage_Scan_Cloud.Header" xml:space="preserve">
     <value>Cloud-based scanning</value>
   </data>

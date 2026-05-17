@@ -76,35 +76,6 @@ namespace Helper
 
         private static readonly System.Net.Http.HttpClient s_httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-        public static async Task<(int statusCode, string? result)> CzkCloudScanAsync(string path, string apiKey)
-        {
-            string hash = await GetFileMD5Async(path);
-            return await CzkCloudScanWithHashAsync(hash, apiKey);
-        }
-
-        public static async Task<(int statusCode, string? result)> CzkCloudScanWithHashAsync(string hash, string apiKey)
-        {
-            var client = s_httpClient;
-            string url = $"https://cv.szczk.top/scan/{apiKey}/{hash}";
-            try
-            {
-                var resp = await client.GetAsync(url);
-                resp.EnsureSuccessStatusCode();
-                string json = await resp.Content.ReadAsStringAsync();
-                using JsonDocument doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("result", out JsonElement prop))
-                {
-                    return (200, prop.GetString());
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                return ((int?)ex.StatusCode ?? -1, string.Empty);
-            }
-
-            return (-1, string.Empty);
-        }
-
         public static async Task<(int statusCode, string? result)> CloudScanAsync(string path)
         {
             string hash = await GetFileMD5Async(path);

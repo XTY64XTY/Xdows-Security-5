@@ -828,18 +828,6 @@
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>修改主窗口的不透明度</value>
   </data>
-  <data name="SettingsPage_Scan_CzkCloud.Header" xml:space="preserve">
-    <value>CzkCloud 云端引擎</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
-    <value>云端引擎来自第三方且需要连接至互联网，但是能提高查杀率</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
-    <value>关于引擎</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud_Develop.Description" xml:space="preserve">
-    <value>天启星图网络科技 是这个扫描引擎的开发者和维护者</value>
-  </data>
   <data name="SettingsPage_Scan_Cloud.Header" xml:space="preserve">
     <value>基于云的扫描引擎</value>
   </data>

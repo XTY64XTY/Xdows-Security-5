@@ -992,10 +992,9 @@ namespace Xdows_Security.Views
         {
             ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
             Boolean UseLocalScan = (settings.Values["LocalScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseCzkCloudScan = (settings.Values["CzkCloudScan"] as Boolean?).GetValueOrDefault();
             Boolean UseCloudScan = (settings.Values["CloudScan"] as Boolean?).GetValueOrDefault();
             Boolean UseModelScan = (settings.Values["ModelScan"] as Boolean?).GetValueOrDefault();
-            if (!UseLocalScan && !UseCzkCloudScan && !UseCloudScan && !UseModelScan)
+            if (!UseLocalScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
                 {
@@ -1037,10 +1036,9 @@ namespace Xdows_Security.Views
         {
             ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
             Boolean UseLocalScan = (settings.Values["LocalScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseCzkCloudScan = (settings.Values["CzkCloudScan"] as Boolean?).GetValueOrDefault();
             Boolean UseCloudScan = (settings.Values["CloudScan"] as Boolean?).GetValueOrDefault();
             Boolean UseModelScan = (settings.Values["ModelScan"] as Boolean?).GetValueOrDefault();
-            if (!UseLocalScan && !UseCzkCloudScan && !UseCloudScan && !UseModelScan)
+            if (!UseLocalScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
                 {
@@ -1249,15 +1247,14 @@ namespace Xdows_Security.Views
         // Run configured scan engines against a single file and return the first detection (if any).
         private async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
             Boolean deepScan, Boolean extraData,
-            Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan,
+            Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan,
             Boolean useInfectorCleaner, Boolean useVirusFamily,
             Helper.ScanEngine.ModelEngineScan? modelEngine,
-            String czkApiKey, CancellationToken token)
+            CancellationToken token)
         {
             try
             {
-                // 流式计算MD5一次，两个云引擎共享（128KB缓冲，不加载整个文件）
-                if ((useCloudScan || useCzkCloudScan) && md5Hash == null)
+                if (useCloudScan && md5Hash == null)
                 {
                     try { md5Hash = await ScanEngine.GetFileMD5Async(filePath); } catch { }
                 }
@@ -1291,16 +1288,6 @@ namespace Xdows_Security.Views
                         (Int32? statusCode, String? result) = t.Result;
                         String? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
                         return new ScanResult("Cloud", info);
-                    }, TaskScheduler.Default));
-                }
-
-                if (useCzkCloudScan && md5Hash != null)
-                {
-                    scanTasks.Add(Helper.ScanEngine.CzkCloudScanWithHashAsync(md5Hash, czkApiKey).ContinueWith(t =>
-                    {
-                        (Int32? statusCode, String? result) = t.Result;
-                        String? info = (result != "safe") ? (result ?? String.Empty) : null;
-                        return new ScanResult("CzkCloud", info);
                     }, TaskScheduler.Default));
                 }
 
@@ -1346,7 +1333,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task ScanZipFileAsync(Int32 scanId, String zipPath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useCzkCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, String czkApiKey, CancellationToken token)
+        private async Task ScanZipFileAsync(Int32 scanId, String zipPath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, CancellationToken token)
         {
             try
             {
@@ -1380,7 +1367,7 @@ namespace Xdows_Security.Views
 
                         // ZIP entry already has bytes in memory - compute MD5 once, pass to all engines
                         string entryMd5 = ScanEngine.ComputeMD5(data);
-                        var scanRes = await RunScansOnFileAsync(tempFile, data, entryMd5, deepScan, extraData, useLocalScan, useCloudScan, useCzkCloudScan, useModelScan, useInfectorCleaner, useVirusFamily, modelEngine, czkApiKey, token);
+                        var scanRes = await RunScansOnFileAsync(tempFile, data, entryMd5, deepScan, extraData, useLocalScan, useCloudScan, useModelScan, useInfectorCleaner, useVirusFamily, modelEngine, token);
                         string? virusResult = scanRes.VirusInfo;
                         if (!String.IsNullOrEmpty(virusResult))
                         {
@@ -1450,7 +1437,6 @@ namespace Xdows_Security.Views
             bool DeepScan = settings.Values["DeepScan"] as bool? ?? false;
             bool ExtraData = settings.Values["ExtraData"] as bool? ?? false;
             bool UseLocalScan = settings.Values["LocalScan"] as bool? ?? false;
-            bool UseCzkCloudScan = settings.Values["CzkCloudScan"] as bool? ?? false;
             bool UseCloudScan = settings.Values["CloudScan"] as bool? ?? false;
             bool UseModelScan = settings.Values["ModelScan"] as bool? ?? true;
             bool UseInfectorCleaner = settings.Values["InfectorCleaner"] as bool? ?? false;
@@ -1482,7 +1468,6 @@ namespace Xdows_Security.Views
             }
             var enginesLog = "Use";
             if (UseLocalScan) enginesLog += DeepScan ? " LocalScan-DeepScan" : " LocalScan";
-            if (UseCzkCloudScan) enginesLog += " CzkCloudScan";
             if (UseCloudScan) enginesLog += " CloudScan";
             if (UseModelScan) enginesLog += " Xdows-Model";
             if (UseInfectorCleaner) enginesLog += " InfectorCleaner";
@@ -1606,7 +1591,6 @@ namespace Xdows_Security.Views
                     string tStatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning");
                     TimeSpan pausedTime = TimeSpan.Zero;
                     DateTime lastPauseTime = DateTime.MinValue;
-                    string czkApiKey = App.GetCzkCloudApiKey();
                     bool ScanInside = settings.Values["ScanInside"] as bool? ?? false;
 
                     // 双层并行架构：
@@ -1853,7 +1837,7 @@ namespace Xdows_Security.Views
                             await scanGate.WaitAsync(ct);
                             try
                             {
-                                await ScanZipFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
+                                await ScanZipFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
                             }
                             finally { scanGate.Release(); }
                             return;
@@ -1863,7 +1847,7 @@ namespace Xdows_Security.Views
                         await scanGate.WaitAsync(ct);
                         try
                         {
-                            var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseCzkCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, czkApiKey, ct);
+                            var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
                             Interlocked.Increment(ref Statistics.ScansQuantity);
                             if (!String.IsNullOrEmpty(scanRes.VirusInfo))
                             {

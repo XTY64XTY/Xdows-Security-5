@@ -828,18 +828,6 @@
   <data name="SettingsPage_Appearance_Backdrop_Opacity.Description" xml:space="preserve">
     <value>修改主窗口的不透明度</value>
   </data>
-  <data name="SettingsPage_Scan_CzkCloud.Header" xml:space="preserve">
-    <value>CzkCloud 雲端引擎</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud.Description" xml:space="preserve">
-    <value>雲端引擎來自第三方且需要連接至互聯網，但是能提高查殺率</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud_Develop.Header" xml:space="preserve">
-    <value>關於引擎</value>
-  </data>
-  <data name="SettingsPage_Scan_CzkCloud_Develop.Description" xml:space="preserve">
-    <value>天啓星圖網絡科技 是這個掃描引擎的開發者和維護者</value>
-  </data>
   <data name="SettingsPage_Scan_Cloud.Header" xml:space="preserve">
     <value>基於雲的掃描引擎</value>
   </data>

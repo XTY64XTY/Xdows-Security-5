@@ -592,10 +592,6 @@ namespace Xdows_Security
             }
         }
         public static ElementTheme Theme { get; set; } = ElementTheme.Default;
-        public static string GetCzkCloudApiKey()
-        {
-            return string.Empty;
-        }
         public static bool IsRunAsAdmin()
         {
             WindowsIdentity identity = WindowsIdentity.GetCurrent();

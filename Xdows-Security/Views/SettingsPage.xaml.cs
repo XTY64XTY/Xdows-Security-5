@@ -70,12 +70,6 @@ namespace Xdows_Security.Views
                     Settings_About_Feedback.NavigateUri = new Uri(AppInfo.AppFeedback);
                     Settings_About_Website.NavigateUri = new Uri(AppInfo.AppWebsite);
 
-                    if (App.GetCzkCloudApiKey() == String.Empty)
-                    {
-                        CzkCloudScanToggle?.IsOn = false;
-                        CzkCloudScanToggle?.IsEnabled = false;
-                    }
-
                     if (!App.IsRunAsAdmin())
                     {
                         RegistryToggle?.IsEnabled = false;
@@ -214,7 +208,7 @@ namespace Xdows_Security.Views
 
             String key = toggle.Tag as String ?? toggle.Name;
             if (String.IsNullOrWhiteSpace(key)) return;
-            if (toggle.IsOn && (key == "CzkCloudScan" || key == "CloudScan" || key == "ExactRuleScan"))
+            if (toggle.IsOn && (key == "CloudScan" || key == "ExactRuleScan"))
             {
                 _ = new ContentDialog
                 {
@@ -267,7 +261,6 @@ namespace Xdows_Security.Views
                 InfectorCleanerToggle,
                 ExactRuleToggle,
                 LocalScanToggle,
-                CzkCloudScanToggle,
                 ModelScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,
