@@ -610,7 +610,6 @@ namespace Xdows_Security
             string lastLang = settings.Values["AppLanguage"] as string ?? "en-US";
 
             ApplicationLanguages.PrimaryLanguageOverride = lastLang;
-
             ILocalizer localizer = await new LocalizerBuilder()
                 .AddStringResourcesFolderForLanguageDictionaries(stringsPath)
                 .SetOptions(o => o.DefaultLanguage = lastLang)

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
@@ -22,7 +22,7 @@
 		<IsAotCompatible>true</IsAotCompatible>
 		<CsWinRTAotOptimizerEnable>true</CsWinRTAotOptimizerEnable>
 		<TrimMode>partial</TrimMode>
-		<InvariantGlobalization>true</InvariantGlobalization>
+		<InvariantGlobalization>false</InvariantGlobalization>
 		<StackTraceSupport>false</StackTraceSupport>
 		<UseWindowsThreadPool>true</UseWindowsThreadPool>
 		<IlcOptimizationPreference>Speed</IlcOptimizationPreference>

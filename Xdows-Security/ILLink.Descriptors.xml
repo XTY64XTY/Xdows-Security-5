@@ -59,6 +59,16 @@
     <type fullname="Microsoft.Windows.Storage.Pickers.PickFileResult" preserve="all" />
     <type fullname="Microsoft.Windows.Storage.Pickers.PickFolderResult" preserve="all" />
   </assembly>
+
+  <assembly fullname="Microsoft.Windows.AppLifecycle.Projection">
+    <type fullname="Microsoft.Windows.AppLifecycle.AppInstance" preserve="all" />
+    <type fullname="Microsoft.Windows.AppLifecycle.ExtendedActivationKind" preserve="all" />
+    <type fullname="Microsoft.Windows.AppLifecycle.AppActivationArguments" preserve="all" />
+  </assembly>
+
+  <assembly fullname="WinRT.Runtime">
+    <type fullname="WinRT.Interop.WindowNative" preserve="all" />
+  </assembly>
   
   <assembly fullname="WinUI3Localizer" preserve="all" />
   <assembly fullname="Xdows-Security" preserve="all" />
