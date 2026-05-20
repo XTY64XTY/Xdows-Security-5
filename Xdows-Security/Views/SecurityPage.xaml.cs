@@ -1252,10 +1252,10 @@ namespace Xdows_Security.Views
             return null;
         }
 
-        private record ScanResult(String EngineName, String? VirusInfo, String? FamilyInfo = null);
+        internal record ScanResult(String EngineName, String? VirusInfo, String? FamilyInfo = null);
 
         // Run configured scan engines against a single file and return the first detection (if any).
-        private async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
+        internal static async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
             Boolean deepScan, Boolean extraData,
             Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan,
             Boolean useInfectorCleaner, Boolean useVirusFamily,
@@ -1264,10 +1264,14 @@ namespace Xdows_Security.Views
         {
             try
             {
+                token.ThrowIfCancellationRequested();
+
                 if (useCloudScan && md5Hash == null)
                 {
-                    try { md5Hash = await ScanEngine.GetFileMD5Async(filePath); } catch { }
+                    try { md5Hash = await ScanEngine.GetFileMD5Async(filePath).WaitAsync(token); } catch { }
                 }
+
+                token.ThrowIfCancellationRequested();
 
                 var scanTasks = new List<Task<ScanResult>>();
 
@@ -1277,7 +1281,7 @@ namespace Xdows_Security.Views
                     {
                         (Boolean isVirus, String result) = ScanEngine.ModelEngineScan.ScanFile(filePath);
                         return new ScanResult("Xdows-Model", isVirus ? result : null);
-                    }));
+                    }, token));
                 }
 
                 if (useLocalScan)
@@ -1307,8 +1311,9 @@ namespace Xdows_Security.Views
                 ScanResult[] results;
                 try
                 {
-                    results = await Task.WhenAll(scanTasks);
+                    results = await Task.WhenAll(scanTasks).WaitAsync(token);
                 }
+                catch (OperationCanceledException) { return new ScanResult(String.Empty, null); }
                 catch
                 {
                     return new ScanResult(String.Empty, null);

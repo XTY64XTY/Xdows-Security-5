@@ -290,6 +290,13 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+                <controls:SettingsCard
+                    VerticalAlignment="Top"
+                    l:Uids.Uid="SettingsPage_UsbAutoScan"
+                    HeaderIcon="{ui:FontIcon Glyph=&#xE88E;}"
+                    Margin="0,0,0,4">
+                    <ToggleSwitch x:Name="UsbAutoScanToggle" Toggled="Toggled_SaveToggleData" Tag="UsbAutoScan"/>
+                </controls:SettingsCard>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
                 <controls:SettingsExpander
                VerticalAlignment="Top"

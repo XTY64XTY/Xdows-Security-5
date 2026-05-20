@@ -1459,4 +1459,61 @@
   <data name="LogExportDialog_Export.Content" xml:space="preserve">
     <value>导出</value>
   </data>
+  <data name="UsbScanWindow_Title.Title" xml:space="preserve">
+    <value>USB 设备扫描</value>
+  </data>
+  <data name="UsbScanWindow_Status_Scanning.Text" xml:space="preserve">
+    <value>正在扫描...</value>
+  </data>
+  <data name="UsbScanWindow_Status_Paused.Text" xml:space="preserve">
+    <value>已暂停</value>
+  </data>
+  <data name="UsbScanWindow_Status_Safe.Text" xml:space="preserve">
+    <value>安全</value>
+  </data>
+  <data name="UsbScanWindow_Status_ThreatsFound.Text" xml:space="preserve">
+    <value>发现 {0} 个威胁</value>
+  </data>
+  <data name="UsbScanWindow_Status_Cancelled.Text" xml:space="preserve">
+    <value>已取消</value>
+  </data>
+  <data name="UsbScanWindow_FilesScanned.Text" xml:space="preserve">
+    <value>已扫描文件</value>
+  </data>
+  <data name="UsbScanWindow_ThreatsFound.Text" xml:space="preserve">
+    <value>发现威胁</value>
+  </data>
+  <data name="UsbScanWindow_Result_Safe.Text" xml:space="preserve">
+    <value>未发现威胁</value>
+  </data>
+  <data name="UsbScanWindow_Result_Threats.Text" xml:space="preserve">
+    <value>发现 {0} 个威胁</value>
+  </data>
+  <data name="UsbScanWindow_Result_ThreatsDetail.Text" xml:space="preserve">
+    <value>点击"查看威胁"处理</value>
+  </data>
+  <data name="UsbScanWindow_Result_Cancelled.Text" xml:space="preserve">
+    <value>扫描已取消</value>
+  </data>
+  <data name="UsbScanWindow_OpenDevice.Content" xml:space="preserve">
+    <value>打开设备</value>
+  </data>
+  <data name="UsbScanWindow_ViewThreats.Content" xml:space="preserve">
+    <value>查看威胁</value>
+  </data>
+  <data name="UsbScanWindow_Pause.Content" xml:space="preserve">
+    <value>暂停</value>
+  </data>
+  <data name="UsbScanWindow_Resume.Content" xml:space="preserve">
+    <value>继续</value>
+  </data>
+  <data name="UsbScanWindow_Cancel.Content" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsPage_UsbAutoScan.Header" xml:space="preserve">
+    <value>USB 自动扫描</value>
+  </data>
+  <data name="SettingsPage_UsbAutoScan.Description" xml:space="preserve">
+    <value>检测到可移动设备时自动扫描</value>
+  </data>
 </root>

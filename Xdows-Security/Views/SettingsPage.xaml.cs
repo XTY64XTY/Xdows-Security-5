@@ -271,7 +271,8 @@ namespace Xdows_Security.Views
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
-                SpatialAudioToggle
+                SpatialAudioToggle,
+                UsbAutoScanToggle
             ];
 
             foreach (ToggleSwitch toggle in toggles)
@@ -316,6 +317,11 @@ namespace Xdows_Security.Views
             {
                 settings.Values["IsBackButtonVisible"] = true;
                 SettingsPage_Appearance_Nav_IsBackButtonVisible.IsOn = true;
+            }
+
+            if (!settings.Values.ContainsKey("UsbAutoScan"))
+            {
+                settings.Values["UsbAutoScan"] = true;
             }
 
             InfectorCleanerToggle.IsEnabled = VirusFamilyToggle.IsOn;

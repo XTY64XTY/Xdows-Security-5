@@ -1,10 +1,13 @@
 using Compatibility.Windows.Storage;
+using Helper.PInvoke.Comctl32;
+using Helper.PInvoke.User32;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
@@ -22,6 +25,7 @@ namespace Xdows_Security
 
         private bool _isOOBEShown;
         private readonly Stack<string> _navigationHistory = new();
+        private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
 
         public MainWindow()
         {
@@ -31,6 +35,9 @@ namespace Xdows_Security
             AppWindow.SetIcon("logo.ico");
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
 
+            _deviceChangeSubClassProc = new SUBCLASSPROC(DeviceChangeSubClassProc);
+            Comctl32Library.SetWindowSubclass((nint)this.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(_deviceChangeSubClassProc), 1, 0);
+
             nav.SelectedItem = nav.MenuItems.OfType<NavigationViewItem>().First();
             Activated += MainWindow_Activated_FirstTime;
             Title = AppInfo.AppName;
@@ -38,6 +45,7 @@ namespace Xdows_Security
             Manager.AppWindow.Closing += MainWindow_Closing;
             Manager.MinWidth = 650;
             Manager.MinHeight = 530;
+            CenterWindow();
             Closed += delegate { Window_Closed(); };
             Localizer.Get().LanguageChanged += OnLangChanged;
             Manager.TrayIconSelected += (w, e) =>
@@ -104,7 +112,7 @@ namespace Xdows_Security
                 _ = DispatcherQueue.TryEnqueue(async () =>
                 {
                     // 确保 UI 基础架构已经完成加载
-                    await Task.Delay(1500); 
+                    await Task.Delay(1500);
                     var scanPaths = App.ScanTargetPaths.ToList();
                     if (scanPaths.Count > 0)
                     {
@@ -534,6 +542,65 @@ namespace Xdows_Security
             string previousPage = _navigationHistory.Pop();
             UpdateBackEnabled();
             GoToPage(previousPage, false);
+        }
+
+        private void CenterWindow()
+        {
+            var displayArea = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(this.AppWindow.Id, Microsoft.UI.Windowing.DisplayAreaFallback.Nearest);
+            if (displayArea == null) return;
+
+            var windowSize = this.AppWindow.Size;
+            int centerX = (displayArea.WorkArea.Width - windowSize.Width) / 2;
+            int centerY = (displayArea.WorkArea.Height - windowSize.Height) / 2;
+            this.AppWindow.Move(new Windows.Graphics.PointInt32(centerX, centerY));
+        }
+
+        private nint DeviceChangeSubClassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
+        {
+            if (Msg == WindowMessage.WM_DEVICECHANGE)
+            {
+                const int DBT_DEVICEARRIVAL = 0x8000;
+                if (wParam == DBT_DEVICEARRIVAL)
+                {
+                    try
+                    {
+                        var hdr = Marshal.PtrToStructure<DEV_BROADCAST_HDR>(lParam);
+                        if (hdr.dbch_devicetype == DeviceType.DBT_DEVTYP_VOLUME)
+                        {
+                            var vol = Marshal.PtrToStructure<DEV_BROADCAST_VOLUME>(lParam);
+                            if ((vol.dbcv_flags & VolumeFlags.DBTF_NET) == 0)
+                            {
+                                char driveLetter = DriveMaskToLetter(vol.dbcv_unitmask);
+                                if (driveLetter != '\0')
+                                {
+                                    DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        var scanWindow = new UsbScanWindow(
+                                            driveLetter.ToString(),
+                                            UsbScanService.GetDriveLabel(driveLetter.ToString()));
+                                        scanWindow.Activate();
+
+                                        UsbScanService.Instance.EnqueueDrive(driveLetter.ToString());
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            return Comctl32Library.DefSubclassProc(hWnd, Msg, wParam, lParam);
+        }
+
+        private static char DriveMaskToLetter(uint unitMask)
+        {
+            for (int i = 0; i < 26; i++)
+            {
+                if ((unitMask & (1u << i)) != 0)
+                    return (char)('A' + i);
+            }
+            return '\0';
         }
     }
 }
