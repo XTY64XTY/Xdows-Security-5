@@ -25,6 +25,7 @@ public sealed partial class UsbScanWindow : Window
         manager.MinWidth = 340;
         manager.MinHeight = 260;
         manager.Width = 380;
+        manager.Height = 300;
         manager.IsMaximizable = false;
         manager.IsMinimizable = false;
         manager.IsResizable = false;
@@ -49,11 +50,6 @@ public sealed partial class UsbScanWindow : Window
         UsbScanService.Instance.ScanCompleted += OnScanCompleted;
 
         this.Closed += OnWindowClosed;
-
-        RootPanel.Loaded += (_, _) =>
-        {
-            DispatcherQueue.TryEnqueue(() => UpdateWindowHeightAndPosition());
-        };
 
         PositionWindowAtBottomRight();
         App.PlayEntranceAnimation(RootPanel, "right");
