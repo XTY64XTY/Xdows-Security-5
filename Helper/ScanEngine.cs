@@ -46,11 +46,47 @@ namespace Helper
 
         public class ModelEngineScan
         {
+            private static bool _useFlashMode;
+
+            public static bool UseFlashMode
+            {
+                get => _useFlashMode;
+                set
+                {
+                    if (_useFlashMode != value)
+                    {
+                        _useFlashMode = value;
+                        Xdows_Model_Invoker.ModelInvoker.UnloadModel();
+                    }
+                }
+            }
+
+            private static void SyncFlashModeFromSettings()
+            {
+                try
+                {
+                    var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+                    if (settings.Values.TryGetValue("ModelFlashScan", out var raw) && raw is bool flash)
+                    {
+                        UseFlashMode = flash;
+                    }
+                }
+                catch { }
+            }
+
             public static bool Initialize()
             {
                 try
                 {
-                    Xdows_Model_Invoker.ModelInvoker.Initialize();
+                    SyncFlashModeFromSettings();
+                    if (_useFlashMode)
+                    {
+                        Xdows_Model_Invoker.ModelInvoker.InitializeFlash();
+                    }
+                    else
+                    {
+                        Xdows_Model_Invoker.ModelInvoker.Initialize();
+                    }
                     return true;
                 }
                 catch

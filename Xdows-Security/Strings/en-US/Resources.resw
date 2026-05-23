@@ -507,6 +507,12 @@
   <data name="SettingsPage_Scan_Xdows_Model.Description" xml:space="preserve">
     <value>High-Precision Scanning Engine Based on Machine Learning</value>
   </data>
+  <data name="SettingsPage_Scan_Xdows_Model_Flash.Header" xml:space="preserve">
+    <value>Xdows Model Flash</value>
+  </data>
+  <data name="SettingsPage_Scan_Xdows_Model_Flash.Description" xml:space="preserve">
+    <value>Use a lightweight fast model with higher speed but lower accuracy</value>
+  </data>
   <data name="SettingsPage_Scan_Local_DeepScan.Header" xml:space="preserve">
     <value>Deep Scan</value>
   </data>

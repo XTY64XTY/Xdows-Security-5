@@ -131,7 +131,7 @@
                 <controls:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xE945;}"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}"
                            x:Name="Scan_BuiltInRuleEngine"
                            Margin="0,0,0,4">
                     <controls:SettingsExpander.Items>
@@ -157,13 +157,20 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
-                <controls:SettingsCard
+                <controls:SettingsExpander
                    l:Uids.Uid="SettingsPage_Scan_Xdows_Model"
                    x:Name="SettingsPage_Scan_Xdows_Model"
                    HeaderIcon="{ui:FontIcon Glyph=&#xEC26;}"
                    Margin="0,0,0,4">
                     <ToggleSwitch x:Name="ModelScanToggle" Tag="ModelScan" Toggled="Toggled_SaveToggleData" />
-                </controls:SettingsCard>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Flash"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE945;}">
+                            <ToggleSwitch x:Name="ModelFlashScanToggle" Tag="ModelFlashScan" Toggled="Toggled_SaveToggleData" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
                 <controls:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Scan_Local"

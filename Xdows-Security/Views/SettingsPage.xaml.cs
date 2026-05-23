@@ -262,6 +262,7 @@ namespace Xdows_Security.Views
                 ExactRuleToggle,
                 LocalScanToggle,
                 ModelScanToggle,
+                ModelFlashScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,
                 ContextMenuScanToggle,
@@ -289,6 +290,11 @@ namespace Xdows_Security.Views
             if (!settings.Values.ContainsKey("ModelScan"))
             {
                 settings.Values["ModelScan"] = true;
+            }
+
+            if (!settings.Values.ContainsKey("ModelFlashScan"))
+            {
+                settings.Values["ModelFlashScan"] = false;
             }
 
             if (!settings.Values.ContainsKey("Process_CompatibilityMode"))
