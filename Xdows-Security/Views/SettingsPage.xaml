@@ -166,12 +166,17 @@
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xE945;}">
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE8F9;}">
                             <ComboBox x:Name="ModelModeComboBox" SelectionChanged="ModelModeComboBox_SelectionChanged">
-                                <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode_Flash" Tag="Flash" />
-                                <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode_Standard" Tag="Standard" />
-                                <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode_Pro" Tag="Pro" />
+                                <ComboBoxItem Content="Flash" Tag="Flash" />
+                                <ComboBoxItem Content="Standard" Tag="Standard" />
+                                <ComboBoxItem Content="Pro" Tag="Pro" />
                             </ComboBox>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_Xdows_Model_ModeForProtection"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xF7ED;}">
+                            <ToggleSwitch x:Name="ModelModeForProtectionToggle" Tag="ModelModeForProtection" Toggled="ModelModeForProtectionToggle_Toggled" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

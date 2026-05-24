@@ -513,14 +513,11 @@
   <data name="SettingsPage_Scan_Xdows_Model_Mode.Description" xml:space="preserve">
     <value>選擇 Xdows Model 的運行模式</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode_Flash.Content" xml:space="preserve">
-    <value>Flash</value>
+  <data name="SettingsPage_Scan_Xdows_Model_ModeForProtection.Header" xml:space="preserve">
+    <value>將模型模式應用到防護</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode_Standard.Content" xml:space="preserve">
-    <value>標準</value>
-  </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode_Pro.Content" xml:space="preserve">
-    <value>Pro</value>
+  <data name="SettingsPage_Scan_Xdows_Model_ModeForProtection.Description" xml:space="preserve">
+    <value>開啟後，防護模塊將使用選擇的模型模式運行；修改此設置需要重啟對應防護才能生效</value>
   </data>
   <data name="SettingsPage_Scan_Local_DeepScan.Header" xml:space="preserve">
     <value>深度掃描</value>

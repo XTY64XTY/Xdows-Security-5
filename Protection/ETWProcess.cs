@@ -34,7 +34,7 @@ namespace Protection
 
                     try
                     {
-                        Helper.ScanEngine.ModelEngineScan.Initialize();
+                        Helper.ScanEngine.ModelEngineScan.InitializeForProtection();
 
                         isRunning = true;
 

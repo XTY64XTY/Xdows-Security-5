@@ -84,23 +84,54 @@ namespace Helper
                 try
                 {
                     SyncModeFromSettings();
-                    switch (_mode)
-                    {
-                        case Xdows_Model_Invoker.ModelMode.Flash:
-                            Xdows_Model_Invoker.ModelInvoker.InitializeFlash();
-                            break;
-                        case Xdows_Model_Invoker.ModelMode.Pro:
-                            Xdows_Model_Invoker.ModelInvoker.InitializePro();
-                            break;
-                        default:
-                            Xdows_Model_Invoker.ModelInvoker.Initialize();
-                            break;
-                    }
+                    InitializeWithMode(_mode);
                     return true;
                 }
                 catch
                 {
                     return false;
+                }
+            }
+
+            public static bool InitializeForProtection()
+            {
+                try
+                {
+                    SyncModeFromSettings();
+                    bool applyToProtection = false;
+                    try
+                    {
+                        var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+                        if (settings.Values.TryGetValue("ModelModeForProtection", out var raw) && raw is bool enabled)
+                        {
+                            applyToProtection = enabled;
+                        }
+                    }
+                    catch { }
+
+                    var mode = applyToProtection ? _mode : Xdows_Model_Invoker.ModelMode.Standard;
+                    InitializeWithMode(mode);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            private static void InitializeWithMode(Xdows_Model_Invoker.ModelMode mode)
+            {
+                switch (mode)
+                {
+                    case Xdows_Model_Invoker.ModelMode.Flash:
+                        Xdows_Model_Invoker.ModelInvoker.InitializeFlash();
+                        break;
+                    case Xdows_Model_Invoker.ModelMode.Pro:
+                        Xdows_Model_Invoker.ModelInvoker.InitializePro();
+                        break;
+                    default:
+                        Xdows_Model_Invoker.ModelInvoker.Initialize();
+                        break;
                 }
             }
 

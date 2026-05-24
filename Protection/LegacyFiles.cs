@@ -12,7 +12,7 @@ namespace Protection
         string IProtectionModel.Name => Name;
         public bool Run(InterceptCallBack toastCallBack)
         {
-            Helper.ScanEngine.ModelEngineScan.Initialize();
+            Helper.ScanEngine.ModelEngineScan.InitializeForProtection();
 
             if (_isMonitoring)
             {

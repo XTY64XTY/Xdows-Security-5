@@ -18,7 +18,7 @@ namespace Protection
 
         public bool Run(InterceptCallBack toastCallBack)
         {
-            Helper.ScanEngine.ModelEngineScan.Initialize();
+            Helper.ScanEngine.ModelEngineScan.InitializeForProtection();
 
             if (IsRun())
                 return true;

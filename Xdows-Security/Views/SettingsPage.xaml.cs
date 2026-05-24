@@ -314,6 +314,16 @@ namespace Xdows_Security.Views
             }
             catch { }
 
+            if (!settings.Values.ContainsKey("ModelModeForProtection"))
+            {
+                settings.Values["ModelModeForProtection"] = false;
+                ModelModeForProtectionToggle.IsOn = false;
+            }
+            else if (settings.Values.TryGetValue("ModelModeForProtection", out var mfpRaw) && mfpRaw is bool mfpOn)
+            {
+                ModelModeForProtectionToggle.IsOn = mfpOn;
+            }
+
             if (!settings.Values.ContainsKey("Process_CompatibilityMode"))
             {
                 settings.Values["Process_CompatibilityMode"] = true;
@@ -437,6 +447,16 @@ namespace Xdows_Security.Views
             {
                 ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
                 settings.Values["ModelMode"] = tag;
+            }
+        }
+
+        private void ModelModeForProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize) return;
+            if (sender is ToggleSwitch toggle)
+            {
+                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                settings.Values["ModelModeForProtection"] = toggle.IsOn;
             }
         }
 

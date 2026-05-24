@@ -30,7 +30,7 @@ namespace Protection
 
                     try
                     {
-                        Helper.ScanEngine.ModelEngineScan.Initialize();
+                        Helper.ScanEngine.ModelEngineScan.InitializeForProtection();
 
                         session = new TraceEventSession($"Xdows-Security-{Name}", null);
                         session.EnableKernelProvider(
