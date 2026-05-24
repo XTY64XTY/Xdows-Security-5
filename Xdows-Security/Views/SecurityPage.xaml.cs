@@ -1280,7 +1280,7 @@ namespace Xdows_Security.Views
                     scanTasks.Add(Task.Run(() =>
                     {
                         (Boolean isVirus, String result) = ScanEngine.ModelEngineScan.ScanFile(filePath);
-                        return new ScanResult("Xdows-Model", isVirus ? result : null);
+                        return new ScanResult(ScanEngine.ModelEngineScan.GetEngineDisplayName(), isVirus ? result : null);
                     }, token));
                 }
 

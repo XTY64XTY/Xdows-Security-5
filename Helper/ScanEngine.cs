@@ -46,29 +46,34 @@ namespace Helper
 
         public class ModelEngineScan
         {
-            private static bool _useFlashMode;
+            private static Xdows_Model_Invoker.ModelMode _mode = Xdows_Model_Invoker.ModelMode.Standard;
 
-            public static bool UseFlashMode
+            public static Xdows_Model_Invoker.ModelMode Mode
             {
-                get => _useFlashMode;
+                get => _mode;
                 set
                 {
-                    if (_useFlashMode != value)
+                    if (_mode != value)
                     {
-                        _useFlashMode = value;
+                        _mode = value;
                         Xdows_Model_Invoker.ModelInvoker.UnloadModel();
                     }
                 }
             }
 
-            private static void SyncFlashModeFromSettings()
+            private static void SyncModeFromSettings()
             {
                 try
                 {
                     var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
-                    if (settings.Values.TryGetValue("ModelFlashScan", out var raw) && raw is bool flash)
+                    if (settings.Values.TryGetValue("ModelMode", out var raw) && raw is string modeStr)
                     {
-                        UseFlashMode = flash;
+                        _mode = modeStr switch
+                        {
+                            "Flash" => Xdows_Model_Invoker.ModelMode.Flash,
+                            "Pro" => Xdows_Model_Invoker.ModelMode.Pro,
+                            _ => Xdows_Model_Invoker.ModelMode.Standard
+                        };
                     }
                 }
                 catch { }
@@ -78,14 +83,18 @@ namespace Helper
             {
                 try
                 {
-                    SyncFlashModeFromSettings();
-                    if (_useFlashMode)
+                    SyncModeFromSettings();
+                    switch (_mode)
                     {
-                        Xdows_Model_Invoker.ModelInvoker.InitializeFlash();
-                    }
-                    else
-                    {
-                        Xdows_Model_Invoker.ModelInvoker.Initialize();
+                        case Xdows_Model_Invoker.ModelMode.Flash:
+                            Xdows_Model_Invoker.ModelInvoker.InitializeFlash();
+                            break;
+                        case Xdows_Model_Invoker.ModelMode.Pro:
+                            Xdows_Model_Invoker.ModelInvoker.InitializePro();
+                            break;
+                        default:
+                            Xdows_Model_Invoker.ModelInvoker.Initialize();
+                            break;
                     }
                     return true;
                 }
@@ -102,11 +111,28 @@ namespace Helper
                     var r = Xdows_Model_Invoker.ModelInvoker.ScanFile(path);
                     if (r.isVirus)
                     {
-                        return (true, $"Xdows.Model.Probability{(int)r.probability}");
+                        string modeTag = _mode switch
+                        {
+                            Xdows_Model_Invoker.ModelMode.Flash => "Flash",
+                            Xdows_Model_Invoker.ModelMode.Pro => "Pro",
+                            _ => "Standard"
+                        };
+                        return (true, $"Xdows.Model.{modeTag}.Probability{(int)r.probability}");
                     }
                 }
                 catch { }
                 return (false, string.Empty);
+            }
+
+            public static string GetEngineDisplayName()
+            {
+                string modeTag = _mode switch
+                {
+                    Xdows_Model_Invoker.ModelMode.Flash => "Flash",
+                    Xdows_Model_Invoker.ModelMode.Pro => "Pro",
+                    _ => "Standard"
+                };
+                return $"Xdows-Model ({modeTag})";
             }
         }
 

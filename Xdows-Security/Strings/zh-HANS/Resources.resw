@@ -507,11 +507,20 @@
   <data name="SettingsPage_Scan_Xdows_Model.Description" xml:space="preserve">
     <value>基于机器学习的高精度扫描引擎</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Flash.Header" xml:space="preserve">
-    <value>Xdows Model Flash</value>
+  <data name="SettingsPage_Scan_Xdows_Model_Mode.Header" xml:space="preserve">
+    <value>模型模式</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Flash.Description" xml:space="preserve">
-    <value>使用轻量快速模型，速度更快但精度较低</value>
+  <data name="SettingsPage_Scan_Xdows_Model_Mode.Description" xml:space="preserve">
+    <value>选择 Xdows Model 的运行模式</value>
+  </data>
+  <data name="SettingsPage_Scan_Xdows_Model_Mode_Flash.Content" xml:space="preserve">
+    <value>Flash</value>
+  </data>
+  <data name="SettingsPage_Scan_Xdows_Model_Mode_Standard.Content" xml:space="preserve">
+    <value>标准</value>
+  </data>
+  <data name="SettingsPage_Scan_Xdows_Model_Mode_Pro.Content" xml:space="preserve">
+    <value>Pro</value>
   </data>
   <data name="SettingsPage_Scan_Local_DeepScan.Header" xml:space="preserve">
     <value>深度扫描</value>

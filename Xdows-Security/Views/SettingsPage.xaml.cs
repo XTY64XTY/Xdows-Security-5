@@ -262,7 +262,6 @@ namespace Xdows_Security.Views
                 ExactRuleToggle,
                 LocalScanToggle,
                 ModelScanToggle,
-                ModelFlashScanToggle,
                 CloudScanToggle,
                 TrayVisibleToggle,
                 ContextMenuScanToggle,
@@ -292,10 +291,28 @@ namespace Xdows_Security.Views
                 settings.Values["ModelScan"] = true;
             }
 
-            if (!settings.Values.ContainsKey("ModelFlashScan"))
+            if (!settings.Values.ContainsKey("ModelMode"))
             {
-                settings.Values["ModelFlashScan"] = false;
+                settings.Values["ModelMode"] = "Standard";
             }
+
+            try
+            {
+                string modelMode = settings.Values.TryGetValue("ModelMode", out object? modeRaw) && modeRaw is string ms ? ms : "Standard";
+                ComboBox modelCombo = this.FindName("ModelModeComboBox") as ComboBox ?? new();
+                if (modelCombo != null)
+                {
+                    foreach (Object obj in modelCombo.Items)
+                    {
+                        if (obj is ComboBoxItem item && (item.Tag as String) == modelMode)
+                        {
+                            modelCombo.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch { }
 
             if (!settings.Values.ContainsKey("Process_CompatibilityMode"))
             {
@@ -410,6 +427,16 @@ namespace Xdows_Security.Views
                     }
                 }
                 catch { }
+            }
+        }
+
+        private void ModelModeComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        {
+            if (IsInitialize) return;
+            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
+            {
+                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                settings.Values["ModelMode"] = tag;
             }
         }
 
@@ -738,7 +765,15 @@ namespace Xdows_Security.Views
                 toggle.IsOn = !toggle.IsOn;
                 toggle.Toggled += StartupToggle_Toggled;
                 LogText.AddNewLog(LogText.LogLevel.ERROR, "Settings", "Failed to change startup setting");
+                return;
             }
+
+            try
+            {
+                var settings = ApplicationData.Current.LocalSettings;
+                settings.Values["AutoEnableStartup"] = toggle.IsOn;
+            }
+            catch { }
         }
 
         private void ContextMenuScanToggle_Toggled(Object sender, RoutedEventArgs e)

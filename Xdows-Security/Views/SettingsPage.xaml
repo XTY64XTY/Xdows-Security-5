@@ -165,9 +165,13 @@
                     <ToggleSwitch x:Name="ModelScanToggle" Tag="ModelScan" Toggled="Toggled_SaveToggleData" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Flash"
+                           l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE945;}">
-                            <ToggleSwitch x:Name="ModelFlashScanToggle" Tag="ModelFlashScan" Toggled="Toggled_SaveToggleData" />
+                            <ComboBox x:Name="ModelModeComboBox" SelectionChanged="ModelModeComboBox_SelectionChanged">
+                                <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode_Flash" Tag="Flash" />
+                                <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode_Standard" Tag="Standard" />
+                                <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode_Pro" Tag="Pro" />
+                            </ComboBox>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

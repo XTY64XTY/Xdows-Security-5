@@ -102,8 +102,8 @@ namespace Xdows_Security
         private static readonly InterceptCallBack interceptCallBack = (isSucceed, path, type) =>
         {
             LogText.AddNewLog(LogText.LogLevel.WARN, "Protection", isSucceed
-                ? $"InterceptProcess：{Path.GetFileName(path)}"
-                : $"Cannot InterceptProcess：{Path.GetFileName(path)}");
+                ? $"InterceptProcess：{path}"
+                : $"Cannot InterceptProcess：{path}");
             // string content = isSucceed ? "已发现威胁" : "无法处理威胁";
             // content = $"{AppInfo.AppName} {content}.{Environment.NewLine}相关数据：{Path.GetFileName(path)}{Environment.NewLine}单击此通知以查看详细信息";
             _ = (App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
