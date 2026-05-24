@@ -1484,7 +1484,16 @@ namespace Xdows_Security.Views
             var enginesLog = "Use";
             if (UseLocalScan) enginesLog += DeepScan ? " LocalScan-DeepScan" : " LocalScan";
             if (UseCloudScan) enginesLog += " CloudScan";
-            if (UseModelScan) enginesLog += " Xdows-Model";
+            if (UseModelScan)
+            {
+                string modeTag = Helper.ScanEngine.ModelEngineScan.Mode switch
+                {
+                    Xdows_Model_Invoker.ModelMode.Flash => "Flash",
+                    Xdows_Model_Invoker.ModelMode.Pro => "Pro",
+                    _ => "Standard"
+                };
+                enginesLog += $" Xdows-Model-{modeTag}";
+            }
             if (UseInfectorCleaner) enginesLog += " InfectorCleaner";
             if (UseVirusFamily) enginesLog += " VirusFamily";
             if (UseExactRule) enginesLog += " ExactRule";
@@ -1645,10 +1654,10 @@ namespace Xdows_Security.Views
                                         {
                                             var hashEntries = batch.Select(b => (b.filePath, b.sha256)).ToList();
                                             var batchResults = await Helper.ScanEngine.ExactRuleEngineBatchScanHashesAsync(hashEntries, token);
-                                            foreach (var b in batch)
+                                            foreach (var (filePath, sha256, tcs) in batch)
                                             {
-                                                if (batchResults.TryGetValue(b.filePath, out var r)) b.tcs.TrySetResult(r);
-                                                else b.tcs.TrySetResult((null, null));
+                                                if (batchResults.TryGetValue(filePath, out var r)) tcs.TrySetResult(r);
+                                                else tcs.TrySetResult((null, null));
                                             }
                                         }
                                         catch (OperationCanceledException)
@@ -1660,7 +1669,7 @@ namespace Xdows_Security.Views
                                         catch (Exception ex)
                                         {
                                             LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleBatchFailed", $"Batch of {batch.Count} files failed: {ex.Message}");
-                                            foreach (var b in batch) b.tcs.TrySetResult((null, null));
+                                            foreach (var (filePath, sha256, tcs) in batch) tcs.TrySetResult((null, null));
                                         }
                                         batch.Clear();
                                     }
@@ -1694,7 +1703,7 @@ namespace Xdows_Security.Views
                                 }
                                 catch (OperationCanceledException)
                                 {
-                                    foreach (var b in batch) b.tcs.TrySetCanceled(token);
+                                    foreach (var (filePath, sha256, tcs) in batch) tcs.TrySetCanceled(token);
                                 }
                                 catch (Exception ex)
                                 {
