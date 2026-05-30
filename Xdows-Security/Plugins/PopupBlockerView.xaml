@@ -36,7 +36,7 @@
                                     PlaceholderText="搜索规则..."
                                     HorizontalAlignment="Center"
                                     MinWidth="240"
-                                    Margin="16,12,0,0"
+                                    Margin="16,12,0,8"
                                     TextChanged="PopupSearchBox_TextChanged"
                                     QueryIcon="Find"/>
                 </Grid>
