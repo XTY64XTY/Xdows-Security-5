@@ -197,11 +197,8 @@ namespace Xdows_Security
 
         private void UnregisterSystemThemeListener()
         {
-            if (_uiSettings != null)
-            {
-                _uiSettings.ColorValuesChanged -= OnSystemThemeChanged;
-                _uiSettings = null;
-            }
+            _uiSettings?.ColorValuesChanged -= OnSystemThemeChanged;
+            _uiSettings = null;
         }
 
         private void OnSystemThemeChanged(UISettings sender, object args)
@@ -219,10 +216,7 @@ namespace Xdows_Security
 
                 UpdateBackdropTheme();
 
-                if (_controller != null)
-                {
-                    _controller.SetSystemBackdropConfiguration(_config);
-                }
+                _controller?.SetSystemBackdropConfiguration(_config);
 
                 var settings = ApplicationData.Current.LocalSettings;
                 var backdropType = settings.Values["AppBackdrop"] as string ?? "Mica";
@@ -244,8 +238,7 @@ namespace Xdows_Security
                     }
                 }
 
-                var titleBar = App.MainWindow?.AppWindow.TitleBar;
-                if (titleBar != null)
+                if (App.MainWindow?.AppWindow.TitleBar is { } titleBar)
                 {
                     titleBar.ButtonForegroundColor = GetSystemTheme() == ApplicationTheme.Light
                         ? Windows.UI.Color.FromArgb(255, 0, 0, 0)

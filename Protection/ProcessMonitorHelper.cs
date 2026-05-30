@@ -4,19 +4,21 @@ using System.Text;
 
 namespace Protection
 {
-    internal static class ProcessMonitorHelper
+    internal static partial class ProcessMonitorHelper
     {
-        [DllImport("psapi.dll", SetLastError = true)]
-        private static extern bool EnumProcesses(int[] lpidProcess, int cb, out int lpcbNeeded);
+        [LibraryImport("psapi.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool EnumProcesses([In, Out] int[] lpidProcess, int cb, out int lpcbNeeded);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, int dwProcessId);
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        private static partial nint OpenProcess(uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, int dwProcessId);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hObject);
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool CloseHandle(nint hObject);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool QueryFullProcessImageNameW(IntPtr hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
+        private static extern bool QueryFullProcessImageNameW(nint hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
 
         private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
@@ -29,18 +31,18 @@ namespace Protection
                 throw new Win32Exception();
 
             int returnedCount = neededBytes / 4;
-            return pids.Take(returnedCount).Where(id => id > 0).Distinct().ToList();
+            return [.. pids.Take(returnedCount).Where(id => id > 0).Distinct()];
         }
 
         public static string GetProcessPathById(int pid)
         {
-            IntPtr hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
-            if (hProcess == IntPtr.Zero)
+            nint hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid);
+            if (hProcess == 0)
                 return string.Empty;
 
             try
             {
-                StringBuilder path = new StringBuilder(4096);
+                StringBuilder path = new(4096);
                 uint size = (uint)path.Capacity;
 
                 if (QueryFullProcessImageNameW(hProcess, 0, path, ref size))

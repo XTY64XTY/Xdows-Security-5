@@ -63,7 +63,7 @@ namespace Protection
 
                         return true;
                     }
-                    catch
+                    catch (Exception)
                     {
                         session?.Dispose();
                         session = null;
@@ -109,7 +109,7 @@ namespace Protection
                 while (isRunning)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(30));
-                    
+
                     var cutoff = DateTime.UtcNow - _dedupWindow;
                     foreach (var key in _recentProcesses.Where(x => x.Value < cutoff).Select(x => x.Key).ToList())
                     {
@@ -138,7 +138,7 @@ namespace Protection
                         return;
 
                     var now = DateTime.UtcNow;
-                    
+
                     if (_recentProcesses.TryGetValue(data.ProcessID, out var lastSeen))
                     {
                         if (now - lastSeen < _dedupWindow)
@@ -160,7 +160,7 @@ namespace Protection
                             _processPathCache[data.ProcessID] = (path, now);
                         }
                     }
-                    catch
+                    catch (Exception)
                     {
                         return;
                     }
@@ -193,15 +193,19 @@ namespace Protection
                                 _ = QuarantineManager.AddToQuarantine(path, result);
                                 interceptCallBack(true, path, Name);
                             }
-                            catch
+                            catch (Exception)
                             {
                                 interceptCallBack(false, path, Name);
                             }
                         }
-                        catch { }
+                        catch (Exception)
+                        {
+                        }
                     });
                 }
-                catch { }
+                catch (Exception)
+                {
+                }
             }
         }
     }

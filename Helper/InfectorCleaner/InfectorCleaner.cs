@@ -48,7 +48,7 @@ namespace Helper.InfectorCleaner
                 Byte[] data = File.ReadAllBytes(filePath);
                 return AnalyzePeStructureFromBytes(data);
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }
@@ -515,7 +515,10 @@ namespace Helper.InfectorCleaner
 
             try
             {
-                File.WriteAllBytes(filePath, peInfo.Data);
+                string tempFile = filePath + ".cleaned";
+                File.WriteAllBytes(tempFile, peInfo.Data);
+                File.Copy(tempFile, filePath, true);
+                File.Delete(tempFile);
                 cleaningLog.Add($"  - Repaired file saved: {filePath}");
             }
             catch (Exception ex)

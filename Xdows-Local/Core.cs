@@ -12,12 +12,12 @@ namespace Xdows_Local
             public String[]? ExportsName;
         }
 
-        public static String ScanAsync(String path, Boolean deep, Boolean extraData)
+        public static String Scan(String path, Boolean deep, Boolean extraData)
         {
             if (!File.Exists(path)) return String.Empty;
             try
             {
-                const Int32 BufferSize = 65536; // 64KB buffer
+                const Int32 BufferSize = 65536;
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize);
                 using var ms = new MemoryStream();
                 var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
@@ -36,8 +36,10 @@ namespace Xdows_Local
                 Byte[] fileBytes = ms.ToArray();
                 return ScanFromBytes(path, fileBytes, deep, extraData);
             }
-            catch { return String.Empty; }
+            catch (Exception) { return String.Empty; }
         }
+
+        public static String ScanAsync(String path, Boolean deep, Boolean extraData) => Scan(path, deep, extraData);
 
         public static String ScanFromBytes(String path, Byte[] fileBytes, Boolean deep, Boolean extraData)
         {
@@ -54,10 +56,7 @@ namespace Xdows_Local
                     }
                     return String.Empty;
                 }
-                catch
-                {
-                    return String.Empty;
-                }
+                catch (Exception) { return String.Empty; }
             }
 
             PeFile peFile = new(fileBytes);

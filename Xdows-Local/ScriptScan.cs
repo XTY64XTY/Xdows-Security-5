@@ -5,36 +5,36 @@ namespace Xdows_Local
 {
     public static partial class ScriptScan
     {
-        private static readonly Regex RxDownload = new(@"(download|wget|curl|invoke-webrequest|fetch\s*\()", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxUrl = new(@"(http|https|ftp)://", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxFileOp = new(@"(delete|remove|copy|move|create\s+file|write\s+file)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxRegistry = new(@"(reg\s+|registry|regedit|reg.exe)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxProcessOp = new(@"(start-process|createobject|wscript.shell|shell.application)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPersistence = new(@"(startup|runonce|autorun|msconfig)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxMemz = new(@"(nyancat|rainbow|memz|trollface)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxDestruction = new(@"(delete\s+.*system|format\s+|shutdown|reboot|blue\s+screen)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPsBypass = new(@"-executionpolicy\s+bypass", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPsHidden = new(@"-windowstyle\s+hidden", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPsReflection = new(@"(reflection|assembly.load|loadfrom)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPsWinApi = new(@"(add-type|dllimport|getmodulehandle)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPsCom = new(@"new-object\s+-comobject", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxVbWscript = new(@"createobject\s*\(\s*""wscript.shell""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxVbFso = new(@"createobject\s*\(\s*""scripting.filesystemobject""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxVbShellApp = new(@"createobject\s*\(\s*""shell.application""", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxJsActiveX = new(@"new\s+activexobject", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxJsWscript = new(@"wscript.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxBatEchoOff = new(@"@echo\s+off", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxBatPs = new(@"powershell\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxBatCertutil = new(@"certutil\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxBatBitsadmin = new(@"bitsadmin\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxBatDestruction = new(@"(del\s+[/sfq]|format\s+|rmdir\s+[/sq]|shutdown\s+[/sfr])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxBatReg = new(@"(reg\s+(add|delete)|regedit)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPyOs = new(@"os.system\s*\(", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPySubprocess = new(@"subprocess.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPyUrllib = new(@"urllib.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxPyRequests = new(@"requests.", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxShDownload = new(@"(wget|curl)\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex RxShChmod = new(@"chmod\s+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex RxDownload = new(@"(download|wget|curl|invoke-webrequest|fetch\s*\()", RegexOptions.IgnoreCase);
+        private static readonly Regex RxUrl = new(@"(http|https|ftp)://", RegexOptions.IgnoreCase);
+        private static readonly Regex RxFileOp = new(@"(delete|remove|copy|move|create\s+file|write\s+file)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxRegistry = new(@"(reg\s+|registry|regedit|reg.exe)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxProcessOp = new(@"(start-process|createobject|wscript.shell|shell.application)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPersistence = new(@"(startup|runonce|autorun|msconfig)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxMemz = new(@"(nyancat|rainbow|memz|trollface)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxDestruction = new(@"(delete\s+.*system|format\s+|shutdown|reboot|blue\s+screen)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPsBypass = new(@"-executionpolicy\s+bypass", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPsHidden = new(@"-windowstyle\s+hidden", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPsReflection = new(@"(reflection|assembly.load|loadfrom)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPsWinApi = new(@"(add-type|dllimport|getmodulehandle)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPsCom = new(@"new-object\s+-comobject", RegexOptions.IgnoreCase);
+        private static readonly Regex RxVbWscript = new(@"createobject\s*\(\s*""wscript.shell""", RegexOptions.IgnoreCase);
+        private static readonly Regex RxVbFso = new(@"createobject\s*\(\s*""scripting.filesystemobject""", RegexOptions.IgnoreCase);
+        private static readonly Regex RxVbShellApp = new(@"createobject\s*\(\s*""shell.application""", RegexOptions.IgnoreCase);
+        private static readonly Regex RxJsActiveX = new(@"new\s+activexobject", RegexOptions.IgnoreCase);
+        private static readonly Regex RxJsWscript = new(@"wscript.", RegexOptions.IgnoreCase);
+        private static readonly Regex RxBatEchoOff = new(@"@echo\s+off", RegexOptions.IgnoreCase);
+        private static readonly Regex RxBatPs = new(@"powershell\s+", RegexOptions.IgnoreCase);
+        private static readonly Regex RxBatCertutil = new(@"certutil\s+", RegexOptions.IgnoreCase);
+        private static readonly Regex RxBatBitsadmin = new(@"bitsadmin\s+", RegexOptions.IgnoreCase);
+        private static readonly Regex RxBatDestruction = new(@"(del\s+[/sfq]|format\s+|rmdir\s+[/sq]|shutdown\s+[/sfr])", RegexOptions.IgnoreCase);
+        private static readonly Regex RxBatReg = new(@"(reg\s+(add|delete)|regedit)", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPyOs = new(@"os.system\s*\(", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPySubprocess = new(@"subprocess.", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPyUrllib = new(@"urllib.", RegexOptions.IgnoreCase);
+        private static readonly Regex RxPyRequests = new(@"requests.", RegexOptions.IgnoreCase);
+        private static readonly Regex RxShDownload = new(@"(wget|curl)\s+", RegexOptions.IgnoreCase);
+        private static readonly Regex RxShChmod = new(@"chmod\s+", RegexOptions.IgnoreCase);
         public static (Int32 score, String extra) ScanScriptFile(String filePath, Byte[] fileContent)
         {
             return ScanScriptFileManaged(filePath, fileContent);
@@ -165,7 +165,7 @@ namespace Xdows_Local
                     extra.Add("DownloadBehavior");
                 }
             }
-            catch
+            catch (Exception)
             {
                 score += 10;
                 extra.Add("CorruptedShortcut");
@@ -196,7 +196,7 @@ namespace Xdows_Local
                     _ => 0
                 };
             }
-            catch
+            catch (Exception)
             {
                 score += 10;
                 extra.Add("CorruptedScript");

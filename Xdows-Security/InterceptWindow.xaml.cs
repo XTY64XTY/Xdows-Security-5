@@ -37,7 +37,7 @@ namespace Xdows_Security
             manager.IsTitleBarVisible = false;
             manager.IsAlwaysOnTop = true;
             this.SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
-            _originalFilePath = setting.path;
+            _originalFilePath = setting.Path;
 
             RootPanel.Loaded += (_, _) =>
             {
@@ -56,7 +56,7 @@ namespace Xdows_Security
             FilePathText.Text = _originalFilePath;
             DetectionTimeText.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
-            if (setting.interceptWindowButtonType == InterceptWindowButtonType.RestoreOrTrust)
+            if (setting.InterceptWindowButtonType == InterceptWindowButtonType.RestoreOrTrust)
             {
                 ReleaseButton.Visibility = Visibility.Collapsed;
             }
@@ -64,7 +64,7 @@ namespace Xdows_Security
             {
                 TrustButton.Visibility = Visibility.Collapsed;
             }
-            if (setting.interceptWindowButtonType == InterceptWindowButtonType.ReminderOnly)
+            if (setting.InterceptWindowButtonType == InterceptWindowButtonType.ReminderOnly)
             {
                 ReleaseButton.Visibility = Visibility.Collapsed;
             }

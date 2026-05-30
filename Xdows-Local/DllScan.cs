@@ -6,9 +6,13 @@ namespace Xdows_Local
     {
         private static readonly string[] WhitelistPatterns = { "Py", "Scan", "chromium", "blink", "Qt" };
         private static readonly string[] BlacklistPatterns = { "Hook", "Virus", "Bypass" };
+        private static readonly string[] WhitelistPatternsLower = WhitelistPatterns.Select(p => p.ToLowerInvariant()).ToArray();
+        private static readonly string[] BlacklistPatternsLower = BlacklistPatterns.Select(p => p.ToLowerInvariant()).ToArray();
 
         public static bool Scan(PEInfo info)
         {
+            ArgumentNullException.ThrowIfNull(info);
+
             if (info.ExportsName == null || info.ExportsName.Length == 0)
                 return false;
 
@@ -19,11 +23,10 @@ namespace Xdows_Local
 
                 string exportNameLower = exportName.ToLowerInvariant();
 
-                // 检查白名单
                 bool isWhitelisted = false;
-                foreach (var pattern in WhitelistPatterns)
+                foreach (var pattern in WhitelistPatternsLower)
                 {
-                    if (exportNameLower.Contains(pattern.ToLowerInvariant()))
+                    if (exportNameLower.Contains(pattern))
                     {
                         isWhitelisted = true;
                         break;
@@ -33,10 +36,9 @@ namespace Xdows_Local
                 if (isWhitelisted)
                     continue;
 
-                // 检查黑名单
-                foreach (var pattern in BlacklistPatterns)
+                foreach (var pattern in BlacklistPatternsLower)
                 {
-                    if (exportNameLower.Contains(pattern.ToLowerInvariant()))
+                    if (exportNameLower.Contains(pattern))
                     {
                         return true;
                     }

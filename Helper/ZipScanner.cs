@@ -29,7 +29,7 @@ namespace Helper
                     ArrayPool<Byte>.Shared.Return(buffer);
                 }
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -67,7 +67,7 @@ namespace Helper
                                     }
                                 }
                             }
-                            catch
+                            catch (Exception)
                             {
                                 var data = ReadEntryData(entry);
                                 if (data != null)
@@ -92,7 +92,7 @@ namespace Helper
                         }
                     }
                 }
-                catch { }
+                catch (Exception) { }
             });
 
             return entries;
@@ -115,7 +115,7 @@ namespace Helper
                     ArrayPool<Byte>.Shared.Return(buffer);
                 }
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -131,7 +131,7 @@ namespace Helper
                 var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
                 try
                 {
-                    var ms = new MemoryStream();
+                    using var ms = new MemoryStream();
                     Int32 bytesRead;
                     while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
                     {
@@ -146,7 +146,7 @@ namespace Helper
                     ArrayPool<Byte>.Shared.Return(buffer);
                 }
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }
@@ -165,7 +165,7 @@ namespace Helper
                     if (entry.Length > MaxEntrySize) continue;
 
                     String fullPath = entry.FullName.Replace('/', '\\');
-                    String entryPath = Path.GetFileName(fullPath);
+                    String entryPath = parentPath + "\\" + fullPath;
                     
                     var data = ReadEntryData(entry);
                     if (data != null)
@@ -174,7 +174,7 @@ namespace Helper
                     }
                 }
             }
-            catch { }
+            catch (Exception) { }
             return entries;
         }
 
@@ -182,10 +182,9 @@ namespace Helper
         {
             return await Task.Run(() =>
             {
+                String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 try
                 {
-                    String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-
                     using (var readArchive = ZipFile.OpenRead(zipPath))
                     using (var createArchive = ZipFile.Open(tempPath, ZipArchiveMode.Create))
                     {
@@ -205,8 +204,9 @@ namespace Helper
                     File.Move(tempPath, zipPath);
                     return true;
                 }
-                catch
+                catch (Exception)
                 {
+                    try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
                     return false;
                 }
             });
@@ -216,12 +216,12 @@ namespace Helper
         {
             return await Task.Run(() =>
             {
+                String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 try
                 {
                     var entriesToDelete = new HashSet<String>(
                         entryPaths.Select(p => p.Replace('\\', '/')),
                         StringComparer.OrdinalIgnoreCase);
-                    String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                     Int32 deletedCount = 0;
 
                     using (var readArchive = ZipFile.OpenRead(zipPath))
@@ -246,8 +246,9 @@ namespace Helper
                     File.Move(tempPath, zipPath);
                     return deletedCount;
                 }
-                catch
+                catch (Exception)
                 {
+                    try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
                     return 0;
                 }
             });
@@ -271,7 +272,7 @@ namespace Helper
                     }
                     return null;
                 }
-                catch
+                catch (Exception)
                 {
                     return null;
                 }
@@ -338,7 +339,7 @@ namespace Helper
                                     ArrayPool<Byte>.Shared.Return(buffer);
                                 }
                             }
-                            catch { }
+                            catch (Exception) { }
                         }
                         return null;
                     }
@@ -356,7 +357,7 @@ namespace Helper
                         return null;
                     }
                 }
-                catch
+                catch (Exception)
                 {
                     return null;
                 }

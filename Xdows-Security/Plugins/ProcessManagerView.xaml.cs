@@ -13,6 +13,60 @@ using System.Threading.Tasks;
 
 namespace Xdows_Security.Views
 {
+    internal static partial class NativeMethods
+    {
+        [LibraryImport("kernel32.dll")]
+        public static partial nint OpenThread(uint dwDesiredAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, uint dwThreadId);
+
+        [LibraryImport("kernel32.dll")]
+        public static partial uint SuspendThread(nint hThread);
+
+        [LibraryImport("kernel32.dll")]
+        public static partial uint ResumeThread(nint hThread);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool CloseHandle(nint hHandle);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        public static partial nint OpenProcess(uint processAccess, [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool QueryFullProcessImageNameW(nint hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool ReadProcessMemory(nint hProcess, nint lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
+
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static partial bool IsWow64Process(nint hProcess, [MarshalAs(UnmanagedType.Bool)] out bool wow64Process);
+
+        [LibraryImport("ntdll.dll")]
+        public static partial int NtQueryInformationProcess(nint processHandle, int processInformationClass, ref PROCESS_BASIC_INFORMATION processInformation, uint processInformationLength, out uint returnLength);
+
+        [LibraryImport("ntdll.dll")]
+        public static partial int NtQueryInformationProcess(nint processHandle, int processInformationClass, ref nint processInformation, uint processInformationLength, out uint returnLength);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct PROCESS_BASIC_INFORMATION
+        {
+            public nint Reserved1;
+            public nint PebBaseAddress;
+            public nint Reserved2_0;
+            public nint Reserved2_1;
+            public nint UniqueProcessId;
+            public nint InheritedFromUniqueProcessId;
+        }
+
+        public const uint THREAD_SUSPEND_RESUME = 0x0002;
+        public const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+        public const uint PROCESS_QUERY_INFORMATION = 0x0400;
+        public const int ProcessBasicInformation = 0;
+        public const int ProcessCommandLineInformation = 60;
+    }
+
     public sealed partial class ProcessManagerView : UserControl
     {
         private List<ProcessInfoEx> _allProcesses = [];
@@ -160,7 +214,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private TreeViewNode? CreateTreeNode(ProcessInfoEx process, Dictionary<uint, List<ProcessInfoEx>> childrenMap, HashSet<uint> visited)
+        private static TreeViewNode? CreateTreeNode(ProcessInfoEx process, Dictionary<uint, List<ProcessInfoEx>> childrenMap, HashSet<uint> visited)
         {
             if (!visited.Add(process.Id))
                 return null;
@@ -254,25 +308,25 @@ namespace Xdows_Security.Views
 
             if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
 
-            var result = await Task.Run(() =>
+            var (success, error) = await Task.Run(() =>
             {
                 try
                 {
                     using var process = Process.GetProcessById((int)info.Id);
                     process.Kill();
                     process.WaitForExit(5000);
-                    return (Success: true, Error: "");
+                    return (true, "");
                 }
                 catch (Exception ex)
                 {
-                    return (Success: false, Error: ex.Message);
+                    return (false, ex.Message);
                 }
             });
 
-            if (result.Success)
+            if (success)
                 await ShowDialogAsync("结束成功", $"进程 {info.Name} 已成功结束。");
             else
-                await ShowDialogAsync("结束失败", $"不能结束这个进程，因为 {result.Error}。");
+                await ShowDialogAsync("结束失败", $"不能结束这个进程，因为 {error}。");
 
             await RefreshProcesses();
         }
@@ -282,23 +336,23 @@ namespace Xdows_Security.Views
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
 
-            var result = await Task.Run(() =>
+            var (success, error) = await Task.Run(() =>
             {
                 try
                 {
                     SuspendProcess((int)info.Id);
-                    return (Success: true, Error: "");
+                    return (true, "");
                 }
                 catch (Exception ex)
                 {
-                    return (Success: false, Error: ex.Message);
+                    return (false, ex.Message);
                 }
             });
 
-            if (result.Success)
+            if (success)
                 await ShowDialogAsync("挂起成功", $"进程 {info.Name} 已挂起。");
             else
-                await ShowDialogAsync("挂起失败", $"无法挂起进程: {result.Error}");
+                await ShowDialogAsync("挂起失败", $"无法挂起进程: {error}");
         }
 
         private async void Resume_Click(object sender, RoutedEventArgs e)
@@ -306,23 +360,23 @@ namespace Xdows_Security.Views
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
 
-            var result = await Task.Run(() =>
+            var (success, error) = await Task.Run(() =>
             {
                 try
                 {
                     ResumeProcess((int)info.Id);
-                    return (Success: true, Error: "");
+                    return (true, "");
                 }
                 catch (Exception ex)
                 {
-                    return (Success: false, Error: ex.Message);
+                    return (false, ex.Message);
                 }
             });
 
-            if (result.Success)
+            if (success)
                 await ShowDialogAsync("恢复成功", $"进程 {info.Name} 已恢复。");
             else
-                await ShowDialogAsync("恢复失败", $"无法恢复进程: {result.Error}");
+                await ShowDialogAsync("恢复失败", $"无法恢复进程: {error}");
         }
 
         private async void ShowProcessDetail_Click(object sender, RoutedEventArgs e)
@@ -489,28 +543,16 @@ namespace Xdows_Security.Views
         private ElementTheme GetDialogTheme()
             => (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
 
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr OpenThread(uint dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint SuspendThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll")]
-        private static extern uint ResumeThread(IntPtr hThread);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hHandle);
-
         public static void SuspendProcess(int processId)
         {
             var process = Process.GetProcessById(processId);
             foreach (ProcessThread thread in process.Threads)
             {
-                var hThread = OpenThread(THREAD_SUSPEND_RESUME, false, (uint)thread.Id);
-                if (hThread != IntPtr.Zero)
+                var hThread = NativeMethods.OpenThread(NativeMethods.THREAD_SUSPEND_RESUME, false, (uint)thread.Id);
+                if (hThread != 0)
                 {
-                    SuspendThread(hThread);
-                    CloseHandle(hThread);
+                    _ = NativeMethods.SuspendThread(hThread);
+                    NativeMethods.CloseHandle(hThread);
                 }
             }
         }
@@ -520,16 +562,14 @@ namespace Xdows_Security.Views
             var process = Process.GetProcessById(processId);
             foreach (ProcessThread thread in process.Threads)
             {
-                var hThread = OpenThread(THREAD_SUSPEND_RESUME, false, (uint)thread.Id);
-                if (hThread != IntPtr.Zero)
+                var hThread = NativeMethods.OpenThread(NativeMethods.THREAD_SUSPEND_RESUME, false, (uint)thread.Id);
+                if (hThread != 0)
                 {
-                    ResumeThread(hThread);
-                    CloseHandle(hThread);
+                    _ = NativeMethods.ResumeThread(hThread);
+                    NativeMethods.CloseHandle(hThread);
                 }
             }
         }
-
-        private const uint THREAD_SUSPEND_RESUME = 0x0002;
     }
 
     public sealed class ProcessInfoEx
@@ -587,11 +627,11 @@ namespace Xdows_Security.Views
             if (_parentIdLoaded) return;
             _parentIdLoaded = true;
 
-            var hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, (int)Id);
-            if (hProcess == IntPtr.Zero)
-                hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, false, (int)Id);
+            var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, (int)Id);
+            if (hProcess == 0)
+                hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_INFORMATION, false, (int)Id);
 
-            if (hProcess != IntPtr.Zero)
+            if (hProcess != 0)
             {
                 try
                 {
@@ -599,7 +639,7 @@ namespace Xdows_Security.Views
                 }
                 finally
                 {
-                    CloseHandle(hProcess);
+                    NativeMethods.CloseHandle(hProcess);
                 }
             }
         }
@@ -614,12 +654,12 @@ namespace Xdows_Security.Views
 
             await Task.Run(() =>
             {
-                var hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, (int)Id);
+                var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, (int)Id);
 
-                if (hProcess == IntPtr.Zero)
-                    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, false, (int)Id);
+                if (hProcess == 0)
+                    hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_INFORMATION, false, (int)Id);
 
-                if (hProcess != IntPtr.Zero)
+                if (hProcess != 0)
                 {
                     try
                     {
@@ -631,60 +671,58 @@ namespace Xdows_Security.Views
                     }
                     finally
                     {
-                        CloseHandle(hProcess);
+                        NativeMethods.CloseHandle(hProcess);
                     }
                 }
             });
         }
 
-        private static uint QueryParentProcessId(IntPtr hProcess)
+        private static uint QueryParentProcessId(nint hProcess)
         {
             try
             {
-                var pbi = new PROCESS_BASIC_INFORMATION();
-                uint returnLength;
-                int status = NtQueryInformationProcess(hProcess, ProcessBasicInformation, ref pbi, (uint)Marshal.SizeOf(pbi), out returnLength);
+                var pbi = new NativeMethods.PROCESS_BASIC_INFORMATION();
+                int status = NativeMethods.NtQueryInformationProcess(hProcess, NativeMethods.ProcessBasicInformation, ref pbi, (uint)Marshal.SizeOf<NativeMethods.PROCESS_BASIC_INFORMATION>(), out _);
                 if (status == 0)
-                    return (uint)pbi.InheritedFromUniqueProcessId.ToInt32();
+                    return (uint)(int)pbi.InheritedFromUniqueProcessId;
             }
             catch { }
             return 0;
         }
 
-        private static string QueryFullProcessImageName(IntPtr hProcess)
+        private static string QueryFullProcessImageName(nint hProcess)
         {
             try
             {
                 uint size = 1024;
                 var builder = new StringBuilder((int)size);
-                if (QueryFullProcessImageNameW(hProcess, 0, builder, ref size))
+                if (NativeMethods.QueryFullProcessImageNameW(hProcess, 0, builder, ref size))
                     return builder.ToString();
             }
             catch { }
             return "";
         }
 
-        private static string QueryCommandLine(IntPtr hProcess)
+        private static string QueryCommandLine(nint hProcess)
         {
             try
             {
-                IntPtr commandLineInfo = IntPtr.Zero;
-                uint returnLength;
-                int status = NtQueryInformationProcess(hProcess, ProcessCommandLineInformation, ref commandLineInfo, (uint)IntPtr.Size, out returnLength);
+                nint commandLineInfo = 0;
+                int status = NativeMethods.NtQueryInformationProcess(hProcess, NativeMethods.ProcessCommandLineInformation, ref commandLineInfo, (uint)IntPtr.Size, out var returnLength);
 
-                if (status != 0 || commandLineInfo == IntPtr.Zero)
+                if (status != 0 || commandLineInfo == 0)
                     return "";
 
                 var buffer = new byte[returnLength];
-                if (ReadProcessMemory(hProcess, commandLineInfo, buffer, buffer.Length, out int bytesRead))
+                if (NativeMethods.ReadProcessMemory(hProcess, commandLineInfo, buffer, buffer.Length, out int bytesRead))
                 {
                     int length = BitConverter.ToUInt16(buffer, 0);
-                    IntPtr stringBuffer = IntPtr.Size == 8
-                        ? (IntPtr)BitConverter.ToInt64(buffer, 8)
+                    nint stringBuffer = IntPtr.Size == 8
+                        ? unchecked((nint)BitConverter.ToInt64(buffer, 8))
                         : BitConverter.ToInt32(buffer, 4);
 
                     var stringBytes = new byte[length];
-                    if (ReadProcessMemory(hProcess, stringBuffer, stringBytes, length, out bytesRead))
+                    if (NativeMethods.ReadProcessMemory(hProcess, stringBuffer, stringBytes, length, out bytesRead))
                         return Encoding.Unicode.GetString(stringBytes);
                 }
             }
@@ -692,13 +730,13 @@ namespace Xdows_Security.Views
             return "";
         }
 
-        private static bool QueryIsWow64(IntPtr hProcess)
+        private static bool QueryIsWow64(nint hProcess)
         {
             if (!Environment.Is64BitOperatingSystem)
                 return false;
             try
             {
-                return IsWow64Process(hProcess, out bool isWow64) && isWow64;
+                return NativeMethods.IsWow64Process(hProcess, out bool isWow64) && isWow64;
             }
             catch { }
             return false;
@@ -715,42 +753,5 @@ namespace Xdows_Security.Views
             return $"{bytes} B";
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hHandle);
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool QueryFullProcessImageNameW(IntPtr hProcess, uint dwFlags, StringBuilder lpExeName, ref uint lpdwSize);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, [Out] byte[] lpBuffer, int dwSize, out int lpNumberOfBytesRead);
-
-        [DllImport("kernel32.dll", SetLastError = true, CallingConvention = CallingConvention.Winapi)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool IsWow64Process([In] IntPtr hProcess, [Out] out bool wow64Process);
-
-        [DllImport("ntdll.dll")]
-        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref PROCESS_BASIC_INFORMATION processInformation, uint processInformationLength, out uint returnLength);
-
-        [DllImport("ntdll.dll")]
-        private static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass, ref IntPtr processInformation, uint processInformationLength, out uint returnLength);
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct PROCESS_BASIC_INFORMATION
-        {
-            public IntPtr Reserved1;
-            public IntPtr PebBaseAddress;
-            public IntPtr Reserved2_0;
-            public IntPtr Reserved2_1;
-            public IntPtr UniqueProcessId;
-            public IntPtr InheritedFromUniqueProcessId;
-        }
-
-        private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
-        private const uint PROCESS_QUERY_INFORMATION = 0x0400;
-        private const int ProcessBasicInformation = 0;
-        private const int ProcessCommandLineInformation = 60;
     }
 }

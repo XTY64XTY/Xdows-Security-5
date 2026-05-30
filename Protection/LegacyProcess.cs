@@ -47,7 +47,7 @@ namespace Protection
                     _cts.Cancel();
                     _monitorTask.Wait(2000);
                 }
-                catch { }
+                catch (Exception) { }
             }
             catch
             {
@@ -68,7 +68,8 @@ namespace Protection
             return _cts is { IsCancellationRequested: false };
         }
 
-        private static readonly List<int> _oldPids = [];
+        private static readonly HashSet<int> _oldPids = [];
+        private static readonly Lock _oldPidsLock = new();
 
         private static async Task MonitorNewProcessesLoop(InterceptCallBack interceptCallBack, CancellationToken token)
         {
@@ -77,51 +78,54 @@ namespace Protection
                 try
                 {
                     var currentPids = GetProcessIdList();
-                    if (_oldPids.Count == 0)
+                    lock (_oldPidsLock)
                     {
-                        _oldPids.AddRange(currentPids);
-                    }
-                    else
-                    {
-                        var newPids = currentPids.Except(_oldPids).Distinct().ToList();
-
-                        foreach (int pid in newPids)
+                        if (_oldPids.Count == 0)
                         {
-                            string path = ProcessPidToPath(pid);
-                            if (string.IsNullOrEmpty(path))
-                                continue;
+                            _oldPids.UnionWith(currentPids);
+                        }
+                        else
+                        {
+                            var newPids = currentPids.Except(_oldPids).Distinct().ToList();
 
-                            if (TrustManager.IsPathTrusted(path))
-                                continue;
-
-                            var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
-
-                            if (isVirus)
+                            foreach (int pid in newPids)
                             {
-                                try
+                                string path = ProcessPidToPath(pid);
+                                if (string.IsNullOrEmpty(path))
+                                    continue;
+
+                                if (TrustManager.IsPathTrusted(path))
+                                    continue;
+
+                                var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
+
+                                if (isVirus)
                                 {
-                                    using var proc = Process.GetProcessById(pid);
-                                    proc.Kill();
-                                    _ = QuarantineManager.AddToQuarantine(path, result);
-                                    interceptCallBack(true, path, Name);
-                                }
-                                catch
-                                {
-                                    interceptCallBack(false, path, Name);
+                                    try
+                                    {
+                                        using var proc = Process.GetProcessById(pid);
+                                        proc.Kill();
+                                        _ = QuarantineManager.AddToQuarantine(path, result);
+                                        interceptCallBack(true, path, Name);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        interceptCallBack(false, path, Name);
+                                    }
                                 }
                             }
-                        }
 
-                        _oldPids.Clear();
-                        _oldPids.AddRange(currentPids);
+                            _oldPids.Clear();
+                            _oldPids.UnionWith(currentPids);
+                        }
                     }
                 }
-                catch
+                catch (Exception)
                 {
                 }
                 try
                 {
-                    await Task.Delay(10, token);
+                    await Task.Delay(1000, token);
                 }
                 catch (OperationCanceledException)
                 {

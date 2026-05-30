@@ -1,6 +1,8 @@
+using System.Linq;
+
 namespace Xdows_Local
 {
-    public class RegistryScan
+    public static class RegistryScan
     {
         private static readonly string[] SuspiciousKeys = {
             @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
@@ -21,16 +23,18 @@ namespace Xdows_Local
             @"Software\Classes\ms-settings\Shell\Open\command"
         };
 
-        public string Scan(string key)
+        private static readonly string[] SuspiciousKeysLower = SuspiciousKeys.Select(k => k.ToLowerInvariant()).ToArray();
+
+        public static string Scan(string key)
         {
             if (string.IsNullOrWhiteSpace(key))
                 return string.Empty;
 
             string keyLower = key.ToLowerInvariant();
 
-            foreach (var suspiciousKey in SuspiciousKeys)
+            foreach (var suspiciousKey in SuspiciousKeysLower)
             {
-                if (keyLower.Contains(suspiciousKey.ToLowerInvariant()))
+                if (keyLower.Contains(suspiciousKey))
                 {
                     return "Xdows.Local.RegistryScan";
                 }

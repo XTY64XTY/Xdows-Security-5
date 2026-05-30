@@ -230,7 +230,7 @@ namespace Xdows_Security
                         string displayName = System.IO.Path.GetFileName(scanPath);
                         if (string.IsNullOrEmpty(displayName))
                             displayName = scanPath;
-                        await securityPage.StartScanAsync(displayName, ScanMode.More, new List<string> { scanPath });
+                        await securityPage.StartScanAsync(displayName, ScanMode.More, [scanPath]);
                     }
                     else
                     {

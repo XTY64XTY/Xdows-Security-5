@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Helper.InfectorCleaner
@@ -18,8 +19,8 @@ namespace Helper.InfectorCleaner
 
     public static class InfectorDetector
     {
-        private static readonly String[] s_peExtensions = [".exe", ".dll", ".sys", ".drv", ".ocx", ".scr"];
-        private static readonly String[] s_excludedExtensions = [".sys", ".dll", ".drv"];
+        private static readonly HashSet<String> s_peExtensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".drv", ".ocx", ".scr" };
+        private static readonly HashSet<String> s_excludedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".sys", ".dll", ".drv" };
 
         public static InfectorDetectionResult DetectInfector(String filePath)
         {
@@ -35,7 +36,7 @@ namespace Helper.InfectorCleaner
                 Byte[] data = File.ReadAllBytes(filePath);
                 return AnalyzePeInfector(data);
             }
-            catch
+            catch (Exception)
             {
                 return InfectorDetectionResult.Clean();
             }

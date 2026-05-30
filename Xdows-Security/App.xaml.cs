@@ -110,9 +110,9 @@ namespace Xdows_Security
             {
                 _ = InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
                 {
-                    path = path,
-                    isSucceed = isSucceed,
-                    interceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
+                    Path = path,
+                    IsSucceed = isSucceed,
+                    InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
                 });
             }));
             // Notifications.ShowNotification("发现威胁", content, path);
@@ -228,8 +228,8 @@ namespace Xdows_Security
 
     public static class Statistics
     {
-        public static int ScansQuantity = 0;
-        public static int VirusQuantity = 0;
+        internal static int ScansQuantity = 0;
+        internal static int VirusQuantity = 0;
     }
     public static class LogText
     {
@@ -572,8 +572,8 @@ namespace Xdows_Security
             {
                 //_ = InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
                 //{
-                //    path = "This is a file",
-                //    isSucceed = true,
+                //    Path = "This is a file",
+                //    IsSucceed = true,
                 //});// 测试用的捏（By Shiyi）
 
                 // Initialize sound effects

@@ -7,7 +7,7 @@ namespace Protection
         private static FileSystemWatcher[]? _watchers;
         private static InterceptCallBack? _toastCallBack;
         private static Thread? _monitorThread;
-        private static bool _isMonitoring = false;
+        private static volatile bool _isMonitoring = false;
         public const string Name = "Files";
         string IProtectionModel.Name => Name;
         public bool Run(InterceptCallBack toastCallBack)
@@ -49,7 +49,7 @@ namespace Protection
                     watcher.EnableRaisingEvents = false;
                     watcher.Dispose();
                 }
-                catch { return false; }
+                catch (Exception) { return false; }
             }
             if (_monitorThread != null && _monitorThread.IsAlive)
                 _monitorThread.Join();
@@ -59,7 +59,7 @@ namespace Protection
 
         public bool IsRun()
         {
-            try { return _isMonitoring; } catch { return false; }
+            return _isMonitoring;
         }
 
         private static void StartMonitoring()
@@ -111,7 +111,7 @@ namespace Protection
                                          FileShare.ReadWrite);
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -143,13 +143,13 @@ namespace Protection
                         _toastCallBack?.Invoke(true, e.FullPath, Name);
 
                     }
-                    catch
+                    catch (Exception)
                     {
                         _toastCallBack?.Invoke(false, e.FullPath, Name);
                     }
                 }
             }
-            catch { }
+            catch (Exception) { }
         }
     }
 }

@@ -77,10 +77,8 @@ namespace Xdows_Security
                 string jsonStr = Encoding.UTF8.GetString(messageData);
                 return JsonSerializer.Deserialize(jsonStr, JsonContext.Default.DictionaryStringObject);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"解码消息异常: {ex.Message}");
-                // 重新抛出异常，让调用方处理
                 throw;
             }
         }

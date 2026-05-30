@@ -18,6 +18,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ using Xdows_Security.Services;
 namespace Xdows_Security.Views
 {
     public enum ScanMode { Quick, Full, File, Folder, More }
-    public class VirusRow : INotifyPropertyChanged
+    public partial class VirusRow : INotifyPropertyChanged
     {
         private String _filePath = String.Empty;
         private String _virusName = String.Empty;
@@ -478,9 +479,8 @@ namespace Xdows_Security.Views
                     if (handled && zipPath != null && entryPath != null)
                     {
                         var entriesToDelete = new List<String>();
-                        if (_zipFileThreats.ContainsKey(zipPath))
+                        if (_zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                         {
-                            var threatsInZip = _zipFileThreats[zipPath];
                             foreach (var (EntryPath, VirusName) in threatsInZip)
                             {
                                 if (EntryPath == entryPath || threatsInZip.Any(t => t.EntryPath.StartsWith(entryPath + "\\")))
@@ -562,9 +562,8 @@ namespace Xdows_Security.Views
                     Boolean handled = false;
                     String actionTaken = "";
 
-                    if (zipPath != null && entryPath != null && _zipFileThreats.ContainsKey(zipPath))
+                    if (zipPath != null && entryPath != null && _zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                     {
-                        var threatsInZip = _zipFileThreats[zipPath];
                         var entriesToDelete = new List<String>();
                         Int32 quarantinedCount = 0;
 
@@ -585,8 +584,8 @@ namespace Xdows_Security.Views
                                     var fileData = await ZipScanner.ExtractEntryAsync(zipPath, entry);
                                     if (fileData != null && fileData.Length > 0)
                                     {
-                                        var threatInfo = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
-                                        String virusName = threatInfo.VirusName ?? row.VirusName ?? "Unknown";
+                                        var (_, threatVirusName) = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
+                                        String virusName = threatVirusName ?? row.VirusName ?? "Unknown";
                                         String sourcePath = Path.GetDirectoryName(zipPath) + "\\" + Path.GetFileName(entry);
 
                                         LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Quarantining {sourcePath} from {zipPath}, size: {fileData.Length} bytes");
@@ -779,9 +778,8 @@ namespace Xdows_Security.Views
                             String zipPath = displayPath[..(zipIndex + 4)];
                             String entryPath = displayPath[(zipIndex + 5)..];
 
-                            if (_zipFileThreats.ContainsKey(zipPath))
+                            if (_zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                             {
-                                var threatsInZip = _zipFileThreats[zipPath];
                                 var entriesToDelete = new List<String>();
                                 foreach (var (EntryPath, VirusName) in threatsInZip)
                                 {
@@ -974,7 +972,7 @@ namespace Xdows_Security.Views
             });
         }
 
-        private void UpdateScanStats(Int32 filesScanned, Int32 filesSafe, Int32 threatsFound)
+        private void UpdateScanStats(Int32 filesScanned, Int32 _, Int32 threatsFound)
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -1078,7 +1076,7 @@ namespace Xdows_Security.Views
                     {
                         if (!drive.IsReady || drive.DriveType is DriveType.CDRom or DriveType.Network)
                             continue;
-                        foreach (String file in SafeEnumerateFiles(drive.RootDirectory.FullName, new HashSet<String>(StringComparer.OrdinalIgnoreCase)))
+                        foreach (String file in SafeEnumerateFiles(drive.RootDirectory.FullName, [with(StringComparer.OrdinalIgnoreCase)]))
                             yield return file;
                     }
                     yield break;
@@ -1255,15 +1253,18 @@ namespace Xdows_Security.Views
         internal record ScanResult(String EngineName, String? VirusInfo, String? FamilyInfo = null);
 
         // Run configured scan engines against a single file and return the first detection (if any).
-        internal static async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? fileBytes, String? md5Hash,
+        internal static async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? _fileBytes, String? md5Hash,
             Boolean deepScan, Boolean extraData,
             Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan,
-            Boolean useInfectorCleaner, Boolean useVirusFamily,
+            Boolean _useInfectorCleaner, Boolean useVirusFamily,
             Helper.ScanEngine.ModelEngineScan? modelEngine,
             CancellationToken token)
         {
             try
             {
+                // Intentionally reference parameters that are not used in all code paths to avoid IDE0060 warnings.
+                _ = _fileBytes;
+                _ = _useInfectorCleaner;
                 token.ThrowIfCancellationRequested();
 
                 if (useCloudScan && md5Hash == null)
@@ -1396,7 +1397,7 @@ namespace Xdows_Security.Views
                             lock (_zipFileThreats)
                             {
                                 if (!_zipFileThreats.ContainsKey(zipPath))
-                                    _zipFileThreats[zipPath] = new List<(string, string)>();
+                                    _zipFileThreats[zipPath] = [];
                                 _zipFileThreats[zipPath].Add((entryPath, virusResult));
                             }
 
@@ -1554,7 +1555,7 @@ namespace Xdows_Security.Views
             for (int i = 0; i < _scanItems!.Count; i++)
                 UpdateScanItemStatus(i, Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting"), false, 0);
 
-            CurrentResults = new ObservableCollection<VirusRow>();
+            CurrentResults = [];
             _dispatcherQueue.TryEnqueue(() =>
             {
                 ScanProgress.IsIndeterminate = !showScanProgress;
@@ -1663,7 +1664,7 @@ namespace Xdows_Security.Views
                                         catch (OperationCanceledException)
                                         {
                                             LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleBatchCanceled", $"Batch of {batch.Count} files canceled");
-                                            foreach (var b in batch) b.tcs.TrySetCanceled(token);
+                                            foreach (var (_, _, tcs) in batch) tcs.TrySetCanceled(token);
                                             break;
                                         }
                                         catch (Exception ex)
@@ -1678,7 +1679,7 @@ namespace Xdows_Security.Views
                             catch (OperationCanceledException)
                             {
                                 LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleWorkerCanceled", "Batch worker canceled");
-                                foreach (var b in batch) b.tcs.TrySetCanceled(token);
+                                foreach (var (_, _, tcs) in batch) tcs.TrySetCanceled(token);
                             }
                             catch (ChannelClosedException)
                             {
@@ -1687,7 +1688,7 @@ namespace Xdows_Security.Views
                             catch (Exception ex)
                             {
                                 LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleWorkerError", ex.Message);
-                                foreach (var b in batch) b.tcs.TrySetResult((null, null));
+                                foreach (var (_, _, tcs) in batch) tcs.TrySetResult((null, null));
                             }
                             if (batch.Count > 0)
                             {
@@ -1695,10 +1696,10 @@ namespace Xdows_Security.Views
                                 {
                                     var hashEntries = batch.Select(b => (b.filePath, b.sha256)).ToList();
                                     var batchResults = await Helper.ScanEngine.ExactRuleEngineBatchScanHashesAsync(hashEntries, token);
-                                    foreach (var b in batch)
+                                    foreach (var (filePath, _, tcs) in batch)
                                     {
-                                        if (batchResults.TryGetValue(b.filePath, out var r)) b.tcs.TrySetResult(r);
-                                        else b.tcs.TrySetResult((null, null));
+                                        if (batchResults.TryGetValue(filePath, out var r)) tcs.TrySetResult(r);
+                                        else tcs.TrySetResult((null, null));
                                     }
                                 }
                                 catch (OperationCanceledException)
@@ -1708,7 +1709,7 @@ namespace Xdows_Security.Views
                                 catch (Exception ex)
                                 {
                                     LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ExactRuleFinalBatchFailed", $"Final batch of {batch.Count} files failed: {ex.Message}");
-                                    foreach (var b in batch) b.tcs.TrySetResult((null, null));
+                                    foreach (var (_, _, tcs) in batch) tcs.TrySetResult((null, null));
                                 }
                             }
                         }, token);
@@ -2150,8 +2151,8 @@ namespace Xdows_Security.Views
                 Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
                 if (zipIndex > 0)
                 {
-                    zipPath = displayPath.Substring(0, zipIndex + 4);
-                    entryPath = displayPath.Substring(zipIndex + 5);
+                    zipPath = displayPath[..(zipIndex + 4)];
+                    entryPath = displayPath[(zipIndex + 5)..];
                     isZipEntry = true;
                 }
 
@@ -2211,12 +2212,12 @@ namespace Xdows_Security.Views
                 {
                     if (String.IsNullOrWhiteSpace(template)) return template;
 
-                    var label = System.Text.RegularExpressions.Regex.Replace(template, "\\{[^}]*\\}", String.Empty);
-                    label = System.Text.RegularExpressions.Regex.Replace(label, "\\s+", " ").Trim();
-                    label = System.Text.RegularExpressions.Regex.Replace(label, "\\s+\\b(KB|MB|GB|TB|B)\\b\\s*$", String.Empty).Trim();
+                    var label = TemplateBraceRegex().Replace(template, String.Empty);
+                    label = WhitespaceRegex().Replace(label, " ").Trim();
+                    label = UnitSuffixRegex().Replace(label, String.Empty).Trim();
 
-                    while (label.EndsWith(":", StringComparison.Ordinal) || label.EndsWith("：", StringComparison.Ordinal))
-                        label = label.Substring(0, label.Length - 1).TrimEnd();
+                    while (label.EndsWith(':') || label.EndsWith('：'))
+                        label = label[..^1].TrimEnd();
 
                     return label;
                 }
@@ -2452,7 +2453,7 @@ namespace Xdows_Security.Views
                  Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysWOW64")
             ];
 
-            HashSet<String> extensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".com", ".scr", ".bat" };
+            HashSet<String> extensions = [with(StringComparer.OrdinalIgnoreCase), ".exe", ".dll", ".sys", ".com", ".scr", ".bat"];
 
             return criticalPaths
                    .Where(Directory.Exists)
@@ -2473,7 +2474,7 @@ namespace Xdows_Security.Views
 
         private static IEnumerable<String> EnumerateFullScanFiles()
         {
-            HashSet<String> scanned = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<String> scanned = [with(StringComparer.OrdinalIgnoreCase)];
 
             foreach (DriveInfo drive in DriveInfo.GetDrives())
             {
@@ -2520,5 +2521,14 @@ namespace Xdows_Security.Views
                 }
             }
         }
+
+        [GeneratedRegex("\\{[^}]*\\}")]
+        private static partial Regex TemplateBraceRegex();
+
+        [GeneratedRegex("\\s+")]
+        private static partial Regex WhitespaceRegex();
+
+        [GeneratedRegex("\\s+\\b(KB|MB|GB|TB|B)\\b\\s*$")]
+        private static partial Regex UnitSuffixRegex();
     }
 }

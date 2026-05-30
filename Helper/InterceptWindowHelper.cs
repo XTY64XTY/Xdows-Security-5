@@ -4,10 +4,10 @@ namespace Helper
     {
         public class InterceptWindowSetting
         {
-            public InterceptWindowButtonType interceptWindowButtonType;
-            public required string path;
-            public bool isSucceed;
-            public string? buttonName;
+            public InterceptWindowButtonType InterceptWindowButtonType { get; set; }
+            public required string Path { get; set; }
+            public bool IsSucceed { get; set; }
+            public string? ButtonName { get; set; }
         }
         public enum InterceptWindowButtonType
         {

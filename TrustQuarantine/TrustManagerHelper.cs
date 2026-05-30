@@ -18,7 +18,7 @@ namespace TrustQuarantine
                 var hashBytes = sha256.ComputeHash(stream);
                 return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }
@@ -36,7 +36,7 @@ namespace TrustQuarantine
                 var hashBytes = await sha256.ComputeHashAsync(stream);
                 return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }
@@ -56,7 +56,7 @@ namespace TrustQuarantine
                 string trustFile = Path.Combine(trustFolderPath, fileHash.ToLowerInvariant() + ".json");
                 return File.Exists(trustFile);
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -76,7 +76,7 @@ namespace TrustQuarantine
                 };
                 return JsonSerializer.Serialize(item);
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }

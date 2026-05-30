@@ -60,7 +60,7 @@ namespace Protection
 
                         return true;
                     }
-                    catch
+                    catch (Exception)
                     {
                         session?.Dispose();
                         session = null;
@@ -125,7 +125,7 @@ namespace Protection
                         using var process = Process.GetProcessById(data.ProcessID);
                         creatorProcessPath = process.MainModule?.FileName;
                     }
-                    catch
+                    catch (Exception)
                     {
                         return;
                     }
@@ -135,10 +135,12 @@ namespace Protection
 
                     HandleCreatedFile(filePath, data.ProcessID, interceptCallBack);
                 }
-                catch { }
+                catch (Exception)
+                {
+                }
             }
 
-            private static void HandleCreatedFile(string filePath, int creatorProcessId, InterceptCallBack interceptCallBack)
+            private static void HandleCreatedFile(string filePath, int creatorProcessId, InterceptCallBack _interceptCallBack)
             {
                 try
                 {
@@ -155,26 +157,30 @@ namespace Protection
                         {
                             TerminateProcessByPath(filePath);
                         }
-                        catch { }
+                        catch (Exception)
+                        {
+                        }
 
                         try
                         {
                             _ = QuarantineManager.AddToQuarantine(filePath, fileResult);
                             if (!alreadyNotified)
                             {
-                                interceptCallBack(true, filePath, Name);
+                                _interceptCallBack(true, filePath, Name);
                             }
                         }
-                        catch
+                        catch (Exception)
                         {
                             if (!alreadyNotified)
                             {
-                                interceptCallBack(false, filePath, Name);
+                                _interceptCallBack(false, filePath, Name);
                             }
                         }
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                }
             }
 
             private static void TerminateProcessByPath(string filePath)
@@ -182,21 +188,26 @@ namespace Protection
                 try
                 {
                     var processes = Process.GetProcesses();
-                    foreach (var proc in processes)
+                    try
                     {
-                        try
+                        foreach (var proc in processes)
                         {
-                            if (proc.MainModule?.FileName?.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true)
+                            try
                             {
-                                proc.Kill();
+                                if (proc.MainModule?.FileName?.Equals(filePath, StringComparison.OrdinalIgnoreCase) == true)
+                                {
+                                    proc.Kill();
+                                }
                             }
-                        }
-                        catch
-                        {
+                            catch (Exception) { }
                         }
                     }
+                    finally
+                    {
+                        foreach (var proc in processes) proc.Dispose();
+                    }
                 }
-                catch
+                catch (Exception)
                 {
                 }
             }

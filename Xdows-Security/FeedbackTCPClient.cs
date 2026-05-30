@@ -328,9 +328,7 @@ namespace Xdows_Security
                 catch (Exception ex)
                 {
                     retryCount++;
-                    System.Diagnostics.Debug.WriteLine($"发送消息失败 (尝试 {retryCount}/{maxRetries}): {ex.Message}");
 
-                    // 如果是最后一次尝试，更新状态并触发错误
                     if (retryCount >= maxRetries)
                     {
                         // 连接可能已断开，更新状态
@@ -357,29 +355,16 @@ namespace Xdows_Security
             {
                 try
                 {
-                    System.Diagnostics.Debug.WriteLine($"尝试重新连接 (尝试 {retryCount + 1}/{maxRetries})");
-
-                    // 清理现有连接
                     Cleanup();
 
                     // 尝试重新连接
                     bool connectSuccess = await ConnectAsync();
                     if (connectSuccess)
                     {
-                        System.Diagnostics.Debug.WriteLine("重新连接成功");
                         return true;
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"重连尝试失败 (尝试 {retryCount + 1}/{maxRetries}): {ex.Message}");
-
-                    // 如果是NullReferenceException，可能是_tcpClient被设置为null
-                    if (ex is NullReferenceException)
-                    {
-                        System.Diagnostics.Debug.WriteLine("检测到NullReferenceException，可能是_tcpClient为null");
-                    }
-                }
+                catch (Exception) { }
 
                 retryCount++;
 
@@ -390,7 +375,6 @@ namespace Xdows_Security
                 }
             }
 
-            System.Diagnostics.Debug.WriteLine("所有重连尝试均失败");
             return false;
         }
         private async Task HeartbeatLoopAsync()
@@ -449,10 +433,6 @@ namespace Xdows_Security
                         // 重置重试计数器
                         retryCount = 0;
 
-                        // 记录接收到的消息
-                        System.Diagnostics.Debug.WriteLine($"客户端接收到消息: {System.Text.Json.JsonSerializer.Serialize(message, JsonContext.Default.DictionaryStringObject)}");
-
-                        // 处理心跳包
                         if (message.TryGetValue("type", out var typeObj) && typeObj.ToString() == "pong")
                         {
                             continue;
@@ -463,47 +443,31 @@ namespace Xdows_Security
                     }
                     catch (Exception decodeEx)
                     {
-                        // 解码消息时出错，记录错误并继续尝试
-                        System.Diagnostics.Debug.WriteLine($"解码消息异常: {decodeEx.Message}");
-
-                        // 增加重试计数
                         retryCount++;
 
-                        // 如果达到最大重试次数，断开连接
                         if (retryCount >= maxRetries)
                         {
-                            System.Diagnostics.Debug.WriteLine($"达到最大重试次数 {maxRetries}，断开连接");
                             OnError?.Invoke(this, $"连续 {maxRetries} 次解码失败，断开连接");
                             break;
                         }
 
-                        // 如果是IO异常，说明连接可能已断开
                         if (decodeEx is System.IO.IOException)
                         {
-                            // 检查是否是"由于线程退出或应用程序请求，已中止 I/O 操作"这类异常
-                            if (decodeEx.Message.Contains("线程退出") || decodeEx.Message.Contains("应用程序请求"))
-                            {
-                                System.Diagnostics.Debug.WriteLine("检测到连接正常关闭，不显示错误");
-                            }
-                            else
+                            if (!decodeEx.Message.Contains("线程退出") && !decodeEx.Message.Contains("应用程序请求"))
                             {
                                 OnError?.Invoke(this, $"连接已断开: {decodeEx.Message}");
                             }
 
-                            // 清理连接资源
                             Cleanup();
                             break;
                         }
 
-                        // 等待600毫秒后重试
-                        System.Diagnostics.Debug.WriteLine($"解码失败，等待600毫秒后重试 ({retryCount}/{maxRetries})");
                         await Task.Delay(600, _cts.Token);
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"接收消息循环出错: {ex.Message}");
                 OnError?.Invoke(this, $"接收消息时出错: {ex.Message}");
                 // 不立即触发断开事件，让UI控制状态显示
                 // OnDisconnected?.Invoke(this, "连接已断开");

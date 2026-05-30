@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Web;
 using static Helper.Linker.CallBack;
 
@@ -12,15 +13,30 @@ namespace Helper
         {
             public delegate Task<string> InterceptCallBack(InterceptWindowHelper.InterceptWindowSetting interceptWindowSetting);
         }
-        public static async void Start(InterceptCallBack interceptCallBack)
+
+        private static TcpListener? s_listener;
+        private static CancellationTokenSource? s_cts;
+
+        public static async Task Start(InterceptCallBack interceptCallBack)
         {
-            var listener = new TcpListener(IPAddress.Any, 20000);
-            listener.Start();
-            while (true)
+            s_cts = new CancellationTokenSource();
+            s_listener = new TcpListener(IPAddress.Any, 20000);
+            s_listener.Start();
+            try
             {
-                var client = await listener.AcceptTcpClientAsync();
-                _ = HandleClientAsync(client, interceptCallBack);
+                while (!s_cts.IsCancellationRequested)
+                {
+                    var client = await s_listener.AcceptTcpClientAsync(s_cts.Token);
+                    _ = HandleClientAsync(client, interceptCallBack);
+                }
             }
+            catch (OperationCanceledException) { }
+        }
+
+        public static void Stop()
+        {
+            s_cts?.Cancel();
+            s_listener?.Stop();
         }
 
         private static async Task HandleClientAsync(TcpClient client, InterceptCallBack interceptCallBack)
@@ -36,6 +52,7 @@ namespace Helper
                 while (!string.IsNullOrEmpty(line = (await reader.ReadLineAsync()) ?? String.Empty)) { }
 
                 var parts = requestLine.Split(' ');
+                if (parts.Length == 0) return;
                 var method = parts[0];
                 var fullPath = parts.Length > 1 ? parts[1] : "/";
 
@@ -62,10 +79,10 @@ namespace Helper
                     var queryParams = HttpUtility.ParseQueryString(queryString);
                     string? pathParam = queryParams["path"];
 
-                    if (String.IsNullOrEmpty(pathParam))
+                    if (String.IsNullOrEmpty(pathParam) || pathParam.Contains(".."))
                     {
                         statusCode = 400;
-                        statusText = "Missing required parameter";
+                        statusText = "Invalid path parameter";
                     }
                     else
                     {
@@ -73,9 +90,9 @@ namespace Helper
                         statusText = "OK";
                         buttonName = await interceptCallBack.Invoke(new InterceptWindowHelper.InterceptWindowSetting
                         {
-                            path = pathParam,
-                            isSucceed = true,
-                            interceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.InterceptOrRelease
+                            Path = pathParam,
+                            IsSucceed = true,
+                            InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.InterceptOrRelease
                         });
                     }
                 }
@@ -84,9 +101,10 @@ namespace Helper
                     statusCode = 404;
                     statusText = "Not Found";
                 }
+
+                statusText = statusText.Replace("\r", "").Replace("\n", "");
                 jsonBody = GetJsonBody(statusCode, statusText, buttonName);
 
-                // 发送HTTP响应
                 var response = $@"
 HTTP/1.1 {statusCode} {statusText}
 Content-Type: application/json; charset=utf-8
@@ -102,13 +120,17 @@ Connection: close
 
         private static string GetJsonBody(int statusCode, string statusText, string? buttonName = null)
         {
-            string buttonJson = buttonName is null ? string.Empty : $",\n    \"ButtonReturn\": \"{buttonName}\"";
-            return $@"
-{{
-    ""statusCode"": {statusCode},
-    ""statusText"": ""{statusText}"",
-    ""timestamp"": ""{DateTime.Now:yyyy-MM-ddTHH:mm:ss.fffZ}""{buttonJson}
-}}";
+            using var ms = new MemoryStream();
+            using var writer = new Utf8JsonWriter(ms);
+            writer.WriteStartObject();
+            writer.WriteNumber("statusCode", statusCode);
+            writer.WriteString("statusText", statusText);
+            writer.WriteString("timestamp", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
+            if (buttonName != null)
+                writer.WriteString("ButtonReturn", buttonName);
+            writer.WriteEndObject();
+            writer.Flush();
+            return Encoding.UTF8.GetString(ms.ToArray());
         }
     }
 }

@@ -40,7 +40,7 @@ namespace TrustQuarantine
                         trustItems.Add(item);
                     }
                 }
-                catch
+                catch (Exception)
                 {
                 }
             }
@@ -75,7 +75,7 @@ namespace TrustQuarantine
 
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -104,7 +104,7 @@ namespace TrustQuarantine
 
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }

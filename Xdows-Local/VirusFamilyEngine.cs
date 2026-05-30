@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Xdows_Local
 {
@@ -211,15 +212,20 @@ namespace Xdows_Local
             Byte[] data;
             try
             {
-                data = File.ReadAllBytes(filePath);
-                if (data.Length > scanSize)
+                using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                Int32 toRead = (Int32)Math.Min(fs.Length, scanSize);
+                data = new Byte[toRead];
+                Int32 bytesRead = 0;
+                while (bytesRead < toRead)
                 {
-                    Byte[] trimmed = new Byte[scanSize];
-                    Array.Copy(data, trimmed, scanSize);
-                    data = trimmed;
+                    Int32 n = fs.Read(data, bytesRead, toRead - bytesRead);
+                    if (n == 0) break;
+                    bytesRead += n;
                 }
+                if (bytesRead < toRead)
+                    Array.Resize(ref data, bytesRead);
             }
-            catch
+            catch (Exception)
             {
                 return (VirusFamily.Generic, modelProbability);
             }
@@ -250,7 +256,10 @@ namespace Xdows_Local
             var result = (bestFamily, modelProbability);
 
             if (s_cache.Count > 5000)
-                s_cache.Clear();
+            {
+                foreach (var key in s_cache.Keys.Take(s_cache.Count - 2500).ToList())
+                    s_cache.TryRemove(key, out _);
+            }
 
             s_cache[filePath] = result;
             return result;
@@ -264,28 +273,9 @@ namespace Xdows_Local
 
         private static Boolean SimpleSearch(Byte[] text, Byte[] pattern)
         {
-            Int32 m = pattern.Length;
-            Int32 n = text.Length;
-
-            if (m == 0 || m > n)
+            if (pattern.Length == 0 || pattern.Length > text.Length)
                 return false;
-
-            for (Int32 i = 0; i <= n - m; i++)
-            {
-                Boolean match = true;
-                for (Int32 k = 0; k < m; k++)
-                {
-                    if (text[i + k] != pattern[k])
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match)
-                    return true;
-            }
-
-            return false;
+            return text.AsSpan().IndexOf(pattern) >= 0;
         }
     }
 }

@@ -57,7 +57,7 @@ namespace Protection
 
                         return true;
                     }
-                    catch
+                    catch (Exception)
                     {
                         session?.Dispose();
                         session = null;
@@ -106,14 +106,14 @@ namespace Protection
                         using var process = Process.GetProcessById(data.ProcessID);
                         path = process.MainModule?.FileName;
                     }
-                    catch
+                    catch (Exception)
                     {
                         return;
                     }
 
                     if (string.IsNullOrEmpty(path) || TrustManager.IsPathTrusted(path))
                         return;
-                    string registryScanResult = new Xdows_Local.RegistryScan().Scan(data.KeyName);
+                    string registryScanResult = Xdows_Local.RegistryScan.Scan(data.KeyName);
                     if (registryScanResult != string.Empty)
                     {
                         try
@@ -124,7 +124,7 @@ namespace Protection
                             interceptCallBack(true, path, Name);
 
                         }
-                        catch
+                        catch (Exception)
                         {
                             interceptCallBack(false, path, Name);
                         }
@@ -143,12 +143,14 @@ namespace Protection
                         interceptCallBack(true, path, Name);
 
                     }
-                    catch
+                    catch (Exception)
                     {
                         interceptCallBack(false, path, Name);
                     }
                 }
-                catch { }
+                catch (Exception)
+                {
+                }
             }
         }
     }

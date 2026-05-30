@@ -47,7 +47,8 @@ namespace Compatibility.Windows.Storage
                 string targetPath = IO.Path.Combine(localFolder.Path, fileName);
 
                 // 确保目录存在
-                Directory.CreateDirectory(IO.Path.GetDirectoryName(targetPath)!);
+                var dir = IO.Path.GetDirectoryName(targetPath);
+                if (dir != null) Directory.CreateDirectory(dir);
 
                 // 复制文件到配置目录
                 File.Copy(sourceFilePath, targetPath, true);
@@ -58,7 +59,7 @@ namespace Compatibility.Windows.Storage
 
                 return targetPath;
             }
-            catch { return string.Empty; }
+            catch (Exception) { return string.Empty; }
         }
 
         /// <summary>
@@ -81,7 +82,7 @@ namespace Compatibility.Windows.Storage
                 }
                 return null;
             }
-            catch
+            catch (Exception)
             {
                 return null;
             }
@@ -108,9 +109,9 @@ namespace Compatibility.Windows.Storage
                     settings.Values.Remove(configKey);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new Exception($"删除文件失败: {ex.Message}", ex);
+                throw;
             }
         }
 
@@ -129,10 +130,7 @@ namespace Compatibility.Windows.Storage
                        pathObj is string path &&
                        File.Exists(path);
             }
-            catch
-            {
-                return false;
-            }
+            catch (Exception) { return false; }
         }
 
         /// <summary>
@@ -140,14 +138,15 @@ namespace Compatibility.Windows.Storage
         /// </summary>
         /// <param name="fileName">原始文件名</param>
         /// <returns>清理后的文件名</returns>
+        private static readonly char[] s_invalidChars = Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).ToArray();
+        private static readonly HashSet<char> s_invalidCharSet = new(s_invalidChars);
+
         private static string SanitizeFileName(string fileName)
         {
-            // 移除文件路径中的非法字符 - 使用 StringBuilder 优化
-            var invalidChars = Path.GetInvalidFileNameChars().Concat(Path.GetInvalidPathChars()).ToArray();
             var sb = new StringBuilder(fileName.Length);
             foreach (char c in fileName)
             {
-                if (Array.IndexOf(invalidChars, c) >= 0)
+                if (s_invalidCharSet.Contains(c))
                 {
                     sb.Append('_');
                 }
@@ -192,7 +191,7 @@ namespace Compatibility.Windows.Storage
                 var json = JsonSerializer.Serialize(_dict, AppDataJsonContext.Default.DictionaryStringJsonElement);
                 await File.WriteAllTextAsync(StorePath, json);
             }
-            catch { }
+            catch (Exception) { }
         }
 
         private void Load()
@@ -206,7 +205,7 @@ namespace Compatibility.Windows.Storage
                     foreach (var kv in tmp)
                         _dict[kv.Key] = kv.Value.Clone();   // 隔离引用
             }
-            catch { }
+            catch (Exception) { }
         }
     }
     #endregion
@@ -308,7 +307,7 @@ namespace Compatibility.Windows.Storage
     {
         internal static readonly StorageFolder LocalFolderInstance = new()
         {
-            Path = IO.Path.GetDirectoryName(ApplicationDataContainer.StorePath)!
+            Path = IO.Path.GetDirectoryName(ApplicationDataContainer.StorePath) ?? string.Empty
         };
         public string Path { get; internal set; } = null!;
 
@@ -337,7 +336,8 @@ namespace Compatibility.Windows.Storage
             var full = IO.Path.Combine(Path, desiredName);
             if (File.Exists(full) && option == CreationCollisionOption.FailIfExists)
                 throw new IOException("File already exists");
-            Directory.CreateDirectory(IO.Path.GetDirectoryName(full)!);
+            var dir = IO.Path.GetDirectoryName(full);
+            if (dir != null) Directory.CreateDirectory(dir);
             File.WriteAllBytes(full, []);
             return new StorageFile { Path = full };
         }
@@ -365,7 +365,8 @@ namespace Compatibility.Windows.Storage
                 return Task.FromResult(this);
             if (File.Exists(dst) && option == NameCollisionOption.FailIfExists)
                 throw new IOException("File already exists");
-            Directory.CreateDirectory(IO.Path.GetDirectoryName(dst)!);
+            var dstDir = IO.Path.GetDirectoryName(dst);
+            if (dstDir != null) Directory.CreateDirectory(dstDir);
             File.Copy(src, dst, option == NameCollisionOption.ReplaceExisting);
             return Task.FromResult(new StorageFile { Path = dst });
         }
@@ -374,7 +375,7 @@ namespace Compatibility.Windows.Storage
         {
             if (!uri.AbsoluteUri.StartsWith("ms-appdata:///local/"))
                 throw new ArgumentException("Only ms-appdata:///local/ is supported");
-            var fileName = uri.AbsoluteUri.Replace("ms-appdata:///local/", "");
+            var fileName = uri.AbsoluteUri.Substring("ms-appdata:///local/".Length);
             var localPath = IO.Path.Combine(
                 IO.Path.GetDirectoryName(ApplicationDataContainer.StorePath)!,
                 fileName);

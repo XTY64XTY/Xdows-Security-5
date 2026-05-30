@@ -9,12 +9,7 @@ namespace Xdows_Local
 {
     public static class Heuristic
     {
-        private struct Rule(String[][] keywords, Int32 score, String suspiciousData)
-        {
-            public String[][] Keywords = keywords;
-            public Int32 Score = score;
-            public String SuspiciousData = suspiciousData;
-        }
+        private readonly record struct Rule(String[][] Keywords, Int32 Score, String SuspiciousData);
 
         private static readonly Rule[] Rules =
         [
@@ -79,12 +74,14 @@ namespace Xdows_Local
 
             String[] fileExtension = GetExtStrings(path);
 
-            Byte[] rawBytes = peFile.RawFile.ToArray();
+            Byte[] rawBytes = peFile.RawFile?.ToArray() ?? [];
+            if (rawBytes.Length == 0) return (0, String.Empty);
             ReadOnlySpan<Byte> rawSpan = rawBytes;
             if (fileExtension.Length > 0)
             {
                 String[] docExts = [".doc", ".ppt", ".xls", ".csv"];
-                if (docExts.Any(docExt => path.Contains(docExt)))
+                String ext = Path.GetExtension(path);
+                if (!String.IsNullOrEmpty(ext) && docExts.Contains(ext, StringComparer.OrdinalIgnoreCase))
                 {
                     if (IsSuspiciousDoc(rawSpan))
                     {
@@ -92,18 +89,18 @@ namespace Xdows_Local
                         suspiciousData.Add("DocVirus");
                     }
                 }
-                else if (fileExtension[^1] == "fne")
+                else if (path.EndsWith(".fne", StringComparison.OrdinalIgnoreCase))
                 {
                     score += 20;
                     suspiciousData.Add("EComponent");
                 }
 
-                if (fileExtension.Length > 1 && fileExtension[^1] != "bak")
+                if (fileExtension.Length > 1 && !path.EndsWith(".bak", StringComparison.OrdinalIgnoreCase))
                 {
                     score += 20;
                 }
 
-                if (fileExtension[^1] == "exe" &&
+                if (path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) &&
                     (path.Contains(@"\Start Menu\Programs\Startup\", StringComparison.OrdinalIgnoreCase) ||
                      path.Contains(@"\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\", StringComparison.OrdinalIgnoreCase)))
                 {
@@ -116,7 +113,7 @@ namespace Xdows_Local
                             suspiciousData.Add("StartupHidden");
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
                 }
             }
 
@@ -250,7 +247,6 @@ namespace Xdows_Local
         public static Boolean CheckPackingSignatures(PeFile pe, Byte[]? cachedRaw = null)
         {
             Byte[] raw = cachedRaw ?? pe.RawFile.ToArray();
-            ReadOnlySpan<Byte> rawSpan = raw;
             if (raw.Length > 0x40 &&
                 raw[0x40] == 0x55 && raw[0x41] == 0x50 &&
                 raw[0x42] == 0x58 && raw[0x43] == 0x30)
@@ -457,7 +453,7 @@ namespace Xdows_Local
                 X509Certificate2? auth = pe.SigningAuthenticodeCertificate;
                 if (auth == null) return 0;
 
-                X509Chain chain = new()
+                using X509Chain chain = new()
                 {
                     ChainPolicy = {
                         RevocationMode = X509RevocationMode.Offline,
@@ -482,7 +478,7 @@ namespace Xdows_Local
 
                 return chainOk ? 5 : 0;
             }
-            catch { return 0; }
+            catch (Exception) { return 0; }
         }
 
         private static Boolean IsSuspiciousDoc(ReadOnlySpan<Byte> fileContent)

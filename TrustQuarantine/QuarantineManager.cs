@@ -40,9 +40,8 @@ namespace TrustQuarantine
                         quarantineItems.Add(item);
                     }
                 }
-                catch
+                catch (Exception)
                 {
-                    // 跳过无法解析的文件
                 }
             }
 
@@ -59,7 +58,7 @@ namespace TrustQuarantine
                 byte[] fileData = await File.ReadAllBytesAsync(filePath);
                 return await AddToQuarantineFromBytes(fileData, filePath, threatName, true);
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -112,7 +111,7 @@ namespace TrustQuarantine
                 }
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }
@@ -158,7 +157,7 @@ namespace TrustQuarantine
 
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }

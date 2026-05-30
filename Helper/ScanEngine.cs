@@ -5,6 +5,10 @@ namespace Helper
 {
     public static class ScanEngine
     {
+        private const string CloudScanBaseUrl = "http://103.118.245.82:5000";
+        private const string CloudScanApiKey = "my_virus_key_2024";
+        private const string ExactRuleBaseUrl = "http://103.118.245.82:7050";
+
         public static async Task<string> LocalScanAsync(string path, bool deep, bool ExtraData)
         {
             return await Task.Run(() => Xdows_Local.Core.ScanAsync(path, deep, ExtraData));
@@ -27,7 +31,7 @@ namespace Helper
                         return (true, "HEUR:Infector.EP_Hijack!ml");
                     }
                 }
-                catch { }
+                catch (Exception) { }
                 return (false, null);
             });
         }
@@ -40,7 +44,7 @@ namespace Helper
                 {
                     return InfectorCleaner.InfectorCleaner.CleanInfectedFile(path);
                 }
-                catch { return null; }
+                catch (Exception) { return null; }
             });
         }
 
@@ -76,7 +80,7 @@ namespace Helper
                         };
                     }
                 }
-                catch { }
+                catch (Exception) { }
             }
 
             public static bool Initialize()
@@ -87,7 +91,7 @@ namespace Helper
                     InitializeWithMode(_mode);
                     return true;
                 }
-                catch
+                catch (Exception)
                 {
                     return false;
                 }
@@ -107,13 +111,13 @@ namespace Helper
                             applyToProtection = enabled;
                         }
                     }
-                    catch { }
+                    catch (Exception) { }
 
                     var mode = applyToProtection ? _mode : Xdows_Model_Invoker.ModelMode.Standard;
                     InitializeWithMode(mode);
                     return true;
                 }
-                catch
+                catch (Exception)
                 {
                     return false;
                 }
@@ -139,8 +143,8 @@ namespace Helper
             {
                 try
                 {
-                    var r = Xdows_Model_Invoker.ModelInvoker.ScanFile(path);
-                    if (r.isVirus)
+                    var (isVirus, probability) = Xdows_Model_Invoker.ModelInvoker.ScanFile(path);
+                    if (isVirus)
                     {
                         string modeTag = _mode switch
                         {
@@ -148,10 +152,10 @@ namespace Helper
                             Xdows_Model_Invoker.ModelMode.Pro => "Pro",
                             _ => "Standard"
                         };
-                        return (true, $"Xdows.Model.{modeTag}.Probability{(int)r.probability}");
+                        return (true, $"Xdows.Model.{modeTag}.Probability{(int)probability}");
                     }
                 }
-                catch { }
+                catch (Exception) { }
                 return (false, string.Empty);
             }
 
@@ -178,7 +182,7 @@ namespace Helper
         public static async Task<(int statusCode, string? result)> CloudScanWithHashAsync(string hash)
         {
             var client = s_httpClient;
-            string url = $"http://103.118.245.82:5000/scan/md5?key=my_virus_key_2024&md5={hash}";
+            string url = $"{CloudScanBaseUrl}/scan/md5?key={CloudScanApiKey}&md5={hash}";
             try
             {
                 var resp = await client.GetAsync(url);
@@ -243,9 +247,8 @@ namespace Helper
                 {
                     throw;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    System.Diagnostics.Debug.WriteLine($"ExactRuleEngine hash computation failed for {path}: {ex.Message}");
                 }
             }
 
@@ -260,7 +263,7 @@ namespace Helper
             if (hashEntries.Count == 0) return results;
 
             var client = s_httpClient;
-            string url = "http://103.118.245.82:7050/api/batch_check";
+            string url = $"{ExactRuleBaseUrl}/api/batch_check";
             try
             {
                 var hashes = hashEntries.Select(e => e.hash).ToList();
@@ -310,9 +313,8 @@ namespace Helper
             {
                 throw;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"ExactRuleEngine batch scan failed: {ex.Message}");
             }
             return results;
         }

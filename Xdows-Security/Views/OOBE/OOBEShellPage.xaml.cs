@@ -122,8 +122,10 @@ namespace Xdows_Security.Views.OOBE
             await NavigateToAsync(GetCurrentPageType(), OOBENavKind.Next);
         }
 
-        private async Task NavigateToAsync(Type pageType, OOBENavKind kind, bool initial = false)
+        private async Task NavigateToAsync(Type pageType, OOBENavKind _kind, bool initial = false)
         {
+            // _kind is currently unused in some flows; reference it to avoid IDE0060 warnings.
+            _ = _kind;
             ContentFrame.Navigate(pageType);
 
             if (ContentFrame.Content is IOOBEStepPage step)
@@ -203,7 +205,7 @@ namespace Xdows_Security.Views.OOBE
                 await Task.Delay(300);
         }
 
-        private async Task FadeButtonAsync(UIElement element, bool show, bool fadeIn)
+        private static async Task FadeButtonAsync(UIElement element, bool show, bool fadeIn)
         {
             element.IsHitTestVisible = show;
             element.Opacity = 1;
