@@ -82,7 +82,8 @@ namespace Xdows_Security.Views
                         LoadThemeSettingAsync,
                         LoadBackdropSettingAsync,
                         LoadBackgroundImageSettingAsync,
-                        LoadSoundSettingAsync
+                        LoadSoundSettingAsync,
+                        LoadTransitionSettingAsync
                     );
                     WinUI3Localizer.Localizer.Get().LanguageChanged += (s, e) => UpdateAppText();
                     UpdateAppText();
@@ -145,6 +146,14 @@ namespace Xdows_Security.Views
             get
             {
                 return RunOnDispatcher(LoadSoundSetting);
+            }
+        }
+
+        private Task LoadTransitionSettingAsync
+        {
+            get
+            {
+                return RunOnDispatcher(LoadTransitionSetting);
             }
         }
 
@@ -1192,6 +1201,36 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             Toggled_SaveToggleData(sender, e);
             ApplySoundSettings();
+        }
+
+        private void TransitionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsInitialize) return;
+            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            {
+                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                settings.Values["PageTransition"] = tag;
+            }
+        }
+
+        private void LoadTransitionSetting()
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            string savedTransition = settings.Values.TryGetValue("PageTransition", out var raw) && raw is string s ? s : "Default";
+
+            if (!settings.Values.ContainsKey("PageTransition"))
+            {
+                settings.Values["PageTransition"] = savedTransition;
+            }
+
+            foreach (ComboBoxItem item in TransitionComboBox.Items.Cast<ComboBoxItem>())
+            {
+                if (item.Tag as string == savedTransition)
+                {
+                    TransitionComboBox.SelectedItem = item;
+                    break;
+                }
+            }
         }
 
         private static void ApplySoundSettings()

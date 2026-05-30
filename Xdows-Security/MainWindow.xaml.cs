@@ -404,7 +404,7 @@ namespace Xdows_Security
                 "Settings" => typeof(SettingsPage),
                 _ => typeof(HomePage)
             };
-            navContainer.Navigate(pageType);
+            navContainer.Navigate(pageType, null, App.GetNavigationTransitionInfo());
         }
         public void GoToBugReportPage(string? PageName)
         {
@@ -413,7 +413,7 @@ namespace Xdows_Security
             NowPage = "BugReport";
             nav.Header = PageName;
             nav.SelectedItem = null;
-            navContainer.Navigate(typeof(BugReportPage));
+            navContainer.Navigate(typeof(BugReportPage), null, App.GetNavigationTransitionInfo());
         }
         private static NavigationViewItem? FindNavigationItemByTag(IList<object> items, string targetTag)
         {

@@ -1528,4 +1528,31 @@
   <data name="SettingsPage_UsbAutoScan.Description" xml:space="preserve">
     <value>检测到可移动设备时自动扫描</value>
   </data>
+  <data name="SettingsPage_Appearance_Transition.Header" xml:space="preserve">
+    <value>页面过渡</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition.Description" xml:space="preserve">
+    <value>设置页面切换时的动画效果</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Default.Content" xml:space="preserve">
+    <value>默认</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Entrance.Content" xml:space="preserve">
+    <value>进入</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_DrillIn.Content" xml:space="preserve">
+    <value>钻入</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Suppress.Content" xml:space="preserve">
+    <value>无动画</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_SlideFromRight.Content" xml:space="preserve">
+    <value>从右滑入</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_SlideFromLeft.Content" xml:space="preserve">
+    <value>从左滑入</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Continuum.Content" xml:space="preserve">
+    <value>连续</value>
+  </data>
 </root>

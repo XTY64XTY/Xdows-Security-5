@@ -2,6 +2,7 @@ using Compatibility.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.Globalization;
 using Protection;
@@ -651,6 +652,23 @@ namespace Xdows_Security
 
             visual.StartAnimation("Offset", offsetAnimation);
             visual.StartAnimation("Opacity", opacityAnimation);
+        }
+
+        public static NavigationTransitionInfo GetNavigationTransitionInfo()
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            string transitionType = settings.Values.TryGetValue("PageTransition", out var raw) && raw is string s ? s : "Default";
+
+            return transitionType switch
+            {
+                "Entrance" => new EntranceNavigationTransitionInfo(),
+                "DrillIn" => new DrillInNavigationTransitionInfo(),
+                "Suppress" => new SuppressNavigationTransitionInfo(),
+                "SlideFromRight" => new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromRight },
+                "SlideFromLeft" => new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft },
+                "Continuum" => new ContinuumNavigationTransitionInfo(),
+                _ => new EntranceNavigationTransitionInfo()
+            };
         }
     }
 }

@@ -103,6 +103,21 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+                <controls:SettingsCard
+                   l:Uids.Uid="SettingsPage_Appearance_Transition"
+                   HeaderIcon="{ui:FontIcon Glyph=&#xE8E2;}"
+                   x:Name="Appearance_Transition"
+                   Margin="0,0,0,4">
+                    <ComboBox x:Name="TransitionComboBox" SelectedIndex="0" SelectionChanged="TransitionComboBox_SelectionChanged">
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_Default" Tag="Default" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_Entrance" Tag="Entrance" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_DrillIn" Tag="DrillIn" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_Suppress" Tag="Suppress" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_SlideFromRight" Tag="SlideFromRight" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_SlideFromLeft" Tag="SlideFromLeft" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_Continuum" Tag="Continuum" />
+                    </ComboBox>
+                </controls:SettingsCard>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Scan" x:Name="Scan_Header"/>
                 <controls:SettingsExpander
                            l:Uids.Uid="SettingsPage_Scan_IndexMode"

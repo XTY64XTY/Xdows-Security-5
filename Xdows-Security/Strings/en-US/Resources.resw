@@ -1529,4 +1529,31 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_UsbAutoScan.Description" xml:space="preserve">
     <value>Automatically scan when removable device is detected</value>
   </data>
+  <data name="SettingsPage_Appearance_Transition.Header" xml:space="preserve">
+    <value>Page Transition</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition.Description" xml:space="preserve">
+    <value>Set the animation effect when switching between pages</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Default.Content" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Entrance.Content" xml:space="preserve">
+    <value>Entrance</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_DrillIn.Content" xml:space="preserve">
+    <value>Drill In</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Suppress.Content" xml:space="preserve">
+    <value>Suppress</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_SlideFromRight.Content" xml:space="preserve">
+    <value>Slide from Right</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_SlideFromLeft.Content" xml:space="preserve">
+    <value>Slide from Left</value>
+  </data>
+  <data name="SettingsPage_Appearance_Transition_Continuum.Content" xml:space="preserve">
+    <value>Continuum</value>
+  </data>
 </root>
