@@ -213,16 +213,10 @@
   <data name="OOBE_AppearanceSound_Content.Text" xml:space="preserve">
     <value>設定應用程式互動的聲音回饋</value>
   </data>
-  <data name="OOBE_AppearanceSound_EffectsToggle.OnContent" xml:space="preserve">
+  <data name="OOBE_AppearanceSound_EffectsToggle.Header" xml:space="preserve">
     <value>啟用聲音效果</value>
   </data>
-  <data name="OOBE_AppearanceSound_EffectsToggle.OffContent" xml:space="preserve">
-    <value>啟用聲音效果</value>
-  </data>
-  <data name="OOBE_AppearanceSound_SpatialToggle.OnContent" xml:space="preserve">
-    <value>空間音訊</value>
-  </data>
-  <data name="OOBE_AppearanceSound_SpatialToggle.OffContent" xml:space="preserve">
+  <data name="OOBE_AppearanceSound_SpatialToggle.Header" xml:space="preserve">
     <value>空間音訊</value>
   </data>
   <data name="OOBE_Finish_Title.Text" xml:space="preserve">
