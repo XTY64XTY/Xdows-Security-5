@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.IO.Compression;
+using System.Text;
 
 namespace Helper
 {
@@ -7,6 +8,54 @@ namespace Helper
     {
         private const Int64 MaxEntrySize = 100 * 1024 * 1024; // 100MB limit per entry
         private const Int32 BufferSize = 262144; // 256KB buffer for streaming (optimized from 80KB)
+
+        private static readonly Encoding[] _fallbackEncodings;
+
+        static ZipScanner()
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            _fallbackEncodings =
+            [
+                Encoding.UTF8,
+                Encoding.GetEncoding("gb2312"),
+                Encoding.GetEncoding("gbk"),
+                Encoding.GetEncoding("big5")
+            ];
+        }
+
+        private static String DecodeEntryName(ZipArchiveEntry entry)
+        {
+            try
+            {
+                var nameField = typeof(ZipArchiveEntry).GetField("_storedEntryNameBytes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (nameField == null) return entry.FullName;
+
+                var nameBytes = nameField.GetValue(entry) as Byte[];
+                if (nameBytes == null || nameBytes.Length == 0) return entry.FullName;
+
+                String utf8Result = Encoding.UTF8.GetString(nameBytes);
+                if (!utf8Result.Contains('\uFFFD') && !utf8Result.Contains('?'))
+                    return utf8Result;
+
+                foreach (var enc in _fallbackEncodings)
+                {
+                    if (enc.CodePage == Encoding.UTF8.CodePage) continue;
+                    try
+                    {
+                        String decoded = enc.GetString(nameBytes);
+                        if (!decoded.Contains('\uFFFD') && !decoded.Contains('?'))
+                            return decoded;
+                    }
+                    catch { }
+                }
+
+                return utf8Result;
+            }
+            catch
+            {
+                return entry.FullName;
+            }
+        }
         public static Boolean IsZipFile(String filePath)
         {
             if (!File.Exists(filePath)) return false;
@@ -51,7 +100,7 @@ namespace Helper
                         // Skip entries larger than MaxEntrySize
                         if (entry.Length > MaxEntrySize) continue;
 
-                        String entryPath = entry.FullName.Replace('/', '\\');
+                        String entryPath = DecodeEntryName(entry).Replace('/', '\\');
 
                         if (scanNestedArchives && IsZipEntry(entry))
                         {
@@ -164,7 +213,7 @@ namespace Helper
                     if (entry.Length == 0 || entry.Name.EndsWith("/")) continue;
                     if (entry.Length > MaxEntrySize) continue;
 
-                    String fullPath = entry.FullName.Replace('/', '\\');
+                    String fullPath = DecodeEntryName(entry).Replace('/', '\\');
                     String entryPath = parentPath + "\\" + fullPath;
                     
                     var data = ReadEntryData(entry);
@@ -190,10 +239,11 @@ namespace Helper
                     {
                         foreach (var entry in readArchive.Entries)
                         {
-                            if (String.Equals(entry.FullName, entryPath, StringComparison.OrdinalIgnoreCase))
+                            String decodedName = DecodeEntryName(entry);
+                            if (String.Equals(decodedName, entryPath, StringComparison.OrdinalIgnoreCase))
                                 continue;
 
-                            var newEntry = createArchive.CreateEntry(entry.FullName);
+                            var newEntry = createArchive.CreateEntry(decodedName);
                             using var entryStream = entry.Open();
                             using var newEntryStream = newEntry.Open();
                             entryStream.CopyTo(newEntryStream);
@@ -229,13 +279,14 @@ namespace Helper
                     {
                         foreach (var entry in readArchive.Entries)
                         {
-                            if (entriesToDelete.Contains(entry.FullName))
+                            String decodedName = DecodeEntryName(entry);
+                            if (entriesToDelete.Contains(decodedName))
                             {
                                 deletedCount++;
                                 continue;
                             }
 
-                            var newEntry = createArchive.CreateEntry(entry.FullName);
+                            var newEntry = createArchive.CreateEntry(decodedName);
                             using var entryStream = entry.Open();
                             using var newEntryStream = newEntry.Open();
                             entryStream.CopyTo(newEntryStream);
@@ -265,7 +316,7 @@ namespace Helper
 
                     foreach (var entry in archive.Entries)
                     {
-                        if (String.Equals(entry.FullName, normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
+                        if (String.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
                         {
                             return ReadEntryData(entry);
                         }
@@ -295,14 +346,14 @@ namespace Helper
 
                         using var outerArchive = ZipFile.OpenRead(zipPath);
                         var outerEntry = outerArchive.Entries.FirstOrDefault(e =>
-                            String.Equals(e.FullName, outerEntryPath, StringComparison.OrdinalIgnoreCase));
+                            String.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase));
 
                         if (outerEntry == null)
                         {
                             outerEntryPath = normalizedEntryPath.Substring(0, innerZipIndex + 4).Replace(".zip/", "/");
                             outerEntry = outerArchive.Entries.FirstOrDefault(e =>
-                                String.Equals(e.FullName, outerEntryPath, StringComparison.OrdinalIgnoreCase) ||
-                                String.Equals(e.FullName, outerEntryPath.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+                                String.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase) ||
+                                String.Equals(DecodeEntryName(e), outerEntryPath.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
                         }
 
                         if (outerEntry != null)
@@ -327,7 +378,7 @@ namespace Helper
 
                                     using var innerArchive = new ZipArchive(innerMs, ZipArchiveMode.Read);
                                     var innerEntry = innerArchive.Entries.FirstOrDefault(e =>
-                                        String.Equals(e.FullName, remainingPath, StringComparison.OrdinalIgnoreCase));
+                                        String.Equals(DecodeEntryName(e), remainingPath, StringComparison.OrdinalIgnoreCase));
 
                                     if (innerEntry != null)
                                     {
@@ -349,7 +400,7 @@ namespace Helper
 
                         foreach (var entry in archive.Entries)
                         {
-                            if (String.Equals(entry.FullName, normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
+                            if (String.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
                             {
                                 return (entry.Length, entry.LastWriteTime.DateTime, entry.LastWriteTime.DateTime);
                             }
