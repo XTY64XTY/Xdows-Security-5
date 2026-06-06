@@ -393,6 +393,9 @@
   <data name="SecurityPage_Details_EngineName" xml:space="preserve">
     <value>检测引擎：</value>
   </data>
+  <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
+    <value>威胁家族：</value>
+  </data>
   <data name="SecurityPage_Details_SHA256" xml:space="preserve">
     <value>SHA256：</value>
   </data>

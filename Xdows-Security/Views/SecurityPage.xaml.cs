@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -35,6 +36,7 @@ namespace Xdows_Security.Views
         private String _virusName = String.Empty;
         private String _familyName = String.Empty;
         private String _engineName = String.Empty;
+        private bool _useFamilyEngine;
 
         public String FilePath
         {
@@ -45,24 +47,28 @@ namespace Xdows_Security.Views
         public String VirusName
         {
             get => _virusName;
-            set { _virusName = value; OnPropertyChanged(); }
+            set { _virusName = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
         }
 
         public String FamilyName
         {
             get => _familyName;
-            set { _familyName = value; OnPropertyChanged(); OnPropertyChanged(nameof(FamilyNameVisibility)); }
+            set { _familyName = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
         }
 
         public String EngineName
         {
             get => _engineName;
-            set { _engineName = value; OnPropertyChanged(); OnPropertyChanged(nameof(EngineNameVisibility)); }
+            set { _engineName = value; OnPropertyChanged(); }
         }
 
-        public Visibility FamilyNameVisibility => String.IsNullOrWhiteSpace(_familyName) ? Visibility.Collapsed : Visibility.Visible;
+        public bool UseFamilyEngine
+        {
+            get => _useFamilyEngine;
+            set { _useFamilyEngine = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
+        }
 
-        public Visibility EngineNameVisibility => String.IsNullOrWhiteSpace(_engineName) ? Visibility.Collapsed : Visibility.Visible;
+        public String DisplayName => _useFamilyEngine && !String.IsNullOrWhiteSpace(_familyName) && _familyName != Localizer.Get().GetLocalizedString("AllPage_Undefined") ? _familyName : _virusName;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -345,14 +351,15 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void AddVirusResult(String filePath, String virusName, String? familyName = null, String? engineName = null)
+        private void AddVirusResult(String filePath, String virusName, String? familyName = null, String? engineName = null, bool useFamilyEngine = false)
         {
             VirusRow row = new()
             {
                 FilePath = filePath,
                 VirusName = virusName,
                 FamilyName = familyName ?? String.Empty,
-                EngineName = engineName ?? String.Empty
+                EngineName = engineName ?? String.Empty,
+                UseFamilyEngine = useFamilyEngine
             };
 
             CurrentResults?.Add(row);
@@ -1404,7 +1411,7 @@ namespace Xdows_Security.Views
                             _dispatcherQueue.TryEnqueue(() =>
                             {
                                 if (!IsCurrentScan(scanId, token)) return;
-                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo, scanRes.EngineName);
+                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo, scanRes.EngineName, useVirusFamily);
                                 BackToVirusListButton.Visibility = Visibility.Visible;
                             });
 
@@ -1502,9 +1509,7 @@ namespace Xdows_Security.Views
 
             _dispatcherQueue.TryEnqueue(() =>
             {
-                VirusList.ItemTemplate = UseVirusFamily
-                    ? (DataTemplate)Resources["VirusRowWithFamilyTemplate"]
-                    : (DataTemplate)Resources["VirusRowTemplate"];
+                VirusList.ItemTemplate = (DataTemplate)Resources["VirusRowTemplate"];
             });
 
             if (showTaskbarProgress)
@@ -1830,7 +1835,7 @@ namespace Xdows_Security.Views
                                             if (!IsCurrentScan(thisId, token)) return;
                                             try
                                             {
-                                                AddVirusResult(file, result, familyInfo, "ExactRule");
+                                                AddVirusResult(file, result, familyInfo, "ExactRule", UseVirusFamily);
                                                 BackToVirusListButton.Visibility = Visibility.Visible;
                                             }
                                             catch { }
@@ -1916,7 +1921,7 @@ namespace Xdows_Security.Views
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
                                     if (!IsCurrentScan(thisId, token)) return;
-                                    AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo, scanRes.EngineName);
+                                    AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo, scanRes.EngineName, UseVirusFamily);
                                     BackToVirusListButton.Visibility = Visibility.Visible;
                                 });
                                 int newThreats = Interlocked.Increment(ref _threatsFound);
@@ -2133,7 +2138,6 @@ namespace Xdows_Security.Views
         private async Task ShowDetailsDialog(VirusRow? row)
         {
             Boolean isDetailsPause = false;
-            Boolean scanWasResumed = false;
             try
             {
                 if (row is null) return;
@@ -2167,9 +2171,9 @@ namespace Xdows_Security.Views
                         var entryInfo = await ZipScanner.GetEntryInfoAsync(zipPath, entryPath);
                         if (entryInfo.HasValue)
                         {
-                            fileSizeText = String.Format("{0:F2} KB", entryInfo.Value.Size / 1024.0);
-                            creationTimeText = entryInfo.Value.CreationTime.ToString();
-                            lastWriteTimeText = entryInfo.Value.LastWriteTime.ToString();
+                            fileSizeText = String.Format(CultureInfo.CurrentCulture, "{0:F2} KB", entryInfo.Value.Size / 1024.0);
+                            creationTimeText = entryInfo.Value.CreationTime.ToString("g", CultureInfo.CurrentCulture);
+                            lastWriteTimeText = entryInfo.Value.LastWriteTime.ToString("g", CultureInfo.CurrentCulture);
                         }
                         else
                         {
@@ -2186,9 +2190,9 @@ namespace Xdows_Security.Views
                     try
                     {
                         FileInfo fileInfo = new(displayPath);
-                        fileSizeText = String.Format("{0:F2} KB", fileInfo.Length / 1024.0);
-                        creationTimeText = fileInfo.CreationTime.ToString();
-                        lastWriteTimeText = fileInfo.LastWriteTime.ToString();
+                        fileSizeText = String.Format(CultureInfo.CurrentCulture, "{0:F2} KB", fileInfo.Length / 1024.0);
+                        creationTimeText = fileInfo.CreationTime.ToString("g", CultureInfo.CurrentCulture);
+                        lastWriteTimeText = fileInfo.LastWriteTime.ToString("g", CultureInfo.CurrentCulture);
                     }
                     catch { }
                 }
@@ -2224,7 +2228,7 @@ namespace Xdows_Security.Views
 
                 var items = new List<(string Key, FrameworkElement Value)>
                 {
-                    (Localizer.Get().GetLocalizedString("SecurityPage_Details_FilePath"), new RichTextBlock
+                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FilePath")), new RichTextBlock
                     {
                         IsTextSelectionEnabled = true,
                         TextWrapping = TextWrapping.Wrap,
@@ -2233,10 +2237,19 @@ namespace Xdows_Security.Views
                         Blocks = { new Paragraph { Inlines = { new Run { Text = displayPath } } } }
                     }),
                     (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_VirusName")), new TextBlock { Text = row.VirusName, IsTextSelectionEnabled = true, TextWrapping = TextWrapping.Wrap }),
-                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize")), new TextBlock { Text = fileSizeText, IsTextSelectionEnabled = true }),
-                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime")), new TextBlock { Text = creationTimeText, IsTextSelectionEnabled = true }),
-                    (ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime")), new TextBlock { Text = lastWriteTimeText, IsTextSelectionEnabled = true }),
                 };
+
+                if (row.UseFamilyEngine)
+                {
+                    String familyDisplay = String.IsNullOrWhiteSpace(row.FamilyName)
+                        ? Localizer.Get().GetLocalizedString("AllPage_Undefined")
+                        : row.FamilyName;
+                    items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FamilyName")), new TextBlock { Text = familyDisplay, IsTextSelectionEnabled = true }));
+                }
+
+                items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FileSize")), new TextBlock { Text = fileSizeText, IsTextSelectionEnabled = true }));
+                items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime")), new TextBlock { Text = creationTimeText, IsTextSelectionEnabled = true }));
+                items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime")), new TextBlock { Text = lastWriteTimeText, IsTextSelectionEnabled = true }));
 
                 if (!String.IsNullOrWhiteSpace(row.EngineName))
                 {
@@ -2313,8 +2326,7 @@ namespace Xdows_Security.Views
                         {
                             FileName = "explorer.exe",
                         };
-                        String safeFilePath = filePath.Replace("\"", "\\\"");
-                        psi.Arguments = $"/select,\"{safeFilePath}\"";
+                        psi.ArgumentList.Add("/select," + filePath);
                         System.Diagnostics.Process.Start(psi);
                     }
                     catch (Exception ex)
@@ -2356,12 +2368,11 @@ namespace Xdows_Security.Views
             }
             finally
             {
-                if (isDetailsPause && !scanWasResumed)
+                if (isDetailsPause)
                 {
                     try
                     {
                         OnResumeScanClick(new Object(), new RoutedEventArgs());
-                        scanWasResumed = true;
                     }
                     catch (Exception resumeEx)
                     {

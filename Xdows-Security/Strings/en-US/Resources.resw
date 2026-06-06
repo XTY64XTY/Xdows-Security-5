@@ -1550,4 +1550,8 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Appearance_Transition_Continuum.Content" xml:space="preserve">
     <value>Continuum</value>
   </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="SecurityPage_Details_FamilyName" type="System.Resources.ResXNullRef, System.Windows.Forms">
+    <value />
+  </data>
 </root>
