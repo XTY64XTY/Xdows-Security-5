@@ -148,9 +148,6 @@ namespace Xdows_Security
                     ["username"] = _username
                 };
 
-                // 先启动接收任务，确保能接收到服务器的响应
-                _receiveTask = Task.Run(ReceiveLoopAsync);
-
                 await SendMessageAsync(registerMessage);
 
                 // 接收注册响应，设置超时
@@ -172,6 +169,9 @@ namespace Xdows_Security
                     typeObj.ToString() == "register_success")
                 {
                     _isConnected = true;
+
+                    // 注册响应由当前方法读取，注册成功后再启动持续接收循环
+                    _receiveTask = Task.Run(ReceiveLoopAsync);
 
                     // 启动心跳任务
                     _heartbeatTask = Task.Run(HeartbeatLoopAsync);
@@ -500,13 +500,6 @@ namespace Xdows_Security
             _stream = null;
             _tcpClient = null;
             _cts = null;
-            try
-            {
-                _receiveTask?.Wait(1000);
-                _heartbeatTask?.Wait(1000);
-
-            }
-            catch { }
             _receiveTask = null;
             _heartbeatTask = null;
         }

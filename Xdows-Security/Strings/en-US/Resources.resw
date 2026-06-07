@@ -1271,6 +1271,12 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="BugReportPage_UsernameEmpty" xml:space="preserve">
     <value>Username cannot be empty</value>
   </data>
+  <data name="BugReportPage_UserOnline" xml:space="preserve">
+    <value>{0} is online</value>
+  </data>
+  <data name="BugReportPage_UserOffline" xml:space="preserve">
+    <value>{0} is offline</value>
+  </data>
   <data name="BugReportPage_AllRead" xml:space="preserve">
     <value>All read</value>
   </data>
@@ -1291,6 +1297,9 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="BugReportPage_PortLabel" xml:space="preserve">
     <value>Port:</value>
+  </data>
+  <data name="BugReportPage_PortInvalid" xml:space="preserve">
+    <value>Port must be a number</value>
   </data>
   <data name="BugReportPage_SettingSaved" xml:space="preserve">
     <value>Settings saved, reconnecting...</value>
