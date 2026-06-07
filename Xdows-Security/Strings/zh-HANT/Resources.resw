@@ -953,6 +953,12 @@
 對於此軟件的分支產生的問題，此軟件的源開發者（Xdows Software、零度楓鑄）不承擔任何責任。
 當您通過任何方式使用該引擎時則表示同意並接受該聲明，如果您不接受請自行關閉此引擎或停止使用並刪除該軟件。</value>
   </data>
+  <data name="BugReportPage_Title.Text" xml:space="preserve">
+    <value>反饋頻道</value>
+  </data>
+  <data name="BugReportPage_Description.Text" xml:space="preserve">
+    <value>向開發者反饋問題或建議，並查看反饋頻道消息</value>
+  </data>
   <data name="BugReportPage_Connected" xml:space="preserve">
     <value>已連接</value>
   </data>
@@ -971,7 +977,13 @@
   <data name="BugReportPage_SendButton.Content" xml:space="preserve">
     <value>發送</value>
   </data>
+  <data name="BugReportPage_SendButtonText.Text" xml:space="preserve">
+    <value>發送</value>
+  </data>
   <data name="BugReportPage_ReconnectButton.Content" xml:space="preserve">
+    <value>重新連接</value>
+  </data>
+  <data name="BugReportPage_ReconnectButtonText.Text" xml:space="preserve">
     <value>重新連接</value>
   </data>
   <data name="BugReportPage_ConnectionFailedMessage" xml:space="preserve">
@@ -1298,6 +1310,9 @@
     <value>錯誤: {0}</value>
   </data>
   <data name="BugReportPage_SettingsButton.Content" xml:space="preserve">
+    <value>設置</value>
+  </data>
+  <data name="BugReportPage_SettingsButtonText.Text" xml:space="preserve">
     <value>設置</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">

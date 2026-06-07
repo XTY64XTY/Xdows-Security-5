@@ -951,6 +951,12 @@ The original developer of this software (Xdows Software, IceZero Studio) bears n
 In the event of any form of dispute, the Chinese version of the disclaimer shall prevail.
 If you do not accept it, please turn off the engine, or stop using and delete the software.</value>
   </data>
+  <data name="BugReportPage_Title.Text" xml:space="preserve">
+    <value>Feedback Channel</value>
+  </data>
+  <data name="BugReportPage_Description.Text" xml:space="preserve">
+    <value>Report issues or suggestions to the developers and view feedback channel messages</value>
+  </data>
   <data name="BugReportPage_Connected" xml:space="preserve">
     <value>Connected</value>
   </data>
@@ -969,7 +975,13 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="BugReportPage_SendButton.Content" xml:space="preserve">
     <value>Send</value>
   </data>
+  <data name="BugReportPage_SendButtonText.Text" xml:space="preserve">
+    <value>Send</value>
+  </data>
   <data name="BugReportPage_ReconnectButton.Content" xml:space="preserve">
+    <value>Reconnect</value>
+  </data>
+  <data name="BugReportPage_ReconnectButtonText.Text" xml:space="preserve">
     <value>Reconnect</value>
   </data>
   <data name="BugReportPage_ConnectionFailedMessage" xml:space="preserve">
@@ -1296,6 +1308,9 @@ Files can be restored from quarantine after handling. Some files may be deleted 
     <value>Error: {0}</value>
   </data>
   <data name="BugReportPage_SettingsButton.Content" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="BugReportPage_SettingsButtonText.Text" xml:space="preserve">
     <value>Settings</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
