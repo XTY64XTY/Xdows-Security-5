@@ -16,20 +16,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" ColumnSpacing="16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <StackPanel VerticalAlignment="Center">
-                <TextBlock l:Uids.Uid="BugReportPage_Description"
-                           Style="{StaticResource BodyTextBlockStyle}"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            </StackPanel>
-
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
+        <Grid Grid.Row="0">
+            <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
                         Spacing="8">
@@ -83,8 +71,7 @@
                              AutomationProperties.AutomationId="BugReportMessageInput"
                              Grid.Column="0"
                              l:Uids.Uid="BugReportPage_Input"
-                             MinHeight="40"
-                             MaxHeight="120"
+                             MinHeight="32"
                              AcceptsReturn="False"
                              TextWrapping="Wrap"
                              KeyDown="InputBox_KeyDown"/>
@@ -92,7 +79,7 @@
                     <Button x:Name="SendBtn"
                             AutomationProperties.AutomationId="BugReportSendButton"
                             Grid.Column="1"
-                            MinHeight="40"
+                            MinHeight="32"
                             Style="{StaticResource AccentButtonStyle}"
                             Click="SendBtn_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">

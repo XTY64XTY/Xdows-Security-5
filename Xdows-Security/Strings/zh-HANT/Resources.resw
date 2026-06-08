@@ -953,9 +953,6 @@
 對於此軟件的分支產生的問題，此軟件的源開發者（Xdows Software、零度楓鑄）不承擔任何責任。
 當您通過任何方式使用該引擎時則表示同意並接受該聲明，如果您不接受請自行關閉此引擎或停止使用並刪除該軟件。</value>
   </data>
-  <data name="BugReportPage_Description.Text" xml:space="preserve">
-    <value>向開發者反饋問題或建議，並查看反饋頻道消息</value>
-  </data>
   <data name="BugReportPage_Connected" xml:space="preserve">
     <value>已連接</value>
   </data>
