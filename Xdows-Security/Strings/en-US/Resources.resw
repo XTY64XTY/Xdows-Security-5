@@ -951,9 +951,6 @@ The original developer of this software (Xdows Software, IceZero Studio) bears n
 In the event of any form of dispute, the Chinese version of the disclaimer shall prevail.
 If you do not accept it, please turn off the engine, or stop using and delete the software.</value>
   </data>
-  <data name="BugReportPage_Title.Text" xml:space="preserve">
-    <value>Feedback Channel</value>
-  </data>
   <data name="BugReportPage_Description.Text" xml:space="preserve">
     <value>Report issues or suggestions to the developers and view feedback channel messages</value>
   </data>

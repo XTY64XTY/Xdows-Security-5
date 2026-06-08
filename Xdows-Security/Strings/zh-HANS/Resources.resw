@@ -953,9 +953,6 @@
 对于此软件的分支产生的问题，此软件的源开发者（Xdows Software、零度枫铸）不承担任何责任。 
 当您通过任何方式使用该引擎时则表示同意并接受该声明，如果您不接受请自行关闭此引擎或停止使用并删除该软件。</value>
   </data>
-  <data name="BugReportPage_Title.Text" xml:space="preserve">
-    <value>反馈频道</value>
-  </data>
   <data name="BugReportPage_Description.Text" xml:space="preserve">
     <value>向开发者反馈问题或建议，并查看反馈频道消息</value>
   </data>

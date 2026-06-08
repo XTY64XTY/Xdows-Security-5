@@ -22,9 +22,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Spacing="4">
-                <TextBlock l:Uids.Uid="BugReportPage_Title"
-                           Style="{StaticResource TitleTextBlockStyle}"/>
+            <StackPanel VerticalAlignment="Center">
                 <TextBlock l:Uids.Uid="BugReportPage_Description"
                            Style="{StaticResource BodyTextBlockStyle}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
@@ -33,7 +31,7 @@
             <StackPanel Grid.Column="1"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
-                        VerticalAlignment="Bottom"
+                        VerticalAlignment="Center"
                         Spacing="8">
                 <Button x:Name="SettingsBtn"
                         AutomationProperties.AutomationId="BugReportSettingsButton"
