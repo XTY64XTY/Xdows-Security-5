@@ -25,9 +25,19 @@ namespace Xdows_Security.Views
                 _tcpClient = client;
                 AttachClientEvents(client, generation);
 
-                if (String.IsNullOrWhiteSpace(client.Username))
+                String systemUsername = Environment.UserName;
+                if (String.IsNullOrEmpty(client.Username) || client.Username != systemUsername)
                 {
-                    await client.SetUsernameAsync(Environment.UserName);
+                    try
+                    {
+                        await client.SetUsernameAsync(systemUsername);
+                    }
+                    catch (Exception ex)
+                    {
+                        AddSystemMessage(LF("BugReportPage_SetUsernameFailed", ex.Message));
+                        SetConnectionStatus("BugReportPage_NotConnected");
+                        return;
+                    }
                 }
 
                 Boolean connected = await client.ConnectAsync();

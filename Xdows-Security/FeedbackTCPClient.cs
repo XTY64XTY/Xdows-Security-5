@@ -19,6 +19,7 @@ namespace Xdows_Security
         private CancellationTokenSource? _cts;
         private Task? _receiveTask;
         private Task? _heartbeatTask;
+        private int _connectionGeneration = 0;
         private bool _isConnected = false;
         private string _username = "";
         private string _serverHost = "103.118.245.82";
@@ -113,6 +114,7 @@ namespace Xdows_Security
             try
             {
                 Cleanup();
+                int generation = _connectionGeneration;
 
                 _cts = new CancellationTokenSource();
                 _tcpClient = new TcpClient();
@@ -170,11 +172,14 @@ namespace Xdows_Security
                 {
                     _isConnected = true;
 
+                    NetworkStream receiveStream = _stream;
+                    CancellationToken receiveToken = _cts.Token;
+
                     // 注册响应由当前方法读取，注册成功后再启动持续接收循环
-                    _receiveTask = Task.Run(ReceiveLoopAsync);
+                    _receiveTask = Task.Run(() => ReceiveLoopAsync(generation, receiveStream, receiveToken));
 
                     // 启动心跳任务
-                    _heartbeatTask = Task.Run(HeartbeatLoopAsync);
+                    _heartbeatTask = Task.Run(() => HeartbeatLoopAsync(generation, receiveToken));
 
                     // 触发OnConnected事件
                     OnConnected?.Invoke(this, $"已连接到服务器 {_serverHost}:{_serverPort}");
@@ -377,19 +382,16 @@ namespace Xdows_Security
 
             return false;
         }
-        private async Task HeartbeatLoopAsync()
+        private async Task HeartbeatLoopAsync(int generation, CancellationToken cancellationToken)
         {
-            if (_cts == null)
-                return;
-
             try
             {
-                while (!_cts.Token.IsCancellationRequested && _isConnected)
+                while (!cancellationToken.IsCancellationRequested && IsCurrentGeneration(generation) && _isConnected)
                 {
                     // 每30秒发送一次心跳
-                    await Task.Delay(30000, _cts.Token);
+                    await Task.Delay(30000, cancellationToken);
 
-                    if (_isConnected && !_cts.Token.IsCancellationRequested)
+                    if (_isConnected && !cancellationToken.IsCancellationRequested && IsCurrentGeneration(generation))
                     {
                         var pingMessage = new Dictionary<string, object>
                         {
@@ -406,12 +408,15 @@ namespace Xdows_Security
             }
             catch (Exception ex)
             {
-                OnError?.Invoke(this, $"心跳出错: {ex.Message}");
+                if (IsCurrentGeneration(generation))
+                {
+                    OnError?.Invoke(this, $"心跳出错: {ex.Message}");
+                }
             }
         }
-        private async Task ReceiveLoopAsync()
+        private async Task ReceiveLoopAsync(int generation, NetworkStream? stream, CancellationToken cancellationToken)
         {
-            if (_stream == null || _cts == null)
+            if (stream == null)
                 return;
 
             try
@@ -419,11 +424,11 @@ namespace Xdows_Security
                 int retryCount = 0;
                 const int maxRetries = 5;
 
-                while (!_cts.Token.IsCancellationRequested && _isConnected)
+                while (!cancellationToken.IsCancellationRequested && IsCurrentGeneration(generation) && _isConnected)
                 {
                     try
                     {
-                        var message = await TCPMessageProtocol.DecodeMessageAsync(_stream);
+                        var message = await TCPMessageProtocol.DecodeMessageAsync(stream);
                         if (message == null)
                         {
                             // 连接已关闭或解码失败
@@ -453,29 +458,35 @@ namespace Xdows_Security
 
                         if (decodeEx is System.IO.IOException)
                         {
-                            if (!decodeEx.Message.Contains("线程退出") && !decodeEx.Message.Contains("应用程序请求"))
+                            if (IsCurrentGeneration(generation) && !decodeEx.Message.Contains("线程退出") && !decodeEx.Message.Contains("应用程序请求"))
                             {
                                 OnError?.Invoke(this, $"连接已断开: {decodeEx.Message}");
                             }
 
-                            Cleanup();
+                            if (IsCurrentGeneration(generation))
+                            {
+                                Cleanup();
+                            }
                             break;
                         }
 
-                        await Task.Delay(600, _cts.Token);
+                        await Task.Delay(600, cancellationToken);
                     }
                 }
             }
             catch (Exception ex)
             {
-                OnError?.Invoke(this, $"接收消息时出错: {ex.Message}");
+                if (IsCurrentGeneration(generation))
+                {
+                    OnError?.Invoke(this, $"接收消息时出错: {ex.Message}");
+                }
                 // 不立即触发断开事件，让UI控制状态显示
                 // OnDisconnected?.Invoke(this, "连接已断开");
             }
             finally
             {
                 // 如果循环结束，说明连接已断开
-                if (_isConnected)
+                if (IsCurrentGeneration(generation) && _isConnected)
                 {
                     _isConnected = false;
                     // 不立即触发断开事件，让UI控制状态显示
@@ -485,6 +496,7 @@ namespace Xdows_Security
         }
         private void Cleanup()
         {
+            _connectionGeneration++;
             _isConnected = false;
 
             try
@@ -503,6 +515,7 @@ namespace Xdows_Security
             _receiveTask = null;
             _heartbeatTask = null;
         }
+        private bool IsCurrentGeneration(int generation) => generation == _connectionGeneration;
         public bool IsConnected => _isConnected;
         public string Username => _username;
         public string ServerHost => _serverHost;

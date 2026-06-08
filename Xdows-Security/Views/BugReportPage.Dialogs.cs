@@ -30,9 +30,9 @@ namespace Xdows_Security.Views
                 Spacing = 12
             };
 
-            TextBox usernameBox = CreateDialogTextBox("BugReportUsernameBox", _tcpClient?.Username ?? "");
-            TextBox hostBox = CreateDialogTextBox("BugReportHostBox", _tcpClient?.ServerHost ?? "");
-            TextBox portBox = CreateDialogTextBox("BugReportPortBox", _tcpClient?.ServerPort.ToString() ?? "");
+            TextBox usernameBox = CreateDialogTextBox("BugReportUsernameBox", _tcpClient?.Username ?? "", "BugReportPage_UsernameLabel");
+            TextBox hostBox = CreateDialogTextBox("BugReportHostBox", _tcpClient?.ServerHost ?? "", "BugReportPage_HostLabel");
+            TextBox portBox = CreateDialogTextBox("BugReportPortBox", _tcpClient?.ServerPort.ToString() ?? "", "BugReportPage_PortLabel");
 
             stackPanel.Children.Add(CreateDialogField("BugReportPage_UsernameLabel", usernameBox));
             stackPanel.Children.Add(CreateDialogField("BugReportPage_HostLabel", hostBox));
@@ -119,7 +119,7 @@ namespace Xdows_Security.Views
             return panel;
         }
 
-        private static TextBox CreateDialogTextBox(String automationId, String text)
+        private static TextBox CreateDialogTextBox(String automationId, String text, String labelResourceKey)
         {
             TextBox textBox = new()
             {
@@ -128,6 +128,7 @@ namespace Xdows_Security.Views
             };
 
             AutomationProperties.SetAutomationId(textBox, automationId);
+            AutomationProperties.SetName(textBox, L(labelResourceKey));
             return textBox;
         }
     }

@@ -53,7 +53,10 @@ namespace Xdows_Security.Views
             try
             {
                 await InitializeTCPClientAsync();
-                InitializeRefreshTimer();
+                if (!_isUnloaded)
+                {
+                    InitializeRefreshTimer();
+                }
             }
             catch (Exception ex)
             {
