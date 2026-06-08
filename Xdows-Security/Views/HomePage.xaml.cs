@@ -18,6 +18,8 @@ namespace Xdows_Security.Views
 {
     public sealed partial class HomePage : Page
     {
+        private const double LogScrollEdgeThreshold = 8;
+
         private bool _entrancePlayed;
         private bool _langHandlerAttached;
 
@@ -70,6 +72,7 @@ namespace Xdows_Security.Views
         private bool _isLoadingOlder;
         private bool _hasMoreOlder = true;
         private bool _isAutoScroll = true;
+        private ScrollViewer? _logScrollViewer;
         private DispatcherQueueTimer? _logThrottleTimer;
         private LogEntry? _pendingLogEntry;
 
@@ -84,7 +87,8 @@ namespace Xdows_Security.Views
 
             UpdateLogEmptyState();
 
-            LogScroll.ViewChanged += LogScroll_ViewChanged;
+            LogListView.Loaded += LogListView_Loaded;
+            LogListView.Unloaded += LogListView_Unloaded;
 
             LogSearchBox.QuerySubmitted += LogSearchBox_QuerySubmitted;
             LogSearchBox.TextChanged += LogSearchBox_TextChanged;
@@ -104,10 +108,42 @@ namespace Xdows_Security.Views
 
         private void HomePage_Unloaded(object sender, RoutedEventArgs e)
         {
+            DetachLogScrollViewer();
+
             if (!_langHandlerAttached) return;
             _langHandlerAttached = false;
             try { Localizer.Get().LanguageChanged -= OnLanguageChanged; } catch { }
             try { Xdows_Security.ProtectionStatus.StateChanged -= OnProtectionStateChanged; } catch { }
+        }
+
+        private void LogListView_Loaded(object sender, RoutedEventArgs e)
+        {
+            AttachLogScrollViewer();
+        }
+
+        private void LogListView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            DetachLogScrollViewer();
+        }
+
+        private void DetachLogScrollViewer()
+        {
+            if (_logScrollViewer is null) return;
+
+            _logScrollViewer.ViewChanged -= LogScroll_ViewChanged;
+            _logScrollViewer = null;
+        }
+
+        private void AttachLogScrollViewer()
+        {
+            if (_logScrollViewer is not null) return;
+
+            LogListView.ApplyTemplate();
+            _logScrollViewer = FindDescendant<ScrollViewer>(LogListView);
+            if (_logScrollViewer is null) return;
+
+            _logScrollViewer.ViewChanged += LogScroll_ViewChanged;
+            _isAutoScroll = IsLogScrolledToBottom(_logScrollViewer);
         }
 
         private async void HomePage_Loaded(object sender, RoutedEventArgs e)
@@ -146,48 +182,72 @@ namespace Xdows_Security.Views
             UpdateLogEmptyState();
 
             await Task.Delay(50);
-            LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
+            AttachLogScrollViewer();
+            ScrollLogsToBottom();
+            _isAutoScroll = true;
         }
 
         private int CalculateInitialCount()
         {
-            double height = LogScroll.ActualHeight;
+            double height = _logScrollViewer?.ActualHeight ?? LogListView.ActualHeight;
             if (height <= 0) height = 216;
             return (int)(height / 18) + 20;
         }
 
         private async void LogScroll_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
         {
+            if (sender is not ScrollViewer scrollViewer) return;
+
+            _isAutoScroll = IsLogScrolledToBottom(scrollViewer);
+
             if (_isLoadingOlder || !_hasMoreOlder) return;
 
-            if (LogScroll.VerticalOffset <= 5 && LogScroll.ScrollableHeight > 0)
+            if (scrollViewer.VerticalOffset <= LogScrollEdgeThreshold && scrollViewer.ScrollableHeight > 0)
             {
-                _isLoadingOlder = true;
-                try
+                await LoadOlderLogsAsync(scrollViewer);
+            }
+        }
+
+        private async Task LoadOlderLogsAsync(ScrollViewer scrollViewer)
+        {
+            if (_isLoadingOlder || !_hasMoreOlder || _logEntries.Count == 0) return;
+
+            _isLoadingOlder = true;
+            try
+            {
+                long oldestId = _logEntries[0].Id;
+                LogText.LogLevel[] levelsSnapshot = [.. _selectedLevels];
+                string? keywordSnapshot = _searchKeyword;
+
+                var older = await Task.Run(() =>
+                    LogService.GetOlderLogs(oldestId, 50, levelsSnapshot, keywordSnapshot));
+
+                if (older.Count == 0)
                 {
-                    if (_logEntries.Count == 0) return;
-                    long oldestId = _logEntries[0].Id;
-                    var older = LogService.GetOlderLogs(oldestId, 50, _selectedLevels, _searchKeyword);
-                    if (older.Count == 0)
-                    {
-                        _hasMoreOlder = false;
-                        return;
-                    }
-
-                    double prevScrollableHeight = LogScroll.ScrollableHeight;
-
-                    for (int i = 0; i < older.Count; i++)
-                        _logEntries.Insert(i, older[i]);
-
-                    await Task.Delay(10);
-                    double newScrollableHeight = LogScroll.ScrollableHeight;
-                    double offsetAdjustment = newScrollableHeight - prevScrollableHeight;
-                    LogScroll.ChangeView(null, LogScroll.VerticalOffset + offsetAdjustment, null);
+                    _hasMoreOlder = false;
+                    return;
                 }
-                finally
+
+                if (_logEntries.Count == 0 ||
+                    _logEntries[0].Id != oldestId ||
+                    !levelsSnapshot.SequenceEqual(_selectedLevels) ||
+                    keywordSnapshot != _searchKeyword)
                 {
-                    _isLoadingOlder = false;
+                    return;
                 }
+
+                double prevScrollableHeight = scrollViewer.ScrollableHeight;
+
+                for (int i = 0; i < older.Count; i++)
+                    _logEntries.Insert(i, older[i]);
+
+                await Task.Delay(10);
+                double offsetAdjustment = scrollViewer.ScrollableHeight - prevScrollableHeight;
+                scrollViewer.ChangeView(null, scrollViewer.VerticalOffset + offsetAdjustment, null, true);
+            }
+            finally
+            {
+                _isLoadingOlder = false;
             }
         }
 
@@ -204,6 +264,12 @@ namespace Xdows_Security.Views
 
         private void OnLogAdded(object? sender, LogEntry entry)
         {
+            if (!DispatcherQueue.HasThreadAccess)
+            {
+                DispatcherQueue.TryEnqueue(() => OnLogAdded(sender, entry));
+                return;
+            }
+
             _pendingLogEntry = entry;
             if (_logThrottleTimer is { IsRunning: false })
                 _logThrottleTimer.Start();
@@ -234,11 +300,49 @@ namespace Xdows_Security.Views
             _hasMoreOlder = true;
 
             UpdateLogEmptyState();
+            AttachLogScrollViewer();
 
             if (_isAutoScroll)
             {
-                LogScroll.ChangeView(null, LogScroll.ScrollableHeight, null);
+                ScrollLogsToBottom();
             }
+        }
+
+        private bool IsLogScrolledToBottom(ScrollViewer scrollViewer)
+        {
+            return scrollViewer.ScrollableHeight <= LogScrollEdgeThreshold ||
+                   scrollViewer.VerticalOffset >= scrollViewer.ScrollableHeight - LogScrollEdgeThreshold;
+        }
+
+        private void ScrollLogsToBottom()
+        {
+            if (_logScrollViewer is not null)
+            {
+                _logScrollViewer.ChangeView(null, _logScrollViewer.ScrollableHeight, null, true);
+                return;
+            }
+
+            if (_logEntries.Count > 0)
+            {
+                LogListView.ScrollIntoView(_logEntries[^1]);
+            }
+        }
+
+        private static T? FindDescendant<T>(DependencyObject? parent) where T : DependencyObject
+        {
+            if (parent is null) return null;
+
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T target) return target;
+
+                T? result = FindDescendant<T>(child);
+                if (result is not null) return result;
+            }
+
+            return null;
         }
 
         private void LogSearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
