@@ -94,11 +94,12 @@ namespace Xdows_Security.Views
                     }
                 }
 
-                ScrollToBottom();
+                ScrollToBottomAfterLayout();
             }
             else
             {
                 AddSystemMessage(L("BugReportPage_NoHistoryMessages"));
+                ScrollToBottomAfterLayout();
             }
 
             _ = ProcessPendingMessagesAsync();
@@ -312,7 +313,10 @@ namespace Xdows_Security.Views
             }
 
             MessagesPanel.Children.Add(container);
-            ScrollToBottom();
+            if (!isHistory)
+            {
+                ScrollToBottom();
+            }
         }
 
         private static Border CreateAvatar(String username)
@@ -429,6 +433,38 @@ namespace Xdows_Security.Views
             }
 
             ChatScroll.ChangeView(null, ChatScroll.ScrollableHeight, null);
+        }
+
+        private void ScrollToBottomAfterLayout()
+        {
+            if (!DispatcherQueue.HasThreadAccess)
+            {
+                _ = TryEnqueueUi(ScrollToBottomAfterLayout);
+                return;
+            }
+
+            _ = ScrollToBottomAfterLayoutAsync();
+        }
+
+        private async Task ScrollToBottomAfterLayoutAsync()
+        {
+            await Task.Yield();
+            if (_isUnloaded)
+            {
+                return;
+            }
+
+            ChatScroll.UpdateLayout();
+            ScrollToBottom();
+
+            await Task.Delay(50);
+            if (_isUnloaded)
+            {
+                return;
+            }
+
+            ChatScroll.UpdateLayout();
+            ScrollToBottom();
         }
 
         private async void SendBtn_Click(Object sender, RoutedEventArgs e)
