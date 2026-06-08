@@ -9,65 +9,118 @@
     xmlns:l="using:WinUI3Localizer"
     mc:Ignorable="d">
 
-    <Grid Padding="24">
+    <Grid Margin="64,24,64,24" RowSpacing="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Chat -->
-        <Border Grid.Row="0"
-                CornerRadius="8" Padding="12">
-            <Grid>
+        <Grid Grid.Row="0" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Spacing="4">
+                <TextBlock l:Uids.Uid="BugReportPage_Title"
+                           Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock l:Uids.Uid="BugReportPage_Description"
+                           Style="{StaticResource BodyTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom"
+                        Spacing="8">
+                <Button x:Name="SettingsBtn"
+                        AutomationProperties.AutomationId="BugReportSettingsButton"
+                        Click="SettingsBtn_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE713;" FontSize="16"/>
+                        <TextBlock l:Uids.Uid="BugReportPage_SettingsButtonText"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="ReconnectBtn"
+                        AutomationProperties.AutomationId="BugReportReconnectButton"
+                        Click="ReconnectBtn_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE72C;" FontSize="16"/>
+                        <TextBlock l:Uids.Uid="BugReportPage_ReconnectButtonText"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Row="1"
+                Padding="16"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource OverlayCornerRadius}">
+            <Grid RowSpacing="12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <ScrollViewer x:Name="ChatScroll"
+                              AutomationProperties.AutomationId="BugReportMessageScroll"
                               Grid.Row="0"
                               VerticalScrollBarVisibility="Auto">
-                    <StackPanel x:Name="MessagesPanel"/>
+                    <StackPanel x:Name="MessagesPanel"
+                                Spacing="4"
+                                Padding="0,0,8,0"/>
                 </ScrollViewer>
 
-                <Grid Grid.Row="1" Margin="0,12,0,0">
+                <Grid Grid.Row="1" ColumnSpacing="8">
                     <Grid.ColumnDefinitions>
-						<ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-					<TextBox x:Name="InputBox"
+
+                    <TextBox x:Name="InputBox"
+                             AutomationProperties.AutomationId="BugReportMessageInput"
                              Grid.Column="0"
                              l:Uids.Uid="BugReportPage_Input"
+                             MinHeight="40"
+                             MaxHeight="120"
+                             AcceptsReturn="False"
+                             TextWrapping="Wrap"
                              KeyDown="InputBox_KeyDown"/>
+
                     <Button x:Name="SendBtn"
+                            AutomationProperties.AutomationId="BugReportSendButton"
                             Grid.Column="1"
-                            Margin="8,0,0,0"
-                            l:Uids.Uid="BugReportPage_SendButton"
-							Style="{StaticResource AccentButtonStyle}"
-                            Click="SendBtn_Click"/>
+                            MinHeight="40"
+                            Style="{StaticResource AccentButtonStyle}"
+                            Click="SendBtn_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE724;" FontSize="16"/>
+                            <TextBlock l:Uids.Uid="BugReportPage_SendButtonText"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
             </Grid>
         </Border>
 
-        <!-- Status -->
-        <Grid Grid.Row="1" Margin="0,12,0,0">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
+
+            <FontIcon Grid.Column="0"
+                      Margin="0,0,8,0"
+                      Glyph="&#xE946;"
+                      FontSize="16"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
             <TextBlock x:Name="StatusTxt"
-                       Grid.Column="0"
-                       VerticalAlignment="Center"/>
-            <Button x:Name="SettingsBtn"
-                    Grid.Column="1"
-                    Margin="0,0,8,0"
-                    l:Uids.Uid="BugReportPage_SettingsButton"
-                    Click="SettingsBtn_Click"/>
-            <Button x:Name="ReconnectBtn"
-                    Grid.Column="2"
-                    l:Uids.Uid="BugReportPage_ReconnectButton"
-                    Click="ReconnectBtn_Click"/>
+                       Grid.Column="1"
+                       VerticalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
         </Grid>
     </Grid>
 </Page>

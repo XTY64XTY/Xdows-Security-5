@@ -953,6 +953,12 @@
 对于此软件的分支产生的问题，此软件的源开发者（Xdows Software、零度枫铸）不承担任何责任。 
 当您通过任何方式使用该引擎时则表示同意并接受该声明，如果您不接受请自行关闭此引擎或停止使用并删除该软件。</value>
   </data>
+  <data name="BugReportPage_Title.Text" xml:space="preserve">
+    <value>反馈频道</value>
+  </data>
+  <data name="BugReportPage_Description.Text" xml:space="preserve">
+    <value>向开发者反馈问题或建议，并查看反馈频道消息</value>
+  </data>
   <data name="BugReportPage_Connected" xml:space="preserve">
     <value>已连接</value>
   </data>
@@ -971,7 +977,13 @@
   <data name="BugReportPage_SendButton.Content" xml:space="preserve">
     <value>发送</value>
   </data>
+  <data name="BugReportPage_SendButtonText.Text" xml:space="preserve">
+    <value>发送</value>
+  </data>
   <data name="BugReportPage_ReconnectButton.Content" xml:space="preserve">
+    <value>重新连接</value>
+  </data>
+  <data name="BugReportPage_ReconnectButtonText.Text" xml:space="preserve">
     <value>重新连接</value>
   </data>
   <data name="BugReportPage_ConnectionFailedMessage" xml:space="preserve">
@@ -1261,6 +1273,12 @@
   <data name="BugReportPage_UsernameEmpty" xml:space="preserve">
     <value>用户名不能为空</value>
   </data>
+  <data name="BugReportPage_UserOnline" xml:space="preserve">
+    <value>{0} 已上线</value>
+  </data>
+  <data name="BugReportPage_UserOffline" xml:space="preserve">
+    <value>{0} 已离线</value>
+  </data>
   <data name="BugReportPage_AllRead" xml:space="preserve">
     <value>全部已读</value>
   </data>
@@ -1282,6 +1300,9 @@
   <data name="BugReportPage_PortLabel" xml:space="preserve">
     <value>端口:</value>
   </data>
+  <data name="BugReportPage_PortInvalid" xml:space="preserve">
+    <value>端口必须是数字</value>
+  </data>
   <data name="BugReportPage_SettingSaved" xml:space="preserve">
     <value>设置已保存，正在重新连接...</value>
   </data>
@@ -1298,6 +1319,9 @@
     <value>错误: {0}</value>
   </data>
   <data name="BugReportPage_SettingsButton.Content" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="BugReportPage_SettingsButtonText.Text" xml:space="preserve">
     <value>设置</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
