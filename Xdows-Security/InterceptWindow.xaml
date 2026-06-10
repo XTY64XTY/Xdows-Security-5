@@ -41,6 +41,14 @@
                     </Grid>
                 </Border>
 
+                <Border Background="{ThemeResource ControlFillColorDefaultBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderThickness="1" BorderBrush="{ThemeResource ControlElevationBorderBrush}">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="DetectionNameText" FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="ActorPathText" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="CorrelationText" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

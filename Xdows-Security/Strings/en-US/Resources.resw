@@ -1568,6 +1568,36 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Appearance_Transition_Continuum.Content" xml:space="preserve">
     <value>Continuum</value>
   </data>
+  <data name="SettingsPage_Protection_Driver.Header" xml:space="preserve">
+    <value>Driver Protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver.Description" xml:space="preserve">
+    <value>Use the Xdows Security kernel driver for process, file, injection, and self-protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_NotInstalled" xml:space="preserve">
+    <value>Not installed</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_NotRunning" xml:space="preserve">
+    <value>Not running</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_Loading" xml:space="preserve">
+    <value>Loading</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_Protected" xml:space="preserve">
+    <value>Protected by driver</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_NeedsRepair" xml:space="preserve">
+    <value>Needs repair</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
+    <value>Driver environment check required</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Dialog_Content" xml:space="preserve">
+    <value>The driver could not be started. Check administrator permission, driver installation, test-signing/signature state, service status, and native model files.</value>
+  </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="SecurityPage_Details_FamilyName" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />

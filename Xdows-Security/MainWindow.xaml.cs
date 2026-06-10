@@ -24,6 +24,7 @@ namespace Xdows_Security
         public WinUIEx.WindowManager? Manager { get; private set; }
 
         private bool _isOOBEShown;
+        private bool _allowCloseFromTray;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
 
@@ -86,6 +87,7 @@ namespace Xdows_Security
                     }
                     if (disabledVerify)
                     {
+                        _allowCloseFromTray = true;
                         this.Close();
                     }
                     else
@@ -98,6 +100,7 @@ namespace Xdows_Security
                         UserConsentVerificationResult.NotConfiguredForUser or
                         UserConsentVerificationResult.Verified)
                         {
+                            _allowCloseFromTray = true;
                             this.Close();
                         }
                         return;
@@ -451,13 +454,18 @@ namespace Xdows_Security
         }
         private void MainWindow_Closing(object sender, AppWindowClosingEventArgs e)
         {
-            App.ReleaseResources();
-
             bool trayVisible = !ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) || (trayVisibleToggle is bool trayVisibleValue && trayVisibleValue);
-            if (trayVisible)
+            if (trayVisible && !_allowCloseFromTray)
             {
                 e.Cancel = true;
                 this.Hide();
+                return;
+            }
+            if (_allowCloseFromTray)
+            {
+                ProtectionStatus.PrepareVoluntaryExit();
+                App.ReleaseResources();
+                _allowCloseFromTray = false;
                 return;
             }
             bool disabledVerify = false;
@@ -476,10 +484,17 @@ namespace Xdows_Security
                 UserConsentVerificationResult.NotConfiguredForUser or
                 UserConsentVerificationResult.Verified)
                 {
+                    ProtectionStatus.PrepareVoluntaryExit();
+                    App.ReleaseResources();
                     e.Cancel = false;
+                    _allowCloseFromTray = false;
                 }
                 return;
             }
+
+            ProtectionStatus.PrepareVoluntaryExit();
+            App.ReleaseResources();
+            _allowCloseFromTray = false;
         }
         private void Nav_Loaded(object sender, RoutedEventArgs e)
         {

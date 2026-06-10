@@ -46,9 +46,11 @@ namespace Xdows_Security.Views
         {
             if (IsInitialize) return;
 
+            UpdateDriverProtectionState();
             UpdateProtectionToggleState(ProcessToggle, 0);
             UpdateProtectionToggleState(FilesToggle, 1);
             UpdateProtectionToggleState(RegistryToggle, 4);
+            ApplyDriverProtectionControlState();
         }
 
         private void UpdateProtectionToggleState(ToggleSwitch toggle, Int32 runId)
@@ -99,6 +101,48 @@ namespace Xdows_Security.Views
         {
             SettingsPage_Protection_Registry.Header += " (Beta)";
             SettingsPage_Scan_Xdows_Model.Header += " (Beta)";
+            UpdateDriverProtectionState();
+        }
+
+        private void UpdateDriverProtectionState()
+        {
+            if (DriverProtectionToggle == null || DriverProtectionStatusText == null) return;
+
+            DriverProtectionToggle.Toggled -= DriverProtectionToggle_Toggled;
+            DriverProtectionToggle.IsOn = ProtectionStatus.IsRun(5);
+            DriverProtectionToggle.Toggled += DriverProtectionToggle_Toggled;
+
+            string statusKey = ProtectionStatus.GetDriverStatusKey();
+            string status = Localizer.Get().GetLocalizedString(statusKey);
+            DriverProtectionStatusText.Text = string.IsNullOrWhiteSpace(status) ? statusKey : status;
+        }
+
+        private void ApplyDriverProtectionControlState()
+        {
+            bool driverRunning = ProtectionStatus.IsRun(5);
+
+            ProcessToggle.IsEnabled = !driverRunning;
+            FilesToggle.IsEnabled = !driverRunning;
+            RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
+            Process_CompatibilityMode.IsOn = true;
+            Files_CompatibilityMode.IsOn = true;
+            Process_CompatibilityMode.IsEnabled = false;
+            Files_CompatibilityMode.IsEnabled = false;
+        }
+
+        private async Task ShowDriverEnvironmentDialogAsync()
+        {
+            try
+            {
+                DriverEnvironmentDialog dialog = new()
+                {
+                    XamlRoot = this.XamlRoot,
+                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+                };
+
+                await dialog.ShowAsync();
+            }
+            catch { }
         }
 
         private Task LoadScanSettingAsync
@@ -182,13 +226,10 @@ namespace Xdows_Security.Views
                 toggle.IsOn = !toggle.IsOn;
             toggle.IsOn = ProtectionStatus.IsRun(runId);
             toggle.Toggled += RunProtection;
-            if (runId == 0)
+            if (runId == 5)
             {
-                Process_CompatibilityMode.IsEnabled = !ProtectionStatus.IsRun(0);
-            }
-            if (runId == 1)
-            {
-                Files_CompatibilityMode.IsEnabled = !ProtectionStatus.IsRun(1);
+                UpdateDriverProtectionState();
+                ApplyDriverProtectionControlState();
             }
         }
 
@@ -203,12 +244,24 @@ namespace Xdows_Security.Views
             String tag = toggle.Tag as String ?? String.Empty;
             Int32 runId = tag switch
             {
-                "Progress" => 0,
+                "Driver" => 5,
+                "Process" => 0,
                 "Files" => 1,
                 "Registry" => 4,
                 _ => 0
             };
             RunProtectionWithToggle(toggle, runId);
+        }
+
+        private async void DriverProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (sender is not ToggleSwitch toggle || IsInitialize) return;
+
+            RunProtectionWithToggle(toggle, 5);
+            if (!ProtectionStatus.IsRun(5))
+            {
+                await ShowDriverEnvironmentDialogAsync();
+            }
         }
 
         private async void Toggled_SaveToggleData(Object sender, RoutedEventArgs e)
@@ -217,6 +270,12 @@ namespace Xdows_Security.Views
 
             String key = toggle.Tag as String ?? toggle.Name;
             if (String.IsNullOrWhiteSpace(key)) return;
+            if (key is "Process_CompatibilityMode" or "Files_CompatibilityMode")
+            {
+                toggle.IsOn = true;
+                ApplicationData.Current.LocalSettings.Values[key] = true;
+                return;
+            }
             if (toggle.IsOn && (key == "CloudScan" || key == "ExactRuleScan"))
             {
                 _ = new ContentDialog
@@ -277,6 +336,7 @@ namespace Xdows_Security.Views
                 DisabledVerifyToggle,
                 Process_CompatibilityMode,
                 Files_CompatibilityMode,
+                DriverProtectionToggle,
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
@@ -336,14 +396,16 @@ namespace Xdows_Security.Views
             if (!settings.Values.ContainsKey("Process_CompatibilityMode"))
             {
                 settings.Values["Process_CompatibilityMode"] = true;
-                Process_CompatibilityMode.IsOn = true;
             }
+            Process_CompatibilityMode.IsOn = true;
+            Process_CompatibilityMode.IsEnabled = false;
 
             if (!settings.Values.ContainsKey("Files_CompatibilityMode"))
             {
                 settings.Values["Files_CompatibilityMode"] = true;
-                Files_CompatibilityMode.IsOn = true;
             }
+            Files_CompatibilityMode.IsOn = true;
+            Files_CompatibilityMode.IsEnabled = false;
 
             if (!settings.Values.ContainsKey("TrayVisibleToggle"))
             {
@@ -380,6 +442,9 @@ namespace Xdows_Security.Views
             ProcessToggle.IsOn = ProtectionStatus.IsRun(0);
             FilesToggle.IsOn = ProtectionStatus.IsRun(1);
             RegistryToggle.IsOn = ProtectionStatus.IsRun(4);
+            DriverProtectionToggle.IsOn = ProtectionStatus.IsRun(5);
+            UpdateDriverProtectionState();
+            ApplyDriverProtectionControlState();
             ContextMenuScanToggle.IsOn = ContextMenuService.IsEnabled();
             StartupToggle.IsOn = StartupService.IsStartupEnabled();
 

@@ -97,7 +97,7 @@ namespace Xdows_Security
 
         public static bool IsOpen()
         {
-            return IsRun(0) || IsRun(1) || IsRun(4);
+            return IsRun(0) || IsRun(1) || IsRun(4) || IsRun(5);
         }
 
         private static readonly InterceptCallBack interceptCallBack = (isSucceed, path, type) =>
@@ -121,9 +121,65 @@ namespace Xdows_Security
         private static readonly IProtectionModel LegacyProcessProtection = new LegacyProcessProtection();
         private static readonly IProtectionModel LegacyFilesProtection = new LegacyFilesProtection();
 
-        private static readonly IProtectionModel ETWProcessProtection = new ETW.ProcessProtection();
-        private static readonly IProtectionModel ETWFilesProtection = new ETW.FilesProtection();
-        private static readonly IProtectionModel ETWRegistryProtection = new ETW.RegistryProtection();
+        private static readonly DriverProtection DriverProtection = CreateDriverProtection();
+
+        private static DriverProtection CreateDriverProtection()
+        {
+            return new DriverProtection
+            {
+                DecisionCallback = DriverDecisionCallbackAsync
+            };
+        }
+
+        private static async Task<ProtectionUserDecision> DriverDecisionCallbackAsync(ProtectionDecisionRequest request, CancellationToken token)
+        {
+            LogText.AddNewLog(
+                LogText.LogLevel.WARN,
+                "DriverProtection",
+                $"Threat intercepted: {request.ProtectionType} {request.Path} ({request.DetectionName}, {request.Probability:F2}%, cid:{request.CorrelationId})");
+
+            if (App.MainWindow?.DispatcherQueue is null)
+                return ProtectionUserDecision.Block;
+
+            TaskCompletionSource<ProtectionUserDecision> tcs = new();
+            using CancellationTokenRegistration registration = token.Register(() => tcs.TrySetResult(ProtectionUserDecision.Timeout));
+
+            bool queued = App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    string button = await InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
+                    {
+                        Path = request.Path,
+                        IsSucceed = true,
+                        InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.InterceptOrRelease,
+                        ProtectionType = request.ProtectionType,
+                        DetectionName = request.DetectionName,
+                        Probability = request.Probability,
+                        ActorPath = request.ActorPath,
+                        ActorTrust = request.ActorTrust,
+                        ActorDetectionName = request.ActorDetectionName,
+                        ActorProbability = request.ActorProbability,
+                        CommandLine = request.CommandLine,
+                        CorrelationId = request.CorrelationId
+                    });
+
+                    tcs.TrySetResult(button == "Release"
+                        ? ProtectionUserDecision.Allow
+                        : ProtectionUserDecision.Block);
+                }
+                catch
+                {
+                    tcs.TrySetResult(ProtectionUserDecision.Block);
+                }
+            });
+
+            if (!queued)
+                return ProtectionUserDecision.Block;
+
+            return await tcs.Task;
+        }
+
         public static bool Run(int RunID)
         {
             IProtectionModel? protection = RunIdToProtection(RunID);
@@ -156,12 +212,12 @@ namespace Xdows_Security
 
         public static void RestoreProtections()
         {
-            RestoreProtection(0);
-            RestoreProtection(1);
+            RestoreProtection(5);
 
-            if (App.IsRunAsAdmin())
+            if (!IsRun(5))
             {
-                RestoreProtection(4);
+                RestoreProtection(0);
+                RestoreProtection(1);
             }
         }
 
@@ -200,29 +256,38 @@ namespace Xdows_Security
         {
             return RunIdToProtection(RunID)?.IsRun() ?? false;
         }
+
+        public static void PrepareVoluntaryExit()
+        {
+            DriverProtection.TrySetVoluntaryExit(true);
+        }
+
+        public static string GetDriverStatusKey()
+        {
+            if (DriverProtection.IsRun())
+                return "SettingsPage_Protection_Driver_Status_Protected";
+
+            return DriverProtection.QueryRuntimeStatus() switch
+            {
+                DriverProtectionRuntimeStatus.NotInstalled => "SettingsPage_Protection_Driver_Status_NotInstalled",
+                DriverProtectionRuntimeStatus.NotRunning => "SettingsPage_Protection_Driver_Status_NotRunning",
+                DriverProtectionRuntimeStatus.Loading => "SettingsPage_Protection_Driver_Status_Loading",
+                DriverProtectionRuntimeStatus.Protected => "SettingsPage_Protection_Driver_Status_Protected",
+                DriverProtectionRuntimeStatus.NeedsRepair => "SettingsPage_Protection_Driver_Status_NeedsRepair",
+                _ => "SettingsPage_Protection_Driver_Status_Error"
+            };
+        }
+
         private static IProtectionModel? RunIdToProtection(int RunID)
         {
             IProtectionModel? protection = RunID switch
             {
-                0 => ETWProcessProtection,
-                1 => ETWFilesProtection,
-                4 => ETWRegistryProtection,
+                0 => LegacyProcessProtection,
+                1 => LegacyFilesProtection,
+                5 => DriverProtection,
                 _ => null,
             };
             if (protection is null) { return null; }
-
-            bool isCompatibilityMode = ApplicationData.Current.LocalSettings.Values[protection.Name + "_CompatibilityMode"] as bool? ?? (RunID is 0 or 1);
-
-            if (isCompatibilityMode)
-            {
-                protection = RunID switch
-                {
-                    0 => LegacyProcessProtection,
-                    1 => LegacyFilesProtection,
-                    _ => null,
-                };
-            }
-
             return protection;
         }
     }

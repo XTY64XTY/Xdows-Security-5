@@ -230,6 +230,22 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Protection" />
+                <controls:SettingsCard
+                    VerticalAlignment="Top"
+                    l:Uids.Uid="SettingsPage_Protection_Driver"
+                    HeaderIcon="{ui:FontIcon Glyph=&#xE83D;}"
+                    x:Name="DriverProtectionCard"
+                    Margin="0,0,0,4">
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock x:Name="DriverProtectionStatusText"
+                                   MinWidth="96"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"/>
+                        <ToggleSwitch x:Name="DriverProtectionToggle"
+                                      Tag="Driver"
+                                      Toggled="DriverProtectionToggle_Toggled"/>
+                    </StackPanel>
+                </controls:SettingsCard>
                 <controls:SettingsExpander
                VerticalAlignment="Top"
                l:Uids.Uid="SettingsPage_Protection_Process"

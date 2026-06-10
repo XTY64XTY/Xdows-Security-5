@@ -55,6 +55,18 @@ namespace Xdows_Security
             ProgramNameText.Text = Path.GetFileName(_originalFilePath);
             FilePathText.Text = _originalFilePath;
             DetectionTimeText.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+            ThreatTypeText.Text = string.IsNullOrWhiteSpace(setting.ProtectionType)
+                ? ThreatTypeText.Text
+                : setting.ProtectionType;
+            DetectionNameText.Text = string.IsNullOrWhiteSpace(setting.DetectionName)
+                ? string.Empty
+                : $"{setting.DetectionName}  {setting.Probability:F2}%";
+            ActorPathText.Text = string.IsNullOrWhiteSpace(setting.ActorPath)
+                ? string.Empty
+                : $"Actor: {setting.ActorPath} ({setting.ActorTrust ?? "unknown"})";
+            CorrelationText.Text = setting.CorrelationId == 0
+                ? string.Empty
+                : $"Correlation: {setting.CorrelationId}";
             ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
             if (setting.InterceptWindowButtonType == InterceptWindowButtonType.RestoreOrTrust)
             {

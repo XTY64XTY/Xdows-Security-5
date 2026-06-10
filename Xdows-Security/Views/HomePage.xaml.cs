@@ -556,7 +556,10 @@ namespace Xdows_Security.Views
         {
             var st = Localizer.Get().GetLocalizedString("AllPage_Status").Split(',');
             var ok = Xdows_Security.ProtectionStatus.IsOpen();
-            ProtectionStatus.Text = ok ? st[0] : st[1];
+            string driverStatus = Localizer.Get().GetLocalizedString(Xdows_Security.ProtectionStatus.GetDriverStatusKey());
+            ProtectionStatus.Text = Xdows_Security.ProtectionStatus.IsRun(5) && !string.IsNullOrWhiteSpace(driverStatus)
+                ? driverStatus
+                : ok ? st[0] : st[1];
             ProtectionStatus.Foreground = ok
             ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 78, 201, 176))
             : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 241, 82, 98));

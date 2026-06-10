@@ -1570,4 +1570,34 @@
   <data name="SettingsPage_Appearance_Transition_Continuum.Content" xml:space="preserve">
     <value>連續</value>
   </data>
+  <data name="SettingsPage_Protection_Driver.Header" xml:space="preserve">
+    <value>驅動防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver.Description" xml:space="preserve">
+    <value>使用 Xdows Security 內核驅動接管進程、文件、注入和自保護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_NotInstalled" xml:space="preserve">
+    <value>未安裝</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_NotRunning" xml:space="preserve">
+    <value>未運行</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_Loading" xml:space="preserve">
+    <value>載入中</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_Protected" xml:space="preserve">
+    <value>驅動已保護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_NeedsRepair" xml:space="preserve">
+    <value>需要修復</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Status_Error" xml:space="preserve">
+    <value>錯誤</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
+    <value>需要檢測驅動環境</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Dialog_Content" xml:space="preserve">
+    <value>驅動未能啟動。請檢查管理員權限、驅動安裝、測試簽名/正式簽名狀態、服務狀態和原生模型文件。</value>
+  </data>
 </root>
