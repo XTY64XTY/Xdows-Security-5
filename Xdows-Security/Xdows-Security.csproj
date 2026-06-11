@@ -28,6 +28,8 @@
 		<IlcOptimizationPreference>Speed</IlcOptimizationPreference>
 		<IlcInstructionSet>x86-64-v2</IlcInstructionSet>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<XdowsModelNativeOutput>..\..\Xdows-Model\$(Platform)\$(Configuration)</XdowsModelNativeOutput>
+		<XdowsDriverPackageOutput>..\..\Xdows-Security-Driver\$(Platform)\$(Configuration)\Xdows-Security-Driver</XdowsDriverPackageOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -68,6 +70,29 @@
 		<ProjectReference Include="..\Helper\Helper.csproj" />
 		<ProjectReference Include="..\Protection\Protection.csproj" />
 		<ProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<Link>Xdows-Model-Native.dll</Link>
+		</Content>
+		<Content Include="$(XdowsModelNativeOutput)\onnxruntime.dll" Condition="Exists('$(XdowsModelNativeOutput)\onnxruntime.dll')">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<Link>onnxruntime.dll</Link>
+		</Content>
+		<Content Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" Condition="Exists('$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll')">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<Link>onnxruntime_providers_shared.dll</Link>
+		</Content>
+		<Content Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<Link>Driver\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		</Content>
 	</ItemGroup>
 
 	<PropertyGroup Label="Globals">

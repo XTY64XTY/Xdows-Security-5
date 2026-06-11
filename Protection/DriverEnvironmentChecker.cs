@@ -54,6 +54,8 @@ public static class DriverEnvironmentChecker
         [
             Path.Combine(AppContext.BaseDirectory, "Driver", "Xdows-Security-Driver.inf"),
             Path.Combine(AppContext.BaseDirectory, "Xdows-Security-Driver.inf"),
+            @"D:\Code\Xdows-Security-Driver\x64\Debug\Xdows-Security-Driver\Xdows-Security-Driver.inf",
+            @"D:\Code\Xdows-Security-Driver\x64\Release\Xdows-Security-Driver\Xdows-Security-Driver.inf",
             @"D:\Code\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.inf"
         ];
 
@@ -66,6 +68,10 @@ public static class DriverEnvironmentChecker
         [
             Path.Combine(AppContext.BaseDirectory, "Driver", "Xdows-Security-Driver.sys"),
             Path.Combine(AppContext.BaseDirectory, "Xdows-Security-Driver.sys"),
+            @"D:\Code\Xdows-Security-Driver\x64\Debug\Xdows-Security-Driver\Xdows-Security-Driver.sys",
+            @"D:\Code\Xdows-Security-Driver\x64\Release\Xdows-Security-Driver\Xdows-Security-Driver.sys",
+            @"D:\Code\Xdows-Security-Driver\x64\Debug\Xdows-Security-Driver.sys",
+            @"D:\Code\Xdows-Security-Driver\x64\Release\Xdows-Security-Driver.sys",
             @"D:\Code\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.sys"
         ];
 
@@ -189,7 +195,9 @@ public static class DriverEnvironmentChecker
         [
             "Xdows-Model.onnx",
             "Xdows-Model-Flash.onnx",
-            "Xdows-Model-Pro.onnx"
+            "Xdows-Model-Pro.onnx",
+            "onnxruntime.dll",
+            "onnxruntime_providers_shared.dll"
         ];
 
         int foundModels = models.Count(name => File.Exists(Path.Combine(baseDirectory, name)));

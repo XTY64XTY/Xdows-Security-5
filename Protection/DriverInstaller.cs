@@ -33,6 +33,8 @@ public static class DriverInstaller
         if (string.IsNullOrWhiteSpace(infPath))
             return new DriverRepairResult(false, "Driver INF was not found.");
 
+        await StopServiceIfPresentAsync(token).ConfigureAwait(false);
+
         var install = await DriverEnvironmentChecker.RunCommandAsync(
             "pnputil",
             $"/add-driver \"{infPath}\" /install",
@@ -50,6 +52,38 @@ public static class DriverInstaller
             return new DriverRepairResult(false, $"Driver installed, but service start failed: {start.Message}");
 
         return new DriverRepairResult(true, "Driver installed and service started.");
+    }
+
+    public static async Task<DriverRepairResult> UninstallDriverAsync(CancellationToken token = default)
+    {
+        await StopServiceIfPresentAsync(token).ConfigureAwait(false);
+
+        var enumDrivers = await DriverEnvironmentChecker.RunCommandAsync(
+            "pnputil",
+            "/enum-drivers",
+            token).ConfigureAwait(false);
+
+        if (!enumDrivers.Started || enumDrivers.ExitCode != 0)
+            return new DriverRepairResult(false, $"Unable to enumerate drivers: {TrimCommandOutput(enumDrivers.Output)}");
+
+        string? publishedName = FindPublishedName(enumDrivers.Output);
+        if (string.IsNullOrWhiteSpace(publishedName))
+            return new DriverRepairResult(true, "Driver package is not installed.");
+
+        var delete = await DriverEnvironmentChecker.RunCommandAsync(
+            "pnputil",
+            $"/delete-driver {publishedName} /uninstall /force",
+            token).ConfigureAwait(false);
+
+        if (delete.Started && delete.ExitCode == 0)
+            return new DriverRepairResult(true, $"Driver package {publishedName} uninstalled.");
+
+        string output = TrimCommandOutput(delete.Output);
+        bool rebootLikely = output.Contains("reboot", StringComparison.OrdinalIgnoreCase) ||
+            output.Contains("restart", StringComparison.OrdinalIgnoreCase);
+        return new DriverRepairResult(
+            false,
+            rebootLikely ? $"{output} A restart may be required before retrying." : output);
     }
 
     public static async Task<DriverRepairResult> StartServiceAsync(CancellationToken token = default)
@@ -101,7 +135,9 @@ public static class DriverInstaller
                 "Xdows-Model.onnx",
                 "Xdows-Model-Flash.onnx",
                 "Xdows-Model-Pro.onnx",
-                "Xdows-Model-Native.dll"
+                "Xdows-Model-Native.dll",
+                "onnxruntime.dll",
+                "onnxruntime_providers_shared.dll"
             ];
 
             var copied = new List<string>();
@@ -159,6 +195,10 @@ public static class DriverInstaller
         [
             AppContext.BaseDirectory,
             @"D:\Code\Xdows-Model\Xdows-Model-Invoker",
+            @"D:\Code\Xdows-Model\x64\Debug",
+            @"D:\Code\Xdows-Model\x64\Release",
+            @"D:\Code\Xdows-Model\ARM64\Debug",
+            @"D:\Code\Xdows-Model\ARM64\Release",
             @"D:\Code\Xdows-Model\Xdows-Model-Invoker\bin\x64\Debug\net10.0-windows10.0.26100.0",
             @"D:\Code\Xdows-Model\Xdows-Model-Caller\bin\x64\Debug\net10.0-windows10.0.26100.0",
             @"D:\Code\Xdows-Model\Xdows-Model-Invoker\bin\Debug\net10.0-windows10.0.26100.0",
@@ -188,5 +228,58 @@ public static class DriverInstaller
     {
         string value = string.IsNullOrWhiteSpace(output) ? "No command output." : output.Trim();
         return value.Length <= 700 ? value : value[..700];
+    }
+
+    private static async Task StopServiceIfPresentAsync(CancellationToken token)
+    {
+        var query = await DriverEnvironmentChecker.RunCommandAsync(
+            "sc.exe",
+            $"query \"{ServiceName}\"",
+            token).ConfigureAwait(false);
+
+        if (!query.Started || query.ExitCode != 0)
+            return;
+
+        if (!query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await DriverEnvironmentChecker.RunCommandAsync(
+            "sc.exe",
+            $"stop \"{ServiceName}\"",
+            token).ConfigureAwait(false);
+    }
+
+    private static string? FindPublishedName(string pnputilOutput)
+    {
+        string? currentPublishedName = null;
+
+        using var reader = new StringReader(pnputilOutput);
+        string? line;
+        while ((line = reader.ReadLine()) is not null)
+        {
+            string trimmed = line.Trim();
+            int colon = trimmed.IndexOf(':');
+            if (colon <= 0)
+                continue;
+
+            string key = trimmed[..colon].Trim();
+            string value = trimmed[(colon + 1)..].Trim();
+
+            if (key.Contains("Published Name", StringComparison.OrdinalIgnoreCase) ||
+                key.Contains("发布名称", StringComparison.OrdinalIgnoreCase))
+            {
+                currentPublishedName = value;
+                continue;
+            }
+
+            if (key.Contains("Original Name", StringComparison.OrdinalIgnoreCase) ||
+                key.Contains("原始名称", StringComparison.OrdinalIgnoreCase))
+            {
+                if (value.Equals("Xdows-Security-Driver.inf", StringComparison.OrdinalIgnoreCase))
+                    return currentPublishedName;
+            }
+        }
+
+        return null;
     }
 }

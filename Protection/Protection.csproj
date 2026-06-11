@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <XdowsModelNativeOutput>..\..\Xdows-Model\$(Platform)\$(Configuration)</XdowsModelNativeOutput>
+    <XdowsDriverPackageOutput>..\..\Xdows-Security-Driver\$(Platform)\$(Configuration)\Xdows-Security-Driver</XdowsDriverPackageOutput>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,19 +22,38 @@
   <ItemGroup>
     <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model.onnx')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Xdows-Model.onnx</Link>
     </Content>
     <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Flash.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Flash.onnx')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Xdows-Model-Flash.onnx</Link>
     </Content>
     <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Pro.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Pro.onnx')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Xdows-Model-Pro.onnx</Link>
     </Content>
-    <None Include="..\..\Xdows-Model\Xdows-Model-Native\$(Platform)\$(Configuration)\Xdows-Model-Native.dll" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Native\$(Platform)\$(Configuration)\Xdows-Model-Native.dll')">
+    <None Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Xdows-Model-Native.dll</Link>
+    </None>
+    <None Include="$(XdowsModelNativeOutput)\onnxruntime.dll" Condition="Exists('$(XdowsModelNativeOutput)\onnxruntime.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <Link>onnxruntime.dll</Link>
+    </None>
+    <None Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" Condition="Exists('$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <Link>onnxruntime_providers_shared.dll</Link>
+    </None>
+    <None Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <Link>Driver\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
 
