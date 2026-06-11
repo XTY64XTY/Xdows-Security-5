@@ -14,6 +14,24 @@ public enum DriverProtectionRuntimeStatus
     Error
 }
 
+public enum DriverProtectionLogSeverity
+{
+    Debug,
+    Info,
+    Warning,
+    Error,
+    Fatal
+}
+
+public sealed record DriverProtectionLogEntry(
+    ulong EventId,
+    ulong CorrelationId,
+    DriverProtectionLogSeverity Severity,
+    uint DroppedCount,
+    DateTimeOffset Timestamp,
+    string Module,
+    string Message);
+
 public sealed class DriverProtection : IProtectionModel
 {
     private sealed record DecisionCacheEntry(
@@ -27,6 +45,7 @@ public sealed class DriverProtection : IProtectionModel
 
     private CancellationTokenSource? _cts;
     private Task? _pumpTask;
+    private Task? _logTask;
     private DriverBridgeClient? _client;
     private NativeModelScanner? _scanner;
     private InterceptCallBack? _interceptCallBack;
@@ -37,6 +56,7 @@ public sealed class DriverProtection : IProtectionModel
     public NativeModelScannerMode ModelMode { get; set; } = NativeModelScannerMode.Standard;
 
     public Func<ProtectionDecisionRequest, CancellationToken, Task<ProtectionUserDecision>>? DecisionCallback { get; set; }
+    public Action<DriverProtectionLogEntry>? LogCallback { get; set; }
 
     public static DriverProtectionRuntimeStatus QueryRuntimeStatus()
     {
@@ -70,7 +90,9 @@ public sealed class DriverProtection : IProtectionModel
                 _client = new DriverBridgeClient();
                 _client.Connect();
                 _client.RegisterProtectedProcess();
-                _pumpTask = Task.Run(() => _client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
+                DriverBridgeClient client = _client;
+                _pumpTask = Task.Run(() => client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
+                _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));
                 return true;
             }
             catch
@@ -94,6 +116,7 @@ public sealed class DriverProtection : IProtectionModel
                 try
                 {
                     _pumpTask?.Wait(2000);
+                    _logTask?.Wait(2000);
                 }
                 catch
                 {
@@ -156,7 +179,75 @@ public sealed class DriverProtection : IProtectionModel
         _cts?.Dispose();
         _cts = null;
         _pumpTask = null;
+        _logTask = null;
         _interceptCallBack = null;
+    }
+
+    private async Task RunLogPumpAsync(DriverBridgeClient client, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                if (client.TryGetNextLog(out XdowsDriverLogEntry entry))
+                {
+                    LogCallback?.Invoke(ConvertLogEntry(entry));
+                    continue;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    0,
+                    0,
+                    DriverProtectionLogSeverity.Warning,
+                    0,
+                    DateTimeOffset.Now,
+                    "Bridge",
+                    $"Driver log polling failed: {ex.GetType().Name}"));
+            }
+
+            await Task.Delay(500, token).ConfigureAwait(false);
+        }
+    }
+
+    private static DriverProtectionLogEntry ConvertLogEntry(XdowsDriverLogEntry entry)
+    {
+        DateTimeOffset timestamp;
+        try
+        {
+            timestamp = DateTimeOffset.FromFileTime(entry.Timestamp);
+        }
+        catch
+        {
+            timestamp = DateTimeOffset.Now;
+        }
+
+        return new DriverProtectionLogEntry(
+            entry.EventId,
+            entry.CorrelationId,
+            MapLogSeverity(entry.Severity),
+            entry.DroppedCount,
+            timestamp,
+            CleanDriverString(entry.Module),
+            CleanDriverString(entry.Message));
+    }
+
+    private static DriverProtectionLogSeverity MapLogSeverity(uint severity)
+    {
+        return severity switch
+        {
+            0 => DriverProtectionLogSeverity.Debug,
+            1 => DriverProtectionLogSeverity.Info,
+            2 => DriverProtectionLogSeverity.Warning,
+            3 => DriverProtectionLogSeverity.Error,
+            4 => DriverProtectionLogSeverity.Fatal,
+            _ => DriverProtectionLogSeverity.Info
+        };
     }
 
     private async Task<XdowsSecurityDecision> HandleDriverEventAsync(

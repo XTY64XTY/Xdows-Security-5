@@ -9,6 +9,8 @@ internal static class DriverProtocol
     public const int MaxCommandChars = 1024;
     public const int MaxReasonChars = 128;
     public const int TokenChars = 64;
+    public const int MaxLogModuleChars = 32;
+    public const int MaxLogMessageChars = 256;
     public const string DevicePath = @"\\.\XdowsSecurityDriver";
 
     private const uint FileDeviceXdowsSecurity = 0x8000;
@@ -24,6 +26,7 @@ internal static class DriverProtocol
     public static readonly uint RegisterProtectedProcess = CtlCode(FileDeviceXdowsSecurity, 0x807, MethodBuffered, FileAnyAccess);
     public static readonly uint SetVoluntaryExit = CtlCode(FileDeviceXdowsSecurity, 0x808, MethodBuffered, FileAnyAccess);
     public static readonly uint AuthorizedShutdown = CtlCode(FileDeviceXdowsSecurity, 0x809, MethodBuffered, FileAnyAccess);
+    public static readonly uint GetNextLog = CtlCode(FileDeviceXdowsSecurity, 0x80A, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -66,6 +69,15 @@ internal enum XdowsSecurityModelMode : uint
     Standard = 0,
     Flash = 1,
     Pro = 2
+}
+
+internal enum XdowsSecurityLogSeverity : uint
+{
+    Debug = 0,
+    Info = 1,
+    Warning = 2,
+    Error = 3,
+    Fatal = 4
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -185,4 +197,21 @@ internal struct XdowsShutdownRequest
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.TokenChars + 1)]
     public string ShutdownToken;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsDriverLogEntry
+{
+    public XdowsProtocolHeader Header;
+    public ulong EventId;
+    public ulong CorrelationId;
+    public uint Severity;
+    public uint DroppedCount;
+    public long Timestamp;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxLogModuleChars)]
+    public string Module;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxLogMessageChars)]
+    public string Message;
 }

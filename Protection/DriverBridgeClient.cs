@@ -131,6 +131,21 @@ internal sealed class DriverBridgeClient : IDisposable
         return state;
     }
 
+    public bool TryGetNextLog(out XdowsDriverLogEntry entry)
+    {
+        EnsureConnected();
+
+        bool ok = DeviceIoControlNoInput(DriverProtocol.GetNextLog, out entry);
+        if (ok)
+            return true;
+
+        int error = Marshal.GetLastWin32Error();
+        if (error == ErrorNoMoreItems)
+            return false;
+
+        throw new Win32Exception(error, "Failed to get next Xdows Security driver log entry.");
+    }
+
     public static bool TryQueryStateWithoutRegister(out XdowsSecurityState state, out int win32Error)
     {
         state = default;

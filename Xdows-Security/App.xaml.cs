@@ -127,8 +127,26 @@ namespace Xdows_Security
         {
             return new DriverProtection
             {
-                DecisionCallback = DriverDecisionCallbackAsync
+                DecisionCallback = DriverDecisionCallbackAsync,
+                LogCallback = DriverLogCallback
             };
+        }
+
+        private static void DriverLogCallback(DriverProtectionLogEntry entry)
+        {
+            LogText.LogLevel level = entry.Severity switch
+            {
+                DriverProtectionLogSeverity.Debug => LogText.LogLevel.DEBUG,
+                DriverProtectionLogSeverity.Info => LogText.LogLevel.INFO,
+                DriverProtectionLogSeverity.Warning => LogText.LogLevel.WARN,
+                DriverProtectionLogSeverity.Error => LogText.LogLevel.ERROR,
+                DriverProtectionLogSeverity.Fatal => LogText.LogLevel.FATAL,
+                _ => LogText.LogLevel.INFO
+            };
+
+            string module = string.IsNullOrWhiteSpace(entry.Module) ? "Driver" : entry.Module;
+            string message = $"eventId:{entry.EventId} correlationId:{entry.CorrelationId} dropped:{entry.DroppedCount} driverTime:{entry.Timestamp:O} {entry.Message}";
+            LogText.AddNewLog(level, $"Driver/{module}", message);
         }
 
         private static async Task<ProtectionUserDecision> DriverDecisionCallbackAsync(ProtectionDecisionRequest request, CancellationToken token)
