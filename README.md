@@ -52,6 +52,49 @@
 
       Or use the Publish feature to enable AOT compilation
 
+#### Driver Protection Development
+
+The driver-backed protection path spans three sibling repositories under `D:\Code`:
+
+- `Xdows-Security`: WinUI app, protection bridge, environment repair UI, logging, and user decisions.
+- `Xdows-Security-Driver`: KMDF driver, shared protocol, test-signed driver package, and VM validation matrix.
+- `Xdows-Model`: ONNX models and `Xdows-Model-Native.dll`.
+
+Build order for local development:
+
+```powershell
+& 'D:\Visual-Studio\MSBuild\Current\Bin\amd64\MSBuild.exe' `
+  'D:\Code\Xdows-Model\Xdows-Model.slnx' `
+  /p:Configuration=Debug `
+  /p:Platform=x64 `
+  /m
+
+& 'D:\Code\Xdows-Security-Driver\tools\Build-TestSignedDriver.ps1' `
+  -Configuration Debug `
+  -Platform x64
+
+dotnet build 'D:\Code\Xdows-Security\Xdows-Security.slnx' -c Debug -p:Platform=x64
+```
+
+The app output should contain:
+
+- `Xdows-Model.onnx`, `Xdows-Model-Flash.onnx`, `Xdows-Model-Pro.onnx`
+- `Xdows-Model-Native.dll`
+- `onnxruntime.dll`, `onnxruntime_providers_shared.dll`
+- `Driver\Xdows-Security-Driver.inf`
+- `Driver\Xdows-Security-Driver.sys`
+- `Driver\xdows-security-driver.cat`
+- `Driver\Xdows-Security-Driver-Test.cer`
+
+Local verification:
+
+```powershell
+& 'D:\Code\Xdows-Security\tests\Invoke-DriverBridgeProtocolSmoke.ps1'
+& 'D:\Code\Xdows-Security\tests\Invoke-PublishAssetSmoke.ps1' -SkipBuild
+```
+
+Driver install, repair, and unload require an elevated test machine with Windows test-signing enabled. Production driver signing is outside the current development flow.
+
 ### License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE.txt) for details.
