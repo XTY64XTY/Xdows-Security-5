@@ -57,7 +57,7 @@
 The driver-backed protection path spans three sibling repositories under `D:\Code`:
 
 - `Xdows-Security`: WinUI app, protection bridge, environment repair UI, logging, and user decisions.
-- `Xdows-Security-Driver`: KMDF driver, shared protocol, test-signed driver package, and VM validation matrix.
+- `Xdows-Security-Driver`: KMDF driver, shared protocol, VS/WDK-generated driver package, and VM validation matrix.
 - `Xdows-Model`: ONNX models and `Xdows-Model-Native.dll`.
 
 Build order for local development:
@@ -69,9 +69,7 @@ Build order for local development:
   /p:Platform=x64 `
   /m
 
-& 'D:\Code\Xdows-Security-Driver\tools\Build-TestSignedDriver.ps1' `
-  -Configuration Debug `
-  -Platform x64
+# Build D:\Code\Xdows-Security-Driver\Xdows-Security-Driver.slnx in VS2026 as Debug|x64.
 
 dotnet build 'D:\Code\Xdows-Security\Xdows-Security.slnx' -c Debug -p:Platform=x64
 ```
@@ -84,7 +82,6 @@ The app output should contain:
 - `Driver\Xdows-Security-Driver.inf`
 - `Driver\Xdows-Security-Driver.sys`
 - `Driver\xdows-security-driver.cat`
-- `Driver\Xdows-Security-Driver-Test.cer`
 
 Local verification:
 
@@ -93,7 +90,7 @@ Local verification:
 & 'D:\Code\Xdows-Security\tests\Invoke-PublishAssetSmoke.ps1' -SkipBuild
 ```
 
-Driver install, repair, and unload require an elevated test machine with Windows test-signing enabled. Production driver signing is outside the current development flow.
+Driver install, repair, and unload require an elevated test machine. Enable Windows test-signing on the VM if the development driver signature is not trusted.
 
 ### License
 

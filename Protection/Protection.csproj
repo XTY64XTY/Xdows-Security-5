@@ -50,7 +50,7 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>onnxruntime_providers_shared.dll</Link>
     </None>
-    <None Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')">
+    <None Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Driver\%(RecursiveDir)%(Filename)%(Extension)</Link>

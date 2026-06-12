@@ -43,14 +43,13 @@ $requiredFiles = @(
     "onnxruntime_providers_shared.dll",
     "Driver\Xdows-Security-Driver.inf",
     "Driver\Xdows-Security-Driver.sys",
-    "Driver\xdows-security-driver.cat",
-    "Driver\Xdows-Security-Driver-Test.cer"
+    "Driver\xdows-security-driver.cat"
 )
 
 $results = foreach ($relative in $requiredFiles) {
     $path = Join-Path $outputDir $relative
     if (!(Test-Path $path)) {
-        throw "Required publish asset was not found: $path"
+        throw "Required publish asset was not found: $path. Build Xdows-Security-Driver in VS2026 first, then rebuild Xdows-Security."
     }
 
     $item = Get-Item -LiteralPath $path
