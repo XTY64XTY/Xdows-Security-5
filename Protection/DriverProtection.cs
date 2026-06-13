@@ -86,6 +86,24 @@ public sealed class DriverProtection : IProtectionModel
             {
                 _interceptCallBack = interceptCallBack;
                 _cts = new CancellationTokenSource();
+                DriverRepairResult driverReady = DriverInstaller
+                    .EnsureInstalledAndStartedAsync(_cts.Token)
+                    .GetAwaiter()
+                    .GetResult();
+                if (!driverReady.Success)
+                {
+                    LogCallback?.Invoke(new DriverProtectionLogEntry(
+                        0,
+                        0,
+                        DriverProtectionLogSeverity.Error,
+                        0,
+                        DateTimeOffset.Now,
+                        "Installer",
+                        driverReady.Message));
+                    CleanupLocked();
+                    return false;
+                }
+
                 _scanner = new NativeModelScanner(ModelMode);
                 _client = new DriverBridgeClient();
                 _client.Connect();

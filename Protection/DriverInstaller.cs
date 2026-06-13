@@ -6,7 +6,7 @@ public sealed record DriverRepairResult(bool Success, string Message);
 
 public static class DriverInstaller
 {
-    private const string ServiceName = "Xdows-Security-Driver";
+    private const string ServiceName = DriverPackageLocator.ServiceName;
 
     public static Task<DriverRepairResult> RepairAsync(
         DriverEnvironmentCheckItem item,
@@ -29,22 +29,25 @@ public static class DriverInstaller
 
     public static async Task<DriverRepairResult> InstallAndStartDriverAsync(CancellationToken token = default)
     {
-        string? infPath = DriverEnvironmentChecker.FindDriverInf();
-        if (string.IsNullOrWhiteSpace(infPath))
-            return new DriverRepairResult(false, "Driver INF was not found.");
+        DriverPackage? package = DriverPackageLocator.Find();
+        if (package is null)
+            return new DriverRepairResult(false, "Driver package was not found. Build Xdows-Security.slnx first.");
 
         await StopServiceIfPresentAsync(token).ConfigureAwait(false);
 
+        if (!DriverRootDeviceInstaller.EnsureExists(out string deviceMessage))
+            return new DriverRepairResult(false, $"Driver device registration failed: {deviceMessage}");
+
         var install = await DriverEnvironmentChecker.RunCommandAsync(
             "pnputil",
-            $"/add-driver \"{infPath}\" /install",
+            $"/add-driver \"{package.InfPath}\" /install",
             token).ConfigureAwait(false);
 
         if (!install.Started || install.ExitCode != 0)
         {
             return new DriverRepairResult(
                 false,
-                $"Driver install failed: {TrimCommandOutput(install.Output)}");
+                $"Driver install failed after root device registration: {TrimCommandOutput(install.Output)}");
         }
 
         DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
@@ -52,6 +55,34 @@ public static class DriverInstaller
             return new DriverRepairResult(false, $"Driver installed, but service start failed: {start.Message}");
 
         return new DriverRepairResult(true, "Driver installed and service started.");
+    }
+
+    public static async Task<DriverRepairResult> EnsureInstalledAndStartedAsync(CancellationToken token = default)
+    {
+        DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
+        if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
+            return new DriverRepairResult(true, $"Driver bridge is reachable: {runtimeStatus}.");
+
+        DriverPackage? package = DriverPackageLocator.Find();
+        if (package is null)
+            return new DriverRepairResult(false, "Driver package was not found. Build Xdows-Security.slnx first.");
+
+        DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
+        if (start.Success)
+        {
+            runtimeStatus = await WaitForBridgeAsync(token).ConfigureAwait(false);
+            if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
+                return new DriverRepairResult(true, $"Driver service started and bridge is reachable: {runtimeStatus}.");
+        }
+
+        DriverRepairResult install = await InstallAndStartDriverAsync(token).ConfigureAwait(false);
+        if (!install.Success)
+            return install;
+
+        runtimeStatus = await WaitForBridgeAsync(token).ConfigureAwait(false);
+        return runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected
+            ? new DriverRepairResult(true, $"Driver installed, started, and bridge is reachable: {runtimeStatus}.")
+            : new DriverRepairResult(false, $"Driver installed and started, but bridge is not reachable: {runtimeStatus}.");
     }
 
     public static async Task<DriverRepairResult> UninstallDriverAsync(CancellationToken token = default)
@@ -230,6 +261,21 @@ public static class DriverInstaller
         return value.Length <= 700 ? value : value[..700];
     }
 
+    private static async Task<DriverProtectionRuntimeStatus> WaitForBridgeAsync(CancellationToken token)
+    {
+        DriverProtectionRuntimeStatus status = DriverProtection.QueryRuntimeStatus();
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            if (status is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
+                return status;
+
+            await Task.Delay(300, token).ConfigureAwait(false);
+            status = DriverProtection.QueryRuntimeStatus();
+        }
+
+        return status;
+    }
+
     private static async Task StopServiceIfPresentAsync(CancellationToken token)
     {
         var query = await DriverEnvironmentChecker.RunCommandAsync(
@@ -275,7 +321,7 @@ public static class DriverInstaller
             if (key.Contains("Original Name", StringComparison.OrdinalIgnoreCase) ||
                 key.Contains("原始名称", StringComparison.OrdinalIgnoreCase))
             {
-                if (value.Equals("Xdows-Security-Driver.inf", StringComparison.OrdinalIgnoreCase))
+                if (value.Equals(DriverPackageLocator.InfName, StringComparison.OrdinalIgnoreCase))
                     return currentPublishedName;
             }
         }

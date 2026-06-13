@@ -31,7 +31,7 @@ public sealed record DriverEnvironmentReport(
 
 public static class DriverEnvironmentChecker
 {
-    private const string ServiceName = "Xdows-Security-Driver";
+    private const string ServiceName = DriverPackageLocator.ServiceName;
 
     public static async Task<DriverEnvironmentReport> CheckAsync(CancellationToken token = default)
     {
@@ -50,32 +50,12 @@ public static class DriverEnvironmentChecker
 
     public static string? FindDriverInf()
     {
-        string[] candidates =
-        [
-            Path.Combine(AppContext.BaseDirectory, "Driver", "Xdows-Security-Driver.inf"),
-            Path.Combine(AppContext.BaseDirectory, "Xdows-Security-Driver.inf"),
-            @"D:\Code\Xdows-Security-Driver\x64\Debug\Xdows-Security-Driver\Xdows-Security-Driver.inf",
-            @"D:\Code\Xdows-Security-Driver\x64\Release\Xdows-Security-Driver\Xdows-Security-Driver.inf",
-            @"D:\Code\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.inf"
-        ];
-
-        return candidates.FirstOrDefault(File.Exists);
+        return DriverPackageLocator.Find()?.InfPath;
     }
 
     public static string? FindDriverSys()
     {
-        string[] candidates =
-        [
-            Path.Combine(AppContext.BaseDirectory, "Driver", "Xdows-Security-Driver.sys"),
-            Path.Combine(AppContext.BaseDirectory, "Xdows-Security-Driver.sys"),
-            @"D:\Code\Xdows-Security-Driver\x64\Debug\Xdows-Security-Driver\Xdows-Security-Driver.sys",
-            @"D:\Code\Xdows-Security-Driver\x64\Release\Xdows-Security-Driver\Xdows-Security-Driver.sys",
-            @"D:\Code\Xdows-Security-Driver\x64\Debug\Xdows-Security-Driver.sys",
-            @"D:\Code\Xdows-Security-Driver\x64\Release\Xdows-Security-Driver.sys",
-            @"D:\Code\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.sys"
-        ];
-
-        return candidates.FirstOrDefault(File.Exists);
+        return DriverPackageLocator.Find()?.SysPath;
     }
 
     private static DriverEnvironmentCheckItem CheckAdministrator()
@@ -128,24 +108,18 @@ public static class DriverEnvironmentChecker
 
     private static DriverEnvironmentCheckItem CheckDriverPackage()
     {
-        string? inf = FindDriverInf();
-        string? sys = FindDriverSys();
-        string? cat = inf is null ? null : Path.ChangeExtension(inf, ".cat");
-        bool infOk = inf is not null;
-        bool sysOk = sys is not null;
-        bool catOk = cat is not null && File.Exists(cat);
-        bool packageOk = infOk && sysOk && catOk;
+        DriverPackage? package = DriverPackageLocator.Find();
 
-        string detail = packageOk
-            ? $"Driver package found: {inf}"
-            : $"Missing package files. inf:{infOk}, sys:{sysOk}, cat:{catOk}";
+        string detail = package is not null
+            ? $"Driver package found: {package.DirectoryPath}"
+            : "Missing driver package. Expected INF, SYS, and CAT under the app Driver folder.";
 
         return new DriverEnvironmentCheckItem(
             "package",
             "Driver package",
             detail,
-            packageOk ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
-            infOk,
+            package is not null ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
+            package is not null,
             "Install driver");
     }
 

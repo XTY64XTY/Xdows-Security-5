@@ -28,8 +28,12 @@
 		<IlcOptimizationPreference>Speed</IlcOptimizationPreference>
 		<IlcInstructionSet>x86-64-v2</IlcInstructionSet>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<XdowsModelNativeOutput>..\..\Xdows-Model\$(Platform)\$(Configuration)</XdowsModelNativeOutput>
-		<XdowsDriverPackageOutput>..\..\Xdows-Security-Driver\$(Platform)\$(Configuration)\Xdows-Security-Driver</XdowsDriverPackageOutput>
+		<XdowsCodeRoot>$(MSBuildProjectDirectory)\..\..</XdowsCodeRoot>
+		<XdowsModelInvokerRoot>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Invoker</XdowsModelInvokerRoot>
+		<XdowsModelNativeProject>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Native\Xdows-Model-Native.vcxproj</XdowsModelNativeProject>
+		<XdowsModelNativeOutput>$(XdowsCodeRoot)\Xdows-Model\$(Platform)\$(Configuration)</XdowsModelNativeOutput>
+		<XdowsDriverProject>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj</XdowsDriverProject>
+		<XdowsDriverPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\$(Platform)\$(Configuration)\Xdows-Security-Driver</XdowsDriverPackageOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -72,29 +76,6 @@
 		<ProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Content Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			<Link>Xdows-Model-Native.dll</Link>
-		</Content>
-		<Content Include="$(XdowsModelNativeOutput)\onnxruntime.dll" Condition="Exists('$(XdowsModelNativeOutput)\onnxruntime.dll')">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			<Link>onnxruntime.dll</Link>
-		</Content>
-		<Content Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" Condition="Exists('$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll')">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			<Link>onnxruntime_providers_shared.dll</Link>
-		</Content>
-		<Content Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			<Link>Driver\%(RecursiveDir)%(Filename)%(Extension)</Link>
-		</Content>
-	</ItemGroup>
-
 	<PropertyGroup Label="Globals">
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -131,4 +112,54 @@
 	<ItemGroup>
 	  <Folder Include="Dialog\" />
 	</ItemGroup>
+
+	<Target Name="BuildXdowsNativeAndDriverProjects" BeforeTargets="CollectXdowsDriverAndModelAssets" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
+		<MSBuild Projects="$(XdowsModelNativeProject)"
+				 Targets="Build"
+				 Properties="Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)"
+				 Condition="Exists('$(XdowsModelNativeProject)')" />
+		<MSBuild Projects="$(XdowsDriverProject)"
+				 Targets="Build"
+				 Properties="Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)"
+				 Condition="Exists('$(XdowsDriverProject)')" />
+	</Target>
+
+	<Target Name="CollectXdowsDriverAndModelAssets" AfterTargets="Build" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
+		<ItemGroup>
+			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
+			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Flash.onnx" />
+			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro.onnx" />
+			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
+			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
+			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
+			<XdowsDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')" />
+		</ItemGroup>
+
+		<Error Condition="!Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')" Text="Xdows-Model-Native.dll was not found. Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
+		<Error Condition="!Exists('$(XdowsModelNativeOutput)\onnxruntime.dll')" Text="onnxruntime.dll was not found in $(XdowsModelNativeOutput)." />
+		<Error Condition="!Exists('$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll')" Text="onnxruntime_providers_shared.dll was not found in $(XdowsModelNativeOutput)." />
+		<Error Condition="!Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.inf')" Text="Driver INF was not found in $(XdowsDriverPackageOutput). Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
+		<Error Condition="!Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys')" Text="Driver SYS was not found in $(XdowsDriverPackageOutput)." />
+		<Error Condition="!Exists('$(XdowsDriverPackageOutput)\xdows-security-driver.cat') AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.cat')" Text="Driver CAT was not found in $(XdowsDriverPackageOutput)." />
+
+		<Copy SourceFiles="@(XdowsModelFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(XdowsNativeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFiles="@(XdowsDriverFiles->'$(OutDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+	</Target>
+
+	<Target Name="PublishXdowsDriverAndModelAssets" AfterTargets="Publish" Condition="'$(PublishDir)' != '' AND ('$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64')">
+		<ItemGroup>
+			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
+			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Flash.onnx" />
+			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro.onnx" />
+			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
+			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
+			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
+			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')" />
+		</ItemGroup>
+
+		<Copy SourceFiles="@(XdowsPublishModelFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishModelFiles.Identity)')" />
+		<Copy SourceFiles="@(XdowsPublishNativeFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishNativeFiles.Identity)')" />
+		<Copy SourceFiles="@(XdowsPublishDriverFiles)" DestinationFiles="@(XdowsPublishDriverFiles->'$(PublishDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+	</Target>
 </Project>

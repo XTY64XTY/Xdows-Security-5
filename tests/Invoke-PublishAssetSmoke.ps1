@@ -14,7 +14,12 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $solution = Join-Path $repoRoot "Xdows-Security.slnx"
 
 if (!$SkipBuild) {
-    dotnet build $solution -c $Configuration -p:Platform=$Platform
+    $msbuild = "D:\Visual-Studio\MSBuild\Current\Bin\amd64\MSBuild.exe"
+    if (!(Test-Path -LiteralPath $msbuild)) {
+        throw "MSBuild was not found at $msbuild. Visual Studio/WDK MSBuild is required so the Xdows Security solution can build the driver project."
+    }
+
+    & $msbuild $solution /p:Configuration=$Configuration /p:Platform=$Platform /p:WindowsTargetPlatformVersion=10.0.28000.0 /p:SignMode=Off /m
     if ($LASTEXITCODE -ne 0) {
         throw "Xdows-Security build failed with exit code $LASTEXITCODE"
     }
@@ -49,7 +54,7 @@ $requiredFiles = @(
 $results = foreach ($relative in $requiredFiles) {
     $path = Join-Path $outputDir $relative
     if (!(Test-Path $path)) {
-        throw "Required publish asset was not found: $path. Build Xdows-Security-Driver in VS2026 first, then rebuild Xdows-Security."
+        throw "Required publish asset was not found: $path. Build Xdows-Security.slnx with Visual Studio/MSBuild for $Configuration|$Platform."
     }
 
     $item = Get-Item -LiteralPath $path

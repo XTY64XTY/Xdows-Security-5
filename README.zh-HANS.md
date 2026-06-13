@@ -39,16 +39,17 @@
 
 2. 编译运行:
 
-    1. 克隆仓库
+    1. 克隆同级仓库
 
       ```sh
       git clone https://github.com/XTY64XTY/Xdows-Security-5
       git clone https://github.com/XTY64XTY/Xdows-Model
+      git clone https://github.com/XTY64XTY/Xdows-Security-Driver
       ```
 
     2. 生成项目
 
-      直接编译 `Xdows-Security.slnx` 解决方案即可
+      使用 Visual Studio/MSBuild 直接生成 `Xdows-Security.slnx` 解决方案即可。该解决方案会同时生成驱动和原生模型项目，并将驱动包复制到主程序输出目录；启用驱动防护时，主程序会按需创建 `Root\XdowsSecurityDriver` 设备、自动安装驱动包并启动驱动。
 
       或使用发布功能以使用 AOT
 

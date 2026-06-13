@@ -39,16 +39,17 @@
 
 2. Build and Run:
 
-    1. Clone the repository
+    1. Clone the sibling repositories
 
       ```sh
       git clone https://github.com/XTY64XTY/Xdows-Security-5   
       git clone https://github.com/XTY64XTY/Xdows-Model
+      git clone https://github.com/XTY64XTY/Xdows-Security-Driver
       ```
 
     2. Build the project
 
-      Simply build the `Xdows-Security.slnx` solution
+      Build the `Xdows-Security.slnx` solution with Visual Studio/MSBuild. The solution references `Xdows-Model-Native` and `Xdows-Security-Driver`, so the app output contains the native model runtime and driver package after one solution build.
 
       Or use the Publish feature to enable AOT compilation
 
@@ -60,18 +61,16 @@ The driver-backed protection path spans three sibling repositories under `D:\Cod
 - `Xdows-Security-Driver`: KMDF driver, shared protocol, VS/WDK-generated driver package, and VM validation matrix.
 - `Xdows-Model`: ONNX models and `Xdows-Model-Native.dll`.
 
-Build order for local development:
+Build local development output from the main solution:
 
 ```powershell
 & 'D:\Visual-Studio\MSBuild\Current\Bin\amd64\MSBuild.exe' `
-  'D:\Code\Xdows-Model\Xdows-Model.slnx' `
+  'D:\Code\Xdows-Security\Xdows-Security.slnx' `
   /p:Configuration=Debug `
   /p:Platform=x64 `
+  /p:WindowsTargetPlatformVersion=10.0.28000.0 `
+  /p:SignMode=Off `
   /m
-
-# Build D:\Code\Xdows-Security-Driver\Xdows-Security-Driver.slnx in VS2026 as Debug|x64.
-
-dotnet build 'D:\Code\Xdows-Security\Xdows-Security.slnx' -c Debug -p:Platform=x64
 ```
 
 The app output should contain:
@@ -87,10 +86,10 @@ Local verification:
 
 ```powershell
 & 'D:\Code\Xdows-Security\tests\Invoke-DriverBridgeProtocolSmoke.ps1'
-& 'D:\Code\Xdows-Security\tests\Invoke-PublishAssetSmoke.ps1' -SkipBuild
+& 'D:\Code\Xdows-Security\tests\Invoke-PublishAssetSmoke.ps1'
 ```
 
-Driver install, repair, and unload require an elevated test machine. Enable Windows test-signing on the VM if the development driver signature is not trusted.
+Driver install, repair, and unload require an elevated test machine. When Driver Protection is enabled, Xdows Security creates the `Root\XdowsSecurityDriver` device when needed, installs the package from its output `Driver` folder, and starts the driver automatically. Enable Windows test-signing on the VM if the development driver signature is not trusted.
 
 ### License
 
