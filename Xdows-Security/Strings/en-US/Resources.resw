@@ -1598,6 +1598,48 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Protection_Driver_Dialog_Content" xml:space="preserve">
     <value>The driver could not be started. Check administrator permission, driver installation, test-signing/signature state, service status, and native model files.</value>
   </data>
+  <data name="SettingsPage_Protection_Driver_Disclaimer_Title" xml:space="preserve">
+    <value>Driver protection disclaimer</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Disclaimer_Text" xml:space="preserve">
+    <value>Driver protection installs and starts a kernel-mode driver. It can block process, file, injection, and self-protection events before they reach user mode. Use it only when you understand that an incorrect decision, unsigned driver state, incompatible system policy, or third-party security software may affect system stability. Continue only if you accept this risk.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Status" xml:space="preserve">
+    <value>Configuring</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Title" xml:space="preserve">
+    <value>Configuring driver protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Preparing" xml:space="preserve">
+    <value>Preparing driver protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Preparing_Detail" xml:space="preserve">
+    <value>Checking consent and preparing the protection runtime.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Checking" xml:space="preserve">
+    <value>Checking driver package</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Checking_Detail" xml:space="preserve">
+    <value>Looking for the built driver files copied by the solution build.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Configuring" xml:space="preserve">
+    <value>Installing and starting driver</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Configuring_Detail" xml:space="preserve">
+    <value>Registering the device, installing the INF package, starting the service, and connecting the bridge.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Finalizing" xml:space="preserve">
+    <value>Finalizing driver protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Finalizing_Detail" xml:space="preserve">
+    <value>Refreshing protection status and applying the driver-backed mode.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Success" xml:space="preserve">
+    <value>Driver protection is enabled.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
+    <value>Driver protection could not be enabled. Opening the environment check.</value>
+  </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="SecurityPage_Details_FamilyName" type="System.Resources.ResXNullRef, System.Windows.Forms">
     <value />

@@ -31,7 +31,7 @@ public static class DriverInstaller
     {
         DriverPackage? package = DriverPackageLocator.Find();
         if (package is null)
-            return new DriverRepairResult(false, "Driver package was not found. Build Xdows-Security.slnx first.");
+            return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
 
         await StopServiceIfPresentAsync(token).ConfigureAwait(false);
 
@@ -65,7 +65,7 @@ public static class DriverInstaller
 
         DriverPackage? package = DriverPackageLocator.Find();
         if (package is null)
-            return new DriverRepairResult(false, "Driver package was not found. Build Xdows-Security.slnx first.");
+            return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
 
         DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
         if (start.Success)
@@ -171,12 +171,20 @@ public static class DriverInstaller
                 "onnxruntime_providers_shared.dll"
             ];
 
-            var copied = new List<string>();
+            var ready = new List<string>();
             var missing = new List<string>();
+            var failed = new List<string>();
 
             foreach (string asset in assets)
             {
                 token.ThrowIfCancellationRequested();
+                string targetPath = Path.Combine(outputDirectory, asset);
+                if (File.Exists(targetPath))
+                {
+                    ready.Add(asset);
+                    continue;
+                }
+
                 string? source = FindAsset(asset);
                 if (source is null)
                 {
@@ -184,19 +192,35 @@ public static class DriverInstaller
                     continue;
                 }
 
-                File.Copy(source, Path.Combine(outputDirectory, asset), overwrite: true);
-                copied.Add(asset);
+                try
+                {
+                    File.Copy(source, targetPath, overwrite: false);
+                    ready.Add(asset);
+                }
+                catch (IOException ex)
+                {
+                    failed.Add($"{asset}: {ex.Message}");
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    failed.Add($"{asset}: {ex.Message}");
+                }
             }
 
-            if (missing.Count > 0)
+            if (missing.Count > 0 || failed.Count > 0)
             {
-                string message = copied.Count > 0
-                    ? $"Copied {string.Join(", ", copied)}; missing {string.Join(", ", missing)}."
-                    : $"Missing source files: {string.Join(", ", missing)}.";
+                var parts = new List<string>();
+                if (ready.Count > 0)
+                    parts.Add($"Ready: {string.Join(", ", ready)}");
+                if (missing.Count > 0)
+                    parts.Add($"missing: {string.Join(", ", missing)}");
+                if (failed.Count > 0)
+                    parts.Add($"failed: {string.Join("; ", failed)}");
+                string message = string.Join("; ", parts) + ".";
                 return new DriverRepairResult(false, message);
             }
 
-            return new DriverRepairResult(true, $"Copied model assets to {outputDirectory}.");
+            return new DriverRepairResult(true, $"Model assets are ready in {outputDirectory}.");
         }, token);
     }
 
@@ -225,6 +249,10 @@ public static class DriverInstaller
         string[] roots =
         [
             AppContext.BaseDirectory,
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..")),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "win-x64")),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish")),
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish", "win-x64")),
             @"D:\Code\Xdows-Model\Xdows-Model-Invoker",
             @"D:\Code\Xdows-Model\x64\Debug",
             @"D:\Code\Xdows-Model\x64\Release",

@@ -1600,4 +1600,46 @@
   <data name="SettingsPage_Protection_Driver_Dialog_Content" xml:space="preserve">
     <value>驅動未能啟動。請檢查管理員權限、驅動安裝、測試簽名/正式簽名狀態、服務狀態和原生模型文件。</value>
   </data>
+  <data name="SettingsPage_Protection_Driver_Disclaimer_Title" xml:space="preserve">
+    <value>驅動防護免責聲明</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Disclaimer_Text" xml:space="preserve">
+    <value>驅動防護會安裝並啟動內核模式驅動，可在事件到達使用者態之前攔截進程、文件、注入和自保護行為。錯誤決策、未簽名驅動狀態、不相容的系統策略或第三方安全軟體都可能影響系統穩定性。僅在理解並接受這些風險後繼續。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Status" xml:space="preserve">
+    <value>配置中</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Title" xml:space="preserve">
+    <value>正在配置驅動防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Preparing" xml:space="preserve">
+    <value>準備驅動防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Preparing_Detail" xml:space="preserve">
+    <value>正在檢查授權狀態並準備防護執行階段。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Checking" xml:space="preserve">
+    <value>檢查驅動包</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Checking_Detail" xml:space="preserve">
+    <value>正在查找由解決方案構建複製的驅動文件。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Configuring" xml:space="preserve">
+    <value>安裝並啟動驅動</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Configuring_Detail" xml:space="preserve">
+    <value>正在註冊設備、安裝 INF 包、啟動服務並連接橋接通道。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Finalizing" xml:space="preserve">
+    <value>完成驅動防護配置</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Finalizing_Detail" xml:space="preserve">
+    <value>正在刷新防護狀態並應用驅動防護模式。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Success" xml:space="preserve">
+    <value>驅動防護已啟用。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
+    <value>驅動防護未能啟用。即將打開環境檢測。</value>
+  </data>
 </root>

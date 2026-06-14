@@ -1,0 +1,42 @@
+<ContentDialog
+    x:Class="Xdows_Security.DriverProtectionSetupDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    DefaultButton="None"
+    CornerRadius="{ThemeResource ControlCornerRadius}">
+
+    <Grid MinWidth="480" MaxWidth="680" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition IsStaggeringEnabled="True" />
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
+
+        <StackPanel Spacing="8">
+            <TextBlock x:Name="MessageText"
+                       TextWrapping="WrapWholeWords"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock x:Name="DetailText"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       TextWrapping="WrapWholeWords"
+                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+        </StackPanel>
+
+        <ProgressBar x:Name="SetupProgressBar"
+                     Grid.Row="1"
+                     Minimum="0"
+                     Maximum="100"
+                     Value="0" />
+
+        <InfoBar x:Name="ResultInfoBar"
+                 Grid.Row="2"
+                 IsOpen="False"
+                 IsClosable="False" />
+    </Grid>
+</ContentDialog>

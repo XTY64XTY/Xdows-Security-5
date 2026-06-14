@@ -112,7 +112,7 @@ public static class DriverEnvironmentChecker
 
         string detail = package is not null
             ? $"Driver package found: {package.DirectoryPath}"
-            : "Missing driver package. Expected INF, SYS, and CAT under the app Driver folder.";
+            : DriverPackageLocator.CreateNotFoundMessage();
 
         return new DriverEnvironmentCheckItem(
             "package",

@@ -24,6 +24,8 @@ namespace Xdows_Security.Views
     {
         private Boolean IsInitialize = true;
         private DispatcherTimer? ProtectionStatusTimer;
+        private const string DriverProtectionDisclaimerAcceptedSetting = "DriverProtectionDisclaimerAccepted";
+        private bool _driverProtectionOperationInProgress;
 
         public SettingsPage()
         {
@@ -45,6 +47,7 @@ namespace Xdows_Security.Views
         private void ProtectionStatusTimer_Tick(object? sender, object? e)
         {
             if (IsInitialize) return;
+            if (_driverProtectionOperationInProgress) return;
 
             UpdateDriverProtectionState();
             UpdateProtectionToggleState(ProcessToggle, 0);
@@ -108,19 +111,38 @@ namespace Xdows_Security.Views
         {
             if (DriverProtectionToggle == null || DriverProtectionStatusText == null) return;
 
-            DriverProtectionToggle.Toggled -= DriverProtectionToggle_Toggled;
-            DriverProtectionToggle.IsOn = ProtectionStatus.IsRun(5);
-            DriverProtectionToggle.Toggled += DriverProtectionToggle_Toggled;
+            if (!_driverProtectionOperationInProgress)
+            {
+                DriverProtectionToggle.Toggled -= DriverProtectionToggle_Toggled;
+                DriverProtectionToggle.IsOn = ProtectionStatus.IsRun(5);
+                DriverProtectionToggle.Toggled += DriverProtectionToggle_Toggled;
+            }
 
-            string statusKey = ProtectionStatus.GetDriverStatusKey();
+            string statusKey = _driverProtectionOperationInProgress
+                ? "SettingsPage_Protection_Driver_Setup_Status"
+                : ProtectionStatus.GetDriverStatusKey();
             string status = Localizer.Get().GetLocalizedString(statusKey);
             DriverProtectionStatusText.Text = string.IsNullOrWhiteSpace(status) ? statusKey : status;
         }
 
         private void ApplyDriverProtectionControlState()
         {
+            if (_driverProtectionOperationInProgress)
+            {
+                DriverProtectionToggle.IsEnabled = false;
+                ProcessToggle.IsEnabled = false;
+                FilesToggle.IsEnabled = false;
+                RegistryToggle.IsEnabled = false;
+                Process_CompatibilityMode.IsOn = true;
+                Files_CompatibilityMode.IsOn = true;
+                Process_CompatibilityMode.IsEnabled = false;
+                Files_CompatibilityMode.IsEnabled = false;
+                return;
+            }
+
             bool driverRunning = ProtectionStatus.IsRun(5);
 
+            DriverProtectionToggle.IsEnabled = true;
             ProcessToggle.IsEnabled = !driverRunning;
             FilesToggle.IsEnabled = !driverRunning;
             RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
@@ -221,6 +243,12 @@ namespace Xdows_Security.Views
 
         private void RunProtectionWithToggle(ToggleSwitch toggle, Int32 runId)
         {
+            if (runId == 5)
+            {
+                _ = RunDriverProtectionToggleAsync(toggle);
+                return;
+            }
+
             toggle.Toggled -= RunProtection;
             if (!ProtectionStatus.Run(runId))
                 toggle.IsOn = !toggle.IsOn;
@@ -257,11 +285,109 @@ namespace Xdows_Security.Views
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
 
-            RunProtectionWithToggle(toggle, 5);
-            if (!ProtectionStatus.IsRun(5))
+            await RunDriverProtectionToggleAsync(toggle);
+        }
+
+        private async Task RunDriverProtectionToggleAsync(ToggleSwitch toggle)
+        {
+            if (_driverProtectionOperationInProgress)
+            {
+                SetDriverProtectionToggleSilently(ProtectionStatus.IsRun(5));
+                return;
+            }
+
+            bool requestedOn = toggle.IsOn;
+            if (requestedOn && !await EnsureDriverProtectionDisclaimerAcceptedAsync())
+            {
+                SetDriverProtectionToggleSilently(false);
+                return;
+            }
+
+            _driverProtectionOperationInProgress = true;
+            UpdateDriverProtectionState();
+            ApplyDriverProtectionControlState();
+
+            bool operationSucceeded = false;
+            try
+            {
+                operationSucceeded = requestedOn
+                    ? await ShowDriverProtectionSetupDialogAsync(() => Task.Run(() => ProtectionStatus.Run(5)))
+                    : await Task.Run(() => ProtectionStatus.Run(5));
+            }
+            catch (Exception ex)
+            {
+                AddNewLog(LogLevel.ERROR, "DriverProtection", ex.Message);
+            }
+            finally
+            {
+                _driverProtectionOperationInProgress = false;
+                UpdateDriverProtectionState();
+                ApplyDriverProtectionControlState();
+            }
+
+            SetDriverProtectionToggleSilently(ProtectionStatus.IsRun(5));
+
+            if (requestedOn && (!operationSucceeded || !ProtectionStatus.IsRun(5)))
             {
                 await ShowDriverEnvironmentDialogAsync();
             }
+        }
+
+        private void SetDriverProtectionToggleSilently(bool isOn)
+        {
+            if (DriverProtectionToggle == null) return;
+
+            DriverProtectionToggle.Toggled -= DriverProtectionToggle_Toggled;
+            DriverProtectionToggle.IsOn = isOn;
+            DriverProtectionToggle.Toggled += DriverProtectionToggle_Toggled;
+        }
+
+        private async Task<bool> EnsureDriverProtectionDisclaimerAcceptedAsync()
+        {
+            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            if (settings.Values.TryGetValue(DriverProtectionDisclaimerAcceptedSetting, out object? raw) &&
+                raw is bool accepted &&
+                accepted)
+            {
+                return true;
+            }
+
+            try
+            {
+                ContentDialogResult result = await new ContentDialog
+                {
+                    Title = Localizer.Get().GetLocalizedString("SettingsPage_Protection_Driver_Disclaimer_Title"),
+                    Content = Localizer.Get().GetLocalizedString("SettingsPage_Protection_Driver_Disclaimer_Text"),
+                    PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
+                    CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
+                    XamlRoot = this.XamlRoot,
+                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
+                    DefaultButton = ContentDialogButton.Close
+                }.ShowAsync();
+
+                if (result != ContentDialogResult.Primary)
+                    return false;
+
+                settings.Values[DriverProtectionDisclaimerAcceptedSetting] = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                AddNewLog(LogLevel.ERROR, "DriverProtection", ex.Message);
+                return false;
+            }
+        }
+
+        private async Task<bool> ShowDriverProtectionSetupDialogAsync(Func<Task<bool>> configureAsync)
+        {
+            DriverProtectionSetupDialog dialog = new(configureAsync)
+            {
+                XamlRoot = this.XamlRoot,
+                RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+            };
+
+            await dialog.ShowAsync();
+            return dialog.SetupSucceeded;
         }
 
         private async void Toggled_SaveToggleData(Object sender, RoutedEventArgs e)

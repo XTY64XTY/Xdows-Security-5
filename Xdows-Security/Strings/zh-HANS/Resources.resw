@@ -1600,4 +1600,46 @@
   <data name="SettingsPage_Protection_Driver_Dialog_Content" xml:space="preserve">
     <value>驱动未能启动。请检查管理员权限、驱动安装、测试签名/正式签名状态、服务状态和原生模型文件。</value>
   </data>
+  <data name="SettingsPage_Protection_Driver_Disclaimer_Title" xml:space="preserve">
+    <value>驱动防护免责声明</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Disclaimer_Text" xml:space="preserve">
+    <value>驱动防护会安装并启动内核模式驱动，可在事件到达用户态之前拦截进程、文件、注入和自保护行为。错误决策、未签名驱动状态、不兼容的系统策略或第三方安全软件都可能影响系统稳定性。仅在理解并接受这些风险后继续。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Status" xml:space="preserve">
+    <value>配置中</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Title" xml:space="preserve">
+    <value>正在配置驱动防护</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Preparing" xml:space="preserve">
+    <value>准备驱动防护</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Preparing_Detail" xml:space="preserve">
+    <value>正在检查授权状态并准备防护运行时。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Checking" xml:space="preserve">
+    <value>检查驱动包</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Checking_Detail" xml:space="preserve">
+    <value>正在查找由解决方案构建复制的驱动文件。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Configuring" xml:space="preserve">
+    <value>安装并启动驱动</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Configuring_Detail" xml:space="preserve">
+    <value>正在注册设备、安装 INF 包、启动服务并连接桥接通道。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Finalizing" xml:space="preserve">
+    <value>完成驱动防护配置</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Finalizing_Detail" xml:space="preserve">
+    <value>正在刷新防护状态并应用驱动防护模式。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Success" xml:space="preserve">
+    <value>驱动防护已启用。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
+    <value>驱动防护未能启用。即将打开环境检测。</value>
+  </data>
 </root>
