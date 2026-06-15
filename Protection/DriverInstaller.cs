@@ -38,21 +38,34 @@ public static class DriverInstaller
         if (!DriverRootDeviceInstaller.EnsureExists(out string deviceMessage))
             return new DriverRepairResult(false, $"Driver device registration failed: {deviceMessage}");
 
-        var install = await DriverEnvironmentChecker.RunCommandAsync(
+        var addPackage = await DriverEnvironmentChecker.RunCommandAsync(
             "pnputil",
-            $"/add-driver \"{package.InfPath}\" /install",
+            $"/add-driver \"{package.InfPath}\"",
             token).ConfigureAwait(false);
 
-        if (!install.Started || install.ExitCode != 0)
+        if (!addPackage.Started || addPackage.ExitCode != 0)
         {
             return new DriverRepairResult(
                 false,
-                $"Driver install failed after root device registration: {TrimCommandOutput(install.Output)}");
+                $"Driver package staging failed after root device registration: {TrimCommandOutput(addPackage.Output)}");
+        }
+
+        if (!DriverRootDeviceInstaller.BindDriverPackage(package.InfPath, out string bindMessage))
+        {
+            string serviceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
+            return new DriverRepairResult(
+                false,
+                $"Driver package was staged, but device binding failed. Device: {deviceMessage} Stage: {TrimCommandOutput(addPackage.Output)} Bind: {bindMessage} Service: {serviceState}");
         }
 
         DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
         if (!start.Success)
-            return new DriverRepairResult(false, $"Driver installed, but service start failed: {start.Message}");
+        {
+            string serviceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
+            return new DriverRepairResult(
+                false,
+                $"Driver package was staged and bound, but service start failed. Device: {deviceMessage} Bind: {bindMessage} Stage: {TrimCommandOutput(addPackage.Output)} Start: {start.Message} Service: {serviceState}");
+        }
 
         return new DriverRepairResult(true, "Driver installed and service started.");
     }
@@ -321,6 +334,18 @@ public static class DriverInstaller
             "sc.exe",
             $"stop \"{ServiceName}\"",
             token).ConfigureAwait(false);
+    }
+
+    private static async Task<string> QueryServiceStateAsync(CancellationToken token)
+    {
+        var query = await DriverEnvironmentChecker.RunCommandAsync(
+            "sc.exe",
+            $"query \"{ServiceName}\"",
+            token).ConfigureAwait(false);
+
+        return query.Started
+            ? TrimCommandOutput(query.Output)
+            : "Unable to run sc.exe query.";
     }
 
     private static string? FindPublishedName(string pnputilOutput)

@@ -45,6 +45,35 @@ internal static class DriverRootDeviceInstaller
         }
     }
 
+    public static bool BindDriverPackage(string infPath, out string message)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(infPath);
+
+        try
+        {
+            if (!NativeMethods.UpdateDriverForPlugAndPlayDevices(
+                0,
+                HardwareId,
+                infPath,
+                NativeMethods.InstallFlagForce,
+                out bool rebootRequired))
+            {
+                message = FormatLastError("Unable to bind the root device to the driver package.");
+                return false;
+            }
+
+            message = rebootRequired
+                ? "Driver package was bound to the root device. A restart is required."
+                : "Driver package was bound to the root device.";
+            return true;
+        }
+        catch (Exception ex) when (ex is Win32Exception or OverflowException)
+        {
+            message = ex.Message;
+            return false;
+        }
+    }
+
     private static bool ContainsRootDevice(nint deviceInfoSet)
     {
         for (uint index = 0; ; index++)
@@ -192,6 +221,7 @@ internal static class DriverRootDeviceInstaller
         public const int ErrorInsufficientBuffer = 122;
         public const int ErrorNoMoreItems = 259;
         public const int ErrorNotFound = 1168;
+        public const uint InstallFlagForce = 0x00000001;
 
         [DllImport("setupapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern nint SetupDiGetClassDevs(
@@ -251,5 +281,14 @@ internal static class DriverRootDeviceInstaller
         [DllImport("setupapi.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetupDiDestroyDeviceInfoList(nint deviceInfoSet);
+
+        [DllImport("newdev.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool UpdateDriverForPlugAndPlayDevices(
+            nint parentWindow,
+            string hardwareId,
+            string fullInfPath,
+            uint installFlags,
+            [MarshalAs(UnmanagedType.Bool)] out bool rebootRequired);
     }
 }
