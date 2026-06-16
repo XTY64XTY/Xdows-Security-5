@@ -49,7 +49,7 @@
 
     2. 生成项目
 
-      使用 Visual Studio/MSBuild 直接生成 `Xdows-Security.slnx` 解决方案即可。该解决方案会同时生成驱动和原生模型项目，并将驱动包复制到主程序输出目录；启用驱动防护时，主程序会按需创建或复用 `Root\XdowsSecurityDriver` 根设备，使用 `pnputil` 暂存 `Driver\Xdows-Security-Driver.inf`，再将驱动包绑定到根设备、启动 `Xdows-Security-Driver` 服务并检查桥接通信。
+      使用 Visual Studio/MSBuild 直接生成 `Xdows-Security.slnx` 解决方案即可。该解决方案会同时生成驱动和原生模型项目，并将驱动包复制到主程序输出目录；启用驱动防护时，主程序会按需创建 `Root\XdowsSecurityDriver` 设备、自动安装驱动包并启动驱动。
 
       或使用发布功能以使用 AOT
 

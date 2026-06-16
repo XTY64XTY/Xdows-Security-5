@@ -89,7 +89,7 @@ Local verification:
 & 'D:\Code\Xdows-Security\tests\Invoke-PublishAssetSmoke.ps1'
 ```
 
-Driver install, repair, and unload require an elevated test machine. When Driver Protection is enabled, Xdows Security now performs the full service registration path itself: it stops any stale service, creates or reuses the `Root\XdowsSecurityDriver` root device, stages the `Driver\Xdows-Security-Driver.inf` package with `pnputil`, binds that package to the root device, starts `Xdows-Security-Driver`, then checks whether the bridge is reachable. Enable Windows test-signing on the VM if the development driver signature is not trusted.
+Driver install, repair, and unload require an elevated test machine. When Driver Protection is enabled, Xdows Security creates the `Root\XdowsSecurityDriver` device when needed, installs the package from its output `Driver` folder, and starts the driver automatically. Enable Windows test-signing on the VM if the development driver signature is not trusted.
 
 ### License
 
