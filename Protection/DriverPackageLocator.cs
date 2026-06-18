@@ -27,132 +27,22 @@ internal static class DriverPackageLocator
     public static string CreateNotFoundMessage()
     {
         string baseDirectory = AppContext.BaseDirectory;
-        string candidates = string.Join(
-            "; ",
-            EnumerateCandidateDirectories()
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Take(24));
+        string driverDirectory = Path.Combine(baseDirectory, "Driver");
+        string? overrideDirectory = Environment.GetEnvironmentVariable("XDOWS_SECURITY_DRIVER_PACKAGE");
+        string overrideText = string.IsNullOrWhiteSpace(overrideDirectory)
+            ? "not set"
+            : overrideDirectory;
 
-        return $"Driver package was not found. Base directory: {baseDirectory}. Checked: {candidates}. Build Xdows-Security.slnx and copy the full win-x64 output folder, including Driver assets.";
+        return $"Driver package was not found. Expected: {driverDirectory}. XDOWS_SECURITY_DRIVER_PACKAGE: {overrideText}. Build or publish Xdows-Security so the output contains the Driver directory.";
     }
 
     public static IEnumerable<string> EnumerateCandidateDirectories()
     {
-        string baseDirectory = AppContext.BaseDirectory;
-        yield return Path.Combine(baseDirectory, "Driver");
-        yield return baseDirectory;
-
         string? overrideDirectory = Environment.GetEnvironmentVariable("XDOWS_SECURITY_DRIVER_PACKAGE");
         if (!string.IsNullOrWhiteSpace(overrideDirectory))
             yield return overrideDirectory;
 
-        DirectoryInfo? current = new(baseDirectory);
-        while (current is not null)
-        {
-            yield return Path.Combine(current.FullName, "Driver");
-            yield return current.FullName;
-
-            if (string.Equals(current.Name, "Xdows-Security", StringComparison.OrdinalIgnoreCase) &&
-                current.Parent is not null)
-            {
-                string driverRepo = Path.Combine(current.Parent.FullName, "Xdows-Security-Driver");
-                foreach (string directory in EnumerateRepositoryPackageDirectories(driverRepo))
-                    yield return directory;
-            }
-
-            current = current.Parent;
-        }
-
-        foreach (string directory in EnumerateNearbyPackageDirectories(baseDirectory))
-            yield return directory;
-    }
-
-    private static IEnumerable<string> EnumerateRepositoryPackageDirectories(string driverRepo)
-    {
-        foreach (string platform in new[] { "x64", "ARM64" })
-        {
-            foreach (string configuration in new[] { "Debug", "Release" })
-            {
-                yield return Path.Combine(driverRepo, platform, configuration, ServiceName);
-                yield return Path.Combine(driverRepo, platform, configuration);
-            }
-        }
-
-        yield return Path.Combine(driverRepo, ServiceName);
-    }
-
-    private static IEnumerable<string> EnumerateNearbyPackageDirectories(string baseDirectory)
-    {
-        foreach (string root in EnumerateNearbyRoots(baseDirectory).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            yield return Path.Combine(root, "Driver");
-            yield return Path.Combine(root, ServiceName);
-            yield return Path.Combine(root, "Xdows-Security-Driver");
-            yield return Path.Combine(root, "Xdows-Security-Driver", ServiceName);
-            yield return Path.Combine(root, "Xdows-Security-Publish");
-            yield return Path.Combine(root, "Xdows-Security-Publish", "Driver");
-            yield return Path.Combine(root, "win-x64");
-            yield return Path.Combine(root, "win-x64", "Driver");
-
-            foreach (string directory in SearchForInfDirectories(root))
-                yield return directory;
-        }
-    }
-
-    private static IEnumerable<string> EnumerateNearbyRoots(string baseDirectory)
-    {
-        DirectoryInfo? current = new(baseDirectory);
-        for (int i = 0; current is not null && i < 4; i++)
-        {
-            yield return current.FullName;
-            current = current.Parent;
-        }
-
-        string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-        if (!string.IsNullOrWhiteSpace(desktop))
-            yield return desktop;
-    }
-
-    private static IEnumerable<string> SearchForInfDirectories(string root)
-    {
-        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
-            yield break;
-
-        int yielded = 0;
-        IEnumerator<string>? enumerator = null;
-        try
-        {
-            enumerator = Directory.EnumerateFiles(root, InfName, SearchOption.AllDirectories).GetEnumerator();
-        }
-        catch
-        {
-            yield break;
-        }
-
-        using (enumerator)
-        {
-            while (yielded < 32)
-            {
-                string path;
-                try
-                {
-                    if (!enumerator.MoveNext())
-                        yield break;
-                    path = enumerator.Current;
-                }
-                catch
-                {
-                    yield break;
-                }
-
-                string? directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrWhiteSpace(directory))
-                {
-                    yielded++;
-                    yield return directory;
-                }
-            }
-        }
+        yield return Path.Combine(AppContext.BaseDirectory, "Driver");
     }
 
     private static DriverPackage? TryCreatePackage(string directory)
