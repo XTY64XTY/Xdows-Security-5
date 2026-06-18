@@ -35,28 +35,15 @@ public static class DriverInstaller
 
         await StopServiceIfPresentAsync(token).ConfigureAwait(false);
 
-        var addPackage = await DriverEnvironmentChecker.RunCommandAsync(
-            "pnputil",
-            $"/add-driver \"{package.InfPath}\"",
-            token).ConfigureAwait(false);
-
-        if (!addPackage.Started || addPackage.ExitCode != 0)
+        DriverRepairResult install = await Task.Run(() =>
         {
-            return new DriverRepairResult(
-                false,
-                $"Driver package staging failed: {TrimCommandOutput(addPackage.Output)}");
-        }
+            return DriverPackageInstaller.Install(package.InfPath, out string installMessage)
+                ? new DriverRepairResult(true, installMessage)
+                : new DriverRepairResult(false, installMessage);
+        }, token).ConfigureAwait(false);
 
-        if (!DriverRootDeviceInstaller.EnsureExists(out string deviceMessage))
-            return new DriverRepairResult(false, $"Driver package was staged, but device registration failed: {deviceMessage}. Stage: {TrimCommandOutput(addPackage.Output)}");
-
-        if (!DriverRootDeviceInstaller.BindDriverPackage(package.InfPath, out string bindMessage))
-        {
-            string serviceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
-            return new DriverRepairResult(
-                false,
-                $"Driver package was staged, but device binding failed. Device: {deviceMessage} Stage: {TrimCommandOutput(addPackage.Output)} Bind: {bindMessage} Service: {serviceState}");
-        }
+        if (!install.Success)
+            return install;
 
         DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
         if (!start.Success)
@@ -64,7 +51,7 @@ public static class DriverInstaller
             string serviceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
             return new DriverRepairResult(
                 false,
-                $"Driver package was staged and bound, but service start failed. Device: {deviceMessage} Bind: {bindMessage} Stage: {TrimCommandOutput(addPackage.Output)} Start: {start.Message} Service: {serviceState}");
+                $"Driver package installed, but service start failed. Install: {install.Message} Start: {start.Message} Service: {serviceState}");
         }
 
         return new DriverRepairResult(true, "Driver installed and service started.");
