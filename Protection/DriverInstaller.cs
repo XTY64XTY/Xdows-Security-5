@@ -35,9 +35,6 @@ public static class DriverInstaller
 
         await StopServiceIfPresentAsync(token).ConfigureAwait(false);
 
-        if (!DriverRootDeviceInstaller.EnsureExists(out string deviceMessage))
-            return new DriverRepairResult(false, $"Driver device registration failed: {deviceMessage}");
-
         var addPackage = await DriverEnvironmentChecker.RunCommandAsync(
             "pnputil",
             $"/add-driver \"{package.InfPath}\"",
@@ -47,8 +44,11 @@ public static class DriverInstaller
         {
             return new DriverRepairResult(
                 false,
-                $"Driver package staging failed after root device registration: {TrimCommandOutput(addPackage.Output)}");
+                $"Driver package staging failed: {TrimCommandOutput(addPackage.Output)}");
         }
+
+        if (!DriverRootDeviceInstaller.EnsureExists(out string deviceMessage))
+            return new DriverRepairResult(false, $"Driver package was staged, but device registration failed: {deviceMessage}. Stage: {TrimCommandOutput(addPackage.Output)}");
 
         if (!DriverRootDeviceInstaller.BindDriverPackage(package.InfPath, out string bindMessage))
         {

@@ -51,21 +51,47 @@ internal static class DriverRootDeviceInstaller
 
         try
         {
-            if (!NativeMethods.UpdateDriverForPlugAndPlayDevices(
-                0,
-                HardwareId,
-                infPath,
-                NativeMethods.InstallFlagForce,
-                out bool rebootRequired))
+            var attempts = new List<string>();
+            for (int attempt = 1; attempt <= 3; attempt++)
             {
-                message = FormatLastError("Unable to bind the root device to the driver package.");
-                return false;
+                if (NativeMethods.UpdateDriverForPlugAndPlayDevices(
+                    0,
+                    HardwareId,
+                    infPath,
+                    NativeMethods.InstallFlagForce,
+                    out bool rebootRequired))
+                {
+                    string result = rebootRequired
+                        ? "Driver package was bound to the root device. A restart is required."
+                        : "Driver package was bound to the root device.";
+                    message = attempts.Count == 0
+                        ? result
+                        : $"{result} Previous attempts: {string.Join(" ", attempts)}";
+                    return true;
+                }
+
+                int error = Marshal.GetLastWin32Error();
+                string bindError = FormatSetupApiError("Unable to bind the root device to the driver package.", error);
+                if (error != NativeMethods.ErrorNoSuchDevInst || attempt == 3)
+                {
+                    message = attempts.Count == 0
+                        ? bindError
+                        : $"{bindError} Previous attempts: {string.Join(" ", attempts)}";
+                    return false;
+                }
+
+                if (!ReenumerateDeviceTree(out string refreshMessage))
+                {
+                    message = $"{bindError} Device tree refresh failed: {refreshMessage}";
+                    return false;
+                }
+
+                attempts.Add($"Attempt {attempt}: {bindError} Device tree refresh: {refreshMessage}");
+                Thread.Sleep(250 * attempt);
             }
 
-            message = rebootRequired
-                ? "Driver package was bound to the root device. A restart is required."
-                : "Driver package was bound to the root device.";
-            return true;
+            message = "Unable to bind the root device to the driver package.";
+            return false;
         }
         catch (Exception ex) when (ex is Win32Exception or OverflowException)
         {
@@ -187,6 +213,26 @@ internal static class DriverRootDeviceInstaller
         }
     }
 
+    private static bool ReenumerateDeviceTree(out string message)
+    {
+        uint locate = NativeMethods.CM_Locate_DevNode(out uint rootDeviceNode, null, 0);
+        if (locate != NativeMethods.CrSuccess)
+        {
+            message = FormatConfigManagerError("Unable to locate the root device node.", locate);
+            return false;
+        }
+
+        uint refresh = NativeMethods.CM_Reenumerate_DevNode(rootDeviceNode, 0);
+        if (refresh != NativeMethods.CrSuccess)
+        {
+            message = FormatConfigManagerError("Unable to re-enumerate the device tree.", refresh);
+            return false;
+        }
+
+        message = "Device tree was re-enumerated.";
+        return true;
+    }
+
     private static SpDevInfoData CreateDeviceInfoData()
     {
         return new SpDevInfoData
@@ -198,7 +244,20 @@ internal static class DriverRootDeviceInstaller
     private static string FormatLastError(string prefix)
     {
         int error = Marshal.GetLastWin32Error();
-        return $"{prefix} {new Win32Exception(error).Message} ({error}).";
+        return FormatSetupApiError(prefix, error);
+    }
+
+    private static string FormatSetupApiError(string prefix, int error)
+    {
+        string description = error == NativeMethods.ErrorNoSuchDevInst
+            ? "No matching device instance exists."
+            : new Win32Exception(error).Message;
+        return $"{prefix} {description} (0x{unchecked((uint)error):X8}, {error}).";
+    }
+
+    private static string FormatConfigManagerError(string prefix, uint error)
+    {
+        return $"{prefix} CONFIGRET 0x{error:X8}.";
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -221,7 +280,9 @@ internal static class DriverRootDeviceInstaller
         public const int ErrorInsufficientBuffer = 122;
         public const int ErrorNoMoreItems = 259;
         public const int ErrorNotFound = 1168;
+        public const int ErrorNoSuchDevInst = unchecked((int)0xE000020B);
         public const uint InstallFlagForce = 0x00000001;
+        public const uint CrSuccess = 0x00000000;
 
         [DllImport("setupapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern nint SetupDiGetClassDevs(
@@ -290,5 +351,16 @@ internal static class DriverRootDeviceInstaller
             string fullInfPath,
             uint installFlags,
             [MarshalAs(UnmanagedType.Bool)] out bool rebootRequired);
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        public static extern uint CM_Locate_DevNode(
+            out uint deviceNode,
+            string? deviceId,
+            uint flags);
+
+        [DllImport("cfgmgr32.dll")]
+        public static extern uint CM_Reenumerate_DevNode(
+            uint deviceNode,
+            uint flags);
     }
 }
