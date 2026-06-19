@@ -33,7 +33,9 @@ public static class DriverInstaller
         if (package is null)
             return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
 
-        await StopServiceIfPresentAsync(token).ConfigureAwait(false);
+        DriverRepairResult stop = await StopServiceIfPresentAsync(token).ConfigureAwait(false);
+        if (!stop.Success)
+            return stop;
 
         DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
         if (!trust.Success)
@@ -95,7 +97,9 @@ public static class DriverInstaller
 
     public static async Task<DriverRepairResult> UninstallDriverAsync(CancellationToken token = default)
     {
-        await StopServiceIfPresentAsync(token).ConfigureAwait(false);
+        DriverRepairResult stop = await StopServiceIfPresentAsync(token).ConfigureAwait(false);
+        if (!stop.Success)
+            return stop;
 
         var enumDrivers = await DriverEnvironmentChecker.RunCommandAsync(
             "pnputil",
@@ -320,7 +324,7 @@ public static class DriverInstaller
         return status;
     }
 
-    private static async Task StopServiceIfPresentAsync(CancellationToken token)
+    private static async Task<DriverRepairResult> StopServiceIfPresentAsync(CancellationToken token)
     {
         var query = await DriverEnvironmentChecker.RunCommandAsync(
             "sc.exe",
@@ -328,15 +332,31 @@ public static class DriverInstaller
             token).ConfigureAwait(false);
 
         if (!query.Started || query.ExitCode != 0)
-            return;
+            return new DriverRepairResult(true, "Driver service is not installed.");
 
         if (!query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
-            return;
+            return new DriverRepairResult(true, "Driver service is not running.");
 
-        await DriverEnvironmentChecker.RunCommandAsync(
+        var stop = await DriverEnvironmentChecker.RunCommandAsync(
             "sc.exe",
             $"stop \"{ServiceName}\"",
             token).ConfigureAwait(false);
+
+        if (await WaitForServiceStoppedAsync(token).ConfigureAwait(false))
+            return new DriverRepairResult(true, "Driver service stopped.");
+
+        var unload = await DriverEnvironmentChecker.RunCommandAsync(
+            "fltmc.exe",
+            $"unload \"{ServiceName}\"",
+            token).ConfigureAwait(false);
+
+        if (await WaitForServiceStoppedAsync(token).ConfigureAwait(false))
+            return new DriverRepairResult(true, "Driver minifilter unloaded.");
+
+        string output = TrimCommandOutput(stop.Output + unload.Output);
+        return new DriverRepairResult(
+            false,
+            $"Driver service is running and could not be stopped before reinstall. Restart Windows, then try again. {output}");
     }
 
     private static async Task<string> QueryServiceStateAsync(CancellationToken token)
@@ -349,6 +369,28 @@ public static class DriverInstaller
         return query.Started
             ? TrimCommandOutput(query.Output)
             : "Unable to run sc.exe query.";
+    }
+
+    private static async Task<bool> WaitForServiceStoppedAsync(CancellationToken token)
+    {
+        for (int attempt = 0; attempt < 12; attempt++)
+        {
+            var query = await DriverEnvironmentChecker.RunCommandAsync(
+                "sc.exe",
+                $"query \"{ServiceName}\"",
+                token).ConfigureAwait(false);
+
+            if (!query.Started || query.ExitCode != 0)
+                return true;
+
+            if (!query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase) &&
+                !query.Output.Contains("STOP_PENDING", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            await Task.Delay(500, token).ConfigureAwait(false);
+        }
+
+        return false;
     }
 
     private static string? FindPublishedName(string pnputilOutput)
