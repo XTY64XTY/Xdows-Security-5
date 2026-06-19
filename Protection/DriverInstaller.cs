@@ -35,6 +35,10 @@ public static class DriverInstaller
 
         await StopServiceIfPresentAsync(token).ConfigureAwait(false);
 
+        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+        if (!trust.Success)
+            return trust;
+
         DriverRepairResult install = await Task.Run(() =>
         {
             return DriverPackageInstaller.Install(package.InfPath, out string installMessage)
@@ -51,7 +55,7 @@ public static class DriverInstaller
             string serviceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
             return new DriverRepairResult(
                 false,
-                $"Driver package installed, but service start failed. Install: {install.Message} Start: {start.Message} Service: {serviceState}");
+                $"Driver package installed, but service start failed. Trust: {trust.Message} Install: {install.Message} Start: {start.Message} Service: {serviceState}");
         }
 
         return new DriverRepairResult(true, "Driver installed and service started.");
@@ -66,6 +70,10 @@ public static class DriverInstaller
         DriverPackage? package = DriverPackageLocator.Find();
         if (package is null)
             return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
+
+        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+        if (!trust.Success)
+            return trust;
 
         DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
         if (start.Success)
@@ -144,6 +152,14 @@ public static class DriverInstaller
 
     public static async Task<DriverRepairResult> RestartBridgeAsync(CancellationToken token = default)
     {
+        DriverPackage? package = DriverPackageLocator.Find();
+        if (package is not null)
+        {
+            DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+            if (!trust.Success)
+                return trust;
+        }
+
         DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
         if (!start.Success)
             return start;

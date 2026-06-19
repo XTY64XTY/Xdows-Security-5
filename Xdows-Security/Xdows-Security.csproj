@@ -148,7 +148,7 @@
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
-			<XdowsDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')" />
+			<XdowsDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')" />
 		</ItemGroup>
 
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')" Text="Xdows-Model-Native.dll was not found. Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
@@ -167,7 +167,7 @@
 	<Target Name="AddXdowsDriverAndModelAssetsToPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
 		<ItemGroup>
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
-			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')" />
+			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')" />
 			<ResolvedFileToPublish Include="@(XdowsPublishNativeFiles)" Condition="Exists('%(XdowsPublishNativeFiles.Identity)')">
 				<RelativePath>%(Filename)%(Extension)</RelativePath>
 				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -191,7 +191,7 @@
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
-			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Exclude="$(XdowsDriverPackageOutput)\*.cer" Condition="Exists('$(XdowsDriverPackageOutput)')" />
+			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')" />
 		</ItemGroup>
 
 		<Copy SourceFiles="@(XdowsPublishModelFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishModelFiles.Identity)')" />

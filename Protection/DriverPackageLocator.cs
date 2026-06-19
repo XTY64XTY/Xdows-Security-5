@@ -4,7 +4,8 @@ internal sealed record DriverPackage(
     string DirectoryPath,
     string InfPath,
     string SysPath,
-    string CatPath);
+    string CatPath,
+    string? CertificatePath);
 
 internal static class DriverPackageLocator
 {
@@ -59,7 +60,8 @@ internal static class DriverPackageLocator
         if (string.IsNullOrWhiteSpace(catPath) || !File.Exists(catPath))
             return null;
 
-        return new DriverPackage(directory, infPath, sysPath, catPath);
+        string? certificatePath = ResolveCertificatePath(directory);
+        return new DriverPackage(directory, infPath, sysPath, catPath, certificatePath);
     }
 
     private static string? ResolveCatalogPath(string infPath)
@@ -116,5 +118,23 @@ internal static class DriverPackageLocator
         }
 
         return null;
+    }
+
+    private static string? ResolveCertificatePath(string directory)
+    {
+        string preferred = Path.Combine(directory, "Xdows-Security-Driver-Test.cer");
+        if (File.Exists(preferred))
+            return preferred;
+
+        try
+        {
+            return Directory
+                .EnumerateFiles(directory, "*.cer", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault();
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
