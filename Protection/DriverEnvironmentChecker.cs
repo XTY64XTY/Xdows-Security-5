@@ -35,13 +35,14 @@ public static class DriverEnvironmentChecker
 
     public static async Task<DriverEnvironmentReport> CheckAsync(CancellationToken token = default)
     {
+        DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
         var items = new List<DriverEnvironmentCheckItem>
         {
             CheckAdministrator(),
             await CheckTestSigningAsync(token).ConfigureAwait(false),
             CheckDriverPackage(),
-            await CheckDriverServiceAsync(token).ConfigureAwait(false),
-            CheckDriverCommunication(),
+            await CheckDriverServiceAsync(runtimeStatus, token).ConfigureAwait(false),
+            CheckDriverCommunication(runtimeStatus),
             CheckModelAssets()
         };
 
@@ -123,7 +124,9 @@ public static class DriverEnvironmentChecker
             "Install driver");
     }
 
-    private static async Task<DriverEnvironmentCheckItem> CheckDriverServiceAsync(CancellationToken token)
+    private static async Task<DriverEnvironmentCheckItem> CheckDriverServiceAsync(
+        DriverProtectionRuntimeStatus runtimeStatus,
+        CancellationToken token)
     {
         var result = await RunCommandAsync("sc.exe", $"query \"{ServiceName}\"", token).ConfigureAwait(false);
         if (!result.Started || result.ExitCode != 0)
@@ -138,6 +141,17 @@ public static class DriverEnvironmentChecker
         }
 
         bool running = result.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase);
+        if (running && runtimeStatus == DriverProtectionRuntimeStatus.NotInstalled)
+        {
+            return new DriverEnvironmentCheckItem(
+                "service",
+                "Driver service",
+                "Driver service is running, but the Xdows Security bridge device is missing. Restart Windows before repairing or starting driver protection.",
+                DriverEnvironmentCheckStatus.Failed,
+                false,
+                "Restart Windows");
+        }
+
         return new DriverEnvironmentCheckItem(
             "service",
             "Driver service",
@@ -147,9 +161,8 @@ public static class DriverEnvironmentChecker
             "Start service");
     }
 
-    private static DriverEnvironmentCheckItem CheckDriverCommunication()
+    private static DriverEnvironmentCheckItem CheckDriverCommunication(DriverProtectionRuntimeStatus status)
     {
-        DriverProtectionRuntimeStatus status = DriverProtection.QueryRuntimeStatus();
         bool ok = status == DriverProtectionRuntimeStatus.Protected ||
             status == DriverProtectionRuntimeStatus.NotRunning;
 

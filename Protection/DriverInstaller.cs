@@ -7,6 +7,8 @@ public sealed record DriverRepairResult(bool Success, string Message);
 public static class DriverInstaller
 {
     private const string ServiceName = DriverPackageLocator.ServiceName;
+    private const string RunningServiceWithoutBridgeMessage =
+        "Driver service is already running, but the Xdows Security bridge device is missing. This usually means an old driver instance is still loaded. Restart Windows before repairing, reinstalling, or starting driver protection.";
 
     public static Task<DriverRepairResult> RepairAsync(
         DriverEnvironmentCheckItem item,
@@ -32,6 +34,10 @@ public static class DriverInstaller
         DriverPackage? package = DriverPackageLocator.Find();
         if (package is null)
             return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
+
+        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token).ConfigureAwait(false);
+        if (staleService is not null)
+            return staleService;
 
         DriverRepairResult stop = await StopServiceIfPresentAsync(token).ConfigureAwait(false);
         if (!stop.Success)
@@ -75,6 +81,10 @@ public static class DriverInstaller
         DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
         if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
             return new DriverRepairResult(true, $"Driver bridge is reachable: {runtimeStatus}.");
+
+        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token, runtimeStatus).ConfigureAwait(false);
+        if (staleService is not null)
+            return staleService;
 
         DriverPackage? package = DriverPackageLocator.Find();
         if (package is null)
@@ -138,6 +148,10 @@ public static class DriverInstaller
 
     public static async Task<DriverRepairResult> StartServiceAsync(CancellationToken token = default)
     {
+        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token).ConfigureAwait(false);
+        if (staleService is not null)
+            return staleService;
+
         var start = await DriverEnvironmentChecker.RunCommandAsync(
             "sc.exe",
             $"start \"{ServiceName}\"",
@@ -163,6 +177,10 @@ public static class DriverInstaller
 
     public static async Task<DriverRepairResult> RestartBridgeAsync(CancellationToken token = default)
     {
+        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token).ConfigureAwait(false);
+        if (staleService is not null)
+            return staleService;
+
         DriverPackage? package = DriverPackageLocator.Find();
         if (package is not null)
         {
@@ -344,6 +362,9 @@ public static class DriverInstaller
         if (!query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
             return new DriverRepairResult(true, "Driver service is not running.");
 
+        if (DriverProtection.QueryRuntimeStatus() == DriverProtectionRuntimeStatus.NotInstalled)
+            return CreateRunningServiceWithoutBridgeResult();
+
         var stop = await DriverEnvironmentChecker.RunCommandAsync(
             "sc.exe",
             $"stop \"{ServiceName}\"",
@@ -398,6 +419,35 @@ public static class DriverInstaller
         }
 
         return false;
+    }
+
+    private static async Task<DriverRepairResult?> CheckRunningServiceWithoutBridgeAsync(
+        CancellationToken token,
+        DriverProtectionRuntimeStatus? knownRuntimeStatus = null)
+    {
+        DriverProtectionRuntimeStatus runtimeStatus =
+            knownRuntimeStatus ?? DriverProtection.QueryRuntimeStatus();
+        if (runtimeStatus != DriverProtectionRuntimeStatus.NotInstalled)
+            return null;
+
+        var query = await DriverEnvironmentChecker.RunCommandAsync(
+            "sc.exe",
+            $"query \"{ServiceName}\"",
+            token).ConfigureAwait(false);
+
+        if (query.Started &&
+            query.ExitCode == 0 &&
+            query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
+        {
+            return CreateRunningServiceWithoutBridgeResult();
+        }
+
+        return null;
+    }
+
+    private static DriverRepairResult CreateRunningServiceWithoutBridgeResult()
+    {
+        return new DriverRepairResult(false, RunningServiceWithoutBridgeMessage);
     }
 
     private static string? FindPublishedName(string pnputilOutput)
