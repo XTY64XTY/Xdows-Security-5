@@ -26,21 +26,10 @@ internal sealed class DriverBridgeClient : IDisposable
         if (IsConnected)
             return;
 
-        _handle = CreateFile(
-            DriverProtocol.DevicePath,
-            GenericRead | GenericWrite,
-            FileShareRead | FileShareWrite,
-            IntPtr.Zero,
-            OpenExisting,
-            FileAttributeNormal,
-            IntPtr.Zero);
-
-        if (_handle.IsInvalid)
+        _handle = OpenDriverDevice(out int openError);
+        if (_handle is null)
         {
-            int error = Marshal.GetLastWin32Error();
-            _handle.Dispose();
-            _handle = null;
-            throw new Win32Exception(error, "Failed to open Xdows Security driver device.");
+            throw new Win32Exception(openError, "Failed to open Xdows Security driver device.");
         }
 
         _clientProcessId = checked((uint)Environment.ProcessId);
@@ -151,18 +140,10 @@ internal sealed class DriverBridgeClient : IDisposable
         state = default;
         win32Error = 0;
 
-        using SafeFileHandle handle = CreateFile(
-            DriverProtocol.DevicePath,
-            GenericRead | GenericWrite,
-            FileShareRead | FileShareWrite,
-            IntPtr.Zero,
-            OpenExisting,
-            FileAttributeNormal,
-            IntPtr.Zero);
-
-        if (handle.IsInvalid)
+        using SafeFileHandle? handle = OpenDriverDevice(out int openError);
+        if (handle is null)
         {
-            win32Error = Marshal.GetLastWin32Error();
+            win32Error = openError;
             return false;
         }
 
@@ -331,6 +312,31 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         if (!IsConnected)
             throw new InvalidOperationException("Driver bridge is not connected.");
+    }
+
+    private static SafeFileHandle? OpenDriverDevice(out int win32Error)
+    {
+        win32Error = 0;
+
+        foreach (string path in DriverProtocol.DevicePaths)
+        {
+            SafeFileHandle handle = CreateFile(
+                path,
+                GenericRead | GenericWrite,
+                FileShareRead | FileShareWrite,
+                IntPtr.Zero,
+                OpenExisting,
+                FileAttributeNormal,
+                IntPtr.Zero);
+
+            if (!handle.IsInvalid)
+                return handle;
+
+            win32Error = Marshal.GetLastWin32Error();
+            handle.Dispose();
+        }
+
+        return null;
     }
 
     private bool DeviceIoControlNoBuffers(uint ioctl)

@@ -60,7 +60,14 @@ public static class DriverInstaller
                 $"Driver package installed, but service start failed. Trust: {trust.Message} Install: {install.Message} Start: {start.Message} Service: {serviceState}");
         }
 
-        return new DriverRepairResult(true, "Driver installed and service started.");
+        DriverProtectionRuntimeStatus runtimeStatus = await WaitForBridgeAsync(token).ConfigureAwait(false);
+        if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
+            return new DriverRepairResult(true, $"Driver installed, service started, and bridge is reachable: {runtimeStatus}.");
+
+        string startedServiceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
+        return new DriverRepairResult(
+            false,
+            $"Driver package installed and service started, but bridge is not reachable: {runtimeStatus}. Service: {startedServiceState}");
     }
 
     public static async Task<DriverRepairResult> EnsureInstalledAndStartedAsync(CancellationToken token = default)
@@ -312,12 +319,12 @@ public static class DriverInstaller
     private static async Task<DriverProtectionRuntimeStatus> WaitForBridgeAsync(CancellationToken token)
     {
         DriverProtectionRuntimeStatus status = DriverProtection.QueryRuntimeStatus();
-        for (int attempt = 0; attempt < 10; attempt++)
+        for (int attempt = 0; attempt < 20; attempt++)
         {
             if (status is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
                 return status;
 
-            await Task.Delay(300, token).ConfigureAwait(false);
+            await Task.Delay(500, token).ConfigureAwait(false);
             status = DriverProtection.QueryRuntimeStatus();
         }
 

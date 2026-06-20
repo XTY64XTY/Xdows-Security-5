@@ -12,6 +12,8 @@ internal static class DriverProtocol
     public const int MaxLogModuleChars = 32;
     public const int MaxLogMessageChars = 256;
     public const string DevicePath = @"\\.\XdowsSecurityDriver";
+    public const string GlobalDevicePath = @"\\.\Global\XdowsSecurityDriver";
+    public static readonly string[] DevicePaths = [DevicePath, GlobalDevicePath];
 
     private const uint FileDeviceXdowsSecurity = 0x8000;
     private const uint MethodBuffered = 0;
