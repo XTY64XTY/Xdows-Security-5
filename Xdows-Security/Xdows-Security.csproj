@@ -128,6 +128,15 @@
 		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform);SignMode=$(SignMode)" Condition="Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
 	</Target>
 
+	<Target Name="BuildXdowsRuntimeProjectReferences" BeforeTargets="ResolveReferences" Condition="'$(RuntimeIdentifier)' != '' AND '$(DesignTimeBuild)' != 'true'">
+		<ItemGroup>
+			<XdowsRuntimeProjectReference Include="..\Helper\Helper.csproj" />
+			<XdowsRuntimeProjectReference Include="..\Protection\Protection.csproj" />
+			<XdowsRuntimeProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
+		</ItemGroup>
+		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Build" Properties="Configuration=$(Configuration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
+	</Target>
+
 	<Target Name="CollectXdowsDriverAndModelAssets" AfterTargets="Build" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
 		<ItemGroup>
 			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
