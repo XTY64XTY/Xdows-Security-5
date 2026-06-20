@@ -393,9 +393,6 @@
   <data name="SecurityPage_Details_EngineName" xml:space="preserve">
     <value>检测引擎：</value>
   </data>
-  <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
-    <value>威胁家族：</value>
-  </data>
   <data name="SecurityPage_Details_SHA256" xml:space="preserve">
     <value>SHA256：</value>
   </data>
@@ -805,7 +802,7 @@
 如果光是暗语，月光就是它的唇语.
 雨天不是漏洞，是光在给自己加滤镜.
 如果终点是光的谜面，那么谜面的尽头是谁在出题？
-为什么不试试 Xdows Software？</value>
+为什么不试试西瓜杀毒？</value>
   </data>
   <data name="HomePage_RefreshSystemInfo.Text" xml:space="preserve">
     <value>刷新系统信息</value>
@@ -1641,5 +1638,8 @@
   </data>
   <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
     <value>驱动防护未能启用。即将打开环境检测。</value>
+  </data>
+  <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
+    <value>威胁家族：</value>
   </data>
 </root>

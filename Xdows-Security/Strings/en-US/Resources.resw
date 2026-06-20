@@ -1640,8 +1640,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
     <value>Driver protection could not be enabled. Opening the environment check.</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="SecurityPage_Details_FamilyName" type="System.Resources.ResXNullRef, System.Windows.Forms">
-    <value />
+  <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
+    <value>Threats Family:</value>
   </data>
 </root>
