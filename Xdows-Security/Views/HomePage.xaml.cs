@@ -2,6 +2,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.Windows.Storage;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.ObjectModel;
@@ -564,11 +565,12 @@ namespace Xdows_Security.Views
             ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 78, 201, 176))
             : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 241, 82, 98));
 
-            var lastScan = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings.Values["LastScanTime"] as string ?? "";
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var lastScan = settings.Values.TryGetValue("LastScanTime", out object? lastScanRaw) && lastScanRaw is string lastScanValue ? lastScanValue : "";
 
             LastScanTime.Text = string.IsNullOrEmpty(lastScan) ? WinUI3Localizer.Localizer.Get().GetLocalizedString("AllPage_Undefined") : lastScan;
 
-            var threatCount = (int)(Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings.Values["ThreatCount"] ?? 0);
+            var threatCount = settings.Values.TryGetValue("ThreatCount", out object? threatCountRaw) && threatCountRaw is int threatCountValue ? threatCountValue : 0;
             ThreatCount.Text = threatCount.ToString();
         }
 

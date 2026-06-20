@@ -1,4 +1,4 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -21,7 +21,7 @@ namespace Xdows_Security.Views.OOBE
 
             try
             {
-                var settings = ApplicationData.Current.LocalSettings;
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
 
                 bool soundEffects = settings.Values.TryGetValue("SoundEffects", out object? se) && se is bool b && b;
                 bool spatialAudio = settings.Values.TryGetValue("SpatialAudio", out object? sa) && sa is bool sb ? sb : !settings.Values.ContainsKey("SpatialAudio");
@@ -44,7 +44,7 @@ namespace Xdows_Security.Views.OOBE
         private void SoundEffectsToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (_isInitialize) return;
-            ApplicationData.Current.LocalSettings.Values["SoundEffects"] = SoundEffectsToggle.IsOn;
+            ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["SoundEffects"] = SoundEffectsToggle.IsOn;
             SpatialAudioToggle.IsEnabled = SoundEffectsToggle.IsOn;
             ApplySoundSettings();
         }
@@ -52,7 +52,7 @@ namespace Xdows_Security.Views.OOBE
         private void SpatialAudioToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (_isInitialize) return;
-            ApplicationData.Current.LocalSettings.Values["SpatialAudio"] = SpatialAudioToggle.IsOn;
+            ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["SpatialAudio"] = SpatialAudioToggle.IsOn;
             ApplySoundSettings();
         }
 

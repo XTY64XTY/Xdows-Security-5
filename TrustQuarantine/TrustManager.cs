@@ -1,4 +1,4 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -14,7 +14,7 @@ namespace TrustQuarantine
 
     public static class TrustManager
     {
-        private static string TrustFolderPath => Path.Combine(ApplicationData.LocalFolder.Path, "Trust");
+        private static string TrustFolderPath => Path.Combine(ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalPath, "Trust");
 
         private static void EnsureTrustFolderExists()
         {

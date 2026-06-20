@@ -1,6 +1,7 @@
 using CommunityToolkit.WinUI.Controls;
 using CommunityToolkit.WinUI.UI.Controls;
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
+using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -86,7 +87,6 @@ namespace Xdows_Security.Views
                         LoadLanguageSettingAsync,
                         LoadThemeSettingAsync,
                         LoadBackdropSettingAsync,
-                        LoadBackgroundImageSettingAsync,
                         LoadSoundSettingAsync,
                         LoadTransitionSettingAsync
                     );
@@ -196,14 +196,6 @@ namespace Xdows_Security.Views
             get
             {
                 return RunOnDispatcher(LoadBackdropSetting);
-            }
-        }
-
-        private Task LoadBackgroundImageSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadBackgroundImageSetting);
             }
         }
 
@@ -344,7 +336,7 @@ namespace Xdows_Security.Views
 
         private async Task<bool> EnsureDriverProtectionDisclaimerAcceptedAsync()
         {
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             if (settings.Values.TryGetValue(DriverProtectionDisclaimerAcceptedSetting, out object? raw) &&
                 raw is bool accepted &&
                 accepted)
@@ -399,7 +391,7 @@ namespace Xdows_Security.Views
             if (key is "Process_CompatibilityMode" or "Files_CompatibilityMode")
             {
                 toggle.IsOn = true;
-                ApplicationData.Current.LocalSettings.Values[key] = true;
+                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[key] = true;
                 return;
             }
             if (toggle.IsOn && (key == "CloudScan" || key == "ExactRuleScan"))
@@ -414,7 +406,7 @@ namespace Xdows_Security.Views
                     DefaultButton = ContentDialogButton.Primary
                 }.ShowAsync();
             }
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             settings.Values[key] = toggle.IsOn;
         }
 
@@ -433,7 +425,7 @@ namespace Xdows_Security.Views
                 if (InfectorCleanerToggle.IsOn)
                 {
                     InfectorCleanerToggle.IsOn = false;
-                    var settings = ApplicationData.Current.LocalSettings;
+                    var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                     settings.Values["InfectorCleaner"] = false;
                 }
                 InfectorCleanerToggle.IsEnabled = false;
@@ -442,7 +434,7 @@ namespace Xdows_Security.Views
 
         private void LoadScanSetting()
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
 
             List<ToggleSwitch> toggles =
             [
@@ -617,7 +609,7 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
             {
-                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 settings.Values["ScanIndexMode"] = tag;
                 try
                 {
@@ -645,7 +637,7 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
             {
-                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 settings.Values["ModelMode"] = tag;
             }
         }
@@ -655,14 +647,14 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ToggleSwitch toggle)
             {
-                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 settings.Values["ModelModeForProtection"] = toggle.IsOn;
             }
         }
 
         private async void LoadLanguageSetting()
         {
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             if (!settings.Values.TryGetValue("AppLanguage", out object? langRaw) || langRaw is not string savedLanguage)
             {
                 savedLanguage = "en-US";
@@ -692,7 +684,7 @@ namespace Xdows_Security.Views
 
         private async void LoadThemeSetting()
         {
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             ElementTheme themeValue = ElementTheme.Default;
             if (settings.Values.TryGetValue("AppTheme", out object? themeRaw) && themeRaw is string themeString && Enum.TryParse(themeString, out ElementTheme parsedTheme))
             {
@@ -722,7 +714,7 @@ namespace Xdows_Security.Views
                 if (selectedItem.Tag is not String newLanguage) return;
                 if (newLanguage != currentLanguage)
                 {
-                    ApplicationData.Current.LocalSettings.Values["AppLanguage"] = newLanguage;
+                    ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppLanguage"] = newLanguage;
                     await Localizer.Get().SetLanguage(newLanguage);
                     ContextMenuService.UpdateMenuText();
                 }
@@ -813,7 +805,7 @@ namespace Xdows_Security.Views
                 _ => ElementTheme.Default
             };
 
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             settings.Values["AppTheme"] = selectedTheme.ToString();
             if (App.MainWindow == null) return;
             if (App.MainWindow.Content is FrameworkElement rootElement)
@@ -830,8 +822,10 @@ namespace Xdows_Security.Views
 
         private async void LoadBackdropSetting()
         {
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
-            String savedBackdrop = settings.Values["AppBackdrop"] as String ?? "";
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            String savedBackdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdrop
+                ? backdrop
+                : "";
 
             Appearance_Backdrop_Opacity.IsEnabled = !(savedBackdrop == "Solid");
             MicaOption.IsEnabled = MicaController.IsSupported();
@@ -853,18 +847,6 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void LoadBackgroundImageSetting()
-        {
-            try
-            {
-                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
-                String backdropType = settings.Values["AppBackdrop"] as String ?? "Solid";
-                Double opacityValue = settings.Values["AppBackgroundImageOpacity"] as Double? ?? 30.0;
-                BackgroundImageOpacitySlider.Value = opacityValue;
-            }
-            catch { }
-        }
-
         private void BackdropComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
@@ -873,7 +855,7 @@ namespace Xdows_Security.Views
                 try
                 {
                     String backdropType = selected.Tag as String ?? ElementTheme.Default.ToString();
-                    ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                    ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                     settings.Values["AppBackdrop"] = backdropType;
                     App.MainWindow?.ApplyBackdrop(backdropType, false);
                     Appearance_Backdrop_Opacity.IsEnabled = !(backdropType == "Solid");
@@ -885,10 +867,13 @@ namespace Xdows_Security.Views
         private void OpacitySlider_ValueChanged(Object sender, RangeBaseValueChangedEventArgs e)
         {
             if (IsInitialize || sender is not Slider slider) return;
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             settings.Values["AppBackdropOpacity"] = slider.Value;
             if (App.MainWindow == null) return;
-            App.MainWindow.ApplyBackdrop(settings.Values["AppBackdrop"] as String ?? "Mica", false);
+            string backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
+                ? backdropValue
+                : "Mica";
+            App.MainWindow.ApplyBackdrop(backdrop, false);
         }
 
         private void NavComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
@@ -897,7 +882,7 @@ namespace Xdows_Security.Views
             try
             {
                 Int32 index = NavComboBox.SelectedIndex;
-                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 settings.Values["AppNavTheme"] = index;
                 App.MainWindow?.UpdateNavTheme(index);
 
@@ -990,7 +975,7 @@ namespace Xdows_Security.Views
 
             try
             {
-                var settings = ApplicationData.Current.LocalSettings;
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 settings.Values["AutoEnableStartup"] = toggle.IsOn;
             }
             catch { }
@@ -1175,86 +1160,12 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void SelectBackgroundImageButton_Click(Object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var picker = new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId)
-                {
-                    SuggestedStartLocation = PickerLocationId.PicturesLibrary
-                };
-                picker.FileTypeFilter.Add(".jpg");
-                picker.FileTypeFilter.Add(".jpeg");
-                picker.FileTypeFilter.Add(".png");
-                picker.FileTypeFilter.Add(".bmp");
-                picker.FileTypeFilter.Add(".gif");
-
-                PickFileResult file = await picker.PickSingleFileAsync();
-                if (file is null)
-                {
-                    return;
-                }
-
-                try
-                {
-                    String imagePath = file.Path;
-                    String key = "background_image";
-                    await ApplicationData.WriteFileAsync(key, imagePath);
-                    App.MainWindow?.ApplyBackgroundImageAsync(imagePath);
-                }
-                catch (Exception ex)
-                {
-                    ContentDialog errorDialog = new()
-                    {
-                        Title = Localizer.Get().GetLocalizedString("SettingsPage_BackgroundImage_Error_Title"),
-                        Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_BackgroundImage_SelectError_Content"), ex.Message),
-                        CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                        XamlRoot = this.XamlRoot
-                    };
-                    await errorDialog.ShowAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                ContentDialog errorDialog = new()
-                {
-                    Title = Localizer.Get().GetLocalizedString("SettingsPage_BackgroundImage_Error_Title"),
-                    Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_BackgroundImage_SelectError_Content"), ex.Message),
-                    CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                    XamlRoot = this.XamlRoot
-                };
-                await errorDialog.ShowAsync();
-            }
-        }
-
-        private async void ClearBackgroundImageButton_Click(Object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                if (ApplicationData.HasFile("background_image"))
-                {
-                    await ApplicationData.DeleteFileAsync("background_image");
-                    App.MainWindow?.ClearBackgroundImage();
-                }
-            }
-            catch (Exception ex)
-            {
-                ContentDialog errorDialog = new()
-                {
-                    Title = Localizer.Get().GetLocalizedString("SettingsPage_BackgroundImage_Error_Title"),
-                    Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_BackgroundImage_ClearError_Content"), ex.Message),
-                    CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                    XamlRoot = this.XamlRoot
-                };
-                await errorDialog.ShowAsync();
-            }
-        }
-
         private async void OpenConfigLocationButton_Click(Object sender, RoutedEventArgs e)
         {
             try
             {
-                String path = ApplicationData.LocalFolder.Path;
+                String path = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalPath;
+                Directory.CreateDirectory(path);
                 await Windows.System.Launcher.LaunchFolderPathAsync(path);
             }
             catch (Exception ex)
@@ -1286,7 +1197,7 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    String path = ApplicationData.LocalFolder.Path;
+                    String path = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalPath;
                     if (Directory.Exists(path))
                     {
                         Directory.Delete(path, true);
@@ -1322,16 +1233,6 @@ namespace Xdows_Security.Views
                 App.MainWindow?.Close();
                 Environment.Exit(0);
             }
-        }
-
-        private void BackgroundImageOpacitySlider_ValueChanged(Object sender, RoutedEventArgs e)
-        {
-            if (IsInitialize || sender is not Slider slider) return;
-
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
-            settings.Values["AppBackgroundImageOpacity"] = slider.Value;
-
-            App.MainWindow?.UpdateBackgroundImageOpacity(slider.Value / 100.0);
         }
 
         private async void Boot_Save_Button_Click(Object sender, RoutedEventArgs e)
@@ -1370,7 +1271,7 @@ namespace Xdows_Security.Views
 
         private void LoadSoundSetting()
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
 
             SoundEffectsToggle.IsOn = settings.Values.TryGetValue("SoundEffects", out var s) && s is true;
             SpatialAudioToggle.IsOn = settings.Values.TryGetValue("SpatialAudio", out var sp) && sp is true || !(settings.Values.ContainsKey("SpatialAudio"));
@@ -1399,14 +1300,14 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
-                ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 settings.Values["PageTransition"] = tag;
             }
         }
 
         private void LoadTransitionSetting()
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             string savedTransition = settings.Values.TryGetValue("PageTransition", out var raw) && raw is string s ? s : "Default";
 
             if (!settings.Values.ContainsKey("PageTransition"))
@@ -1426,7 +1327,7 @@ namespace Xdows_Security.Views
 
         private static void ApplySoundSettings()
         {
-            var s = ApplicationData.Current.LocalSettings;
+            var s = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             bool sound = s.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
             bool spatial = s.Values.TryGetValue("SpatialAudio", out var spr) && spr is bool spb && spb;
 

@@ -1,4 +1,5 @@
 using Helper;
+using Microsoft.Windows.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -59,8 +60,8 @@ public class UsbScanService
 
     public void EnqueueDrive(string driveLetter)
     {
-        var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
-        bool enabled = !(settings.Values["UsbAutoScan"] is bool b && !b);
+        var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+        bool enabled = !(settings.Values.TryGetValue("UsbAutoScan", out object? usbAutoScanRaw) && usbAutoScanRaw is bool b && !b);
         if (!enabled) return;
 
         _pendingDrives.Enqueue(driveLetter);
@@ -151,13 +152,13 @@ public class UsbScanService
             };
             ProgressChanged?.Invoke(this, args);
 
-            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
-            bool useModelScan = !(settings.Values["ModelScan"] is bool ms && !ms);
-            bool useLocalScan = settings.Values["LocalScan"] is true;
-            bool useCloudScan = settings.Values["CloudScan"] is true;
-            bool deepScan = settings.Values["DeepScan"] is true;
-            bool extraData = settings.Values["ExtraData"] is true;
-            bool useVirusFamily = settings.Values["VirusFamily"] is true;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            bool useModelScan = !(settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool ms && !ms);
+            bool useLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is true;
+            bool useCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is true;
+            bool deepScan = settings.Values.TryGetValue("DeepScan", out object? deepRaw) && deepRaw is true;
+            bool extraData = settings.Values.TryGetValue("ExtraData", out object? extraRaw) && extraRaw is true;
+            bool useVirusFamily = settings.Values.TryGetValue("VirusFamily", out object? familyRaw) && familyRaw is true;
 
             ScanEngine.ModelEngineScan? modelEngine = null;
             if (useModelScan)

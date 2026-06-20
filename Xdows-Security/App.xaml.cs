@@ -1,4 +1,4 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
@@ -225,7 +225,7 @@ namespace Xdows_Security
 
         private static void SaveProtectionState(int runId, bool enabled)
         {
-            ApplicationData.Current.LocalSettings.Values[$"Protection_Enabled_{runId}"] = enabled;
+            ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[$"Protection_Enabled_{runId}"] = enabled;
         }
 
         public static void RestoreProtections()
@@ -243,7 +243,7 @@ namespace Xdows_Security
         {
             try
             {
-                var settings = ApplicationData.Current.LocalSettings;
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 string key = $"Protection_Enabled_{runId}";
 
                 if (!settings.Values.TryGetValue(key, out var raw) || raw is not bool shouldEnable)
@@ -598,7 +598,7 @@ namespace Xdows_Security
         {
             lock (_settingsLock)
             {
-                var settings = ApplicationData.Current.LocalSettings;
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 if (settings.Values.TryGetValue(RunOOBESettingKey, out var raw) && raw is bool b)
                 {
                     return b;
@@ -611,7 +611,7 @@ namespace Xdows_Security
         {
             lock (_settingsLock)
             {
-                ApplicationData.Current.LocalSettings.Values[RunOOBESettingKey] = value;
+                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[RunOOBESettingKey] = value;
             }
         }
 
@@ -661,7 +661,7 @@ namespace Xdows_Security
                 //});// 测试用的捏（By Shiyi）
 
                 // Initialize sound effects
-                var settings = ApplicationData.Current.LocalSettings;
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 bool sound = settings.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
                 bool spatial = !settings.Values.TryGetValue("SpatialAudio", out var spr) || spr is not bool spb || spb;
                 ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
@@ -686,8 +686,10 @@ namespace Xdows_Security
         {
             string stringsPath = Path.Combine(AppContext.BaseDirectory, "Strings");
 
-            var settings = ApplicationData.Current.LocalSettings;
-            string lastLang = settings.Values["AppLanguage"] as string ?? "en-US";
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            string lastLang = settings.Values.TryGetValue("AppLanguage", out object? rawLanguage) && rawLanguage is string language
+                ? language
+                : "en-US";
 
             ApplicationLanguages.PrimaryLanguageOverride = lastLang;
             ILocalizer localizer = await new LocalizerBuilder()
@@ -739,7 +741,7 @@ namespace Xdows_Security
 
         public static NavigationTransitionInfo GetNavigationTransitionInfo()
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             string transitionType = settings.Values.TryGetValue("PageTransition", out var raw) && raw is string s ? s : "Default";
 
             return transitionType switch

@@ -1,5 +1,6 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Helper;
+using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 using Microsoft.UI;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
@@ -1005,10 +1006,10 @@ namespace Xdows_Security.Views
 
         private async void OnScanMenuClick(Object sender, RoutedEventArgs e)
         {
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
-            Boolean UseLocalScan = (settings.Values["LocalScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseCloudScan = (settings.Values["CloudScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseModelScan = (settings.Values["ModelScan"] as Boolean?).GetValueOrDefault();
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            Boolean UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
+            Boolean UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
+            Boolean UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
             if (!UseLocalScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
@@ -1049,10 +1050,10 @@ namespace Xdows_Security.Views
 
         private async void ScanButton_Click(SplitButton sender, SplitButtonClickEventArgs e)
         {
-            ApplicationDataContainer settings = ApplicationData.Current.LocalSettings;
-            Boolean UseLocalScan = (settings.Values["LocalScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseCloudScan = (settings.Values["CloudScan"] as Boolean?).GetValueOrDefault();
-            Boolean UseModelScan = (settings.Values["ModelScan"] as Boolean?).GetValueOrDefault();
+            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            Boolean UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
+            Boolean UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
+            Boolean UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
             if (!UseLocalScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
@@ -1453,18 +1454,18 @@ namespace Xdows_Security.Views
             _isPaused = false;
             _zipFileThreats.Clear();
 
-            var settings = ApplicationData.Current.LocalSettings;
-            bool showScanProgress = settings.Values["ShowScanProgress"] as bool? ?? false;
-            bool showTaskbarProgress = settings.Values["ShowTaskbarScanProgress"] as bool? ?? true;
-            string scanIndexMode = settings.Values["ScanIndexMode"] as string ?? "Parallel";
-            bool DeepScan = settings.Values["DeepScan"] as bool? ?? false;
-            bool ExtraData = settings.Values["ExtraData"] as bool? ?? false;
-            bool UseLocalScan = settings.Values["LocalScan"] as bool? ?? false;
-            bool UseCloudScan = settings.Values["CloudScan"] as bool? ?? false;
-            bool UseModelScan = settings.Values["ModelScan"] as bool? ?? true;
-            bool UseInfectorCleaner = settings.Values["InfectorCleaner"] as bool? ?? false;
-            bool UseVirusFamily = settings.Values["VirusFamily"] as bool? ?? false;
-            bool UseExactRule = settings.Values["ExactRuleScan"] as bool? ?? false;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            bool showScanProgress = settings.Values.TryGetValue("ShowScanProgress", out object? showProgressRaw) && showProgressRaw is bool showProgress && showProgress;
+            bool showTaskbarProgress = !settings.Values.TryGetValue("ShowTaskbarScanProgress", out object? taskbarRaw) || taskbarRaw is not bool taskbar || taskbar;
+            string scanIndexMode = settings.Values.TryGetValue("ScanIndexMode", out object? indexModeRaw) && indexModeRaw is string indexMode ? indexMode : "Parallel";
+            bool DeepScan = settings.Values.TryGetValue("DeepScan", out object? deepRaw) && deepRaw is bool deep && deep;
+            bool ExtraData = settings.Values.TryGetValue("ExtraData", out object? extraRaw) && extraRaw is bool extra && extra;
+            bool UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
+            bool UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
+            bool UseModelScan = !settings.Values.TryGetValue("ModelScan", out object? modelRaw) || modelRaw is not bool model || model;
+            bool UseInfectorCleaner = settings.Values.TryGetValue("InfectorCleaner", out object? cleanerRaw) && cleanerRaw is bool cleaner && cleaner;
+            bool UseVirusFamily = settings.Values.TryGetValue("VirusFamily", out object? familyRaw) && familyRaw is bool family && family;
+            bool UseExactRule = settings.Values.TryGetValue("ExactRuleScan", out object? exactRaw) && exactRaw is bool exact && exact;
 
             Helper.ScanEngine.ModelEngineScan? ModelEngine = null;
 
@@ -1621,7 +1622,7 @@ namespace Xdows_Security.Views
                     string tStatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning");
                     TimeSpan pausedTime = TimeSpan.Zero;
                     DateTime lastPauseTime = DateTime.MinValue;
-                    bool ScanInside = settings.Values["ScanInside"] as bool? ?? false;
+                    bool ScanInside = settings.Values.TryGetValue("ScanInside", out object? scanInsideRaw) && scanInsideRaw is bool scanInside && scanInside;
 
                     // 双层并行架构：
                     // 外层高并发：枚举+TrustCheck快速跳过 → 维持200+/秒吞吐
@@ -2003,7 +2004,7 @@ namespace Xdows_Security.Views
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (!IsCurrentScan(thisId, token)) return;
-                        ApplicationDataContainer settingsLocal = ApplicationData.Current.LocalSettings;
+                        ApplicationDataContainer settingsLocal = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);

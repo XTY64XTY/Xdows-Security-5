@@ -1,4 +1,4 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,8 +21,10 @@ namespace Xdows_Security.Views.OOBE
 
             try
             {
-                var settings = ApplicationData.Current.LocalSettings;
-                string saved = settings.Values["AppBackdrop"] as string ?? "Mica";
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                string saved = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdrop
+                    ? backdrop
+                    : "Mica";
 
                 // Disable Mica options if not supported
                 foreach (ComboBoxItem item in BackdropComboBox.Items)
@@ -62,7 +64,7 @@ namespace Xdows_Security.Views.OOBE
             if (_isInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
-                ApplicationData.Current.LocalSettings.Values["AppBackdrop"] = tag;
+                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppBackdrop"] = tag;
                 App.MainWindow?.ApplyBackdrop(tag, false);
             }
         }

@@ -1,4 +1,4 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Helper.PInvoke.Comctl32;
 using Helper.PInvoke.User32;
 using Microsoft.UI.Windowing;
@@ -81,7 +81,7 @@ namespace Xdows_Security
                 ((MenuFlyoutItem)flyout.Items[3]).Click += async (s, e) =>
                 {
                     bool disabledVerify = false;
-                    if (Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
+                    if (ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
                     {
                         disabledVerify = boolValue;
                     }
@@ -130,7 +130,7 @@ namespace Xdows_Security
 
         private async void MainWindow_Activated_FirstTime(object sender, WindowActivatedEventArgs args)
         {
-            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
 
             if (settings.Values.TryGetValue("AppTheme", out object? theme))
             {
@@ -146,23 +146,16 @@ namespace Xdows_Security
             }
             this.SystemBackdrop = null;
 
-            var backdrop = settings.Values["AppBackdrop"] as string ?? "Mica";
+            var backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
+                ? backdropValue
+                : "Mica";
 
             var dq = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-            dq?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, async () =>
+            dq?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
                 {
                     try
                     {
                         ApplyBackdrop(backdrop, false);
-
-                        if (Compatibility.Windows.Storage.ApplicationData.HasFile("background_image"))
-                        {
-                            var backgroundImagePath = await Compatibility.Windows.Storage.ApplicationData.ReadFileAsync("background_image");
-                            if (backgroundImagePath != null)
-                            {
-                                _ = ApplyBackgroundImageAsync(backgroundImagePath);
-                            }
-                        }
                     }
                     catch { }
                 });
@@ -338,7 +331,7 @@ namespace Xdows_Security
         private void OnLangChanged(object? sender, LanguageChangedEventArgs e) => LoadLocalizerData();
         private void LoadLocalizerData()
         {
-            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             int navTheme = settings.Values.TryGetValue("AppNavTheme", out var raw) && raw is double d ?
                 (int)d : 0;
             if (navTheme == 0)
@@ -454,7 +447,7 @@ namespace Xdows_Security
         }
         private void MainWindow_Closing(object sender, AppWindowClosingEventArgs e)
         {
-            bool trayVisible = !ApplicationData.Current.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) || (trayVisibleToggle is bool trayVisibleValue && trayVisibleValue);
+            bool trayVisible = !ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) || (trayVisibleToggle is bool trayVisibleValue && trayVisibleValue);
             if (trayVisible && !_allowCloseFromTray)
             {
                 e.Cancel = true;
@@ -469,7 +462,7 @@ namespace Xdows_Security
                 return;
             }
             bool disabledVerify = false;
-            if (ApplicationData.Current.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool disabledVerifyValue)
+            if (ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool disabledVerifyValue)
             {
                 disabledVerify = disabledVerifyValue;
             }
@@ -508,7 +501,7 @@ namespace Xdows_Security
 
         public void UpdateBackButtonPosition()
         {
-            var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
             Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
             bool isCompactMode = navTheme == 0 &&
                 settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out var isItInTitleBar) &&

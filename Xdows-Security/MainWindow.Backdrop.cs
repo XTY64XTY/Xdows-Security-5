@@ -1,5 +1,5 @@
 // MainWindow backdrop and theme management (partial class)
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Microsoft.UI;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
@@ -21,9 +21,6 @@ namespace Xdows_Security
         {
             IsInputActive = true
         };
-
-        private ImageBrush? _backgroundImageBrush;
-        private string? _currentBackgroundImagePath;
 
         private UISettings? _uiSettings;
 
@@ -49,8 +46,11 @@ namespace Xdows_Security
                         : Windows.UI.Color.FromArgb(255, 255, 255, 255)
                 };
             }
-            var settings = ApplicationData.Current.LocalSettings;
-            App.MainWindow?.ApplyBackdrop(settings.Values["AppBackdrop"] as string ?? "Mica", true);
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            string backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
+                ? backdropValue
+                : "Mica";
+            App.MainWindow?.ApplyBackdrop(backdrop, true);
         }
 
         public static ApplicationTheme GetSystemTheme()
@@ -81,9 +81,9 @@ namespace Xdows_Security
             try
             {
                 if (RootGrid == null) return;
-                var settings = ApplicationData.Current.LocalSettings;
-                double opacity = settings.Values["AppBackdropOpacity"] is double v ? v :
-                                (settings.Values["AppBackdropOpacity"] is int i ? i : 100);
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                double opacity = settings.Values.TryGetValue("AppBackdropOpacity", out object? opacityRaw) && opacityRaw is double v ? v :
+                                (opacityRaw is int i ? i : 100);
                 if (!compulsory && _lastBackdrop == backdropType && _lastOpacity.Equals(opacity))
                     return;
 
@@ -94,8 +94,6 @@ namespace Xdows_Security
                 if (backdropType == "Solid")
                 {
                     this.SystemBackdrop = null;
-                    if (ApplicationData.HasFile("background_image"))
-                        UpdateBackgroundImage();
 
                     RootGrid.Background = GetCurrentTheme() == ElementTheme.Dark
                          ? new SolidColorBrush(Color.FromArgb(0xFF, 0x20, 0x20, 0x20))
@@ -145,9 +143,6 @@ namespace Xdows_Security
                     UpdateBackdropTheme();
                     _controller.SetSystemBackdropConfiguration(_config);
                 }
-
-                if (ApplicationData.HasFile("background_image"))
-                    UpdateBackgroundImage();
 
                 RegisterSystemThemeListener();
             }
@@ -218,8 +213,10 @@ namespace Xdows_Security
 
                 _controller?.SetSystemBackdropConfiguration(_config);
 
-                var settings = ApplicationData.Current.LocalSettings;
-                var backdropType = settings.Values["AppBackdrop"] as string ?? "Mica";
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var backdropType = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
+                    ? backdropValue
+                    : "Mica";
                 if (backdropType == "Solid")
                 {
                     RootGrid.Background = GetCurrentTheme() == ElementTheme.Dark
@@ -247,70 +244,9 @@ namespace Xdows_Security
             });
         }
 
-        public async System.Threading.Tasks.Task ApplyBackgroundImageAsync(string imagePath)
-        {
-            try
-            {
-                _currentBackgroundImagePath = imagePath;
-                var bitmapImage = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage();
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(imagePath);
-                using (var stream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
-                {
-                    await bitmapImage.SetSourceAsync(stream);
-                }
-
-                _backgroundImageBrush = new ImageBrush
-                {
-                    ImageSource = bitmapImage,
-                    Stretch = Microsoft.UI.Xaml.Media.Stretch.UniformToFill
-                };
-
-                var settings = ApplicationData.Current.LocalSettings;
-                var opacityValue = settings.Values["AppBackgroundImageOpacity"] as double? ?? 30.0;
-                _backgroundImageBrush.Opacity = opacityValue / 100.0;
-
-                var dq = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                dq?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
-                {
-                    UpdateBackgroundImage();
-                });
-            }
-            catch { }
-        }
-
-        public void ClearBackgroundImage()
-        {
-            try
-            {
-                _currentBackgroundImagePath = null;
-                _backgroundImageBrush = null;
-                var settings = ApplicationData.Current.LocalSettings;
-                var backdropType = settings.Values["AppBackdrop"] as string ?? "Mica";
-                ApplyBackdrop(backdropType, true);
-            }
-            catch { }
-        }
-
-        private void UpdateBackgroundImage()
-        {
-            if (RootGrid == null || _backgroundImageBrush == null) return;
-            try
-            {
-                var settings = ApplicationData.Current.LocalSettings;
-                var opacityValue = settings.Values["AppBackgroundImageOpacity"] as double? ?? 30.0;
-                _backgroundImageBrush.Opacity = opacityValue / 100.0;
-                RootGrid.Background = _backgroundImageBrush;
-            }
-            catch { }
-        }
-
-        public void UpdateBackgroundImageOpacity(double opacity)
-        {
-            _backgroundImageBrush?.Opacity = opacity;
-        }
         public async void UpdatePaneToggleButtonPosition()
         {
-            var settings = ApplicationData.Current.LocalSettings;
+            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
 
             // 检查导航栏位置，如果在顶部则不应用紧凑导航栏设置
             Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;

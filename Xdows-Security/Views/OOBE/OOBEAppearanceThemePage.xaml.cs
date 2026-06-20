@@ -1,4 +1,4 @@
-using Compatibility.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
@@ -21,8 +21,10 @@ namespace Xdows_Security.Views.OOBE
 
             try
             {
-                var settings = ApplicationData.Current.LocalSettings;
-                string saved = settings.Values["AppTheme"] as string ?? "Default";
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                string saved = settings.Values.TryGetValue("AppTheme", out object? themeRaw) && themeRaw is string theme
+                    ? theme
+                    : "Default";
 
                 foreach (ComboBoxItem item in ThemeComboBox.Items)
                 {
@@ -47,7 +49,7 @@ namespace Xdows_Security.Views.OOBE
             if (_isInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
-                ApplicationData.Current.LocalSettings.Values["AppTheme"] = tag;
+                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppTheme"] = tag;
                 ApplyTheme(tag);
             }
         }

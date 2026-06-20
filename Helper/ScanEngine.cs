@@ -1,3 +1,4 @@
+using Microsoft.Windows.Storage;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -69,7 +70,7 @@ namespace Helper
             {
                 try
                 {
-                    var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+                    var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                     if (settings.Values.TryGetValue("ModelMode", out var raw) && raw is string modeStr)
                     {
                         _mode = modeStr switch
@@ -105,7 +106,7 @@ namespace Helper
                     bool applyToProtection = false;
                     try
                     {
-                        var settings = Compatibility.Windows.Storage.ApplicationData.Current.LocalSettings;
+                        var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                         if (settings.Values.TryGetValue("ModelModeForProtection", out var raw) && raw is bool enabled)
                         {
                             applyToProtection = enabled;

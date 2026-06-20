@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
+using Microsoft.Windows.Storage;
+using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 
 namespace Xdows_Security
 {
@@ -38,7 +39,7 @@ namespace Xdows_Security
             try
             {
                 // 尝试从本地存储加载设置
-                ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer localSettings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
 
                 if (localSettings.Values.TryGetValue("FeedbackUsername", out var usernameObj) &&
                     usernameObj is string username)
@@ -74,7 +75,7 @@ namespace Xdows_Security
         {
             try
             {
-                ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+                ApplicationDataContainer localSettings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
                 localSettings.Values["FeedbackUsername"] = _username;
                 localSettings.Values["FeedbackServerHost"] = _serverHost;
                 localSettings.Values["FeedbackServerPort"] = _serverPort.ToString();
