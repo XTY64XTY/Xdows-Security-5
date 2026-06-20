@@ -26,6 +26,7 @@
     <Project Path="Xdows-Local/Xdows-Local.csproj" />
   </Folder>
   <Folder Name="/Xdows-Model/">
+    <Project Path="../Xdows-Model/Xdows-Model-Config/Xdows-Model-Config.csproj" />
     <Project Path="../Xdows-Model/Xdows-Model-Invoker/Xdows-Model-Invoker.csproj" />
     <Project Path="../Xdows-Model/Xdows-Model-Native/Xdows-Model-Native.vcxproj" Id="6f1f6583-bc87-4d4a-8c39-3c147144cfb7" />
   </Folder>

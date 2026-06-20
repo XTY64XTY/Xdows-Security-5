@@ -134,6 +134,7 @@
 			<XdowsRuntimeProjectReference Include="..\Protection\Protection.csproj" />
 			<XdowsRuntimeProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
 		</ItemGroup>
+		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Restore" Properties="Configuration=$(Configuration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
 		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Build" Properties="Configuration=$(Configuration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
 	</Target>
 
