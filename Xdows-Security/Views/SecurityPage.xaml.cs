@@ -1357,11 +1357,11 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task ScanZipFileAsync(Int32 scanId, String zipPath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, CancellationToken token)
+        private async Task ScanArchiveFileAsync(Int32 scanId, String archivePath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, CancellationToken token)
         {
             try
             {
-                var entries = await ZipScanner.ReadZipEntriesAsync(zipPath, true);
+                var entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true);
 
                 foreach (var (entryPath, data) in entries)
                 {
@@ -1370,7 +1370,7 @@ namespace Xdows_Security.Views
                         await Task.Delay(100, token);
                     if (token.IsCancellationRequested) break;
 
-                    string displayPath = $"{zipPath}\\{entryPath}";
+                    string displayPath = $"{archivePath}\\{entryPath}";
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (!IsCurrentScan(scanId, token)) return;
@@ -1404,15 +1404,15 @@ namespace Xdows_Security.Views
 
                             lock (_zipFileThreats)
                             {
-                                if (!_zipFileThreats.ContainsKey(zipPath))
-                                    _zipFileThreats[zipPath] = [];
-                                _zipFileThreats[zipPath].Add((entryPath, virusResult));
+                                if (!_zipFileThreats.ContainsKey(archivePath))
+                                    _zipFileThreats[archivePath] = [];
+                                _zipFileThreats[archivePath].Add((entryPath, virusResult));
                             }
 
                             _dispatcherQueue.TryEnqueue(() =>
                             {
                                 if (!IsCurrentScan(scanId, token)) return;
-                                AddVirusResult($"{zipPath}\\{entryPath}", virusResult, scanRes.FamilyInfo, scanRes.EngineName, useVirusFamily);
+                                AddVirusResult($"{archivePath}\\{entryPath}", virusResult, scanRes.FamilyInfo, scanRes.EngineName, useVirusFamily);
                                 BackToVirusListButton.Visibility = Visibility.Visible;
                             });
 
@@ -1863,12 +1863,12 @@ namespace Xdows_Security.Views
                             }
                         }
 
-                        if (ScanInside && ZipScanner.IsZipFile(file))
+                        if (ScanInside && ArchiveScanner.IsArchiveFile(file))
                         {
                             await scanGate.WaitAsync(ct);
                             try
                             {
-                                await ScanZipFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
+                                await ScanArchiveFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
                             }
                             finally { scanGate.Release(); }
                             return;

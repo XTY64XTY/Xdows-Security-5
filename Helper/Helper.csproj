@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
+    <PackageReference Include="SharpCompress" Version="0.37.0" />
     <ProjectReference Include="..\Xdows-Local\Xdows-Local.csproj" />
     <ProjectReference Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Invoker.csproj" />
   </ItemGroup>
