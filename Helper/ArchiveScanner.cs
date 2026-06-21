@@ -1,8 +1,7 @@
-using System.Buffers;
-using System.IO.Compression;
-using System.Text;
 using SharpCompress.Archives;
-using SharpCompress.Common;
+using SharpCompress.Readers;
+using System.Buffers;
+using System.Text;
 
 namespace Helper
 {
@@ -80,9 +79,11 @@ namespace Helper
         public static async Task<List<(string EntryPath, byte[] Data)>> ReadArchiveEntriesAsync(
             string archivePath,
             bool scanNestedArchives = false,
+            string? password = null,
             CancellationToken ct = default)
         {
             var entries = new List<(string EntryPath, byte[] Data)>();
+            bool hasEncryptedEntries = false;
 
             await Task.Run(() =>
             {
@@ -90,11 +91,22 @@ namespace Helper
 
                 try
                 {
-                    using var archive = ArchiveFactory.Open(archivePath);
+                    var options = new ReaderOptions();
+                    if (!string.IsNullOrEmpty(password))
+                        options.Password = password;
+
+                    using var archive = ArchiveFactory.Open(archivePath, options);
 
                     foreach (var entry in archive.Entries)
                     {
                         if (entry.IsDirectory) continue;
+
+                        // 检测加密条目（头部未加密但内容加密）
+                        if (entry.IsEncrypted && string.IsNullOrEmpty(password))
+                        {
+                            hasEncryptedEntries = true;
+                            continue;
+                        }
 
                         // 大小检查
                         var fileSize = entry.Size;
@@ -118,7 +130,7 @@ namespace Helper
                                 data = ReadEntryToBytes(entry);
                                 if (data != null)
                                 {
-                                    var nestedEntries = ReadNestedArchiveEntries(data, entryPath);
+                                    var nestedEntries = ReadNestedArchiveEntries(data, entryPath, password);
                                     lock (entries) entries.AddRange(nestedEntries);
                                 }
                             }
@@ -128,16 +140,28 @@ namespace Helper
                                 if (data != null) lock (entries) entries.Add((entryPath, data));
                             }
                         }
+                        catch (InvalidOperationException ex) when (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // 密码异常需要向上传播，以便弹出密码对话框
+                            throw;
+                        }
                         catch (Exception)
                         {
                             // Skip entries that fail to read
                         }
+                    }
+
+                    // 如果有加密条目但未提供密码，抛出异常以便上层弹出密码对话框
+                    if (hasEncryptedEntries && entries.Count == 0 && string.IsNullOrEmpty(password))
+                    {
+                        throw new InvalidOperationException("The archive contains encrypted entries. Please supply a password.");
                     }
                 }
                 catch (OperationCanceledException) { throw; }
                 catch (Exception)
                 {
                     // Silently skip unreadable archives
+                    throw;
                 }
             }, ct);
 
@@ -223,6 +247,16 @@ namespace Helper
             catch { return false; }
         }
 
+        private static bool IsPasswordException(Exception ex)
+        {
+            return ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+                   ex.Message.Contains("crypt", StringComparison.OrdinalIgnoreCase) ||
+                   ex.Message.Contains("加密", StringComparison.OrdinalIgnoreCase) ||
+                   ex.Message.Contains("解密", StringComparison.OrdinalIgnoreCase) ||
+                   ex.Message.Contains("decrypt", StringComparison.OrdinalIgnoreCase) ||
+                   (ex.InnerException != null && IsPasswordException(ex.InnerException));
+        }
+
         private static byte[]? ReadEntryToBytes(IArchiveEntry entry)
         {
             try
@@ -242,6 +276,10 @@ namespace Helper
                 }
                 finally { ArrayPool<byte>.Shared.Return(buffer); }
             }
+            catch (Exception ex) when (IsPasswordException(ex))
+            {
+                throw new InvalidOperationException("The archive entry is encrypted. Please supply a password.", ex);
+            }
             catch { return null; }
         }
 
@@ -249,7 +287,8 @@ namespace Helper
 
         private static List<(string EntryPath, byte[] Data)> ReadNestedArchiveEntries(
             byte[] archiveData,
-            string parentPath)
+            string parentPath,
+            string? password = null)
         {
             var entries = new List<(string EntryPath, byte[] Data)>();
             try
@@ -262,10 +301,14 @@ namespace Helper
                     int bytesRead = ms.Read(buffer, 0, 8);
                     ms.Position = 0;
 
+                    var options = new ReaderOptions();
+                    if (!string.IsNullOrEmpty(password))
+                        options.Password = password;
+
                     // 检测嵌套类型
                     if (bytesRead >= 6 && MatchesBytes(buffer, bytesRead, Magic7z))
                     {
-                        using var archive = ArchiveFactory.Open(ms);
+                        using var archive = ArchiveFactory.Open(ms, options);
                         foreach (var entry in archive.Entries)
                         {
                             if (entry.IsDirectory) continue;
@@ -276,6 +319,10 @@ namespace Helper
                                 var data = ReadSharpCompressEntryToBytes(entry);
                                 if (data != null) lock (entries) entries.Add((entryPath, data));
                             }
+                            catch (InvalidOperationException ex) when (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                            {
+                                throw;
+                            }
                             catch { }
                         }
                     }
@@ -285,7 +332,7 @@ namespace Helper
                         using var zipArchive = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read);
                         foreach (var entry in zipArchive.Entries)
                         {
-                            if (entry.Length > 0 && !entry.Name.EndsWith("/"))
+                            if (entry.Length > 0 && !entry.Name.EndsWith('/'))
                             {
                                 string fullPath = DecodeZipEntryName(entry);
                                 string entryPath = parentPath + "\\" + fullPath;
@@ -302,7 +349,7 @@ namespace Helper
                     {
                         // 回退：使用相同类型打开
                         ms.Position = 0;
-                        using var archive = ArchiveFactory.Open(ms);
+                        using var archive = ArchiveFactory.Open(ms, options);
                         foreach (var entry in archive.Entries)
                         {
                             if (entry.IsDirectory) continue;
@@ -312,6 +359,10 @@ namespace Helper
                             {
                                 var data = ReadSharpCompressEntryToBytes(entry);
                                 if (data != null) lock (entries) entries.Add((entryPath, data));
+                            }
+                            catch (InvalidOperationException ex) when (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                            {
+                                throw;
                             }
                             catch { }
                         }
@@ -342,6 +393,10 @@ namespace Helper
                 }
                 finally { ArrayPool<byte>.Shared.Return(buffer); }
             }
+            catch (Exception ex) when (IsPasswordException(ex))
+            {
+                throw new InvalidOperationException("The archive entry is encrypted. Please supply a password.", ex);
+            }
             catch { return null; }
         }
 
@@ -354,8 +409,7 @@ namespace Helper
                     System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 if (nameField == null) return entry.Name.Replace('/', '\\');
 
-                var nameBytes = nameField.GetValue(entry) as byte[];
-                if (nameBytes == null || nameBytes.Length == 0) return entry.Name.Replace('/', '\\');
+                if (nameField.GetValue(entry) is not byte[] nameBytes || nameBytes.Length == 0) return entry.Name.Replace('/', '\\');
 
                 string utf8Result = Encoding.UTF8.GetString(nameBytes);
                 if (!utf8Result.Contains('\uFFFD') && !utf8Result.Contains('?'))

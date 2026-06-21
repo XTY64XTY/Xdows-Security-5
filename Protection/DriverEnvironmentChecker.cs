@@ -41,7 +41,7 @@ public static class DriverEnvironmentChecker
             CheckAdministrator(),
             await CheckTestSigningAsync(token).ConfigureAwait(false),
             CheckDriverPackage(),
-            await CheckDriverServiceAsync(runtimeStatus, token).ConfigureAwait(false),
+            CheckDriverService(runtimeStatus),
             CheckDriverCommunication(runtimeStatus),
             CheckModelAssets()
         };
@@ -124,12 +124,10 @@ public static class DriverEnvironmentChecker
             "Install driver");
     }
 
-    private static async Task<DriverEnvironmentCheckItem> CheckDriverServiceAsync(
-        DriverProtectionRuntimeStatus runtimeStatus,
-        CancellationToken token)
+    private static DriverEnvironmentCheckItem CheckDriverService(DriverProtectionRuntimeStatus runtimeStatus)
     {
-        var result = await RunCommandAsync("sc.exe", $"query \"{ServiceName}\"", token).ConfigureAwait(false);
-        if (!result.Started || result.ExitCode != 0)
+        DriverServiceSnapshot service = DriverServiceControl.Query(ServiceName);
+        if (service.IsMissing)
         {
             return new DriverEnvironmentCheckItem(
                 "service",
@@ -140,8 +138,29 @@ public static class DriverEnvironmentChecker
                 "Install driver");
         }
 
-        bool running = result.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase);
-        if (running && runtimeStatus == DriverProtectionRuntimeStatus.NotInstalled)
+        if (service.State == DriverServiceState.Unknown)
+        {
+            return new DriverEnvironmentCheckItem(
+                "service",
+                "Driver service",
+                $"Unable to query driver service. {service.Detail}",
+                DriverEnvironmentCheckStatus.Failed,
+                false,
+                "Restart as administrator");
+        }
+
+        if (service.IsTransitioning)
+        {
+            return new DriverEnvironmentCheckItem(
+                "service",
+                "Driver service",
+                $"Driver service is changing state ({service.State}). Wait for it to finish or restart Windows.",
+                DriverEnvironmentCheckStatus.Failed,
+                false,
+                "Restart Windows");
+        }
+
+        if (service.IsRunning && runtimeStatus == DriverProtectionRuntimeStatus.NotInstalled)
         {
             return new DriverEnvironmentCheckItem(
                 "service",
@@ -155,8 +174,8 @@ public static class DriverEnvironmentChecker
         return new DriverEnvironmentCheckItem(
             "service",
             "Driver service",
-            running ? "Driver service is running." : "Driver service is installed but not running.",
-            running ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
+            service.IsRunning ? "Driver service is running." : $"Driver service is installed but not running. {service.Detail}",
+            service.IsRunning ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
             true,
             "Start service");
     }

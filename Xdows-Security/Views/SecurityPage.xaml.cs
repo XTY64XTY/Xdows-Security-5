@@ -130,6 +130,7 @@ namespace Xdows_Security.Views
         private Int32 _threatsFound = 0;
         private Int32 _scanId = 0;
         private ContentDialog? _moreScanDialog;
+        private ContentDialog? _detailsDialog;
         private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
         private ObservableCollection<VirusRow>? CurrentResults;
         private List<ScanItem>? _scanItems;
@@ -1361,7 +1362,46 @@ namespace Xdows_Security.Views
         {
             try
             {
-                var entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true);
+                List<(string EntryPath, byte[] Data)>? entries = null;
+                string? password = null;
+
+                try
+                {
+                    entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
+                }
+                catch (Exception ex)
+                {
+                    bool isPasswordError = ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("密码", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("encrypted", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("crypt", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("解密", StringComparison.OrdinalIgnoreCase) ||
+                                           ex.Message.Contains("加密", StringComparison.OrdinalIgnoreCase) ||
+                                           (ex.InnerException != null && (
+                                               ex.InnerException.Message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
+                                               ex.InnerException.Message.Contains("密码", StringComparison.OrdinalIgnoreCase) ||
+                                               ex.InnerException.Message.Contains("encrypted", StringComparison.OrdinalIgnoreCase) ||
+                                               ex.InnerException.Message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
+                                               ex.InnerException.Message.Contains("crypt", StringComparison.OrdinalIgnoreCase) ||
+                                               ex.InnerException.Message.Contains("解密", StringComparison.OrdinalIgnoreCase) ||
+                                               ex.InnerException.Message.Contains("加密", StringComparison.OrdinalIgnoreCase)));
+
+                    if (isPasswordError)
+                    {
+                        password = await AskArchivePasswordAsync(archivePath, scanId, token);
+                        if (!string.IsNullOrEmpty(password))
+                        {
+                            entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
+                        }
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+
+                if (entries == null) return;
 
                 foreach (var (entryPath, data) in entries)
                 {
@@ -1442,6 +1482,60 @@ namespace Xdows_Security.Views
             catch (Exception ex)
             {
                 LogText.AddNewLog(LogText.LogLevel.WARN, "Security - ScanZipFailed", ex.Message);
+            }
+        }
+
+        private async Task<String?> AskArchivePasswordAsync(String archivePath, Int32 scanId, CancellationToken token)
+        {
+            var tcs = new TaskCompletionSource<String?>();
+
+            _dispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    if (!IsCurrentScan(scanId, token))
+                    {
+                        tcs.TrySetResult(null);
+                        return;
+                    }
+
+                    var passwordBox = new PasswordBox
+                    {
+                        PlaceholderText = Localizer.Get().GetLocalizedString("SecurityPage_ArchivePassword_Placeholder"),
+                        Width = 300,
+                        Margin = new Thickness(0, 8, 0, 0)
+                    };
+
+                    var dialog = new ContentDialog
+                    {
+                        Title = $"{Localizer.Get().GetLocalizedString("SecurityPage_ArchivePassword_Title")} — {Path.GetFileName(archivePath)}",
+                        Content = passwordBox,
+                        PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
+                        SecondaryButtonText = Localizer.Get().GetLocalizedString("Button_Skip"),
+                        XamlRoot = this.XamlRoot,
+                        RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+
+                    var result = await dialog.ShowAsync();
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        tcs.TrySetResult(passwordBox.Password);
+                    }
+                    else
+                    {
+                        tcs.TrySetResult(null);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    tcs.TrySetException(ex);
+                }
+            });
+
+            using (var registration = token.Register(() => tcs.TrySetCanceled()))
+            {
+                return await tcs.Task;
             }
         }
 
@@ -2136,12 +2230,41 @@ namespace Xdows_Security.Views
             }
         }
 
+        private static readonly string[] ArchiveEntryExtensions = new[] { ".zip", ".7z", ".tar", ".tgz", ".tbz2", ".txz", ".gz", ".bz2", ".xz" };
+
+        private static bool TryParseArchiveEntry(string displayPath, out string archivePath, out string entryPath)
+        {
+            for (int i = 0; i < displayPath.Length; i++)
+            {
+                if (displayPath[i] == '\\')
+                {
+                    string currentPath = displayPath.Substring(0, i);
+                    string ext = Path.GetExtension(currentPath).ToLowerInvariant();
+                    if (ArchiveEntryExtensions.Contains(ext) && ArchiveScanner.IsArchiveFile(currentPath))
+                    {
+                        string remaining = displayPath.Substring(i + 1);
+                        if (!string.IsNullOrEmpty(remaining))
+                        {
+                            archivePath = currentPath;
+                            entryPath = remaining;
+                            return true;
+                        }
+                    }
+                }
+            }
+            archivePath = string.Empty;
+            entryPath = string.Empty;
+            return false;
+        }
+
         private async Task ShowDetailsDialog(VirusRow? row)
         {
+            if (row is null) return;
+            if (_detailsDialog != null) return;
+
             Boolean isDetailsPause = false;
             try
             {
-                if (row is null) return;
                 isDetailsPause = PauseScanButton.Visibility == Visibility.Visible && PauseScanButton.IsEnabled;
                 if (isDetailsPause)
                 {
@@ -2149,27 +2272,26 @@ namespace Xdows_Security.Views
                 }
 
                 String displayPath = row.FilePath;
-                String? zipPath = null;
+                String? archivePath = null;
                 String? entryPath = null;
+                Boolean isArchiveEntry = TryParseArchiveEntry(displayPath, out archivePath, out entryPath);
                 Boolean isZipEntry = false;
 
-                Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
-                if (zipIndex > 0)
+                if (isArchiveEntry)
                 {
-                    zipPath = displayPath[..(zipIndex + 4)];
-                    entryPath = displayPath[(zipIndex + 5)..];
-                    isZipEntry = true;
+                    // 进一步检查是否为 zip 格式，用于获取 entry 信息
+                    isZipEntry = String.Equals(Path.GetExtension(archivePath), ".zip", StringComparison.OrdinalIgnoreCase);
                 }
 
                 String fileSizeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
                 String creationTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
                 String lastWriteTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
 
-                if (isZipEntry && zipPath != null && entryPath != null)
+                if (isZipEntry && archivePath != null && entryPath != null)
                 {
                     try
                     {
-                        var entryInfo = await ZipScanner.GetEntryInfoAsync(zipPath, entryPath);
+                        var entryInfo = await ZipScanner.GetEntryInfoAsync(archivePath, entryPath);
                         if (entryInfo.HasValue)
                         {
                             fileSizeText = String.Format(CultureInfo.CurrentCulture, "{0:F2} KB", entryInfo.Value.Size / 1024.0);
@@ -2257,7 +2379,7 @@ namespace Xdows_Security.Views
                     items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_EngineName")), new TextBlock { Text = row.EngineName, IsTextSelectionEnabled = true }));
                 }
 
-                if (!isZipEntry && System.IO.File.Exists(displayPath))
+                if (!isArchiveEntry && System.IO.File.Exists(displayPath))
                 {
                     try
                     {
@@ -2309,44 +2431,66 @@ namespace Xdows_Security.Views
                 {
                     Title = Localizer.Get().GetLocalizedString("SecurityPage_Details_Title"),
                     Content = new ScrollViewer { Content = listView },
-                    PrimaryButtonText = isZipEntry ? null : Localizer.Get().GetLocalizedString("SecurityPage_Details_LocateButton"),
+                    PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_Details_OpenButton"),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot,
                     RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
                     DefaultButton = ContentDialogButton.Close
                 };
-                if (!isZipEntry && await dialog.ShowAsync() == ContentDialogResult.Primary)
-                {
-                    try
-                    {
-                        String filePath = displayPath;
-                        String? directoryPath = Path.GetDirectoryName(filePath);
-                        String fileName = Path.GetFileName(filePath);
+                _detailsDialog = dialog;
 
-                        System.Diagnostics.ProcessStartInfo psi = new()
-                        {
-                            FileName = "explorer.exe",
-                        };
-                        psi.ArgumentList.Add("/select," + filePath);
-                        System.Diagnostics.Process.Start(psi);
-                    }
-                    catch (Exception ex)
-                    {
-                        ContentDialog dlg = new()
-                        {
-                            Title = Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Title"),
-                            Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Content"), ex.Message),
-                            CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
-                            RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                            XamlRoot = this.XamlRoot,
-                            DefaultButton = ContentDialogButton.Close
-                        };
-                        await dlg.ShowAsync();
-                    }
-                }
-                else if (isZipEntry)
+                if (await dialog.ShowAsync() == ContentDialogResult.Primary)
                 {
-                    await dialog.ShowAsync();
+                    ContentDialog riskDialog = new()
+                    {
+                        Title = Localizer.Get().GetLocalizedString("SecurityPage_Risk_Title"),
+                        Content = new TextBlock
+                        {
+                            Text = isArchiveEntry
+                                ? String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Risk_ArchiveContent"), archivePath)
+                                : String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Risk_FileContent"), displayPath),
+                            TextWrapping = TextWrapping.Wrap
+                        },
+                        PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_Risk_Allow"),
+                        CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
+                        XamlRoot = this.XamlRoot,
+                        RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
+                        DefaultButton = ContentDialogButton.Close
+                    };
+
+                    if (await riskDialog.ShowAsync() == ContentDialogResult.Primary)
+                    {
+                        try
+                        {
+                            if (isArchiveEntry)
+                            {
+                                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(archivePath) { UseShellExecute = true });
+                            }
+                            else
+                            {
+                                String filePath = displayPath;
+                                System.Diagnostics.ProcessStartInfo psi = new()
+                                {
+                                    FileName = "explorer.exe",
+                                };
+                                psi.ArgumentList.Add("/select," + filePath);
+                                System.Diagnostics.Process.Start(psi);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ContentDialog dlg = new()
+                            {
+                                Title = Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Title"),
+                                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Content"), ex.Message),
+                                CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
+                                RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
+                                XamlRoot = this.XamlRoot,
+                                DefaultButton = ContentDialogButton.Close
+                            };
+                            await dlg.ShowAsync();
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -2369,6 +2513,7 @@ namespace Xdows_Security.Views
             }
             finally
             {
+                _detailsDialog = null;
                 if (isDetailsPause)
                 {
                     try

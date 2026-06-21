@@ -1405,6 +1405,15 @@
   <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
     <value>无法初始化 Xdows Model</value>
   </data>
+  <data name="Button_Skip" xml:space="preserve">
+    <value>跳过</value>
+  </data>
+  <data name="SecurityPage_ArchivePassword_Title" xml:space="preserve">
+    <value>压缩包受密码保护</value>
+  </data>
+  <data name="SecurityPage_ArchivePassword_Placeholder" xml:space="preserve">
+    <value>请输入密码</value>
+  </data>
   <data name="SettingsPage_Appearance_Sound.Header" xml:space="preserve">
     <value>控件音效</value>
   </data>
@@ -1641,5 +1650,24 @@
   </data>
   <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
     <value>威胁家族：</value>
+  </data>
+  <data name="SecurityPage_Details_OpenButton" xml:space="preserve">
+    <value>打开文件</value>
+  </data>
+  <data name="SecurityPage_Risk_Title" xml:space="preserve">
+    <value>风险提示</value>
+  </data>
+  <data name="SecurityPage_Risk_ArchiveContent" xml:space="preserve">
+    <value>是否使用此设备默认程序打开此文件：
+{0}
+该操作可能会导致您意外运行威胁文件</value>
+  </data>
+  <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
+    <value>是否使用 文件资源管理器 打开此文件：
+{0}
+该操作可能会导致您意外运行威胁文件</value>
+  </data>
+  <data name="SecurityPage_Risk_Allow" xml:space="preserve">
+    <value>允许</value>
   </data>
 </root>

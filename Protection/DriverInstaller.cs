@@ -6,10 +6,6 @@ public sealed record DriverRepairResult(bool Success, string Message);
 
 public static class DriverInstaller
 {
-    private const string ServiceName = DriverPackageLocator.ServiceName;
-    private const string RunningServiceWithoutBridgeMessage =
-        "Driver service is already running, but the Xdows Security bridge device is missing. This usually means an old driver instance is still loaded. Restart Windows before repairing, reinstalling, or starting driver protection.";
-
     public static Task<DriverRepairResult> RepairAsync(
         DriverEnvironmentCheckItem item,
         CancellationToken token = default)
@@ -29,174 +25,29 @@ public static class DriverInstaller
         };
     }
 
-    public static async Task<DriverRepairResult> InstallAndStartDriverAsync(CancellationToken token = default)
+    public static Task<DriverRepairResult> InstallAndStartDriverAsync(CancellationToken token = default)
     {
-        DriverPackage? package = DriverPackageLocator.Find();
-        if (package is null)
-            return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
-
-        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token).ConfigureAwait(false);
-        if (staleService is not null)
-            return staleService;
-
-        DriverRepairResult stop = await StopServiceIfPresentAsync(token).ConfigureAwait(false);
-        if (!stop.Success)
-            return stop;
-
-        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
-        if (!trust.Success)
-            return trust;
-
-        DriverRepairResult install = await Task.Run(() =>
-        {
-            return DriverPackageInstaller.Install(package.InfPath, out string installMessage)
-                ? new DriverRepairResult(true, installMessage)
-                : new DriverRepairResult(false, installMessage);
-        }, token).ConfigureAwait(false);
-
-        if (!install.Success)
-            return install;
-
-        DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
-        if (!start.Success)
-        {
-            string serviceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
-            return new DriverRepairResult(
-                false,
-                $"Driver package installed, but service start failed. Trust: {trust.Message} Install: {install.Message} Start: {start.Message} Service: {serviceState}");
-        }
-
-        DriverProtectionRuntimeStatus runtimeStatus = await WaitForBridgeAsync(token).ConfigureAwait(false);
-        if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
-            return new DriverRepairResult(true, $"Driver installed, service started, and bridge is reachable: {runtimeStatus}.");
-
-        string startedServiceState = await QueryServiceStateAsync(token).ConfigureAwait(false);
-        return new DriverRepairResult(
-            false,
-            $"Driver package installed and service started, but bridge is not reachable: {runtimeStatus}. Service: {startedServiceState}");
+        return DriverLoadWorkflow.InstallAndStartAsync(token);
     }
 
-    public static async Task<DriverRepairResult> EnsureInstalledAndStartedAsync(CancellationToken token = default)
+    public static Task<DriverRepairResult> EnsureInstalledAndStartedAsync(CancellationToken token = default)
     {
-        DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
-        if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
-            return new DriverRepairResult(true, $"Driver bridge is reachable: {runtimeStatus}.");
-
-        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token, runtimeStatus).ConfigureAwait(false);
-        if (staleService is not null)
-            return staleService;
-
-        DriverPackage? package = DriverPackageLocator.Find();
-        if (package is null)
-            return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
-
-        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
-        if (!trust.Success)
-            return trust;
-
-        DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
-        if (start.Success)
-        {
-            runtimeStatus = await WaitForBridgeAsync(token).ConfigureAwait(false);
-            if (runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
-                return new DriverRepairResult(true, $"Driver service started and bridge is reachable: {runtimeStatus}.");
-        }
-
-        DriverRepairResult install = await InstallAndStartDriverAsync(token).ConfigureAwait(false);
-        if (!install.Success)
-            return install;
-
-        runtimeStatus = await WaitForBridgeAsync(token).ConfigureAwait(false);
-        return runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected
-            ? new DriverRepairResult(true, $"Driver installed, started, and bridge is reachable: {runtimeStatus}.")
-            : new DriverRepairResult(false, $"Driver installed and started, but bridge is not reachable: {runtimeStatus}.");
+        return DriverLoadWorkflow.EnsureReadyAsync(token);
     }
 
-    public static async Task<DriverRepairResult> UninstallDriverAsync(CancellationToken token = default)
+    public static Task<DriverRepairResult> UninstallDriverAsync(CancellationToken token = default)
     {
-        DriverRepairResult stop = await StopServiceIfPresentAsync(token).ConfigureAwait(false);
-        if (!stop.Success)
-            return stop;
-
-        var enumDrivers = await DriverEnvironmentChecker.RunCommandAsync(
-            "pnputil",
-            "/enum-drivers",
-            token).ConfigureAwait(false);
-
-        if (!enumDrivers.Started || enumDrivers.ExitCode != 0)
-            return new DriverRepairResult(false, $"Unable to enumerate drivers: {TrimCommandOutput(enumDrivers.Output)}");
-
-        string? publishedName = FindPublishedName(enumDrivers.Output);
-        if (string.IsNullOrWhiteSpace(publishedName))
-            return new DriverRepairResult(true, "Driver package is not installed.");
-
-        var delete = await DriverEnvironmentChecker.RunCommandAsync(
-            "pnputil",
-            $"/delete-driver {publishedName} /uninstall /force",
-            token).ConfigureAwait(false);
-
-        if (delete.Started && delete.ExitCode == 0)
-            return new DriverRepairResult(true, $"Driver package {publishedName} uninstalled.");
-
-        string output = TrimCommandOutput(delete.Output);
-        bool rebootLikely = output.Contains("reboot", StringComparison.OrdinalIgnoreCase) ||
-            output.Contains("restart", StringComparison.OrdinalIgnoreCase);
-        return new DriverRepairResult(
-            false,
-            rebootLikely ? $"{output} A restart may be required before retrying." : output);
+        return DriverLoadWorkflow.UninstallAsync(token);
     }
 
-    public static async Task<DriverRepairResult> StartServiceAsync(CancellationToken token = default)
+    public static Task<DriverRepairResult> StartServiceAsync(CancellationToken token = default)
     {
-        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token).ConfigureAwait(false);
-        if (staleService is not null)
-            return staleService;
-
-        var start = await DriverEnvironmentChecker.RunCommandAsync(
-            "sc.exe",
-            $"start \"{ServiceName}\"",
-            token).ConfigureAwait(false);
-
-        bool alreadyRunning = start.Output.Contains("1056", StringComparison.OrdinalIgnoreCase) ||
-            start.Output.Contains("already", StringComparison.OrdinalIgnoreCase) ||
-            start.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase);
-
-        if (start.Started && (start.ExitCode == 0 || alreadyRunning))
-            return new DriverRepairResult(true, "Driver service is running.");
-
-        var query = await DriverEnvironmentChecker.RunCommandAsync(
-            "sc.exe",
-            $"query \"{ServiceName}\"",
-            token).ConfigureAwait(false);
-
-        if (query.Started && query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
-            return new DriverRepairResult(true, "Driver service is running.");
-
-        return new DriverRepairResult(false, TrimCommandOutput(start.Output + query.Output));
+        return DriverLoadWorkflow.StartAsync(token);
     }
 
-    public static async Task<DriverRepairResult> RestartBridgeAsync(CancellationToken token = default)
+    public static Task<DriverRepairResult> RestartBridgeAsync(CancellationToken token = default)
     {
-        DriverRepairResult? staleService = await CheckRunningServiceWithoutBridgeAsync(token).ConfigureAwait(false);
-        if (staleService is not null)
-            return staleService;
-
-        DriverPackage? package = DriverPackageLocator.Find();
-        if (package is not null)
-        {
-            DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
-            if (!trust.Success)
-                return trust;
-        }
-
-        DriverRepairResult start = await StartServiceAsync(token).ConfigureAwait(false);
-        if (!start.Success)
-            return start;
-
-        DriverProtectionRuntimeStatus status = DriverProtection.QueryRuntimeStatus();
-        return status is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected
-            ? new DriverRepairResult(true, $"Driver bridge is reachable: {status}.")
-            : new DriverRepairResult(false, $"Driver bridge still is not reachable: {status}.");
+        return DriverLoadWorkflow.RestartBridgeAsync(token);
     }
 
     public static Task<DriverRepairResult> CopyModelAssetsAsync(CancellationToken token = default)
@@ -327,127 +178,261 @@ public static class DriverInstaller
             return null;
         }
     }
+}
 
-    private static string TrimCommandOutput(string output)
+internal static class DriverLoadWorkflow
+{
+    private const string ServiceName = DriverPackageLocator.ServiceName;
+    private const int BridgeProbeAttempts = 24;
+    private static readonly TimeSpan BridgeProbeDelay = TimeSpan.FromMilliseconds(500);
+
+    public static Task<DriverRepairResult> InstallAndStartAsync(CancellationToken token)
     {
-        string value = string.IsNullOrWhiteSpace(output) ? "No command output." : output.Trim();
-        return value.Length <= 700 ? value : value[..700];
+        return EnsureReadyCoreAsync("Driver package installed, service started, and bridge is reachable", token);
     }
 
-    private static async Task<DriverProtectionRuntimeStatus> WaitForBridgeAsync(CancellationToken token)
+    public static Task<DriverRepairResult> EnsureReadyAsync(CancellationToken token)
     {
-        DriverProtectionRuntimeStatus status = DriverProtection.QueryRuntimeStatus();
-        for (int attempt = 0; attempt < 20; attempt++)
-        {
-            if (status is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected)
-                return status;
+        return EnsureReadyCoreAsync("Driver bridge is reachable", token);
+    }
 
-            await Task.Delay(500, token).ConfigureAwait(false);
-            status = DriverProtection.QueryRuntimeStatus();
+    public static Task<DriverRepairResult> StartAsync(CancellationToken token)
+    {
+        return EnsureReadyCoreAsync("Driver service started and bridge is reachable", token);
+    }
+
+    public static Task<DriverRepairResult> RestartBridgeAsync(CancellationToken token)
+    {
+        return EnsureReadyCoreAsync("Driver bridge is reachable", token);
+    }
+
+    public static async Task<DriverRepairResult> UninstallAsync(CancellationToken token)
+    {
+        DriverLoadSnapshot snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        if (snapshot.Service.State == DriverServiceState.Unknown)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Unable to query driver service. {snapshot.Service.Detail}");
         }
 
-        return status;
+        if (snapshot.Service.IsRunning || snapshot.Service.IsTransitioning)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Driver service is loaded or changing state ({snapshot.Service.State}). Restart Windows before uninstalling the loaded driver package.");
+        }
+
+        CommandResult drivers = await RunCommandAsync("pnputil", ["/enum-drivers"], token).ConfigureAwait(false);
+        if (!drivers.Success)
+            return new DriverRepairResult(false, $"Unable to enumerate drivers: {drivers.ShortOutput}");
+
+        string? publishedName = FindPublishedName(drivers.Output);
+        if (string.IsNullOrWhiteSpace(publishedName))
+            return new DriverRepairResult(true, "Driver package is not installed.");
+
+        CommandResult delete = await RunCommandAsync(
+            "pnputil",
+            ["/delete-driver", publishedName, "/uninstall", "/force"],
+            token).ConfigureAwait(false);
+
+        return delete.Success
+            ? new DriverRepairResult(true, $"Driver package {publishedName} uninstalled.")
+            : new DriverRepairResult(false, $"Driver package uninstall failed: {delete.ShortOutput}");
     }
 
-    private static async Task<DriverRepairResult> StopServiceIfPresentAsync(CancellationToken token)
+    private static async Task<DriverRepairResult> EnsureReadyCoreAsync(
+        string successPrefix,
+        CancellationToken token)
     {
-        var query = await DriverEnvironmentChecker.RunCommandAsync(
-            "sc.exe",
-            $"query \"{ServiceName}\"",
-            token).ConfigureAwait(false);
+        DriverLoadSnapshot initial = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        if (initial.BridgeReady)
+            return new DriverRepairResult(true, $"{successPrefix}: {initial.RuntimeStatus}.");
 
-        if (!query.Started || query.ExitCode != 0)
-            return new DriverRepairResult(true, "Driver service is not installed.");
+        if (initial.Service.IsRunning)
+            return CreateLoadedWithoutBridgeResult(initial);
 
-        if (!query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
-            return new DriverRepairResult(true, "Driver service is not running.");
+        if (initial.Service.IsTransitioning)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Driver service is changing state ({initial.Service.State}). Wait for it to finish or restart Windows before repairing driver protection.");
+        }
 
-        if (DriverProtection.QueryRuntimeStatus() == DriverProtectionRuntimeStatus.NotInstalled)
-            return CreateRunningServiceWithoutBridgeResult();
+        if (initial.Service.State == DriverServiceState.Unknown)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Unable to query driver service. {initial.Service.Detail}");
+        }
 
-        var stop = await DriverEnvironmentChecker.RunCommandAsync(
-            "sc.exe",
-            $"stop \"{ServiceName}\"",
-            token).ConfigureAwait(false);
+        DriverPackage? package = DriverPackageLocator.Find();
+        if (package is null)
+            return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
 
-        if (await WaitForServiceStoppedAsync(token).ConfigureAwait(false))
-            return new DriverRepairResult(true, "Driver service stopped.");
+        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+        if (!trust.Success)
+            return trust;
 
-        var unload = await DriverEnvironmentChecker.RunCommandAsync(
-            "fltmc.exe",
-            $"unload \"{ServiceName}\"",
-            token).ConfigureAwait(false);
+        DriverRepairResult install = await InstallPackageAsync(package, token).ConfigureAwait(false);
+        if (!install.Success)
+            return install;
 
-        if (await WaitForServiceStoppedAsync(token).ConfigureAwait(false))
-            return new DriverRepairResult(true, "Driver minifilter unloaded.");
+        DriverServiceSnapshot afterInstall = DriverServiceControl.Query(ServiceName);
+        if (afterInstall.IsMissing)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Driver package install completed, but service {ServiceName} was not registered. Install: {install.Message}");
+        }
 
-        string output = TrimCommandOutput(stop.Output + unload.Output);
+        if (afterInstall.State == DriverServiceState.Unknown)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Driver package install completed, but service state could not be queried. {afterInstall.Detail}");
+        }
+
+        DriverRepairResult start = await StartServiceCoreAsync(afterInstall, token).ConfigureAwait(false);
+        if (!start.Success)
+            return start;
+
+        DriverLoadSnapshot ready = await WaitForBridgeAsync(token).ConfigureAwait(false);
+        if (ready.BridgeReady)
+            return new DriverRepairResult(true, $"{successPrefix}: {ready.RuntimeStatus}.");
+
+        if (ready.Service.IsRunning)
+            return CreateLoadedWithoutBridgeResult(ready);
+
         return new DriverRepairResult(
             false,
-            $"Driver service is running and could not be stopped before reinstall. Restart Windows, then try again. {output}");
+            $"Driver did not become ready. Runtime: {ready.RuntimeStatus}. Service: {ready.Service.Detail}. Install: {install.Message}. Start: {start.Message}");
     }
 
-    private static async Task<string> QueryServiceStateAsync(CancellationToken token)
+    private static Task<DriverRepairResult> InstallPackageAsync(DriverPackage package, CancellationToken token)
     {
-        var query = await DriverEnvironmentChecker.RunCommandAsync(
-            "sc.exe",
-            $"query \"{ServiceName}\"",
-            token).ConfigureAwait(false);
-
-        return query.Started
-            ? TrimCommandOutput(query.Output)
-            : "Unable to run sc.exe query.";
-    }
-
-    private static async Task<bool> WaitForServiceStoppedAsync(CancellationToken token)
-    {
-        for (int attempt = 0; attempt < 12; attempt++)
+        return Task.Run(() =>
         {
-            var query = await DriverEnvironmentChecker.RunCommandAsync(
-                "sc.exe",
-                $"query \"{ServiceName}\"",
-                token).ConfigureAwait(false);
+            return DriverPackageInstaller.Install(package.InfPath, out string message)
+                ? new DriverRepairResult(true, message)
+                : new DriverRepairResult(false, message);
+        }, token);
+    }
 
-            if (!query.Started || query.ExitCode != 0)
-                return true;
+    private static async Task<DriverRepairResult> StartServiceCoreAsync(
+        DriverServiceSnapshot service,
+        CancellationToken token)
+    {
+        if (service.IsRunning)
+            return new DriverRepairResult(true, "Driver service is already running.");
 
-            if (!query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase) &&
-                !query.Output.Contains("STOP_PENDING", StringComparison.OrdinalIgnoreCase))
-                return true;
+        if (service.IsMissing)
+            return new DriverRepairResult(false, $"Driver service {ServiceName} is not installed.");
 
-            await Task.Delay(500, token).ConfigureAwait(false);
+        if (service.IsTransitioning)
+            return new DriverRepairResult(false, $"Driver service is changing state ({service.State}). Wait for it to finish before starting driver protection.");
+
+        if (service.State == DriverServiceState.Unknown)
+            return new DriverRepairResult(false, $"Unable to query driver service. {service.Detail}");
+
+        DriverServiceOperationResult start = DriverServiceControl.Start(ServiceName);
+        if (start.Success)
+        {
+            DriverServiceSnapshot running = await WaitForServiceStateAsync(DriverServiceState.Running, token).ConfigureAwait(false);
+            return running.IsRunning
+                ? new DriverRepairResult(true, "Driver service is running.")
+                : new DriverRepairResult(false, $"Driver service did not enter RUNNING state. Service: {running.Detail}. Start: {start.Message}");
         }
 
-        return false;
+        return new DriverRepairResult(false, $"Driver service start failed: {start.Message}");
     }
 
-    private static async Task<DriverRepairResult?> CheckRunningServiceWithoutBridgeAsync(
-        CancellationToken token,
-        DriverProtectionRuntimeStatus? knownRuntimeStatus = null)
+    private static async Task<DriverLoadSnapshot> WaitForBridgeAsync(CancellationToken token)
     {
-        DriverProtectionRuntimeStatus runtimeStatus =
-            knownRuntimeStatus ?? DriverProtection.QueryRuntimeStatus();
-        if (runtimeStatus != DriverProtectionRuntimeStatus.NotInstalled)
-            return null;
-
-        var query = await DriverEnvironmentChecker.RunCommandAsync(
-            "sc.exe",
-            $"query \"{ServiceName}\"",
-            token).ConfigureAwait(false);
-
-        if (query.Started &&
-            query.ExitCode == 0 &&
-            query.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
+        DriverLoadSnapshot snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        for (int attempt = 0; attempt < BridgeProbeAttempts; attempt++)
         {
-            return CreateRunningServiceWithoutBridgeResult();
+            if (snapshot.BridgeReady)
+                return snapshot;
+
+            if (!snapshot.Service.IsRunning && attempt > 0)
+                return snapshot;
+
+            await Task.Delay(BridgeProbeDelay, token).ConfigureAwait(false);
+            snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
         }
 
-        return null;
+        return snapshot;
     }
 
-    private static DriverRepairResult CreateRunningServiceWithoutBridgeResult()
+    private static async Task<DriverServiceSnapshot> WaitForServiceStateAsync(
+        DriverServiceState expected,
+        CancellationToken token)
     {
-        return new DriverRepairResult(false, RunningServiceWithoutBridgeMessage);
+        DriverServiceSnapshot snapshot = DriverServiceControl.Query(ServiceName);
+        for (int attempt = 0; attempt < 20; attempt++)
+        {
+            if (snapshot.State == expected || snapshot.IsMissing)
+                return snapshot;
+
+            await Task.Delay(250, token).ConfigureAwait(false);
+            snapshot = DriverServiceControl.Query(ServiceName);
+        }
+
+        return snapshot;
+    }
+
+    private static Task<DriverLoadSnapshot> ReadSnapshotAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
+        DriverServiceSnapshot service = DriverServiceControl.Query(ServiceName);
+        return Task.FromResult(new DriverLoadSnapshot(runtimeStatus, service));
+    }
+
+    private static DriverRepairResult CreateLoadedWithoutBridgeResult(DriverLoadSnapshot snapshot)
+    {
+        return new DriverRepairResult(
+            false,
+            $"Driver service is loaded, but the Xdows Security bridge is not reachable ({snapshot.RuntimeStatus}). Restart Windows before repairing, reinstalling, or starting driver protection.");
+    }
+
+    private static async Task<CommandResult> RunCommandAsync(
+        string fileName,
+        IReadOnlyList<string> arguments,
+        CancellationToken token)
+    {
+        try
+        {
+            using var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                }
+            };
+
+            foreach (string argument in arguments)
+                process.StartInfo.ArgumentList.Add(argument);
+
+            if (!process.Start())
+                return new CommandResult(false, -1, string.Empty);
+
+            Task<string> outputTask = process.StandardOutput.ReadToEndAsync(token);
+            Task<string> errorTask = process.StandardError.ReadToEndAsync(token);
+            await process.WaitForExitAsync(token).ConfigureAwait(false);
+            string output = await outputTask.ConfigureAwait(false);
+            string error = await errorTask.ConfigureAwait(false);
+            return new CommandResult(true, process.ExitCode, output + error);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException)
+        {
+            return new CommandResult(false, -1, ex.GetType().Name);
+        }
     }
 
     private static string? FindPublishedName(string pnputilOutput)
@@ -466,15 +451,13 @@ public static class DriverInstaller
             string key = trimmed[..colon].Trim();
             string value = trimmed[(colon + 1)..].Trim();
 
-            if (key.Contains("Published Name", StringComparison.OrdinalIgnoreCase) ||
-                key.Contains("发布名称", StringComparison.OrdinalIgnoreCase))
+            if (key.Equals("Published Name", StringComparison.OrdinalIgnoreCase))
             {
                 currentPublishedName = value;
                 continue;
             }
 
-            if (key.Contains("Original Name", StringComparison.OrdinalIgnoreCase) ||
-                key.Contains("原始名称", StringComparison.OrdinalIgnoreCase))
+            if (key.Equals("Original Name", StringComparison.OrdinalIgnoreCase))
             {
                 if (value.Equals(DriverPackageLocator.InfName, StringComparison.OrdinalIgnoreCase))
                     return currentPublishedName;
@@ -482,5 +465,27 @@ public static class DriverInstaller
         }
 
         return null;
+    }
+
+    private sealed record DriverLoadSnapshot(
+        DriverProtectionRuntimeStatus RuntimeStatus,
+        DriverServiceSnapshot Service)
+    {
+        public bool BridgeReady =>
+            RuntimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected;
+    }
+
+    private sealed record CommandResult(bool Started, int ExitCode, string Output)
+    {
+        public bool Success => Started && ExitCode == 0;
+
+        public string ShortOutput
+        {
+            get
+            {
+                string value = string.IsNullOrWhiteSpace(Output) ? "No command output." : Output.Trim();
+                return value.Length <= 700 ? value : value[..700];
+            }
+        }
     }
 }

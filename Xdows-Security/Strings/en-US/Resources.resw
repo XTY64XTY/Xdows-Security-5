@@ -1406,6 +1406,15 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
     <value>Cannot initialize Xdows Model</value>
   </data>
+  <data name="Button_Skip" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="SecurityPage_ArchivePassword_Title" xml:space="preserve">
+    <value>Archive is password protected</value>
+  </data>
+  <data name="SecurityPage_ArchivePassword_Placeholder" xml:space="preserve">
+    <value>Please enter password</value>
+  </data>
   <data name="SettingsPage_Appearance_Sound.Header" xml:space="preserve">
     <value>Control Sound Effects</value>
   </data>
@@ -1642,5 +1651,24 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
     <value>Threats Family:</value>
+  </data>
+  <data name="SecurityPage_Details_OpenButton" xml:space="preserve">
+    <value>Open File</value>
+  </data>
+  <data name="SecurityPage_Risk_Title" xml:space="preserve">
+    <value>Risk Warning</value>
+  </data>
+  <data name="SecurityPage_Risk_ArchiveContent" xml:space="preserve">
+    <value>Do you want to open this file with the default program on this device:
+{0}
+This action may cause you to accidentally run a threat file.</value>
+  </data>
+  <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
+    <value>Do you want to open this file with File Explorer:
+{0}
+This action may cause you to accidentally run a threat file.</value>
+  </data>
+  <data name="SecurityPage_Risk_Allow" xml:space="preserve">
+    <value>Allow</value>
   </data>
 </root>
