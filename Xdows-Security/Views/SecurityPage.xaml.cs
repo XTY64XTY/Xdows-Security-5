@@ -162,6 +162,18 @@ namespace Xdows_Security.Views
             App.PlayEntranceAnimation(element, kind, delayMs: delayMs);
         }
 
+        private void ShowBackToVirusListButton()
+        {
+            if (BackToVirusListButton.Visibility != Visibility.Visible)
+            {
+                ShowWithEntranceAnimation(BackToVirusListButton, "right");
+            }
+            else
+            {
+                BackToVirusListButton.Visibility = Visibility.Visible;
+            }
+        }
+
 #if DEBUG
         private const String TestVirusCopyDirectory = @"D:\\Code\\Model\\Files\\Test";
 
@@ -1475,7 +1487,7 @@ namespace Xdows_Security.Views
                             {
                                 if (!IsCurrentScan(scanId, token)) return;
                                 AddVirusResult($"{archivePath}\\{entryPath}", virusResult, scanRes.FamilyInfo, scanRes.EngineName, useVirusFamily);
-                                BackToVirusListButton.Visibility = Visibility.Visible;
+                                ShowBackToVirusListButton();
                             });
 
                             Interlocked.Increment(ref _threatsFound);
@@ -1953,7 +1965,7 @@ namespace Xdows_Security.Views
                                             try
                                             {
                                                 AddVirusResult(file, result, familyInfo, "ExactRule", UseVirusFamily);
-                                                BackToVirusListButton.Visibility = Visibility.Visible;
+                                                ShowBackToVirusListButton();
                                             }
                                             catch { }
                                         });
@@ -2039,7 +2051,7 @@ namespace Xdows_Security.Views
                                 {
                                     if (!IsCurrentScan(thisId, token)) return;
                                     AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo, scanRes.EngineName, UseVirusFamily);
-                                    BackToVirusListButton.Visibility = Visibility.Visible;
+                                    ShowBackToVirusListButton();
                                 });
                                 int newThreats = Interlocked.Increment(ref _threatsFound);
                                 UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
