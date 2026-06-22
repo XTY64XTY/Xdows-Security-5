@@ -347,7 +347,6 @@ namespace Helper
                     }
                     else
                     {
-                        // 回退：使用相同类型打开
                         ms.Position = 0;
                         using var archive = ArchiveFactory.Open(ms, options);
                         foreach (var entry in archive.Entries)

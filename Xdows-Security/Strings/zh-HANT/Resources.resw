@@ -1663,7 +1663,7 @@
 該操作可能會導致您意外運行威脅檔案</value>
   </data>
   <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
-    <value>是否使用 檔案總管 打開此檔案：
+    <value>是否使用 檔案總管 選中此檔案：
 {0}
 該操作可能會導致您意外運行威脅檔案</value>
   </data>

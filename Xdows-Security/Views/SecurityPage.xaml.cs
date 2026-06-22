@@ -20,6 +20,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Channels;
@@ -2257,6 +2258,62 @@ namespace Xdows_Security.Views
             return false;
         }
 
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = false)]
+        private static extern int SHOpenFolderAndSelectItems(IntPtr pidlFolder, uint cidl, [MarshalAs(UnmanagedType.LPArray)] IntPtr[] apidl, uint dwFlags);
+
+        [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = false)]
+        private static extern int SHParseDisplayName([MarshalAs(UnmanagedType.LPWStr)] string pszName, IntPtr pbc, out IntPtr ppidl, uint sfgaoIn, out uint psfgaoOut);
+
+        [DllImport("ole32.dll")]
+        private static extern void CoTaskMemFree(IntPtr pv);
+
+        private static void OpenFolderAndSelectItem(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                string? dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "explorer.exe",
+                        Arguments = $"/e,\"{dir}\"",
+                        UseShellExecute = true
+                    });
+                }
+                return;
+            }
+
+            string? folderPath = Path.GetDirectoryName(filePath);
+            if (string.IsNullOrEmpty(folderPath)) return;
+
+            uint sfgao;
+            int hr = SHParseDisplayName(folderPath, IntPtr.Zero, out IntPtr pidlFolder, 0, out sfgao);
+            if (hr != 0) return;
+
+            hr = SHParseDisplayName(filePath, IntPtr.Zero, out IntPtr pidlFile, 0, out sfgao);
+            if (hr != 0)
+            {
+                CoTaskMemFree(pidlFolder);
+                return;
+            }
+
+            hr = SHOpenFolderAndSelectItems(pidlFolder, 1, new[] { pidlFile }, 0);
+            CoTaskMemFree(pidlFolder);
+            CoTaskMemFree(pidlFile);
+
+            if (hr != 0)
+            {
+                // 回退：打开目录
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"/e,\"{folderPath}\"",
+                    UseShellExecute = true
+                });
+            }
+        }
+
         private async Task ShowDetailsDialog(VirusRow? row)
         {
             if (row is null) return;
@@ -2431,7 +2488,9 @@ namespace Xdows_Security.Views
                 {
                     Title = Localizer.Get().GetLocalizedString("SecurityPage_Details_Title"),
                     Content = new ScrollViewer { Content = listView },
-                    PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_Details_OpenButton"),
+                    PrimaryButtonText = isArchiveEntry
+                        ? Localizer.Get().GetLocalizedString("SecurityPage_Details_OpenButton")
+                        : Localizer.Get().GetLocalizedString("SecurityPage_Details_LocateButton"),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot,
                     RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
@@ -2468,13 +2527,7 @@ namespace Xdows_Security.Views
                             }
                             else
                             {
-                                String filePath = displayPath;
-                                System.Diagnostics.ProcessStartInfo psi = new()
-                                {
-                                    FileName = "explorer.exe",
-                                };
-                                psi.ArgumentList.Add("/select," + filePath);
-                                System.Diagnostics.Process.Start(psi);
+                                OpenFolderAndSelectItem(displayPath);
                             }
                         }
                         catch (Exception ex)

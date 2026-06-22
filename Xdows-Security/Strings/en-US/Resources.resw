@@ -1664,7 +1664,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
 This action may cause you to accidentally run a threat file.</value>
   </data>
   <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
-    <value>Do you want to open this file with File Explorer:
+    <value>Do you want to select this file with File Explorer:
 {0}
 This action may cause you to accidentally run a threat file.</value>
   </data>

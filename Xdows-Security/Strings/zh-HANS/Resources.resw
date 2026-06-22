@@ -1663,7 +1663,7 @@
 该操作可能会导致您意外运行威胁文件</value>
   </data>
   <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
-    <value>是否使用 文件资源管理器 打开此文件：
+    <value>是否使用 文件资源管理器 选中此文件：
 {0}
 该操作可能会导致您意外运行威胁文件</value>
   </data>
