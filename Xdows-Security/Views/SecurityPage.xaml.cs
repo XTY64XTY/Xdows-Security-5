@@ -2193,7 +2193,7 @@ namespace Xdows_Security.Views
             _isPaused = true;
             ScanButton.IsEnabled = true;
             PauseScanButton.Visibility = Visibility.Collapsed;
-            ResumeScanButton.Visibility = Visibility.Visible;
+            ShowWithEntranceAnimation(ResumeScanButton, "right");
             PauseRadar();
             ScanProgress.ShowPaused = true;
 
@@ -2220,7 +2220,7 @@ namespace Xdows_Security.Views
         {
             _isPaused = false;
             ScanButton.IsEnabled = false;
-            PauseScanButton.Visibility = Visibility.Visible;
+            ShowWithEntranceAnimation(PauseScanButton, "right");
             ResumeScanButton.Visibility = Visibility.Collapsed;
             ResumeRadar();
             ScanProgress.ShowPaused = false;
