@@ -156,6 +156,12 @@ namespace Xdows_Security.Views
             return scanId == _scanId;
         }
 
+        private static void ShowWithEntranceAnimation(UIElement element, String kind = "up", Int32 delayMs = 0)
+        {
+            element.Visibility = Visibility.Visible;
+            App.PlayEntranceAnimation(element, kind, delayMs: delayMs);
+        }
+
 #if DEBUG
         private const String TestVirusCopyDirectory = @"D:\\Code\\Model\\Files\\Test";
 
@@ -2154,7 +2160,15 @@ namespace Xdows_Security.Views
 
         private void OnBackList(Boolean isShow)
         {
-            VirusList.Visibility = isShow ? Visibility.Visible : Visibility.Collapsed;
+            if (isShow)
+            {
+                ShowWithEntranceAnimation(VirusList);
+            }
+            else
+            {
+                VirusList.Visibility = Visibility.Collapsed;
+            }
+
             BackToVirusListButtonText.Text = isShow ? Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Hide") : Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Show");
             BackToVirusListButtonIcon.Glyph = isShow ? "\uED1A" : "\uE890";
         }
