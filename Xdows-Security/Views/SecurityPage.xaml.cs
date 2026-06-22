@@ -695,8 +695,23 @@ namespace Xdows_Security.Views
                 bool hasResults = CurrentResults != null && CurrentResults.Count > 0;
                 bool scanComplete = PauseScanButton.Visibility == Visibility.Collapsed
                     && ResumeScanButton.Visibility == Visibility.Collapsed;
-                HandleAllButton.Visibility = hasResults && scanComplete
-                    ? Visibility.Visible : Visibility.Collapsed;
+                bool shouldShow = hasResults && scanComplete;
+
+                if (shouldShow)
+                {
+                    if (HandleAllButton.Visibility != Visibility.Visible)
+                    {
+                        ShowWithEntranceAnimation(HandleAllButton, "right");
+                    }
+                    else
+                    {
+                        HandleAllButton.Visibility = Visibility.Visible;
+                    }
+                }
+                else
+                {
+                    HandleAllButton.Visibility = Visibility.Collapsed;
+                }
             });
         }
 
