@@ -717,6 +717,8 @@ namespace Xdows_Security
             };
             Vector3 finalOffset = new(0, finalVerticalOffset, 0);
 
+            visual.StopAnimation("Offset");
+            visual.StopAnimation("Opacity");
             visual.Opacity = 0;
             visual.Offset = directionOffset + finalOffset;
 
@@ -735,8 +737,15 @@ namespace Xdows_Security
             opacityAnimation.Duration = TimeSpan.FromMilliseconds(400);
             opacityAnimation.DelayTime = delay;
 
+            var animationBatch = compositor.CreateScopedBatch(Microsoft.UI.Composition.CompositionBatchTypes.Animation);
             visual.StartAnimation("Offset", offsetAnimation);
             visual.StartAnimation("Opacity", opacityAnimation);
+            animationBatch.Completed += (_, _) =>
+            {
+                visual.Offset = finalOffset;
+                visual.Opacity = 1.0f;
+            };
+            animationBatch.End();
         }
 
         public static NavigationTransitionInfo GetNavigationTransitionInfo()
