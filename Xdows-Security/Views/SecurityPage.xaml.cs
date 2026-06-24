@@ -1392,7 +1392,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task ScanArchiveFileAsync(Int32 scanId, String archivePath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, CancellationToken token)
+        private async Task ScanArchiveFileAsync(Int32 scanId, String archivePath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, SemaphoreSlim scanGate, CancellationToken token)
         {
             try
             {
@@ -1423,11 +1423,24 @@ namespace Xdows_Security.Views
 
                     if (isPasswordError)
                     {
-                        password = await AskArchivePasswordAsync(archivePath, scanId, token);
-                        if (!string.IsNullOrEmpty(password))
+                        // 释放 scanGate，让其他扫描任务可以并行进行，不阻塞 Dialog 等待期间
+                        scanGate.Release();
+                        string? enteredPassword = null;
+                        try
                         {
-                            entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
+                            enteredPassword = await AskArchivePasswordAsync(archivePath, scanId, token);
                         }
+                        finally
+                        {
+                            // 无论用户输入密码、跳过还是扫描被取消，都必须重新获取 scanGate
+                            try { await scanGate.WaitAsync(CancellationToken.None); } catch { }
+                        }
+
+                        if (string.IsNullOrEmpty(enteredPassword))
+                            return;
+
+                        password = enteredPassword;
+                        entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
                     }
                     else
                     {
@@ -1996,7 +2009,7 @@ namespace Xdows_Security.Views
                             await scanGate.WaitAsync(ct);
                             try
                             {
-                                await ScanArchiveFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
+                                await ScanArchiveFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, scanGate, ct);
                             }
                             finally { scanGate.Release(); }
                             return;
