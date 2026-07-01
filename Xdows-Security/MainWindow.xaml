@@ -20,7 +20,7 @@
             RightTapped="AppTitleBar_RightTapped"
             VerticalAlignment="Top">
             <TitleBar.LeftHeader>
-                <StackPanel Margin="11.5,0,0,0" Orientation="Horizontal" VerticalAlignment="Top">
+                <StackPanel Margin="11.5,0,0,0" Orientation="Horizontal" VerticalAlignment="Top" Background="Transparent">
                     <Grid
                         x:Name="AppIcon"
                         Background="Transparent"
@@ -33,6 +33,7 @@
                     </Grid>
                     <TextBlock x:Name="TitleText"
                         FontSize="14"
+                        IsHitTestVisible="False"
                         Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
                 </StackPanel>
             </TitleBar.LeftHeader>
