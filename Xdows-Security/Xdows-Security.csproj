@@ -29,16 +29,25 @@
 		<IlcInstructionSet>x86-64-v2</IlcInstructionSet>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<XdowsCodeRoot>$(MSBuildProjectDirectory)\..\..</XdowsCodeRoot>
+		<XdowsNoDriverBuild Condition="'$(LaunchProfileName)' == 'Xdows-Security (Unpackaged - No Driver Build)' Or '$(ActiveDebugProfile)' == 'Xdows-Security (Unpackaged - No Driver Build)'">true</XdowsNoDriverBuild>
+		<XdowsBuildDriver Condition="'$(XdowsNoDriverBuild)' == 'true'">false</XdowsBuildDriver>
+		<XdowsNativeConfiguration Condition="'$(XdowsNoDriverBuild)' == 'true'">Debug</XdowsNativeConfiguration>
+		<XdowsDriverConfiguration Condition="'$(XdowsNoDriverBuild)' == 'true'">Debug</XdowsDriverConfiguration>
+		<XdowsRuntimeProjectConfiguration Condition="'$(XdowsNoDriverBuild)' == 'true'">Debug</XdowsRuntimeProjectConfiguration>
+		<XdowsBuildDriver Condition="'$(XdowsBuildDriver)' == ''">true</XdowsBuildDriver>
+		<XdowsNativeConfiguration Condition="'$(XdowsNativeConfiguration)' == ''">$(Configuration)</XdowsNativeConfiguration>
+		<XdowsDriverConfiguration Condition="'$(XdowsDriverConfiguration)' == ''">$(Configuration)</XdowsDriverConfiguration>
+		<XdowsRuntimeProjectConfiguration Condition="'$(XdowsRuntimeProjectConfiguration)' == ''">$(Configuration)</XdowsRuntimeProjectConfiguration>
 		<XdowsModelInvokerRoot>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Invoker</XdowsModelInvokerRoot>
 		<XdowsModelNativeProject>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Native\Xdows-Model-Native.vcxproj</XdowsModelNativeProject>
-		<XdowsModelNativeProjectOutput>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Native\$(Platform)\$(Configuration)</XdowsModelNativeProjectOutput>
-		<XdowsModelNativeSolutionOutput>$(XdowsCodeRoot)\Xdows-Model\$(Platform)\$(Configuration)</XdowsModelNativeSolutionOutput>
+		<XdowsModelNativeProjectOutput>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Native\$(Platform)\$(XdowsNativeConfiguration)</XdowsModelNativeProjectOutput>
+		<XdowsModelNativeSolutionOutput>$(XdowsCodeRoot)\Xdows-Model\$(Platform)\$(XdowsNativeConfiguration)</XdowsModelNativeSolutionOutput>
 		<XdowsModelNativeOutput Condition="Exists('$(XdowsModelNativeProjectOutput)\Xdows-Model-Native.dll')">$(XdowsModelNativeProjectOutput)</XdowsModelNativeOutput>
 		<XdowsModelNativeOutput Condition="'$(XdowsModelNativeOutput)' == '' AND Exists('$(XdowsModelNativeSolutionOutput)\Xdows-Model-Native.dll')">$(XdowsModelNativeSolutionOutput)</XdowsModelNativeOutput>
 		<XdowsModelNativeOutput Condition="'$(XdowsModelNativeOutput)' == ''">$(XdowsModelNativeProjectOutput)</XdowsModelNativeOutput>
 		<XdowsDriverProject>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj</XdowsDriverProject>
-		<XdowsDriverProjectPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(Configuration)\Xdows-Security-Driver</XdowsDriverProjectPackageOutput>
-		<XdowsDriverSolutionPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\$(Platform)\$(Configuration)\Xdows-Security-Driver</XdowsDriverSolutionPackageOutput>
+		<XdowsDriverProjectPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\Xdows-Security-Driver</XdowsDriverProjectPackageOutput>
+		<XdowsDriverSolutionPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\Xdows-Security-Driver</XdowsDriverSolutionPackageOutput>
 		<XdowsDriverPackageOutput Condition="Exists('$(XdowsDriverProjectPackageOutput)\Xdows-Security-Driver.inf')">$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
 		<XdowsDriverPackageOutput Condition="'$(XdowsDriverPackageOutput)' == '' AND Exists('$(XdowsDriverSolutionPackageOutput)\Xdows-Security-Driver.inf')">$(XdowsDriverSolutionPackageOutput)</XdowsDriverPackageOutput>
 		<XdowsDriverPackageOutput Condition="'$(XdowsDriverPackageOutput)' == ''">$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
@@ -122,10 +131,10 @@
 	</ItemGroup>
 
 	<Target Name="BuildXdowsNativeAndDriverProjects" BeforeTargets="CollectXdowsDriverAndModelAssets" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
-		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
-		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
-		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
-		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(Configuration);Platform=$(Platform);SignMode=$(SignMode)" Condition="Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
+		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(XdowsNativeConfiguration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
+		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(XdowsNativeConfiguration);Platform=$(Platform)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
+		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
+		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
 	</Target>
 
 	<Target Name="BuildXdowsRuntimeProjectReferences" BeforeTargets="ResolveReferences" Condition="'$(RuntimeIdentifier)' != '' AND '$(DesignTimeBuild)' != 'true'">
@@ -134,8 +143,8 @@
 			<XdowsRuntimeProjectReference Include="..\Protection\Protection.csproj" />
 			<XdowsRuntimeProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
 		</ItemGroup>
-		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Restore" Properties="Configuration=$(Configuration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
-		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Build" Properties="Configuration=$(Configuration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
+		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Restore" Properties="Configuration=$(XdowsRuntimeProjectConfiguration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
+		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Build" Properties="Configuration=$(XdowsRuntimeProjectConfiguration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
 	</Target>
 
 	<Target Name="CollectXdowsDriverAndModelAssets" AfterTargets="Build" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
@@ -152,9 +161,9 @@
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')" Text="Xdows-Model-Native.dll was not found. Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\onnxruntime.dll')" Text="onnxruntime.dll was not found in $(XdowsModelNativeOutput)." />
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll')" Text="onnxruntime_providers_shared.dll was not found in $(XdowsModelNativeOutput)." />
-		<Error Condition="!Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.inf')" Text="Driver INF was not found in $(XdowsDriverPackageOutput). Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
-		<Error Condition="!Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys')" Text="Driver SYS was not found in $(XdowsDriverPackageOutput)." />
-		<Error Condition="!Exists('$(XdowsDriverPackageOutput)\xdows-security-driver.cat') AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.cat')" Text="Driver CAT was not found in $(XdowsDriverPackageOutput)." />
+		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.inf')" Text="Driver INF was not found in $(XdowsDriverPackageOutput). Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
+		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys')" Text="Driver SYS was not found in $(XdowsDriverPackageOutput)." />
+		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsDriverPackageOutput)\xdows-security-driver.cat') AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.cat')" Text="Driver CAT was not found in $(XdowsDriverPackageOutput)." />
 
 		<Copy SourceFiles="@(XdowsModelFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsNativeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />

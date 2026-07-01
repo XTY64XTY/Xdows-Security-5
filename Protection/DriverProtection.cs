@@ -41,7 +41,11 @@ public sealed class DriverProtection : IProtectionModel
 
     private static readonly Lock StateLock = new();
     private static readonly ConcurrentDictionary<string, DecisionCacheEntry> DecisionCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly SemaphoreSlim ScanLimiter = new(4, 4);
+    // F1: Raised from 4 to 16. Pro model ScanFile takes ~480ms; with only 4
+    // concurrent slots the limiter was exhausted by the FileCreate flood
+    // (3357 events in 2 minutes), causing unrelated events to queue until
+    // the 5s kernel timeout fired and blocked them.
+    private static readonly SemaphoreSlim ScanLimiter = new(16, 16);
 
     private CancellationTokenSource? _cts;
     private Task? _pumpTask;
@@ -57,6 +61,12 @@ public sealed class DriverProtection : IProtectionModel
 
     public Func<ProtectionDecisionRequest, CancellationToken, Task<ProtectionUserDecision>>? DecisionCallback { get; set; }
     public Action<DriverProtectionLogEntry>? LogCallback { get; set; }
+
+    private void Log(string module, string message)
+    {
+        LogCallback?.Invoke(new DriverProtectionLogEntry(
+            0, 0, DriverProtectionLogSeverity.Info, 0, DateTimeOffset.Now, module, message));
+    }
 
     public static DriverProtectionRuntimeStatus QueryRuntimeStatus()
     {
@@ -104,13 +114,18 @@ public sealed class DriverProtection : IProtectionModel
                     return false;
                 }
 
+                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
                 _scanner = new NativeModelScanner(ModelMode);
+                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
                 _client = new DriverBridgeClient();
+                Log("Bridge", "Connecting DriverBridgeClient...");
                 _client.Connect();
+                Log("Bridge", "DriverBridgeClient connected");
                 _client.RegisterProtectedProcess();
                 DriverBridgeClient client = _client;
                 _pumpTask = Task.Run(() => client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
                 _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));
+                Log("Bridge", "Event pump and log pump started");
                 return true;
             }
             catch
@@ -272,6 +287,7 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
+        Log("Event", $"Received: id={driverEvent.EventId} type={(XdowsSecurityEventType)driverEvent.EventType} pid={driverEvent.ProcessId} image={CleanDriverString(driverEvent.ImagePath)}");
         return (XdowsSecurityEventType)driverEvent.EventType switch
         {
             XdowsSecurityEventType.ProcessCreate => await HandleProcessCreateAsync(driverEvent, token).ConfigureAwait(false),
@@ -309,8 +325,18 @@ public sealed class DriverProtection : IProtectionModel
         await ScanLimiter.WaitAsync(token).ConfigureAwait(false);
         try
         {
+            // F3: Re-check cache after acquiring limiter; another thread may have
+            // scanned the same image while we were queued.
+            if (DecisionCache.TryGetValue(imagePath, out var cachedAfterWait) &&
+                cachedAfterWait.ExpiresAt > DateTimeOffset.UtcNow)
+            {
+                return DriverBridgeClient.CreateDecision(driverEvent.EventId, cachedAfterWait.Decision, cachedAfterWait.Reason);
+            }
+
             NativeModelScanner scanner = _scanner ?? new NativeModelScanner(ModelMode);
+            Log("Scan", $"ProcessCreate scanning: {imagePath}");
             NativeModelScannerResult scan = scanner.ScanFile(imagePath);
+            Log("Scan", $"ProcessCreate result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine}");
 
             if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
             {
@@ -381,8 +407,18 @@ public sealed class DriverProtection : IProtectionModel
         await ScanLimiter.WaitAsync(token).ConfigureAwait(false);
         try
         {
+            // F3: Re-check cache after acquiring limiter; another thread may have
+            // scanned the same file while we were queued.
+            if (DecisionCache.TryGetValue(cacheKey, out var cachedAfterWait) &&
+                cachedAfterWait.ExpiresAt > DateTimeOffset.UtcNow)
+            {
+                return DriverBridgeClient.CreateDecision(driverEvent.EventId, cachedAfterWait.Decision, cachedAfterWait.Reason);
+            }
+
             NativeModelScanner scanner = _scanner ?? new NativeModelScanner(ModelMode);
+            Log("Scan", $"FileEvent scanning: {filePath}");
             NativeModelScannerResult scan = scanner.ScanFile(filePath);
+            Log("Scan", $"FileEvent result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine}");
 
             if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
             {
@@ -404,7 +440,9 @@ public sealed class DriverProtection : IProtectionModel
                 File.Exists(actorPath) &&
                 !string.Equals(actorPath, filePath, StringComparison.OrdinalIgnoreCase))
             {
+                Log("Scan", $"SensitiveOp scanning actor: {actorPath}");
                 actorScan = scanner.ScanFile(actorPath);
+                Log("Scan", $"SensitiveOp actor result: IsThreat={actorScan.IsThreat} Prob={actorScan.Probability} Error={actorScan.ErrorMessage ?? "(none)"} Native={actorScan.UsedNativeEngine}");
             }
 
             ProtectionUserDecision userDecision = await AskUserForThreatDecisionAsync(

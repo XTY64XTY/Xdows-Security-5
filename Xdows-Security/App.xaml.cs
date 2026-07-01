@@ -1,4 +1,4 @@
-using Microsoft.Windows.Storage;
+﻿using Microsoft.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
@@ -125,11 +125,41 @@ namespace Xdows_Security
 
         private static DriverProtection CreateDriverProtection()
         {
-            return new DriverProtection
+            DriverProtection protection = new()
             {
                 DecisionCallback = DriverDecisionCallbackAsync,
                 LogCallback = DriverLogCallback
             };
+            ApplyDriverProtectionModelMode(protection);
+            return protection;
+        }
+
+        /// <summary>
+        /// 璇诲彇 UI 璁剧疆鐨勬壂鎻忔ā寮忓苟搴旂敤鍒伴┍鍔ㄩ槻鎶ゃ€傚綋鐢ㄦ埛寮€鍚?灏嗘壂鎻忔ā寮忓簲鐢ㄥ埌闃叉姢"鏃讹紝
+        /// 浣跨敤 UI 閫夋嫨鐨勬ā鍨嬫ā寮?Flash/Pro/Standard)锛涘惁鍒欎繚鎸侀粯璁?Standard銆?        /// </summary>
+        private static void ApplyDriverProtectionModelMode(DriverProtection protection)
+        {
+            try
+            {
+                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+
+                if (settings.Values.TryGetValue("ModelModeForProtection", out var mfpRaw) &&
+                    mfpRaw is bool mfpOn && mfpOn)
+                {
+                    string modeStr = settings.Values.TryGetValue("ModelMode", out var modeRaw) && modeRaw is string ms
+                        ? ms : "Standard";
+                    protection.ModelMode = modeStr switch
+                    {
+                        "Flash" => NativeModelScannerMode.Flash,
+                        "Pro" => NativeModelScannerMode.Pro,
+                        _ => NativeModelScannerMode.Standard
+                    };
+                }
+            }
+            catch
+            {
+                // 璁剧疆璇诲彇澶辫触鏃朵繚鎸侀粯璁?Standard
+            }
         }
 
         private static void DriverLogCallback(DriverProtectionLogEntry entry)
@@ -203,6 +233,12 @@ namespace Xdows_Security
             IProtectionModel? protection = RunIdToProtection(RunID);
 
             if (protection is null) { return false; }
+
+            // Refresh ModelMode from settings before each start
+            if (protection is DriverProtection driverProt)
+            {
+                ApplyDriverProtectionModelMode(driverProt);
+            }
 
             bool result;
             if (protection.IsRun())

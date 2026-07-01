@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace Protection;
 
@@ -23,6 +23,9 @@ public sealed class NativeModelScanner : IDisposable
     private IntPtr _session;
     private bool _nativeReady;
     private readonly NativeModelScannerMode _mode;
+
+    public bool NativeReady => _nativeReady;
+    public NativeModelScannerMode Mode => _mode;
 
     public NativeModelScanner(NativeModelScannerMode mode = NativeModelScannerMode.Standard, string? modelDirectory = null)
     {
