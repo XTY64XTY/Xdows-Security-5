@@ -1,7 +1,6 @@
 using Microsoft.Windows.Storage;
 using Helper.PInvoke.Comctl32;
 using Helper.PInvoke.User32;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -29,8 +28,6 @@ namespace Xdows_Security
         private bool _allowCloseFromTray;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
-
-        private DispatcherQueueTimer? _iconClickTimer;
 
         public MainWindow()
         {
@@ -503,23 +500,9 @@ namespace Xdows_Security
             nav.IsPaneOpen = !nav.IsPaneOpen;
         }
 
-        // 标题栏图标交互：单击延迟判定（区分双击），单击打开自定义标题栏菜单，双击关闭窗口
-        private void AppIcon_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            _iconClickTimer ??= DispatcherQueue.CreateTimer();
-            _iconClickTimer.Interval = TimeSpan.FromMilliseconds(GetSystemDoubleClickIntervalMs());
-            _iconClickTimer.Tick -= AppIcon_ClickTimer_Tick;
-            _iconClickTimer.Tick += AppIcon_ClickTimer_Tick;
-            _iconClickTimer.Stop();
-            _iconClickTimer.Start();
-            e.Handled = true;
-        }
-
+        // 标题栏图标双击关闭窗口（与点击标题栏 X 按钮一致，走托盘隐藏/关闭验证流程）
         private void AppIcon_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            _iconClickTimer?.Stop();
-            // 发送 SC_CLOSE 系统命令，与点击标题栏 X 按钮一致，
-            // 触发 AppWindow.Closing 事件以走托盘隐藏/关闭验证流程
             User32Library.SendMessage(
                 (nint)this.AppWindow.Id.Value,
                 WindowMessage.WM_SYSCOMMAND,
@@ -528,23 +511,25 @@ namespace Xdows_Security
             e.Handled = true;
         }
 
-        private void AppIcon_ClickTimer_Tick(DispatcherQueueTimer sender, object args)
+        // 右键标题栏图标，打开自定义标题栏菜单
+        private void AppIcon_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            sender.Stop();
-            titleBarMenu?.ShowMenuAt(AppIcon);
+            if (titleBarMenu is not null)
+            {
+                titleBarMenu.ShowMenuAtPoint(e.GetPosition(titleBarMenu));
+            }
+            e.Handled = true;
         }
 
-        private static double GetSystemDoubleClickIntervalMs()
+        // 右键标题栏区域（交互区），打开自定义标题栏菜单；
+        // 非交互区由 WM_NCRBUTTONUP 子类化处理，两者共同覆盖整个标题栏
+        private void AppTitleBar_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            try
+            if (titleBarMenu is not null)
             {
-                return User32Library.GetDoubleClickTime();
+                titleBarMenu.ShowMenuAtPoint(e.GetPosition(titleBarMenu));
             }
-            catch (Exception ex)
-            {
-                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"GetDoubleClickTime failed: {ex.Message}");
-                return 200;
-            }
+            e.Handled = true;
         }
 
         public void UpdateBackButtonPosition()

@@ -20,8 +20,5 @@ namespace Helper.PInvoke.User32
         [LibraryImport(User32, EntryPoint = "TrackMouseEvent", SetLastError = false)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static partial bool TrackMouseEvent(ref TRACKMOUSEEVENT lpEventTrack);
-
-        [LibraryImport(User32, EntryPoint = "GetDoubleClickTime", SetLastError = false)]
-        public static partial uint GetDoubleClickTime();
     }
 }

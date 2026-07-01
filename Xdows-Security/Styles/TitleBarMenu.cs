@@ -58,11 +58,11 @@ namespace Xdows_Security
         }
 
         /// <summary>
-        /// 在指定锚定元素下方显示自定义标题栏菜单。用于客户端区域图标的单击交互。
+        /// 在指定本地坐标处显示自定义标题栏菜单。用于标题栏区域的右键交互。
         /// </summary>
-        public void ShowMenuAt(FrameworkElement anchor)
+        public void ShowMenuAtPoint(Point localPoint)
         {
-            if (MenuFlyout is null || anchor is null)
+            if (MenuFlyout is null)
                 return;
 
             if (MenuFlyout.IsOpen)
@@ -73,10 +73,10 @@ namespace Xdows_Security
 
             FlyoutShowOptions options = new()
             {
-                Position = new Point(0, anchor.ActualHeight),
+                Position = localPoint,
                 ShowMode = FlyoutShowMode.Standard
             };
-            MenuFlyout.ShowAt(anchor, options);
+            MenuFlyout.ShowAt(this, options);
         }
 
         private static void OnOwnerWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
