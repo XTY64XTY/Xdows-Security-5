@@ -1,10 +1,10 @@
-using Microsoft.Windows.Storage;
 using Helper.PInvoke.Comctl32;
 using Helper.PInvoke.User32;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.Windows.Storage;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,8 +44,7 @@ namespace Xdows_Security
             Activated += MainWindow_Activated_FirstTime;
             Title = AppInfo.AppName;
             TitleText.Text = AppInfo.AppName;
-            // 将图标元素传递给标题栏菜单，用于 NC 双击关闭的命中测试
-            titleBarMenu.IconElement = AppIcon;
+
             Manager.AppWindow.Closing += MainWindow_Closing;
             Manager.MinWidth = 650;
             Manager.MinHeight = 530;
@@ -502,14 +501,29 @@ namespace Xdows_Security
             nav.IsPaneOpen = !nav.IsPaneOpen;
         }
 
+        // 标题栏图标双击关闭窗口（与点击标题栏 X 按钮一致，走托盘隐藏/关闭验证流程）
+        private void AppIcon_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            User32Library.SendMessage(
+                (nint)this.AppWindow.Id.Value,
+                WindowMessage.WM_SYSCOMMAND,
+                (int)SYSTEMCOMMAND.SC_CLOSE,
+                0);
+            e.Handled = true;
+        }
+
+        // 右键标题栏图标，打开自定义标题栏菜单
+        private void AppIcon_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            titleBarMenu?.ShowMenuAtPoint(e.GetPosition(titleBarMenu));
+            e.Handled = true;
+        }
+
         // 右键标题栏区域（交互区），打开自定义标题栏菜单；
         // 非交互区由 WM_NCRBUTTONUP 子类化处理，两者共同覆盖整个标题栏
         private void AppTitleBar_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            if (titleBarMenu is not null)
-            {
-                titleBarMenu.ShowMenuAtPoint(e.GetPosition(titleBarMenu));
-            }
+            titleBarMenu?.ShowMenuAtPoint(e.GetPosition(titleBarMenu));
             e.Handled = true;
         }
 
