@@ -5,6 +5,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -47,6 +48,11 @@ namespace Xdows_Security
         }
 
         public MenuFlyout? MenuFlyout { get; private set; }
+
+        /// <summary>
+        /// 标题栏图标元素，用于 NC 双击关闭窗口的命中测试。
+        /// </summary>
+        public FrameworkElement? IconElement { get; set; }
 
         public TitleBarMenu()
         {
@@ -255,6 +261,34 @@ namespace Xdows_Security
                             }
                         }
                         return 0;
+                    }
+                case WindowMessage.WM_NCLBUTTONDBLCLK:
+                    {
+                        // 双击标题栏图标区域 → 关闭窗口（走托盘隐藏/关闭验证流程）
+                        if (IconElement is not null && OwnerWindow.Content?.XamlRoot is not null && contentCoordinateConverter is not null)
+                        {
+                            PointInt32 screenPoint = new(lParam.ToInt32() & 0xFFFF, lParam.ToInt32() >> 16);
+                            Point localPoint = contentCoordinateConverter.ConvertScreenToLocal(screenPoint);
+                            double scale = OwnerWindow.Content.XamlRoot.RasterizationScale;
+                            Point xamlPoint = Helper.InfoHelper.SystemVersion.Build >= 22000
+                                ? new Point(localPoint.X / scale, localPoint.Y / scale)
+                                : new Point(localPoint.X, localPoint.Y);
+
+                            GeneralTransform transform = IconElement.TransformToVisual(null);
+                            Rect iconRect = transform.TransformBounds(new Rect(0, 0, IconElement.ActualWidth, IconElement.ActualHeight));
+
+                            if (xamlPoint.X >= iconRect.X && xamlPoint.X <= iconRect.X + iconRect.Width &&
+                                xamlPoint.Y >= iconRect.Y && xamlPoint.Y <= iconRect.Y + iconRect.Height)
+                            {
+                                User32Library.SendMessage(
+                                    (nint)OwnerWindow.AppWindow.Id.Value,
+                                    WindowMessage.WM_SYSCOMMAND,
+                                    (int)SYSTEMCOMMAND.SC_CLOSE,
+                                    0);
+                                return 0;
+                            }
+                        }
+                        break;
                     }
             }
             return Comctl32Library.DefSubclassProc(hWnd, Msg, wParam, lParam);
