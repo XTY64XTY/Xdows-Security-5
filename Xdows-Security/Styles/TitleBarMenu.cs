@@ -57,6 +57,28 @@ namespace Xdows_Security
             };
         }
 
+        /// <summary>
+        /// 在指定锚定元素下方显示自定义标题栏菜单。用于客户端区域图标的单击交互。
+        /// </summary>
+        public void ShowMenuAt(FrameworkElement anchor)
+        {
+            if (MenuFlyout is null || anchor is null)
+                return;
+
+            if (MenuFlyout.IsOpen)
+            {
+                MenuFlyout.Hide();
+                return;
+            }
+
+            FlyoutShowOptions options = new()
+            {
+                Position = new Point(0, anchor.ActualHeight),
+                ShowMode = FlyoutShowMode.Standard
+            };
+            MenuFlyout.ShowAt(anchor, options);
+        }
+
         private static void OnOwnerWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var menu = (TitleBarMenu)d;
@@ -156,7 +178,13 @@ namespace Xdows_Security
 
         internal void OnCloseClicked(object _, RoutedEventArgs __)
         {
-            OwnerWindow.Close();
+            // 发送 SC_CLOSE 系统命令，与点击标题栏 X 按钮一致，
+            // 触发 AppWindow.Closing 事件以走托盘隐藏/关闭验证流程
+            User32Library.SendMessage(
+                (nint)OwnerWindow.AppWindow.Id.Value,
+                WindowMessage.WM_SYSCOMMAND,
+                (int)SYSTEMCOMMAND.SC_CLOSE,
+                0);
         }
 
         private nint MainWindowSubClassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)

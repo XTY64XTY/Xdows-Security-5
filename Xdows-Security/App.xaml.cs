@@ -1,4 +1,4 @@
-﻿using Microsoft.Windows.Storage;
+using Microsoft.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
@@ -472,7 +472,18 @@ namespace Xdows_Security
                 Services.ContextMenuService.ValidateOnStartup();
                 EnsureDefaultStartup();
                 InitializeMainWindow();
-                ProtectionStatus.RestoreProtections();
+                // 异步启动防护（含驱动防护）以避免阻塞窗口启动
+                _ = Task.Run(() =>
+                {
+                    try
+                    {
+                        ProtectionStatus.RestoreProtections();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Async restore protections failed: {ex.Message}");
+                    }
+                });
             }
             catch (Exception ex)
             {

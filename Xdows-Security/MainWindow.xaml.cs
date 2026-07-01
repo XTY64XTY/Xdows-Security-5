@@ -1,9 +1,11 @@
 using Microsoft.Windows.Storage;
 using Helper.PInvoke.Comctl32;
 using Helper.PInvoke.User32;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +29,8 @@ namespace Xdows_Security
         private bool _allowCloseFromTray;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
+
+        private DispatcherQueueTimer? _iconClickTimer;
 
         public MainWindow()
         {
@@ -497,6 +501,50 @@ namespace Xdows_Security
         private void AppTitleBar_PaneToggleRequested(Microsoft.UI.Xaml.Controls.TitleBar sender, object args)
         {
             nav.IsPaneOpen = !nav.IsPaneOpen;
+        }
+
+        // 标题栏图标交互：单击延迟判定（区分双击），单击打开自定义标题栏菜单，双击关闭窗口
+        private void AppIcon_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            _iconClickTimer ??= DispatcherQueue.CreateTimer();
+            _iconClickTimer.Interval = TimeSpan.FromMilliseconds(GetSystemDoubleClickIntervalMs());
+            _iconClickTimer.Tick -= AppIcon_ClickTimer_Tick;
+            _iconClickTimer.Tick += AppIcon_ClickTimer_Tick;
+            _iconClickTimer.Stop();
+            _iconClickTimer.Start();
+            e.Handled = true;
+        }
+
+        private void AppIcon_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            _iconClickTimer?.Stop();
+            // 发送 SC_CLOSE 系统命令，与点击标题栏 X 按钮一致，
+            // 触发 AppWindow.Closing 事件以走托盘隐藏/关闭验证流程
+            User32Library.SendMessage(
+                (nint)this.AppWindow.Id.Value,
+                WindowMessage.WM_SYSCOMMAND,
+                (int)SYSTEMCOMMAND.SC_CLOSE,
+                0);
+            e.Handled = true;
+        }
+
+        private void AppIcon_ClickTimer_Tick(DispatcherQueueTimer sender, object args)
+        {
+            sender.Stop();
+            titleBarMenu?.ShowMenuAt(AppIcon);
+        }
+
+        private static double GetSystemDoubleClickIntervalMs()
+        {
+            try
+            {
+                return User32Library.GetDoubleClickTime();
+            }
+            catch (Exception ex)
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"GetDoubleClickTime failed: {ex.Message}");
+                return 200;
+            }
         }
 
         public void UpdateBackButtonPosition()

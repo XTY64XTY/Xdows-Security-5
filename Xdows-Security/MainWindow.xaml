@@ -10,7 +10,7 @@
     mc:Ignorable="d">
 
     <Grid x:Name="RootGrid" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <local:TitleBarMenu OwnerWindow="{x:Bind Mode=OneTime}" />
+        <local:TitleBarMenu x:Name="titleBarMenu" OwnerWindow="{x:Bind Mode=OneTime}" />
         <TitleBar
             x:Name="AppTitleBar"
             Height="48"
@@ -20,8 +20,17 @@
             VerticalAlignment="Top">
             <TitleBar.LeftHeader>
                 <StackPanel Margin="11.5,0,0,0" Orientation="Horizontal" VerticalAlignment="Top">
-                    <Image Source="logo.ico" Width="22" Height="22" Margin="0,0,8,0"/>
-                    <TextBlock x:Name="TitleText" 
+                    <Grid
+                        x:Name="AppIcon"
+                        Background="Transparent"
+                        Width="22"
+                        Height="22"
+                        Margin="0,0,8,0"
+                        Tapped="AppIcon_Tapped"
+                        DoubleTapped="AppIcon_DoubleTapped">
+                        <Image Source="logo.ico" Width="22" Height="22"/>
+                    </Grid>
+                    <TextBlock x:Name="TitleText"
                         FontSize="14"
                         Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
                 </StackPanel>
