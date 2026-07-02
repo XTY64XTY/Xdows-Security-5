@@ -340,8 +340,38 @@ public sealed class DriverProtection : IProtectionModel
 
             if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
             {
-                Cache(imagePath, XdowsSecurityDecisionType.Allow, "model-error", TimeSpan.FromSeconds(30));
-                return Allow(driverEvent.EventId, "model-error:" + scan.ErrorMessage);
+                // Model feature-extraction failed. For ProcessCreate this means
+                // we cannot determine if the executable is safe. Fail-ask:
+                // prompt the user rather than silently allowing a potentially
+                // malicious binary (e.g. malware with malformed PE header that
+                // bypasses IsPeFile). User Allow -> cache; user Block -> block;
+                // user Timeout -> allow (fail-open to avoid system lockup).
+                Log("Scan", $"ProcessCreate model-error, escalating to user: {scan.ErrorMessage}");
+                NativeModelScannerResult errorScan = new NativeModelScannerResult(
+                    true, 50, "ModelExtractionError", false, scan.ErrorMessage);
+                ProtectionUserDecision errorDecision = await AskUserForThreatDecisionAsync(
+                    imagePath,
+                    commandLine,
+                    driverEvent,
+                    errorScan,
+                    actorPath: ResolveActorPath(driverEvent),
+                    actorTrust: null,
+                    actorScan: null,
+                    token).ConfigureAwait(false);
+
+                if (errorDecision == ProtectionUserDecision.Allow)
+                {
+                    Cache(imagePath, XdowsSecurityDecisionType.Allow, "user-release-model-error", TimeSpan.FromMinutes(5));
+                    return Allow(driverEvent.EventId, "user-release-model-error");
+                }
+                if (errorDecision == ProtectionUserDecision.Timeout)
+                {
+                    Cache(imagePath, XdowsSecurityDecisionType.Allow, "model-error-timeout-allow", TimeSpan.FromSeconds(30));
+                    return Allow(driverEvent.EventId, "model-error-timeout-allow");
+                }
+
+                Cache(imagePath, XdowsSecurityDecisionType.Block, "user-block-model-error", TimeSpan.FromSeconds(10));
+                return DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Block, "user-block-model-error");
             }
 
             if (!scan.IsThreat)
@@ -422,7 +452,7 @@ public sealed class DriverProtection : IProtectionModel
 
             if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
             {
-                Cache(cacheKey, XdowsSecurityDecisionType.Allow, "model-error", TimeSpan.FromSeconds(30));
+                Cache(cacheKey, XdowsSecurityDecisionType.Allow, "model-error", TimeSpan.FromSeconds(5));
                 return Allow(driverEvent.EventId, "model-error:" + scan.ErrorMessage);
             }
 
@@ -504,37 +534,8 @@ public sealed class DriverProtection : IProtectionModel
             return Allow(driverEvent.EventId, "trusted-actor", TimeSpan.FromMinutes(10));
         }
 
-        var scan = new NativeModelScannerResult(
-            true,
-            100,
-            ((XdowsSecurityEventType)driverEvent.EventType).ToString(),
-            false,
-            null);
-
-        ProtectionUserDecision userDecision = await AskUserForThreatDecisionAsync(
-            string.IsNullOrWhiteSpace(targetPath) ? actorPath : targetPath,
-            string.Empty,
-            driverEvent,
-            scan,
-            actorPath,
-            actorTrust,
-            null,
-            token).ConfigureAwait(false);
-
-        if (userDecision == ProtectionUserDecision.Allow)
-        {
-            Cache(cacheKey, XdowsSecurityDecisionType.Allow, "user-release-sensitive-operation", TimeSpan.FromMinutes(5));
-            return Allow(driverEvent.EventId, "user-release-sensitive-operation", TimeSpan.FromMinutes(5));
-        }
-
-        XdowsSecurityDecisionType decisionType = userDecision == ProtectionUserDecision.Timeout
-            ? XdowsSecurityDecisionType.Timeout
-            : XdowsSecurityDecisionType.Block;
-        string reason = userDecision == ProtectionUserDecision.Timeout
-            ? "user-timeout-sensitive-operation"
-            : "user-block-sensitive-operation";
-        Cache(cacheKey, decisionType, reason, TimeSpan.FromSeconds(10));
-        return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
+        Cache(cacheKey, XdowsSecurityDecisionType.Allow, "sensitive-op-allowed", TimeSpan.FromMinutes(5));
+        return Allow(driverEvent.EventId, "sensitive-op-allowed", TimeSpan.FromMinutes(5));
     }
 
     private async Task<ProtectionUserDecision> AskUserForThreatDecisionAsync(
