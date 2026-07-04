@@ -180,7 +180,23 @@ namespace Helper
             }
         }
 
-        private static readonly System.Net.Http.HttpClient s_httpClient = new() { Timeout = TimeSpan.FromSeconds(30) };
+        // 配置连接池与生命周期：SocketsHttpHandler 是 .NET 10 默认主处理器，显式配置可控制连接池行为
+        // - PooledConnectionLifetime: 连接最长存活 2 分钟，避免长时间复用导致 DNS 变化失效
+        // - MaxConnectionsPerServer: 单服务器最大并发连接数，防止突发请求耗尽端口
+        // - AutomaticDecompression: 自动解压响应（gzip/deflate/br），减少带宽消耗
+        // 注：自建服务（103.118.245.82）走 HTTP 明文，保持 HTTP/1.1 以兼容未知的服务端 h2c 支持情况
+        private static readonly System.Net.Http.HttpClient s_httpClient = BuildHttpClient(TimeSpan.FromSeconds(30));
+
+        private static System.Net.Http.HttpClient BuildHttpClient(TimeSpan timeout)
+        {
+            SocketsHttpHandler handler = new()
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+                MaxConnectionsPerServer = 16,
+                AutomaticDecompression = System.Net.DecompressionMethods.All
+            };
+            return new System.Net.Http.HttpClient(handler) { Timeout = timeout };
+        }
 
         public static async Task<(int statusCode, string? result)> CloudScanAsync(string path)
         {

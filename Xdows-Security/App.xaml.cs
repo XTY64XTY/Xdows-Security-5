@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
+using System.Net;
 using System.Net.Http;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -32,7 +33,23 @@ namespace Xdows_Security
 
     public static class Updater
     {
-        private static readonly HttpClient _httpClient = new();
+        // GitHub API 走 HTTPS，更新检查频率低（每次启动一次），连接可保持较久生命周期
+        // - PooledConnectionLifetime: 5 分钟，平衡 DNS 缓存与连接复用
+        // - MaxConnectionsPerServer: 4 足够单次更新检查
+        // - AutomaticDecompression: GitHub API 默认 gzip 压缩响应，开启自动解压
+        // - DefaultRequestVersion: HTTP/2，TLS ALPN 自动协商升级，GitHub API 已支持
+        private static readonly HttpClient _httpClient = BuildUpdaterHttpClient();
+
+        private static HttpClient BuildUpdaterHttpClient()
+        {
+            SocketsHttpHandler handler = new()
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                MaxConnectionsPerServer = 4,
+                AutomaticDecompression = System.Net.DecompressionMethods.All
+            };
+            return new HttpClient(handler) { DefaultRequestVersion = HttpVersion.Version20 };
+        }
 
         static Updater()
         {
