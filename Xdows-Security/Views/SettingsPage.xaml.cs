@@ -652,7 +652,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void LoadLanguageSetting()
+        private void LoadLanguageSetting()
         {
             ApplicationDataContainer settings = App.LocalSettings;
             if (!settings.Values.TryGetValue("AppLanguage", out object? langRaw) || langRaw is not string savedLanguage)
@@ -682,7 +682,7 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private async void LoadThemeSetting()
+        private void LoadThemeSetting()
         {
             ApplicationDataContainer settings = App.LocalSettings;
             ElementTheme themeValue = ElementTheme.Default;
@@ -820,7 +820,7 @@ namespace Xdows_Security.Views
             MainWindow.UpdateTheme(Theme);
         }
 
-        private async void LoadBackdropSetting()
+        private void LoadBackdropSetting()
         {
             ApplicationDataContainer settings = App.LocalSettings;
             String savedBackdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdrop

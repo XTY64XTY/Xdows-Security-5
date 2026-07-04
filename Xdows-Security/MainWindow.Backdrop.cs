@@ -293,7 +293,7 @@ namespace Xdows_Security
             });
         }
 
-        public async void UpdatePaneToggleButtonPosition()
+        public void UpdatePaneToggleButtonPosition()
         {
             var settings = App.LocalSettings;
 

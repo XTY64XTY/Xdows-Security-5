@@ -116,7 +116,7 @@ namespace Protection
                 return false;
             }
         }
-        private static async void OnChanged(object sender, FileSystemEventArgs e)
+        private static void OnChanged(object sender, FileSystemEventArgs e)
         {
             try
             {

@@ -32,9 +32,10 @@ namespace Xdows_Security
         public event EventHandler<string>? OnError;
         public FeedbackTCPClient()
         {
-            LoadSettings();
+            // 构造函数不能 await，fire-and-forget 启动异步加载；内部已有 try-catch 不会导致未观察异常
+            _ = LoadSettingsAsync();
         }
-        private async void LoadSettings()
+        private async Task LoadSettingsAsync()
         {
             try
             {
