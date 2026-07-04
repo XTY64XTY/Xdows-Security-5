@@ -151,6 +151,8 @@ namespace Xdows_Security.Views
         private ScalarKeyFrameAnimation? _pulseScaleAnimation;
         private ScalarKeyFrameAnimation? _pulseOpacityAnimation;
         private bool _radarRunning;
+        private bool _radarPausedByWindowDeactivation;
+        private bool _isWindowActive = true;
         private float _radarPausedAngle;
 
         private Boolean IsCurrentScan(Int32 scanId, CancellationToken token)
@@ -242,6 +244,13 @@ namespace Xdows_Security.Views
         private void SecurityPage_Loaded(object sender, RoutedEventArgs e)
         {
             SetupRadarAnimations();
+            // 订阅窗口激活状态变化：窗口最小化/失焦时暂停雷达动画，节省 Composition 线程开销
+            // 先取消再订阅，防止极端场景下 Loaded 重复触发导致多次订阅
+            if (App.MainWindow is { } window)
+            {
+                window.Activated -= OnWindowActivated;
+                window.Activated += OnWindowActivated;
+            }
             // 通知主窗口：SecurityPage 已就绪，可接收扫描请求（替代旧版的 Task.Delay + 轮询）
             App.MainWindow?.NotifySecurityPageReady(this);
         }
@@ -250,6 +259,41 @@ namespace Xdows_Security.Views
         {
             StopRadar();
             ClearTaskbarProgress();
+            if (App.MainWindow is { } window)
+            {
+                window.Activated -= OnWindowActivated;
+            }
+            _radarPausedByWindowDeactivation = false;
+            _isWindowActive = true;
+        }
+
+        /// <summary>
+        /// 窗口激活状态变化：失活时暂停雷达动画（节省 Composition 线程），重新激活时恢复（仅当因窗口失活而暂停且未手动暂停）。
+        /// 同时维护 _isWindowActive 状态，供 StartRadar 检查：若新扫描在窗口已失活时启动，立即暂停。
+        /// </summary>
+        private void OnWindowActivated(object? sender, WindowActivatedEventArgs e)
+        {
+            if (e.WindowActivationState == WindowActivationState.Deactivated)
+            {
+                _isWindowActive = false;
+                if (_radarRunning && !_isPaused)
+                {
+                    _radarPausedByWindowDeactivation = true;
+                    PauseRadar();
+                }
+            }
+            else
+            {
+                _isWindowActive = true;
+                if (_radarPausedByWindowDeactivation)
+                {
+                    _radarPausedByWindowDeactivation = false;
+                    if (_radarRunning && !_isPaused)
+                    {
+                        ResumeRadar();
+                    }
+                }
+            }
         }
 
         private void SetupRadarAnimations()
@@ -300,12 +344,21 @@ namespace Xdows_Security.Views
             _pulseVisual!.StartAnimation("Scale.X", _pulseScaleAnimation!);
             _pulseVisual.StartAnimation("Scale.Y", _pulseScaleAnimation);
             _pulseVisual.StartAnimation("Opacity", _pulseOpacityAnimation!);
+
+            // 若窗口已失活（如 USB 自动扫描在最小化时触发），立即暂停雷达，避免 Composition 线程空转
+            if (!_isWindowActive && !_isPaused)
+            {
+                _radarPausedByWindowDeactivation = true;
+                PauseRadar();
+            }
         }
 
         private void StopRadar()
         {
             if (!_radarRunning || _radarCompositor == null) return;
             _radarRunning = false;
+            // 清理"因失活而暂停"的语义状态，避免下次 StartRadar 后 ResumeRadar 读取过期的 _radarPausedAngle 导致视觉跳变
+            _radarPausedByWindowDeactivation = false;
 
             _scanLineVisual!.StopAnimation("RotationAngleInDegrees");
 
