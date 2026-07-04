@@ -123,6 +123,8 @@ namespace Xdows_Security.Views
         private readonly DispatcherQueue _dispatcherQueue;
         private CancellationTokenSource? _cts;
         private bool _isPaused = false;
+        // 暂停信号：Set=运行中，Reset=已暂停。配合 WaitWhilePausedAsync 实现零轮询等待
+        private readonly ManualResetEventSlim _pauseEvent = new(initialState: true);
         private bool _taskbarProgressActive = false;
         private bool _lastShowScanProgress = false;
         private bool _lastShowTaskbarProgress = true;
@@ -1454,9 +1456,9 @@ namespace Xdows_Security.Views
 
                 foreach (var (entryPath, data) in entries)
                 {
-                    // respect pause and cancellation
+                    // respect pause and cancellation (零轮询信号等待)
                     while (_isPaused && !token.IsCancellationRequested)
-                        await Task.Delay(100, token);
+                        await WaitWhilePausedAsync(token);
                     if (token.IsCancellationRequested) break;
 
                     string displayPath = $"{archivePath}\\{entryPath}";
@@ -1595,6 +1597,7 @@ namespace Xdows_Security.Views
             var token = _cts.Token;
             Int32 thisId = Interlocked.Increment(ref _scanId);
             _isPaused = false;
+            _pauseEvent.Set();
             _zipFileThreats.Clear();
 
             var settings = App.LocalSettings;
@@ -1872,9 +1875,9 @@ namespace Xdows_Security.Views
                         while (_isPaused && !ct.IsCancellationRequested)
                         {
                             if (lastPauseTime == DateTime.MinValue) lastPauseTime = DateTime.Now;
-                            try { await Task.Delay(100, ct); }
-                            catch (OperationCanceledException) { return; }
+                            await WaitWhilePausedAsync(ct);
                         }
+                        if (ct.IsCancellationRequested) return;
 
                         if (lastPauseTime != DateTime.MinValue)
                         {
@@ -2214,6 +2217,7 @@ namespace Xdows_Security.Views
         private void OnPauseScanClick(Object sender, RoutedEventArgs e)
         {
             _isPaused = true;
+            _pauseEvent.Reset();
             ScanButton.IsEnabled = true;
             PauseScanButton.Visibility = Visibility.Collapsed;
             ShowWithEntranceAnimation(ResumeScanButton, "right");
@@ -2242,6 +2246,7 @@ namespace Xdows_Security.Views
         private void OnResumeScanClick(Object sender, RoutedEventArgs e)
         {
             _isPaused = false;
+            _pauseEvent.Set();
             ScanButton.IsEnabled = false;
             ShowWithEntranceAnimation(PauseScanButton, "right");
             ResumeScanButton.Visibility = Visibility.Collapsed;
@@ -2249,6 +2254,27 @@ namespace Xdows_Security.Views
             ScanProgress.ShowPaused = false;
 
             UpdateTaskbarProgressStateForRunning();
+        }
+
+        /// <summary>
+        /// 零轮询等待暂停结束：阻塞线程池线程直到 _pauseEvent 被设置或 CancellationToken 触发。
+        /// 替代旧的 while(_isPaused) await Task.Delay(100) 轮询模式，避免 100ms 唤醒抖动与 CPU 浪费。
+        /// </summary>
+        private async Task WaitWhilePausedAsync(CancellationToken ct)
+        {
+            if (_pauseEvent.IsSet) return;
+            try
+            {
+                await Task.Run(() =>
+                {
+                    var handles = new[] { _pauseEvent.WaitHandle, ct.WaitHandle };
+                    WaitHandle.WaitAny(handles);
+                }, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // 取消时直接返回，由调用方检查 ct
+            }
         }
 
         private async void OnVirusRowDetailsClick(Object sender, RoutedEventArgs e)
