@@ -1,4 +1,5 @@
 using Microsoft.Windows.Storage;
+using System.Buffers;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -275,18 +276,22 @@ namespace Helper
             try
             {
                 var hashes = hashEntries.Select(e => e.hash).ToList();
-                var sb = new System.Text.StringBuilder();
-                sb.Append("{\"hashes\":[");
-                for (int h = 0; h < hashes.Count; h++)
+                // 使用 Utf8JsonWriter 构造 JSON，避免手动拼接字符串带来的注入风险与转义错误
+                var bufferWriter = new System.Buffers.ArrayBufferWriter<byte>();
+                using (var jsonWriter = new Utf8JsonWriter(bufferWriter, new JsonWriterOptions { Indented = false }))
                 {
-                    if (h > 0) sb.Append(',');
-                    sb.Append('\"');
-                    sb.Append(hashes[h]);
-                    sb.Append('\"');
+                    jsonWriter.WriteStartObject();
+                    jsonWriter.WriteStartArray("hashes");
+                    foreach (var hash in hashes)
+                    {
+                        jsonWriter.WriteStringValue(hash);
+                    }
+                    jsonWriter.WriteEndArray();
+                    jsonWriter.WriteEndObject();
+                    jsonWriter.Flush();
                 }
-                sb.Append("]}");
-                string jsonBody = sb.ToString();
-                var content = new StringContent(jsonBody, System.Text.Encoding.UTF8, "application/json");
+                var content = new ByteArrayContent(bufferWriter.WrittenSpan.ToArray());
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                 var resp = await client.PostAsync(url, content, token);
                 resp.EnsureSuccessStatusCode();
                 string json = await resp.Content.ReadAsStringAsync(token);
