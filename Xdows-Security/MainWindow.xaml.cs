@@ -33,6 +33,12 @@ namespace Xdows_Security
         private TaskCompletionSource<SecurityPage?>? _securityPageReadyTcs;
         private static readonly TimeSpan SecurityPageWaitTimeout = TimeSpan.FromSeconds(5);
 
+        // 托盘右键菜单缓存：首次右键时构建，后续直接复用，语言切换时刷新文本
+        private MenuFlyout? _trayMenu;
+        private MenuFlyoutItem? _trayOpenItem;
+        private MenuFlyoutItem? _traySettingsItem;
+        private MenuFlyoutItem? _trayQuitItem;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -61,58 +67,7 @@ namespace Xdows_Security
             };
             Manager.TrayIconContextMenu += (w, e) =>
             {
-                var flyout = new MenuFlyout();
-                flyout.Items.Add(new MenuFlyoutItem()
-                {
-                    Text = Localizer.Get().GetLocalizedString("TrayMenu_Open"),
-                    Icon = new FontIcon() { Glyph = "\uE8A7" }
-                });
-                flyout.Items.Add(new MenuFlyoutItem()
-                {
-                    Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings"),
-                    Icon = new FontIcon() { Glyph = "\uE713" }
-                });
-                flyout.Items.Add(new MenuFlyoutSeparator());
-                flyout.Items.Add(new MenuFlyoutItem()
-                {
-                    Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit"),
-                    Icon = new FontIcon() { Glyph = "\uE7E8" }
-                });
-                ((MenuFlyoutItem)flyout.Items[0]).Click += (s, e) => this.Activate();
-                ((MenuFlyoutItem)flyout.Items[1]).Click += (s, e) =>
-                {
-                    this.Activate();
-                    this.GoToPage("Settings");
-                };
-                ((MenuFlyoutItem)flyout.Items[3]).Click += async (s, e) =>
-                {
-                    bool disabledVerify = false;
-                    if (App.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
-                    {
-                        disabledVerify = boolValue;
-                    }
-                    if (disabledVerify)
-                    {
-                        _allowCloseFromTray = true;
-                        this.Close();
-                    }
-                    else
-                    {
-                        var verifyTask = UserConsentVerifier.RequestVerificationAsync(string.Empty);
-                        var result = verifyTask.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
-
-                        if (result is UserConsentVerificationResult.DeviceNotPresent or
-                        UserConsentVerificationResult.DisabledByPolicy or
-                        UserConsentVerificationResult.NotConfiguredForUser or
-                        UserConsentVerificationResult.Verified)
-                        {
-                            _allowCloseFromTray = true;
-                            this.Close();
-                        }
-                        return;
-                    }
-                };
-                e.Flyout = flyout;
+                e.Flyout = GetOrCreateTrayMenu();
             };
 
             // 处理启动时的扫描请求：直接 enqueue，等待 SecurityPage 就绪由 WaitForSecurityPageAsync 内部处理
@@ -343,6 +298,88 @@ namespace Xdows_Security
             nav.PaneDisplayMode = index == 0 ? NavigationViewPaneDisplayMode.LeftCompact : NavigationViewPaneDisplayMode.Top;
         }
         private void OnLangChanged(object? sender, LanguageChangedEventArgs e) => LoadLocalizerData();
+
+        /// <summary>
+        /// 构建或复用托盘右键菜单。首次调用时构建并缓存，避免每次右键都新建 MenuFlyout + 3 个 Item + 3 个 FontIcon + 4 个事件订阅。
+        /// </summary>
+        private MenuFlyout GetOrCreateTrayMenu()
+        {
+            if (_trayMenu != null) return _trayMenu;
+
+            _trayOpenItem = new MenuFlyoutItem
+            {
+                Text = Localizer.Get().GetLocalizedString("TrayMenu_Open"),
+                Icon = new FontIcon() { Glyph = "\uE8A7" }
+            };
+            _trayOpenItem.Click += (s, e) => this.Activate();
+
+            _traySettingsItem = new MenuFlyoutItem
+            {
+                Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings"),
+                Icon = new FontIcon() { Glyph = "\uE713" }
+            };
+            _traySettingsItem.Click += (s, e) =>
+            {
+                this.Activate();
+                this.GoToPage("Settings");
+            };
+
+            _trayQuitItem = new MenuFlyoutItem
+            {
+                Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit"),
+                Icon = new FontIcon() { Glyph = "\uE7E8" }
+            };
+            _trayQuitItem.Click += async (s, e) =>
+            {
+                bool disabledVerify = false;
+                if (App.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
+                {
+                    disabledVerify = boolValue;
+                }
+                if (disabledVerify)
+                {
+                    _allowCloseFromTray = true;
+                    this.Close();
+                }
+                else
+                {
+                    var verifyTask = UserConsentVerifier.RequestVerificationAsync(string.Empty);
+                    var result = verifyTask.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    if (result is UserConsentVerificationResult.DeviceNotPresent or
+                    UserConsentVerificationResult.DisabledByPolicy or
+                    UserConsentVerificationResult.NotConfiguredForUser or
+                    UserConsentVerificationResult.Verified)
+                    {
+                        _allowCloseFromTray = true;
+                        this.Close();
+                    }
+                    return;
+                }
+            };
+
+            _trayMenu = new MenuFlyout();
+            _trayMenu.Items.Add(_trayOpenItem);
+            _trayMenu.Items.Add(_traySettingsItem);
+            _trayMenu.Items.Add(new MenuFlyoutSeparator());
+            _trayMenu.Items.Add(_trayQuitItem);
+
+            return _trayMenu;
+        }
+
+        /// <summary>
+        /// 语言切换时刷新托盘菜单文本（菜单已构建才需要刷新）。
+        /// </summary>
+        private void RefreshTrayMenuText()
+        {
+            if (_trayMenu == null) return;
+            if (_trayOpenItem != null)
+                _trayOpenItem.Text = Localizer.Get().GetLocalizedString("TrayMenu_Open");
+            if (_traySettingsItem != null)
+                _traySettingsItem.Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings");
+            if (_trayQuitItem != null)
+                _trayQuitItem.Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit");
+        }
         private void LoadLocalizerData()
         {
             var settings = App.LocalSettings;
@@ -356,6 +393,8 @@ namespace Xdows_Security
                     nav.Header = (nav.SelectedItem as NavigationViewItem)?.Content ?? string.Empty;
                 }
             }
+            // 语言切换后刷新托盘菜单文本（菜单已构建才需要刷新）
+            RefreshTrayMenuText();
         }
         public void GoToPage(string PageName, bool pushHistory = true)
         {
