@@ -1776,7 +1776,6 @@ namespace Xdows_Security.Views
                     var scanGate = new SemaphoreSlim(scanConcurrency, scanConcurrency);
                     DateTime lastUiUpdate = DateTime.MinValue;
                     const int UI_UPDATE_INTERVAL_MS = 150;
-                    int heavyScanCount = 0;
 
                     // 精准规则引擎批量预检通道
                     int hashConcurrency = Math.Clamp(Environment.ProcessorCount, 2, 8);
@@ -2084,9 +2083,6 @@ namespace Xdows_Security.Views
                         finally
                         {
                             scanGate.Release();
-                            // 每200个重扫描触发GC回收，防止内存堆积
-                            if (Interlocked.Increment(ref heavyScanCount) % 200 == 0)
-                                GC.Collect(0, GCCollectionMode.Optimized, false);
                         }
 
                         Interlocked.Increment(ref _filesScanned);
