@@ -1,6 +1,4 @@
-using Microsoft.Windows.Storage;
 using Helper;
-using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 using Microsoft.UI;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
@@ -10,6 +8,7 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.Windows.Storage;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
@@ -28,6 +27,7 @@ using System.Threading.Tasks;
 using TrustQuarantine;
 using WinUI3Localizer;
 using Xdows_Security.Services;
+using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 
 namespace Xdows_Security.Views
 {
@@ -234,6 +234,8 @@ namespace Xdows_Security.Views
         private void SecurityPage_Loaded(object sender, RoutedEventArgs e)
         {
             SetupRadarAnimations();
+            // 通知主窗口：SecurityPage 已就绪，可接收扫描请求（替代旧版的 Task.Delay + 轮询）
+            App.MainWindow?.NotifySecurityPageReady(this);
         }
 
         private void SecurityPage_Unloaded(object sender, RoutedEventArgs e)

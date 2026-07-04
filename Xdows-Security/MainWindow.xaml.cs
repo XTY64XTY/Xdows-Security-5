@@ -29,6 +29,10 @@ namespace Xdows_Security
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
 
+        // 事件驱动的 SecurityPage 就绪通知，替代旧的 Task.Delay + 轮询
+        private TaskCompletionSource<SecurityPage?>? _securityPageReadyTcs;
+        private static readonly TimeSpan SecurityPageWaitTimeout = TimeSpan.FromSeconds(5);
+
         public MainWindow()
         {
             InitializeComponent();
@@ -111,13 +115,11 @@ namespace Xdows_Security
                 e.Flyout = flyout;
             };
 
-            // 处理启动时的扫描请求
+            // 处理启动时的扫描请求：直接 enqueue，等待 SecurityPage 就绪由 WaitForSecurityPageAsync 内部处理
             if (App.ScanTargetPaths.Count > 0)
             {
-                _ = DispatcherQueue.TryEnqueue(async () =>
+                _ = DispatcherQueue.TryEnqueue(() =>
                 {
-                    // 确保 UI 基础架构已经完成加载
-                    await Task.Delay(1500);
                     var scanPaths = App.ScanTargetPaths.ToList();
                     if (scanPaths.Count > 0)
                     {
@@ -208,20 +210,7 @@ namespace Xdows_Security
                 try
                 {
                     GoToPage("Security");
-
-                    int maxRetries = 50;
-                    int delayMs = 50;
-                    SecurityPage? securityPage = null;
-
-                    for (int i = 0; i < maxRetries; i++)
-                    {
-                        if (navContainer.Content is SecurityPage page)
-                        {
-                            securityPage = page;
-                            break;
-                        }
-                        await Task.Delay(delayMs);
-                    }
+                    SecurityPage? securityPage = await WaitForSecurityPageAsync();
 
                     if (securityPage != null)
                     {
@@ -262,20 +251,7 @@ namespace Xdows_Security
                 try
                 {
                     GoToPage("Security");
-
-                    int maxRetries = 50;
-                    int delayMs = 50;
-                    SecurityPage? securityPage = null;
-
-                    for (int i = 0; i < maxRetries; i++)
-                    {
-                        if (navContainer.Content is SecurityPage page)
-                        {
-                            securityPage = page;
-                            break;
-                        }
-                        await Task.Delay(delayMs);
-                    }
+                    SecurityPage? securityPage = await WaitForSecurityPageAsync();
 
                     if (securityPage != null)
                     {
@@ -294,6 +270,42 @@ namespace Xdows_Security
                     LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"TriggerScanForPaths failed: {ex.Message}");
                 }
             });
+        }
+
+        /// <summary>
+        /// 等待 SecurityPage 就绪（Loaded 已触发）。优先复用已 Loaded 的当前实例；
+        /// 否则订阅由 SecurityPage.Loaded 触发的就绪通知，带超时兜底避免永久阻塞。
+        /// 并发调用时复用同一等待者，避免相互取消。
+        /// </summary>
+        private async Task<SecurityPage?> WaitForSecurityPageAsync()
+        {
+            // 仅在 SecurityPage 已 Loaded 时直接复用；Frame.Navigate 同步设置 Content 但 Loaded 异步触发，
+            // 若不检查 IsLoaded 会拿到尚未完成 Loaded 的实例，导致 StartScanAsync 在 SetupRadarAnimations 之前运行
+            if (navContainer.Content is SecurityPage { IsLoaded: true } loadedPage)
+                return loadedPage;
+
+            // 复用尚未完成的等待者，避免并发 TriggerScanForPaths 相互取消
+            var existing = _securityPageReadyTcs;
+            if (existing is { Task.IsCompleted: false })
+                return await existing.Task;
+
+            var tcs = new TaskCompletionSource<SecurityPage?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _securityPageReadyTcs = tcs;
+
+            using var cts = new CancellationTokenSource(SecurityPageWaitTimeout);
+            cts.Token.Register(() => tcs.TrySetResult(null));
+
+            return await tcs.Task;
+        }
+
+        /// <summary>
+        /// 由 SecurityPage.Loaded 调用，通知主窗口页面已就绪。
+        /// </summary>
+        internal void NotifySecurityPageReady(SecurityPage page)
+        {
+            var tcs = _securityPageReadyTcs;
+            _securityPageReadyTcs = null;
+            tcs?.TrySetResult(page);
         }
 
         public async Task ShowOOBEAsync()
