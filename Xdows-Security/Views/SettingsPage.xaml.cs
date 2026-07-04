@@ -336,7 +336,7 @@ namespace Xdows_Security.Views
 
         private async Task<bool> EnsureDriverProtectionDisclaimerAcceptedAsync()
         {
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             if (settings.Values.TryGetValue(DriverProtectionDisclaimerAcceptedSetting, out object? raw) &&
                 raw is bool accepted &&
                 accepted)
@@ -391,7 +391,7 @@ namespace Xdows_Security.Views
             if (key is "Process_CompatibilityMode" or "Files_CompatibilityMode")
             {
                 toggle.IsOn = true;
-                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[key] = true;
+                App.LocalSettings.Values[key] = true;
                 return;
             }
             if (toggle.IsOn && (key == "CloudScan" || key == "ExactRuleScan"))
@@ -406,7 +406,7 @@ namespace Xdows_Security.Views
                     DefaultButton = ContentDialogButton.Primary
                 }.ShowAsync();
             }
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             settings.Values[key] = toggle.IsOn;
         }
 
@@ -425,7 +425,7 @@ namespace Xdows_Security.Views
                 if (InfectorCleanerToggle.IsOn)
                 {
                     InfectorCleanerToggle.IsOn = false;
-                    var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                    var settings = App.LocalSettings;
                     settings.Values["InfectorCleaner"] = false;
                 }
                 InfectorCleanerToggle.IsEnabled = false;
@@ -434,7 +434,7 @@ namespace Xdows_Security.Views
 
         private void LoadScanSetting()
         {
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
 
             List<ToggleSwitch> toggles =
             [
@@ -609,7 +609,7 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
             {
-                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["ScanIndexMode"] = tag;
                 try
                 {
@@ -637,7 +637,7 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
             {
-                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["ModelMode"] = tag;
             }
         }
@@ -647,14 +647,14 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ToggleSwitch toggle)
             {
-                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["ModelModeForProtection"] = toggle.IsOn;
             }
         }
 
         private async void LoadLanguageSetting()
         {
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             if (!settings.Values.TryGetValue("AppLanguage", out object? langRaw) || langRaw is not string savedLanguage)
             {
                 savedLanguage = "en-US";
@@ -684,7 +684,7 @@ namespace Xdows_Security.Views
 
         private async void LoadThemeSetting()
         {
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             ElementTheme themeValue = ElementTheme.Default;
             if (settings.Values.TryGetValue("AppTheme", out object? themeRaw) && themeRaw is string themeString && Enum.TryParse(themeString, out ElementTheme parsedTheme))
             {
@@ -714,7 +714,7 @@ namespace Xdows_Security.Views
                 if (selectedItem.Tag is not String newLanguage) return;
                 if (newLanguage != currentLanguage)
                 {
-                    ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppLanguage"] = newLanguage;
+                    App.LocalSettings.Values["AppLanguage"] = newLanguage;
                     await Localizer.Get().SetLanguage(newLanguage);
                     ContextMenuService.UpdateMenuText();
                 }
@@ -805,7 +805,7 @@ namespace Xdows_Security.Views
                 _ => ElementTheme.Default
             };
 
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             settings.Values["AppTheme"] = selectedTheme.ToString();
             if (App.MainWindow == null) return;
             if (App.MainWindow.Content is FrameworkElement rootElement)
@@ -822,7 +822,7 @@ namespace Xdows_Security.Views
 
         private async void LoadBackdropSetting()
         {
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             String savedBackdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdrop
                 ? backdrop
                 : "";
@@ -855,7 +855,7 @@ namespace Xdows_Security.Views
                 try
                 {
                     String backdropType = selected.Tag as String ?? ElementTheme.Default.ToString();
-                    ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                    ApplicationDataContainer settings = App.LocalSettings;
                     settings.Values["AppBackdrop"] = backdropType;
                     App.MainWindow?.ApplyBackdrop(backdropType, false);
                     Appearance_Backdrop_Opacity.IsEnabled = !(backdropType == "Solid");
@@ -867,7 +867,7 @@ namespace Xdows_Security.Views
         private void OpacitySlider_ValueChanged(Object sender, RangeBaseValueChangedEventArgs e)
         {
             if (IsInitialize || sender is not Slider slider) return;
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             settings.Values["AppBackdropOpacity"] = slider.Value;
             if (App.MainWindow == null) return;
             string backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
@@ -882,7 +882,7 @@ namespace Xdows_Security.Views
             try
             {
                 Int32 index = NavComboBox.SelectedIndex;
-                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["AppNavTheme"] = index;
                 App.MainWindow?.UpdateNavTheme(index);
 
@@ -975,7 +975,7 @@ namespace Xdows_Security.Views
 
             try
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 settings.Values["AutoEnableStartup"] = toggle.IsOn;
             }
             catch { }
@@ -1164,7 +1164,7 @@ namespace Xdows_Security.Views
         {
             try
             {
-                String path = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalPath;
+                String path = App.AppData.LocalPath;
                 Directory.CreateDirectory(path);
                 await Windows.System.Launcher.LaunchFolderPathAsync(path);
             }
@@ -1197,7 +1197,7 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    String path = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalPath;
+                    String path = App.AppData.LocalPath;
                     if (Directory.Exists(path))
                     {
                         Directory.Delete(path, true);
@@ -1271,7 +1271,7 @@ namespace Xdows_Security.Views
 
         private void LoadSoundSetting()
         {
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
 
             SoundEffectsToggle.IsOn = settings.Values.TryGetValue("SoundEffects", out var s) && s is true;
             SpatialAudioToggle.IsOn = settings.Values.TryGetValue("SpatialAudio", out var sp) && sp is true || !(settings.Values.ContainsKey("SpatialAudio"));
@@ -1300,14 +1300,14 @@ namespace Xdows_Security.Views
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
-                ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["PageTransition"] = tag;
             }
         }
 
         private void LoadTransitionSetting()
         {
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             string savedTransition = settings.Values.TryGetValue("PageTransition", out var raw) && raw is string s ? s : "Default";
 
             if (!settings.Values.ContainsKey("PageTransition"))
@@ -1327,7 +1327,7 @@ namespace Xdows_Security.Views
 
         private static void ApplySoundSettings()
         {
-            var s = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var s = App.LocalSettings;
             bool sound = s.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
             bool spatial = s.Values.TryGetValue("SpatialAudio", out var spr) && spr is bool spb && spb;
 

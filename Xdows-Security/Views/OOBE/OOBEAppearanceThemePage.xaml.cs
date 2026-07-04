@@ -21,7 +21,7 @@ namespace Xdows_Security.Views.OOBE
 
             try
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 string saved = settings.Values.TryGetValue("AppTheme", out object? themeRaw) && themeRaw is string theme
                     ? theme
                     : "Default";
@@ -49,7 +49,7 @@ namespace Xdows_Security.Views.OOBE
             if (_isInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
-                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppTheme"] = tag;
+                App.LocalSettings.Values["AppTheme"] = tag;
                 ApplyTheme(tag);
             }
         }

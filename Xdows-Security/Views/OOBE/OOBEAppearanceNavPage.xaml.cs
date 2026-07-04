@@ -21,7 +21,7 @@ namespace Xdows_Security.Views.OOBE
 
             try
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 int saved = settings.Values.TryGetValue("AppNavTheme", out object? raw) && raw is double d ? (int)d : 0;
 
                 foreach (ComboBoxItem item in NavComboBox.Items)
@@ -49,7 +49,7 @@ namespace Xdows_Security.Views.OOBE
             {
                 if (int.TryParse(tag, out int index))
                 {
-                    ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppNavTheme"] = (double)index;
+                    App.LocalSettings.Values["AppNavTheme"] = (double)index;
                     App.MainWindow?.UpdateNavTheme(index);
                 }
             }

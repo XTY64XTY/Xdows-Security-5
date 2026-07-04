@@ -46,7 +46,7 @@ namespace Xdows_Security
                         : Windows.UI.Color.FromArgb(255, 255, 255, 255)
                 };
             }
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             string backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
                 ? backdropValue
                 : "Mica";
@@ -81,7 +81,7 @@ namespace Xdows_Security
             try
             {
                 if (RootGrid == null) return;
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 double opacity = settings.Values.TryGetValue("AppBackdropOpacity", out object? opacityRaw) && opacityRaw is double v ? v :
                                 (opacityRaw is int i ? i : 100);
                 if (!compulsory && _lastBackdrop == backdropType && _lastOpacity.Equals(opacity))
@@ -213,7 +213,7 @@ namespace Xdows_Security
 
                 _controller?.SetSystemBackdropConfiguration(_config);
 
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 var backdropType = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
                     ? backdropValue
                     : "Mica";
@@ -246,7 +246,7 @@ namespace Xdows_Security
 
         public async void UpdatePaneToggleButtonPosition()
         {
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
 
             // 检查导航栏位置，如果在顶部则不应用紧凑导航栏设置
             Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;

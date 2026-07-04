@@ -42,7 +42,7 @@ namespace Xdows_Security.Services
                 RegisterKey(MenuKeyFile, menuText, commandValue);
                 RegisterKey(MenuKeyDirectory, menuText, commandValue);
 
-                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[SettingKey] = true;
+                App.LocalSettings.Values[SettingKey] = true;
                 LogText.AddNewLog(LogText.LogLevel.INFO, "ContextMenu", "Context menu registered successfully");
                 return true;
             }
@@ -60,7 +60,7 @@ namespace Xdows_Security.Services
                 UnregisterKey(MenuKeyFile);
                 UnregisterKey(MenuKeyDirectory);
 
-                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[SettingKey] = false;
+                App.LocalSettings.Values[SettingKey] = false;
                 LogText.AddNewLog(LogText.LogLevel.INFO, "ContextMenu", "Context menu unregistered successfully");
                 return true;
             }
@@ -92,7 +92,7 @@ namespace Xdows_Security.Services
         {
             string expectedCommand = GetScanCommand();
             bool isEnabled = IsCommandMatch(MenuKeyFile, expectedCommand) && IsCommandMatch(MenuKeyDirectory, expectedCommand);
-            bool settingEnabled = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values.TryGetValue(SettingKey, out var raw) && raw is bool b && b;
+            bool settingEnabled = App.LocalSettings.Values.TryGetValue(SettingKey, out var raw) && raw is bool b && b;
 
             if (settingEnabled && !isEnabled)
             {
@@ -106,7 +106,7 @@ namespace Xdows_Security.Services
                 catch (Exception ex)
                 {
                     LogText.AddNewLog(LogText.LogLevel.ERROR, "ContextMenu", $"Failed to restore context menu: {ex.Message}");
-                    ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[SettingKey] = false;
+                    App.LocalSettings.Values[SettingKey] = false;
                 }
             }
             else if (!settingEnabled && isEnabled)

@@ -1043,7 +1043,7 @@ namespace Xdows_Security.Views
 
         private async void OnScanMenuClick(Object sender, RoutedEventArgs e)
         {
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             Boolean UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
             Boolean UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
             Boolean UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
@@ -1087,7 +1087,7 @@ namespace Xdows_Security.Views
 
         private async void ScanButton_Click(SplitButton sender, SplitButtonClickEventArgs e)
         {
-            ApplicationDataContainer settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            ApplicationDataContainer settings = App.LocalSettings;
             Boolean UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
             Boolean UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
             Boolean UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
@@ -1597,7 +1597,7 @@ namespace Xdows_Security.Views
             _isPaused = false;
             _zipFileThreats.Clear();
 
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             bool showScanProgress = settings.Values.TryGetValue("ShowScanProgress", out object? showProgressRaw) && showProgressRaw is bool showProgress && showProgress;
             bool showTaskbarProgress = !settings.Values.TryGetValue("ShowTaskbarScanProgress", out object? taskbarRaw) || taskbarRaw is not bool taskbar || taskbar;
             string scanIndexMode = settings.Values.TryGetValue("ScanIndexMode", out object? indexModeRaw) && indexModeRaw is string indexMode ? indexMode : "Parallel";
@@ -2147,7 +2147,7 @@ namespace Xdows_Security.Views
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (!IsCurrentScan(thisId, token)) return;
-                        ApplicationDataContainer settingsLocal = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                        ApplicationDataContainer settingsLocal = App.LocalSettings;
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);

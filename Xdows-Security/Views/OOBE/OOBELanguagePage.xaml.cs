@@ -24,7 +24,7 @@ namespace Xdows_Security.Views.OOBE
 
             try
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 string savedLanguage = settings.Values.TryGetValue("AppLanguage", out object? langRaw) && langRaw is string s ? s : "en-US";
 
                 foreach (ComboBoxItem item in LanguageComboBox.Items.OfType<ComboBoxItem>())
@@ -55,7 +55,7 @@ namespace Xdows_Security.Views.OOBE
                 if (selectedItem.Tag is not string newLanguage) return;
                 if (newLanguage != currentLanguage)
                 {
-                    ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values["AppLanguage"] = newLanguage;
+                    App.LocalSettings.Values["AppLanguage"] = newLanguage;
                     await Localizer.Get().SetLanguage(newLanguage);
                 }
             }

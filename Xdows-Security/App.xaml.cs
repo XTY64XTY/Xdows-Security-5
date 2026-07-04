@@ -141,7 +141,7 @@ namespace Xdows_Security
         {
             try
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
 
                 if (settings.Values.TryGetValue("ModelModeForProtection", out var mfpRaw) &&
                     mfpRaw is bool mfpOn && mfpOn)
@@ -261,7 +261,7 @@ namespace Xdows_Security
 
         private static void SaveProtectionState(int runId, bool enabled)
         {
-            ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[$"Protection_Enabled_{runId}"] = enabled;
+            App.LocalSettings.Values[$"Protection_Enabled_{runId}"] = enabled;
         }
 
         public static void RestoreProtections()
@@ -279,7 +279,7 @@ namespace Xdows_Security
         {
             try
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 string key = $"Protection_Enabled_{runId}";
 
                 if (!settings.Values.TryGetValue(key, out var raw) || raw is not bool shouldEnable)
@@ -382,6 +382,14 @@ namespace Xdows_Security
     public partial class App : Application
     {
         public static MainWindow? MainWindow { get; private set; }
+
+        // 缓存 ApplicationData 与 LocalSettings，避免每次访问都做路径解析与容器查找
+        // 使用 PublicationOnly 模式：失败不缓存异常，允许下次访问重试，避免单次瞬时失败导致永久不可用
+        private static readonly Lazy<ApplicationData> _appDataLazy = new(
+            () => ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security"),
+            LazyThreadSafetyMode.PublicationOnly);
+        public static ApplicationData AppData => _appDataLazy.Value;
+        public static ApplicationDataContainer LocalSettings => AppData.LocalSettings;
 
         private static List<string> _scanTargetPaths = [];
         private static readonly Lock _scanPathLock = new();
@@ -648,7 +656,7 @@ namespace Xdows_Security
         {
             lock (_settingsLock)
             {
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 if (settings.Values.TryGetValue(RunOOBESettingKey, out var raw) && raw is bool b)
                 {
                     return b;
@@ -661,7 +669,7 @@ namespace Xdows_Security
         {
             lock (_settingsLock)
             {
-                ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings.Values[RunOOBESettingKey] = value;
+                App.LocalSettings.Values[RunOOBESettingKey] = value;
             }
         }
 
@@ -711,7 +719,7 @@ namespace Xdows_Security
                 //});// 测试用的捏（By Shiyi）
 
                 // Initialize sound effects
-                var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                var settings = App.LocalSettings;
                 bool sound = settings.Values.TryGetValue("SoundEffects", out var sr) && sr is bool sb && sb;
                 bool spatial = !settings.Values.TryGetValue("SpatialAudio", out var spr) || spr is not bool spb || spb;
                 ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
@@ -736,7 +744,7 @@ namespace Xdows_Security
         {
             string stringsPath = Path.Combine(AppContext.BaseDirectory, "Strings");
 
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             string lastLang = settings.Values.TryGetValue("AppLanguage", out object? rawLanguage) && rawLanguage is string language
                 ? language
                 : "en-US";
@@ -800,7 +808,7 @@ namespace Xdows_Security
 
         public static NavigationTransitionInfo GetNavigationTransitionInfo()
         {
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             string transitionType = settings.Values.TryGetValue("PageTransition", out var raw) && raw is string s ? s : "Default";
 
             return transitionType switch

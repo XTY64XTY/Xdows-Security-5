@@ -60,7 +60,7 @@ public class UsbScanService
 
     public void EnqueueDrive(string driveLetter)
     {
-        var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+        var settings = App.LocalSettings;
         bool enabled = !(settings.Values.TryGetValue("UsbAutoScan", out object? usbAutoScanRaw) && usbAutoScanRaw is bool b && !b);
         if (!enabled) return;
 
@@ -152,7 +152,7 @@ public class UsbScanService
             };
             ProgressChanged?.Invoke(this, args);
 
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             bool useModelScan = !(settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool ms && !ms);
             bool useLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is true;
             bool useCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is true;

@@ -51,6 +51,13 @@ namespace Helper
 
         public class ModelEngineScan
         {
+            // 缓存 LocalSettings，避免每次 SyncModeFromSettings 都调用 ApplicationData.GetForUnpackaged
+            // PublicationOnly 模式：失败不缓存异常，避免单次失败导致整个类永久不可用
+            private static readonly Lazy<ApplicationDataContainer> s_settingsLazy = new(
+                () => ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings,
+                LazyThreadSafetyMode.PublicationOnly);
+            private static ApplicationDataContainer Settings => s_settingsLazy.Value;
+
             private static Xdows_Model_Invoker.ModelMode _mode = Xdows_Model_Invoker.ModelMode.Standard;
 
             public static Xdows_Model_Invoker.ModelMode Mode
@@ -70,7 +77,7 @@ namespace Helper
             {
                 try
                 {
-                    var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                    var settings = Settings;
                     if (settings.Values.TryGetValue("ModelMode", out var raw) && raw is string modeStr)
                     {
                         _mode = modeStr switch
@@ -106,7 +113,7 @@ namespace Helper
                     bool applyToProtection = false;
                     try
                     {
-                        var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                        var settings = Settings;
                         if (settings.Values.TryGetValue("ModelModeForProtection", out var raw) && raw is bool enabled)
                         {
                             applyToProtection = enabled;

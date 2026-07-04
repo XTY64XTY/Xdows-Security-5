@@ -39,7 +39,7 @@ namespace Xdows_Security
             try
             {
                 // 尝试从本地存储加载设置
-                ApplicationDataContainer localSettings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer localSettings = App.LocalSettings;
 
                 if (localSettings.Values.TryGetValue("FeedbackUsername", out var usernameObj) &&
                     usernameObj is string username)
@@ -75,7 +75,7 @@ namespace Xdows_Security
         {
             try
             {
-                ApplicationDataContainer localSettings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+                ApplicationDataContainer localSettings = App.LocalSettings;
                 localSettings.Values["FeedbackUsername"] = _username;
                 localSettings.Values["FeedbackServerHost"] = _serverHost;
                 localSettings.Values["FeedbackServerPort"] = _serverPort.ToString();

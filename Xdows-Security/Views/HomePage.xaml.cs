@@ -565,7 +565,7 @@ namespace Xdows_Security.Views
             ? new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 78, 201, 176))
             : new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 241, 82, 98));
 
-            var settings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            var settings = App.LocalSettings;
             var lastScan = settings.Values.TryGetValue("LastScanTime", out object? lastScanRaw) && lastScanRaw is string lastScanValue ? lastScanValue : "";
 
             LastScanTime.Text = string.IsNullOrEmpty(lastScan) ? WinUI3Localizer.Localizer.Get().GetLocalizedString("AllPage_Undefined") : lastScan;
