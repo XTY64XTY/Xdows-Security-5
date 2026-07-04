@@ -125,6 +125,12 @@ namespace Xdows_Security.Views
         private bool _isPaused = false;
         // 暂停信号：Set=运行中，Reset=已暂停。配合 WaitWhilePausedAsync 实现零轮询等待
         private readonly ManualResetEventSlim _pauseEvent = new(initialState: true);
+        // 缓存 UI 格式化字符串，避免每次 UpdateScanStats 都查询本地化资源
+        private string? _fmtFilesScanned;
+        private string? _fmtFilesSafe;
+        private string? _fmtThreatsFound;
+        // 缓存上次状态文本的文件名，避免相同文件名重复调度 UI 更新
+        private string? _lastStatusFileName;
         private bool _taskbarProgressActive = false;
         private bool _lastShowScanProgress = false;
         private bool _lastShowTaskbarProgress = true;
@@ -1035,9 +1041,10 @@ namespace Xdows_Security.Views
                 _threatsFound = threatsFound;
                 try
                 {
-                    FilesScannedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), filesScanned);
-                    FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), safeForDisplay);
-                    ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatForDisplay);
+                    // 优先使用缓存的格式字符串（扫描期间已初始化），回退到实时查询以支持非扫描上下文调用
+                    FilesScannedText.Text = String.Format(_fmtFilesScanned ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), filesScanned);
+                    FilesSafeText.Text = String.Format(_fmtFilesSafe ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), safeForDisplay);
+                    ThreatsFoundText.Text = String.Format(_fmtThreatsFound ?? Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatForDisplay);
                 }
                 catch { }
             });
@@ -1599,6 +1606,11 @@ namespace Xdows_Security.Views
             _isPaused = false;
             _pauseEvent.Set();
             _zipFileThreats.Clear();
+            // 缓存 UI 格式化字符串，避免扫描期间每次 UpdateScanStats 都查询本地化资源
+            _fmtFilesScanned = Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format");
+            _fmtFilesSafe = Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format");
+            _fmtThreatsFound = Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format");
+            _lastStatusFileName = null;
 
             var settings = App.LocalSettings;
             bool showScanProgress = settings.Values.TryGetValue("ShowScanProgress", out object? showProgressRaw) && showProgressRaw is bool showProgress && showProgress;
@@ -1891,11 +1903,16 @@ namespace Xdows_Security.Views
                         if (shouldUpdateUi)
                         {
                             lastUiUpdate = DateTime.UtcNow;
-                            _dispatcherQueue.TryEnqueue(() =>
+                            // best-effort 去重：并行下多 worker 可能同时通过引用比较，最多冗余一次 TryEnqueue，无正确性问题
+                            if (!ReferenceEquals(file, _lastStatusFileName))
                             {
-                                if (!IsCurrentScan(thisId, token)) return;
-                                try { StatusText.Text = string.Format(tStatusText, file); } catch { }
-                            });
+                                _lastStatusFileName = file;
+                                _dispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (!IsCurrentScan(thisId, token)) return;
+                                    try { StatusText.Text = string.Format(tStatusText, file); } catch { }
+                                });
+                            }
                         }
 
                         // 快速路径：受信任文件直接跳过，不进scanGate，零内存开销
