@@ -87,6 +87,15 @@ namespace Xdows_Security
                 if (!compulsory && _lastBackdrop == backdropType && _lastOpacity.Equals(opacity))
                     return;
 
+                // 属性热更新路径：仅 opacity / Kind 等属性变化时直接更新现有 controller，
+                // 避免销毁重建。这对透明度滑块频繁拖动场景尤其关键（每次值变化都会调用本方法）。
+                if (TryHotUpdateBackdrop(backdropType, opacity))
+                {
+                    _lastBackdrop = backdropType;
+                    _lastOpacity = opacity;
+                    return;
+                }
+
                 CleanupBackdropResources();
                 _lastBackdrop = backdropType;
                 _lastOpacity = opacity;
@@ -149,6 +158,46 @@ namespace Xdows_Security
             catch
             {
                 ApplyBackdrop("Solid", true);
+            }
+        }
+
+        /// <summary>
+        /// 尝试热更新现有 controller 的属性（LuminosityOpacity / Kind），避免销毁重建。
+        /// 仅当旧/新 backdrop 都是系统 backdrop 类型（非 Solid）、controller 仍存活且类型系列一致（Mica↔MicaAlt 或 Acrylic→Acrylic）时适用。
+        /// 跨系列切换（Mica↔Acrylic）或涉及 Solid 时返回 false，由调用方走完整重建路径。
+        /// </summary>
+        private bool TryHotUpdateBackdrop(string backdropType, double opacity)
+        {
+            if (_controller == null || _target == null) return false;
+            if (backdropType == "Solid" || _lastBackdrop == "Solid") return false;
+
+            // 跨系列切换（Mica ↔ Acrylic）需要重建 controller
+            bool lastIsMica = _lastBackdrop is "Mica" or "MicaAlt";
+            bool newIsMica = backdropType is "Mica" or "MicaAlt";
+            if (lastIsMica != newIsMica) return false;
+
+            switch (_controller)
+            {
+                case MicaController mica when backdropType is "Mica" or "MicaAlt":
+                    // 主题切换时（compulsory=true 进入此处）需同步 _config.Theme 与 TintColor，否则 Mica 背景会保留旧主题色
+                    UpdateBackdropTheme();
+                    mica.TintColor = GetBackgroundColor();
+                    mica.LuminosityOpacity = backdropType == "MicaAlt"
+                        ? (float)(opacity / 100 * 0.85)
+                        : (float)(opacity / 100 * 0.95);
+                    MicaKind desiredKind = backdropType == "MicaAlt" ? MicaKind.BaseAlt : MicaKind.Base;
+                    if (mica.Kind != desiredKind)
+                    {
+                        mica.Kind = desiredKind;
+                    }
+                    return true;
+                case DesktopAcrylicController acrylic when backdropType == "Acrylic":
+                    UpdateBackdropTheme();
+                    acrylic.TintColor = GetBackgroundColor();
+                    acrylic.LuminosityOpacity = (float)(opacity / 100 * 0.95);
+                    return true;
+                default:
+                    return false;
             }
         }
 
