@@ -469,8 +469,11 @@ namespace Xdows_Security
                 StartPipeListener();
 
                 await InitializeLocalizer();
-                Services.ContextMenuService.ValidateOnStartup();
-                EnsureDefaultStartup();
+                // 并行执行注册表/启动项检查，避免串行 IO 等待
+                await Task.WhenAll(
+                    Task.Run(() => Services.ContextMenuService.ValidateOnStartup()),
+                    Task.Run(() => EnsureDefaultStartup())
+                );
                 InitializeMainWindow();
                 // 异步启动防护（含驱动防护）以避免阻塞窗口启动
                 _ = Task.Run(() =>
