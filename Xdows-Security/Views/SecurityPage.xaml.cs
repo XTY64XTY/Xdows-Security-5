@@ -169,7 +169,14 @@ namespace Xdows_Security.Views
         private static void ShowWithEntranceAnimation(UIElement element, String kind = "up", Int32 delayMs = 0)
         {
             element.Visibility = Visibility.Visible;
+            element.UpdateLayout();
             App.PlayEntranceAnimation(element, kind, delayMs: delayMs);
+        }
+
+        private static void HideWithVisualReset(UIElement element)
+        {
+            App.ResetElementVisualState(element);
+            element.Visibility = Visibility.Collapsed;
         }
 
         private void ShowBackToVirusListButton()
@@ -785,7 +792,7 @@ namespace Xdows_Security.Views
                 }
                 else
                 {
-                    HandleAllButton.Visibility = Visibility.Collapsed;
+                    HideWithVisualReset(HandleAllButton);
                 }
             });
         }
@@ -819,7 +826,7 @@ namespace Xdows_Security.Views
             List<VirusRow> snapshot = [.. CurrentResults];
             Int32 total = snapshot.Count;
 
-            HandleAllButton.Visibility = Visibility.Collapsed;
+            HideWithVisualReset(HandleAllButton);
 
             var progressRing = new ProgressRing { IsActive = true, Width = 40, Height = 40 };
             var currentFileText = new TextBlock
@@ -1782,13 +1789,13 @@ namespace Xdows_Security.Views
                 ScanProgress.Visibility = Visibility.Visible;
                 ProgressPercentText.Text = showScanProgress ? "0%" : string.Empty;
                 PathText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_PathText_Format"), displayName);
-                BackToVirusListButton.Visibility = Visibility.Collapsed;
+                HideWithVisualReset(BackToVirusListButton);
                 PauseScanButton.Visibility = Visibility.Visible;
                 PauseScanButton.IsEnabled = false;
-                ResumeScanButton.Visibility = Visibility.Collapsed;
+                HideWithVisualReset(ResumeScanButton);
                 StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Processing");
                 OnBackList(false);
-                HandleAllButton.Visibility = Visibility.Collapsed;
+                HideWithVisualReset(HandleAllButton);
                 StartRadar();
             });
 
@@ -2222,8 +2229,8 @@ namespace Xdows_Security.Views
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
-                        PauseScanButton.Visibility = Visibility.Collapsed;
-                        ResumeScanButton.Visibility = Visibility.Collapsed;
+                        HideWithVisualReset(PauseScanButton);
+                        HideWithVisualReset(ResumeScanButton);
                         StopRadar();
                         UpdateHandleAllButtonVisibility();
                     });
@@ -2237,9 +2244,9 @@ namespace Xdows_Security.Views
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanCancelled");
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
-                        ResumeScanButton.Visibility = Visibility.Collapsed;
+                        HideWithVisualReset(ResumeScanButton);
                         StopRadar();
-                        HandleAllButton.Visibility = Visibility.Collapsed;
+                        HideWithVisualReset(HandleAllButton);
                     });
                     ClearTaskbarProgress();
                 }
@@ -2252,10 +2259,10 @@ namespace Xdows_Security.Views
                         StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanFailed_Format"), ex.Message);
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
-                        PauseScanButton.Visibility = Visibility.Collapsed;
-                        ResumeScanButton.Visibility = Visibility.Collapsed;
+                        HideWithVisualReset(PauseScanButton);
+                        HideWithVisualReset(ResumeScanButton);
                         StopRadar();
-                        HandleAllButton.Visibility = Visibility.Collapsed;
+                        HideWithVisualReset(HandleAllButton);
                     });
                     ClearTaskbarProgress();
                 }
@@ -2277,7 +2284,7 @@ namespace Xdows_Security.Views
             }
             else
             {
-                VirusList.Visibility = Visibility.Collapsed;
+                HideWithVisualReset(VirusList);
             }
 
             BackToVirusListButtonText.Text = isShow ? Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Hide") : Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Show");
@@ -2289,7 +2296,7 @@ namespace Xdows_Security.Views
             _isPaused = true;
             _pauseEvent.Reset();
             ScanButton.IsEnabled = true;
-            PauseScanButton.Visibility = Visibility.Collapsed;
+            HideWithVisualReset(PauseScanButton);
             ShowWithEntranceAnimation(ResumeScanButton, "right");
             PauseRadar();
             ScanProgress.ShowPaused = true;
@@ -2319,7 +2326,7 @@ namespace Xdows_Security.Views
             _pauseEvent.Set();
             ScanButton.IsEnabled = false;
             ShowWithEntranceAnimation(PauseScanButton, "right");
-            ResumeScanButton.Visibility = Visibility.Collapsed;
+            HideWithVisualReset(ResumeScanButton);
             ResumeRadar();
             ScanProgress.ShowPaused = false;
 

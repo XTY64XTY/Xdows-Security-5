@@ -790,19 +790,22 @@ namespace Xdows_Security
                 "up" => new Vector3(0, amplitude, 0),
                 _ => new Vector3(0, amplitude, 0),
             };
-            Vector3 finalOffset = new(0, finalVerticalOffset, 0);
+            Vector3 layoutOffset = visual.Offset;
+            Vector3 finalTranslation = new(0, finalVerticalOffset, 0);
+            Vector3 startOffset = layoutOffset + directionOffset + finalTranslation;
+            Vector3 endOffset = layoutOffset + finalTranslation;
 
             visual.StopAnimation("Offset");
             visual.StopAnimation("Opacity");
             visual.Opacity = 0;
-            visual.Offset = directionOffset + finalOffset;
+            visual.Offset = startOffset;
 
             var easing = compositor.CreateCubicBezierEasingFunction(new Vector2(0, 0), new Vector2(0, 1));
             var delay = TimeSpan.FromMilliseconds(delayMs);
 
             var offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
             offsetAnimation.Target = "Offset";
-            offsetAnimation.InsertKeyFrame(1.0f, finalOffset, easing);
+            offsetAnimation.InsertKeyFrame(1.0f, endOffset, easing);
             offsetAnimation.Duration = TimeSpan.FromMilliseconds(400);
             offsetAnimation.DelayTime = delay;
 
@@ -817,10 +820,22 @@ namespace Xdows_Security
             visual.StartAnimation("Opacity", opacityAnimation);
             animationBatch.Completed += (_, _) =>
             {
-                visual.Offset = finalOffset;
+                visual.Offset = endOffset;
                 visual.Opacity = 1.0f;
             };
             animationBatch.End();
+        }
+
+        /// <summary>
+        /// 重置元素的视觉状态，停止所有正在运行的入场动画。
+        /// 仅停止动画并重置 Opacity，不修改 Offset；下次显示时由布局系统重新设置位置。
+        /// </summary>
+        public static void ResetElementVisualState(UIElement uIElement)
+        {
+            var visual = ElementCompositionPreview.GetElementVisual(uIElement);
+            visual.StopAnimation("Offset");
+            visual.StopAnimation("Opacity");
+            visual.Opacity = 1.0f;
         }
 
         public static NavigationTransitionInfo GetNavigationTransitionInfo()
