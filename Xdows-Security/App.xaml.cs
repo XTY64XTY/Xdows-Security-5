@@ -780,50 +780,78 @@ namespace Xdows_Security
         public static string OsVersion => RuntimeInformation.OSDescription;
         public static void PlayEntranceAnimation(UIElement uIElement, string kind, float finalVerticalOffset = 0f, int delayMs = 0)
         {
-            var visual = ElementCompositionPreview.GetElementVisual(uIElement);
-            var compositor = visual.Compositor;
             const float amplitude = 40f;
             Vector3 directionOffset = kind.ToLowerInvariant() switch
             {
                 "left" => new Vector3(-amplitude, 0, 0),
                 "right" => new Vector3(amplitude, 0, 0),
+                "fade" => Vector3.Zero,
                 "up" => new Vector3(0, amplitude, 0),
                 _ => new Vector3(0, amplitude, 0),
             };
-            Vector3 layoutOffset = visual.Offset;
-            Vector3 finalTranslation = new(0, finalVerticalOffset, 0);
-            Vector3 startOffset = layoutOffset + directionOffset + finalTranslation;
-            Vector3 endOffset = layoutOffset + finalTranslation;
 
-            visual.StopAnimation("Offset");
-            visual.StopAnimation("Opacity");
-            visual.Opacity = 0;
-            visual.Offset = startOffset;
-
-            var easing = compositor.CreateCubicBezierEasingFunction(new Vector2(0, 0), new Vector2(0, 1));
-            var delay = TimeSpan.FromMilliseconds(delayMs);
-
-            var offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
-            offsetAnimation.Target = "Offset";
-            offsetAnimation.InsertKeyFrame(1.0f, endOffset, easing);
-            offsetAnimation.Duration = TimeSpan.FromMilliseconds(400);
-            offsetAnimation.DelayTime = delay;
-
-            var opacityAnimation = compositor.CreateScalarKeyFrameAnimation();
-            opacityAnimation.Target = "Opacity";
-            opacityAnimation.InsertKeyFrame(1.0f, 1.0f, easing);
-            opacityAnimation.Duration = TimeSpan.FromMilliseconds(400);
-            opacityAnimation.DelayTime = delay;
-
-            var animationBatch = compositor.CreateScopedBatch(Microsoft.UI.Composition.CompositionBatchTypes.Animation);
-            visual.StartAnimation("Offset", offsetAnimation);
-            visual.StartAnimation("Opacity", opacityAnimation);
-            animationBatch.Completed += (_, _) =>
+            var transform = uIElement.RenderTransform as Microsoft.UI.Xaml.Media.TranslateTransform;
+            if (transform == null)
             {
-                visual.Offset = endOffset;
-                visual.Opacity = 1.0f;
+                transform = new Microsoft.UI.Xaml.Media.TranslateTransform();
+                uIElement.RenderTransform = transform;
+            }
+
+            double finalY = finalVerticalOffset;
+            double startX = directionOffset.X;
+            double startY = directionOffset.Y + finalY;
+            transform.X = startX;
+            transform.Y = startY;
+            uIElement.Opacity = 0;
+
+            var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+            var duration = new Duration(TimeSpan.FromMilliseconds(400));
+            var beginTime = TimeSpan.FromMilliseconds(delayMs);
+            var storyboard = new Storyboard();
+
+            var xAnimation = new DoubleAnimation
+            {
+                From = startX,
+                To = 0,
+                Duration = duration,
+                BeginTime = beginTime,
+                EasingFunction = easing
             };
-            animationBatch.End();
+            Storyboard.SetTarget(xAnimation, transform);
+            Storyboard.SetTargetProperty(xAnimation, nameof(Microsoft.UI.Xaml.Media.TranslateTransform.X));
+
+            var yAnimation = new DoubleAnimation
+            {
+                From = startY,
+                To = finalY,
+                Duration = duration,
+                BeginTime = beginTime,
+                EasingFunction = easing
+            };
+            Storyboard.SetTarget(yAnimation, transform);
+            Storyboard.SetTargetProperty(yAnimation, nameof(Microsoft.UI.Xaml.Media.TranslateTransform.Y));
+
+            var opacityAnimation = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = duration,
+                BeginTime = beginTime,
+                EasingFunction = easing
+            };
+            Storyboard.SetTarget(opacityAnimation, uIElement);
+            Storyboard.SetTargetProperty(opacityAnimation, nameof(UIElement.Opacity));
+
+            storyboard.Children.Add(xAnimation);
+            storyboard.Children.Add(yAnimation);
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Completed += (_, _) =>
+            {
+                transform.X = 0;
+                transform.Y = finalY;
+                uIElement.Opacity = 1.0;
+            };
+            storyboard.Begin();
         }
 
         /// <summary>
@@ -836,6 +864,13 @@ namespace Xdows_Security
             visual.StopAnimation("Offset");
             visual.StopAnimation("Opacity");
             visual.Opacity = 1.0f;
+            uIElement.Opacity = 1.0;
+
+            if (uIElement.RenderTransform is Microsoft.UI.Xaml.Media.TranslateTransform transform)
+            {
+                transform.X = 0;
+                transform.Y = 0;
+            }
         }
 
         public static NavigationTransitionInfo GetNavigationTransitionInfo()
