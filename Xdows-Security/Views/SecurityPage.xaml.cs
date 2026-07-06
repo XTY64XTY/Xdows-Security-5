@@ -183,7 +183,7 @@ namespace Xdows_Security.Views
         {
             if (BackToVirusListButton.Visibility != Visibility.Visible)
             {
-                ShowWithEntranceAnimation(BackToVirusListButton, "right");
+                ShowWithEntranceAnimation(BackToVirusListButton, "fade");
             }
             else
             {
@@ -783,7 +783,7 @@ namespace Xdows_Security.Views
                 {
                     if (HandleAllButton.Visibility != Visibility.Visible)
                     {
-                        ShowWithEntranceAnimation(HandleAllButton, "right");
+                        ShowWithEntranceAnimation(HandleAllButton, "fade");
                     }
                     else
                     {
@@ -2297,7 +2297,7 @@ namespace Xdows_Security.Views
             _pauseEvent.Reset();
             ScanButton.IsEnabled = true;
             HideWithVisualReset(PauseScanButton);
-            ShowWithEntranceAnimation(ResumeScanButton, "right");
+            ShowWithEntranceAnimation(ResumeScanButton, "fade");
             PauseRadar();
             ScanProgress.ShowPaused = true;
 
@@ -2325,7 +2325,7 @@ namespace Xdows_Security.Views
             _isPaused = false;
             _pauseEvent.Set();
             ScanButton.IsEnabled = false;
-            ShowWithEntranceAnimation(PauseScanButton, "right");
+            ShowWithEntranceAnimation(PauseScanButton, "fade");
             HideWithVisualReset(ResumeScanButton);
             ResumeRadar();
             ScanProgress.ShowPaused = false;

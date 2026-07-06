@@ -73,6 +73,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -177,11 +178,11 @@
                 </StackPanel>
             </local:InfoCard>
 
-            <TextBlock Name="PathText" l:Uids.Uid="SecurityPage_PathText" Grid.Row="4" Grid.Column="0" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,16"/>
+            <TextBlock Name="PathText" l:Uids.Uid="SecurityPage_PathText" Grid.Row="4" Grid.ColumnSpan="2" FontSize="16" VerticalAlignment="Center" Margin="0,0,0,8"/>
 
-            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,0,16">
+            <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,0,16">
                 <Button x:Name="BackToVirusListButton" Click="OnBackToVirusListClick" Visibility="Collapsed">
-                <StackPanel Orientation="Horizontal" Tag="Visible" Spacing="8">
+                    <StackPanel Orientation="Horizontal" Tag="Visible" Spacing="8">
                         <FontIcon x:Name="BackToVirusListButtonIcon" Glyph="&#xE890;"/>
                         <TextBlock x:Name="BackToVirusListButtonText" l:Uids.Uid="SecurityPage_BackToVirusListButtonText"/>
                     </StackPanel>
@@ -247,11 +248,11 @@
                 </SplitButton>
             </StackPanel>
 
-            <TextBlock Name="StatusText" Grid.Row="5" Margin="0,8,0,0" FontSize="14" TextWrapping="Wrap" Grid.ColumnSpan="2"/>
+            <TextBlock Name="StatusText" Grid.Row="6" Margin="0,8,0,0" FontSize="14" TextWrapping="Wrap" Grid.ColumnSpan="2"/>
 
             <ListView Name="VirusList" 
-          Grid.Row="6" 
-          Margin="-28,10,0,8" 
+          Grid.Row="7" 
+          Margin="0,10,0,8" 
           Visibility="Collapsed" 
           DoubleTapped="VirusList_DoubleTapped" 
           Grid.ColumnSpan="2"/>
