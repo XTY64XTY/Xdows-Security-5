@@ -1,0 +1,197 @@
+{
+  "version": 3,
+  "comment": "Xdows Security 病毒家族检测规则 v3 - 外部 JSON 驱动。可在程序运行目录放置同名文件覆盖内嵌默认规则。",
+  "signatures": [
+    {
+      "family": "RemcosRAT",
+      "detectionName": "Trojan-RAT/Remcos",
+      "patterns": [ "Remcos", "remcos", "Breaking-Security", "remcos_mutex" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "AsyncRAT",
+      "detectionName": "Trojan-RAT/AsyncRAT",
+      "patterns": [ "AsyncRAT", "asyncrat", "NYAN_x_CAT", "AsyncClient" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "DcRat",
+      "detectionName": "Trojan-RAT/DcRat",
+      "patterns": [ "DcRat", "dcrat", "qwqdanchun" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "NJRat",
+      "detectionName": "Trojan-RAT/NJRat",
+      "patterns": [ "NJrat", "njrat", "njw0rm" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "DarkComet",
+      "detectionName": "Trojan-RAT/DarkComet",
+      "patterns": [ "DarkComet", "darkcomet", "#KCMDDC" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "QuasarRAT",
+      "detectionName": "Trojan-RAT/Quasar",
+      "patterns": [ "QuasarRAT", "Quasar.Client", "xClient" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "NanoCoreRAT",
+      "detectionName": "Trojan-RAT/NanoCore",
+      "patterns": [ "NanoCore", "nanocore", "NanoCore.Client" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "CobaltStrike",
+      "detectionName": "Trojan-RAT/CobaltStrike",
+      "patterns": [ "cobaltstrike", "Cobalt Strike", "beacon", "Beacon" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "Metasploit",
+      "detectionName": "Exploit/Metasploit",
+      "patterns": [ "metasploit", "Metasploit", "meterpreter", "Meterpreter", "msfvenom", "reverse_tcp" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "WannaCry",
+      "detectionName": "Ransom/WannaCry",
+      "patterns": [ "WannaCry", "wannacry", "Wana Decrypt0r", "@Please_Read_Me@" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "Locky",
+      "detectionName": "Ransom/Locky",
+      "patterns": [ "Locky", ".locky", "_Locky_recover" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "Cerber",
+      "detectionName": "Ransom/Cerber",
+      "patterns": [ "Cerber", ".cerber", "_HELP_HELP_HELP" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "Ryuk",
+      "detectionName": "Ransom/Ryuk",
+      "patterns": [ "Ryuk", ".ryk", "RyukReadMe" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "Conti",
+      "detectionName": "Ransom/Conti",
+      "patterns": [ "Conti", "CONTi", ".conti" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "XMRig",
+      "detectionName": "Miner/XMRig",
+      "patterns": [ "xmrig", "XMRig", "stratum+tcp", "stratum+ssl", "cryptonight", "randomx" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "AgentTesla",
+      "detectionName": "Spy/AgentTesla",
+      "patterns": [ "AgentTesla", "agenttesla", "Agent Tesla" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "Formbook",
+      "detectionName": "Spy/Formbook",
+      "patterns": [ "Formbook", "formbook", "Xloader", "xloader" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "RedLine",
+      "detectionName": "Spy/RedLine",
+      "patterns": [ "RedLine", "redline", "RedLine Stealer" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "SilverFox",
+      "detectionName": "Trojan/SilverFox",
+      "patterns": [ "yinhu", "YinHu", "yinfox", "YinFox", "SilverFox", "silverfox", "\u94F6\u72D0", "svch0st", "csrsss", "lsasss" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "AVKill",
+      "detectionName": "HackTool/AVKill",
+      "patterns": [ "MsMpEng", "avp", "AvP", "AVP", "avast", "Avast", "AVAST", "360tray", "360sd", "360rp", "QQPCRTP", "QQProtect", "kxetray", "baidusd", "\u706B\u7ED2", "DisableAntiSpyware", "DisableAntiVirus", "taskkill", "TASKKILL", "/F /IM", "/f /im", "sc stop", "sc delete", "net stop", "reg delete" ],
+      "minMatches": 2,
+      "priority": 90
+    },
+    {
+      "family": "Rootkit",
+      "detectionName": "Rootkit/Generic",
+      "patterns": [ "rootkit", "Rootkit", "SSDT", "KiServiceTable", "DKOM", "hide process", "NtQuerySystemInformation", "PsSetCreateProcessNotifyRoutine" ],
+      "minMatches": 1,
+      "priority": 90
+    },
+    {
+      "family": "TDLRootkit",
+      "detectionName": "Rootkit/TDL",
+      "patterns": [ "TDL4", "tdl4", "Alureon", "alureon" ],
+      "minMatches": 1,
+      "priority": 100
+    },
+    {
+      "family": "MEMZ",
+      "detectionName": "Joke/MEMZ",
+      "patterns": [ "MEMZ", "memz", "Leurak", "Nyan Cat", "You are an idiot" ],
+      "minMatches": 1,
+      "priority": 100
+    }
+  ],
+  "silverfoxHeuristic": {
+    "enabled": true,
+    "maxSizeMb": 50,
+    "randomNameMinLen": 6,
+    "randomNameMaxLen": 16,
+    "minEntropy": 2.2,
+    "maxCharFrequency": 0.45,
+    "minLetters": 2,
+    "minDigits": 1,
+    "minProbability": 0.5,
+    "suspiciousPaths": [
+      "\\ProgramData\\",
+      "\\AppData\\Local\\Temp\\",
+      "\\AppData\\Roaming\\",
+      "\\AppData\\Local\\",
+      "\\Users\\Public\\",
+      "\\Windows\\Temp\\",
+      "\\$Recycle.Bin\\",
+      "\\ProgramData\\Microsoft\\Windows\\"
+    ],
+    "trustedPathKeywords": [ "leigod", "seewo", "mozilla", "nss", "firefox" ]
+  },
+  "avkillHeuristic": {
+    "enabled": true,
+    "minToolStringHits": 1,
+    "minTargetProcessHits": 2,
+    "toolStrings": [ "defendnot", "defender-disabler", "no-defender", "wsc_proxy", "defenderkiller", "windows security center" ],
+    "targetProcessesAscii": [ "msmpeng.exe", "360tray.exe", "360sd.exe", "qqpctray.exe", "qqpcrtp.exe", "qqprotect.exe", "kxetray.exe", "baidusd.exe", "avp.exe", "avguard.exe", "ekrn.exe", "ccsvchst.exe", "mcshield.exe", "ravmond.exe", "safedog.exe", "mssense.exe", "nissrv.exe", "securityhealthservice.exe", "mpcmdrun.exe", "savservice.exe", "mbamservice.exe" ],
+    "targetProcessesWide": [ "msmpeng.exe", "360tray.exe", "360sd.exe", "qqpctray.exe", "qqpcrtp.exe", "qqprotect.exe", "kxetray.exe", "baidusd.exe", "avp.exe", "avguard.exe", "ekrn.exe", "ccsvchst.exe", "mcshield.exe", "mssense.exe", "nissrv.exe", "mpcmdrun.exe", "savservice.exe", "mbamservice.exe" ]
+  }
+}
