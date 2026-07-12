@@ -13,6 +13,7 @@ $files = @{
     AppProject = Join-Path $repoRoot "Xdows-Security\Xdows-Security.csproj"
     DriverProject = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj"
     SelfProtect = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\SelfProtect.c"
+    ProcessProtect = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\ProcessProtect.c"
     NativeModel = Join-Path $codeRoot "Xdows-Model\Xdows-Model-Native\src\xdows_model_native.cpp"
 }
 
@@ -62,6 +63,7 @@ Assert-Match $files.DriverProject '<XdowsDriverPackageDirectory>\$\(OutDir\)\$\(
 Assert-Match $files.AppProject 'OutDir=\$\(XdowsDriverProjectOutput\)' 'isolated current driver build output'
 Assert-NotMatch $files.SelfProtect 'MainThreadId\s*==\s*0' 'zero main-thread rejection'
 Assert-Match $files.SelfProtect 'PsGetThreadProcessId' 'all guarded-process threads covered by self-protection'
+Assert-Match $files.ProcessProtect 'XDOWS_PROCESS_LAUNCH_VERDICT_TIMEOUT_MS\s+32000u' 'process verdict timeout aligned with the 30-second UI decision window'
 
 foreach ($culture in @('zh-HANS', 'zh-HANT', 'en-US')) {
     $resource = Join-Path $repoRoot "Xdows-Security\Strings\$culture\Resources.resw"
