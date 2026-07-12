@@ -10,6 +10,7 @@ $files = @{
     Normalizer = Join-Path $repoRoot "Protection\DriverPathNormalizer.cs"
     InterceptXaml = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml"
     InterceptCode = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml.cs"
+    AppCode = Join-Path $repoRoot "Xdows-Security\App.xaml.cs"
     AppProject = Join-Path $repoRoot "Xdows-Security\Xdows-Security.csproj"
     DriverProject = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj"
     SelfProtect = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\SelfProtect.c"
@@ -56,6 +57,7 @@ Assert-Match $files.Protection 'sensitive-op-fast-allow' 'non-blocking sensitive
 Assert-NotMatch $files.Protection 'private\s+Task<XdowsSecurityDecision>\s+HandleSensitiveOperationAsync(?s:.*?)SignerTrustService\.Evaluate' 'unused signature-chain work in sensitive-operation hot path'
 Assert-Match $files.Protection 'Connecting DriverBridgeClient(?s:.*?)RegisterProtectedProcess\(\)(?s:.*?)Creating NativeModelScanner' 'driver connection before model initialization'
 Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0' 'inactive process module startup rejection'
+Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'

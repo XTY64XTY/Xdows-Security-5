@@ -502,15 +502,7 @@ namespace Xdows_Security
                 }
 
                 StartPipeListener();
-
-                await InitializeLocalizer();
-                // 并行执行注册表/启动项检查，避免串行 IO 等待
-                await Task.WhenAll(
-                    Task.Run(() => Services.ContextMenuService.ValidateOnStartup()),
-                    Task.Run(() => EnsureDefaultStartup())
-                );
-                InitializeMainWindow();
-                // 异步启动防护（含驱动防护）以避免阻塞窗口启动
+                // 单实例确认后立即恢复防护，避免本地化和启动项检查期间出现驱动桥接空档。
                 _ = Task.Run(() =>
                 {
                     try
@@ -522,6 +514,14 @@ namespace Xdows_Security
                         LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Async restore protections failed: {ex.Message}");
                     }
                 });
+
+                await InitializeLocalizer();
+                // 并行执行注册表/启动项检查，避免串行 IO 等待
+                await Task.WhenAll(
+                    Task.Run(() => Services.ContextMenuService.ValidateOnStartup()),
+                    Task.Run(() => EnsureDefaultStartup())
+                );
+                InitializeMainWindow();
             }
             catch (Exception ex)
             {
