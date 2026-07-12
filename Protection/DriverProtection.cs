@@ -541,10 +541,11 @@ public sealed class DriverProtection : IProtectionModel
         return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
     }
 
-    private async Task<XdowsSecurityDecision> HandleSensitiveOperationAsync(
+    private Task<XdowsSecurityDecision> HandleSensitiveOperationAsync(
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
+        token.ThrowIfCancellationRequested();
         string actorPath = ResolveActorPath(driverEvent) ?? string.Empty;
         string targetPath = CleanDriverString(driverEvent.ImagePath);
         string cacheKey = $"{driverEvent.EventType}:{actorPath}:{targetPath}:{driverEvent.ProcessId}";
@@ -553,18 +554,15 @@ public sealed class DriverProtection : IProtectionModel
         if (DecisionCache.TryGetValue(cacheKey, out var cached) &&
             cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
-            return DriverBridgeClient.CreateDecision(driverEvent.EventId, cached.Decision, cached.Reason);
+            return Task.FromResult(DriverBridgeClient.CreateDecision(driverEvent.EventId, cached.Decision, cached.Reason));
         }
 
-        SignerTrustResult actorTrust = SignerTrustService.Evaluate(actorPath);
-        if (actorTrust.IsTrusted)
-        {
-            Cache(cacheKey, XdowsSecurityDecisionType.Allow, "trusted-actor", TimeSpan.FromMinutes(10));
-            return Allow(driverEvent.EventId, "trusted-actor", TimeSpan.FromMinutes(10));
-        }
-
-        Cache(cacheKey, XdowsSecurityDecisionType.Allow, "sensitive-op-allowed", TimeSpan.FromMinutes(5));
-        return Allow(driverEvent.EventId, "sensitive-op-allowed", TimeSpan.FromMinutes(5));
+        // The current policy allows both trusted and untrusted sensitive
+        // operations. Avoid expensive Authenticode chain construction here:
+        // it cannot change the verdict and regularly exceeds the driver's
+        // 500 ms synchronous consultation budget during handle-event floods.
+        Cache(cacheKey, XdowsSecurityDecisionType.Allow, "sensitive-op-fast-allow", TimeSpan.FromMinutes(5));
+        return Task.FromResult(Allow(driverEvent.EventId, "sensitive-op-fast-allow", TimeSpan.FromMinutes(5)));
     }
 
     private async Task<ProtectionUserDecision> AskUserForThreatDecisionAsync(

@@ -52,6 +52,8 @@ Assert-Match $files.Normalizer 'GetFileInformationByHandle' 'stable volume and f
 Assert-Match $files.Protection 'confirmed-threat-user-timeout-block' 'confirmed process threat timeout blocking'
 Assert-Match $files.Protection 'confirmed-file-threat-user-timeout-block' 'confirmed file threat timeout blocking'
 Assert-NotMatch $files.Protection 'Cache\(processCacheKey,\s*decisionType' 'cached user process-block decision'
+Assert-Match $files.Protection 'sensitive-op-fast-allow' 'non-blocking sensitive-operation allow path'
+Assert-NotMatch $files.Protection 'private\s+Task<XdowsSecurityDecision>\s+HandleSensitiveOperationAsync(?s:.*?)SignerTrustService\.Evaluate' 'unused signature-chain work in sensitive-operation hot path'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
