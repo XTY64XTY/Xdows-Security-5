@@ -46,7 +46,8 @@
 		<XdowsModelNativeOutput Condition="'$(XdowsModelNativeOutput)' == '' AND Exists('$(XdowsModelNativeSolutionOutput)\Xdows-Model-Native.dll')">$(XdowsModelNativeSolutionOutput)</XdowsModelNativeOutput>
 		<XdowsModelNativeOutput Condition="'$(XdowsModelNativeOutput)' == ''">$(XdowsModelNativeProjectOutput)</XdowsModelNativeOutput>
 		<XdowsDriverProject>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj</XdowsDriverProject>
-		<XdowsDriverProjectPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\Xdows-Security-Driver</XdowsDriverProjectPackageOutput>
+		<XdowsDriverProjectOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\</XdowsDriverProjectOutput>
+		<XdowsDriverProjectPackageOutput>$(XdowsDriverProjectOutput)Xdows-Security-Driver</XdowsDriverProjectPackageOutput>
 		<XdowsDriverPackageOutput>$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
 	</PropertyGroup>
 
@@ -130,8 +131,8 @@
 	<Target Name="BuildXdowsNativeAndDriverProjects" BeforeTargets="CollectXdowsDriverAndModelAssets" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
 		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(XdowsNativeConfiguration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
 		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(XdowsNativeConfiguration);Platform=$(Platform)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
-		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
-		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
+		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);OutDir=$(XdowsDriverProjectOutput);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
+		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);OutDir=$(XdowsDriverProjectOutput);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
 	</Target>
 
 	<Target Name="BuildXdowsRuntimeProjectReferences" BeforeTargets="ResolveReferences" Condition="'$(RuntimeIdentifier)' != '' AND '$(DesignTimeBuild)' != 'true'">
