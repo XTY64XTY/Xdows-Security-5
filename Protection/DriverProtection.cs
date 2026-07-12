@@ -431,7 +431,8 @@ public sealed class DriverProtection : IProtectionModel
             ? "confirmed-threat-user-timeout-block"
             : "user-block-threat";
 
-        Cache(processCacheKey, decisionType, reason, TimeSpan.FromMinutes(10));
+        // Do not cache an interactive block. Each later execution attempt must
+        // surface a fresh interception prompt instead of being blocked silently.
         return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
     }
 

@@ -50,6 +50,7 @@ Assert-Match $files.Protection 'DriverPathNormalizer\.Normalize' 'NT path normal
 Assert-Match $files.Normalizer 'GetFileInformationByHandle' 'stable volume and file identity cache key'
 Assert-Match $files.Protection 'confirmed-threat-user-timeout-block' 'confirmed process threat timeout blocking'
 Assert-Match $files.Protection 'confirmed-file-threat-user-timeout-block' 'confirmed file threat timeout blocking'
+Assert-NotMatch $files.Protection 'Cache\(processCacheKey,\s*decisionType' 'cached user process-block decision'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
