@@ -10,6 +10,8 @@ $files = @{
     Normalizer = Join-Path $repoRoot "Protection\DriverPathNormalizer.cs"
     InterceptXaml = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml"
     InterceptCode = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml.cs"
+    AppProject = Join-Path $repoRoot "Xdows-Security\Xdows-Security.csproj"
+    DriverProject = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj"
     NativeModel = Join-Path $codeRoot "Xdows-Model\Xdows-Model-Native\src\xdows_model_native.cpp"
 }
 
@@ -39,6 +41,8 @@ Assert-Match $files.Bridge 'Channel\.CreateBounded<XdowsSecurityEvent>' 'bounded
 Assert-NotMatch $files.Bridge 'Task\.Delay\(150' '150 ms polling delay'
 Assert-Match $files.Bridge 'Math\.Clamp\(Environment\.ProcessorCount\s*/\s*2,\s*2,\s*4\)' 'bounded worker count'
 Assert-NotMatch $files.Bridge '_\s*=\s*Task\.Run\(async' 'unbounded per-event Task.Run'
+Assert-Match $files.Bridge 'ErrorRevisionMismatch\s*=\s*1306' 'protocol mismatch repair signal'
+Assert-Match $files.Bridge 'state\.DriverBuildId\s*!=\s*DriverProtocol\.DriverBuildId' 'runtime build identity validation'
 Assert-Match $files.Protection 'ScanSingleFlightAsync' 'single-flight scanning'
 Assert-Match $files.Protection 'DecisionCache\.Count\s*>=\s*4096' 'bounded verdict cache'
 Assert-Match $files.Protection 'DriverPathNormalizer\.Normalize' 'NT path normalization'
@@ -49,6 +53,9 @@ Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|Correlatio
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
 Assert-NotMatch $files.NativeModel 'Xdows\.Model\.Native\.' 'native-only detection prefix'
+Assert-Match $files.DriverProject '<SignMode>Off</SignMode>' 'self-contained test-signing build mode'
+Assert-Match $files.DriverProject '<XdowsDriverPackageDirectory>\$\(OutDir\)\$\(TargetName\)</XdowsDriverPackageDirectory>' 'active driver output signing path'
+Assert-Match $files.AppProject 'OutDir=\$\(XdowsDriverProjectOutput\)' 'isolated current driver build output'
 
 foreach ($culture in @('zh-HANS', 'zh-HANT', 'en-US')) {
     $resource = Join-Path $repoRoot "Xdows-Security\Strings\$culture\Resources.resw"

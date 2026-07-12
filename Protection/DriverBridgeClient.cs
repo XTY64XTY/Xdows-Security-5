@@ -14,6 +14,7 @@ internal sealed class DriverBridgeClient : IDisposable
     private const uint OpenExisting = 3;
     private const uint FileAttributeNormal = 0x00000080;
     private const int ErrorNoMoreItems = 259;
+    internal const int ErrorRevisionMismatch = 1306;
 
     private SafeFileHandle? _handle;
     private uint _clientProcessId;
@@ -45,6 +46,12 @@ internal sealed class DriverBridgeClient : IDisposable
         {
             int error = Marshal.GetLastWin32Error();
             Disconnect();
+            if (error == ErrorRevisionMismatch)
+            {
+                throw new Win32Exception(
+                    error,
+                    $"Xdows Security driver protocol is outdated. Expected v{DriverProtocol.ProtocolVersion}/{DriverProtocol.DriverBuildId}; reinstall the packaged driver.");
+            }
             throw new Win32Exception(error, "Failed to register Xdows Security driver client.");
         }
 
@@ -191,6 +198,14 @@ internal sealed class DriverBridgeClient : IDisposable
             if (ok)
             {
                 state = Marshal.PtrToStructure<XdowsSecurityState>(outPtr);
+                if (state.Header.Size != (uint)outSize ||
+                    state.Header.Version != DriverProtocol.ProtocolVersion ||
+                    state.ProtocolVersion != DriverProtocol.ProtocolVersion ||
+                    state.DriverBuildId != DriverProtocol.DriverBuildId)
+                {
+                    win32Error = ErrorRevisionMismatch;
+                    return false;
+                }
                 return true;
             }
 

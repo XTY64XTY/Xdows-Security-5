@@ -15,7 +15,9 @@ public static class DriverInstaller
         return item.Id switch
         {
             "package" or "service" => InstallAndStartDriverAsync(token),
-            "communication" => RestartBridgeAsync(token),
+            "communication" => DriverProtection.QueryRuntimeStatus() == DriverProtectionRuntimeStatus.NeedsRepair
+                ? InstallAndStartDriverAsync(token)
+                : RestartBridgeAsync(token),
             "model" => CopyModelAssetsAsync(token),
             "testsigning" => ShowTestSigningPromptAsync(),
             "admin" => Task.FromResult(new DriverRepairResult(

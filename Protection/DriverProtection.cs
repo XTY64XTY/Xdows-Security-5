@@ -84,7 +84,7 @@ public sealed class DriverProtection : IProtectionModel
         return error switch
         {
             2 or 3 => DriverProtectionRuntimeStatus.NotInstalled,
-            5 => DriverProtectionRuntimeStatus.NeedsRepair,
+            5 or DriverBridgeClient.ErrorRevisionMismatch => DriverProtectionRuntimeStatus.NeedsRepair,
             _ => DriverProtectionRuntimeStatus.Error
         };
     }

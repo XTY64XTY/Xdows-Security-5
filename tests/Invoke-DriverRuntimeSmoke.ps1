@@ -9,6 +9,8 @@ $ErrorActionPreference = "Stop"
 $serviceName = "Xdows-Security-Driver"
 $devicePaths = @("\\.\XdowsSecurityDriver", "\\.\Global\XdowsSecurityDriver")
 $ioctlGetState = [Convert]::ToUInt32("80002014", 16)
+$expectedProtocolVersion = [uint32]2
+$expectedDriverBuildId = [uint64]2026071201
 
 function Test-IsAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -178,7 +180,7 @@ function Test-DriverBridge {
     }
 
     try {
-        $buffer = [byte[]]::new(32)
+        $buffer = [byte[]]::new(152)
         $bytesReturned = [uint32]0
         $ok = [XdowsDriverSmokeNative]::DeviceIoControl(
             $handle,
@@ -202,11 +204,15 @@ function Test-DriverBridge {
             Reachable = $true
             Win32Error = 0
             State = [pscustomobject]@{
+                HeaderSize = [BitConverter]::ToUInt32($buffer, 0)
+                HeaderVersion = [BitConverter]::ToUInt32($buffer, 4)
                 ClientConnected = [BitConverter]::ToUInt32($buffer, 8)
                 PendingEventCount = [BitConverter]::ToUInt32($buffer, 12)
                 DroppedEventCount = [BitConverter]::ToUInt32($buffer, 16)
                 ProcessProtectionEnabled = [BitConverter]::ToUInt32($buffer, 20)
                 ProtocolVersion = [BitConverter]::ToUInt32($buffer, 24)
+                Capabilities = [BitConverter]::ToUInt32($buffer, 28)
+                DriverBuildId = [BitConverter]::ToUInt64($buffer, 32)
             }
         }
     }
@@ -246,6 +252,11 @@ $lastBridge = $null
 for ($i = 0; $i -lt 20; $i++) {
     $lastBridge = Test-DriverBridge
     if ($lastBridge.Reachable) {
+        if ($lastBridge.State.HeaderVersion -ne $expectedProtocolVersion -or
+            $lastBridge.State.ProtocolVersion -ne $expectedProtocolVersion -or
+            $lastBridge.State.DriverBuildId -ne $expectedDriverBuildId) {
+            throw "Driver protocol/build mismatch. Expected v$expectedProtocolVersion/$expectedDriverBuildId, received header v$($lastBridge.State.HeaderVersion), state v$($lastBridge.State.ProtocolVersion)/$($lastBridge.State.DriverBuildId)."
+        }
         $lastBridge.State | Format-List
         Write-Host "Driver runtime smoke passed. Service started and bridge IOCTL succeeded."
         exit 0
