@@ -56,16 +56,16 @@
 
                     <Border Grid.Column="1" Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}" CornerRadius="{ThemeResource OverlayCornerRadius}" Padding="12" Margin="8,0,0,0" BorderThickness="1" BorderBrush="{ThemeResource SystemFillColorCriticalBrush}">
                         <StackPanel>
-                            <TextBlock x:Name="ThreatLevelLabelText" l:Uids.Uid="InterceptWindow_ThreatLevelLabel" FontSize="11"/>
-                            <TextBlock x:Name="ThreatLevelText" l:Uids.Uid="InterceptWindow_ThreatLevel_High" FontSize="13" FontWeight="SemiBold" Margin="0,3,0,0"/>
+                            <TextBlock x:Name="ThreatLevelLabelText" l:Uids.Uid="InterceptWindow_ThreatLevelLabel" Style="{StaticResource CaptionTextBlockStyle}"/>
+                            <TextBlock x:Name="ThreatLevelText" l:Uids.Uid="InterceptWindow_ThreatLevel_High" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>
                 </Grid>
 
                 <Border Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}" CornerRadius="{ThemeResource OverlayCornerRadius}" Padding="12" Margin="0,0,0,12" BorderThickness="1" BorderBrush="{ThemeResource SystemFillColorSuccessBrush}">
                     <StackPanel>
-                        <TextBlock x:Name="DetectionTimeLabelText" l:Uids.Uid="InterceptWindow_DetectionTimeLabel" FontSize="11" FontWeight="Medium"/>
-                        <TextBlock x:Name="DetectionTimeText" FontSize="13" Margin="0,3,0,0"/>
+                        <TextBlock x:Name="DetectionTimeLabelText" l:Uids.Uid="InterceptWindow_DetectionTimeLabel" Style="{StaticResource CaptionTextBlockStyle}"/>
+                        <TextBlock x:Name="DetectionTimeText" Margin="0,4,0,0"/>
                     </StackPanel>
                 </Border>
 
