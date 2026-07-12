@@ -12,6 +12,7 @@ $files = @{
     InterceptCode = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml.cs"
     AppProject = Join-Path $repoRoot "Xdows-Security\Xdows-Security.csproj"
     DriverProject = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj"
+    SelfProtect = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\SelfProtect.c"
     NativeModel = Join-Path $codeRoot "Xdows-Model\Xdows-Model-Native\src\xdows_model_native.cpp"
 }
 
@@ -56,6 +57,8 @@ Assert-NotMatch $files.NativeModel 'Xdows\.Model\.Native\.' 'native-only detecti
 Assert-Match $files.DriverProject '<SignMode>Off</SignMode>' 'self-contained test-signing build mode'
 Assert-Match $files.DriverProject '<XdowsDriverPackageDirectory>\$\(OutDir\)\$\(TargetName\)</XdowsDriverPackageDirectory>' 'active driver output signing path'
 Assert-Match $files.AppProject 'OutDir=\$\(XdowsDriverProjectOutput\)' 'isolated current driver build output'
+Assert-NotMatch $files.SelfProtect 'MainThreadId\s*==\s*0' 'zero main-thread rejection'
+Assert-Match $files.SelfProtect 'PsGetThreadProcessId' 'all guarded-process threads covered by self-protection'
 
 foreach ($culture in @('zh-HANS', 'zh-HANT', 'en-US')) {
     $resource = Join-Path $repoRoot "Xdows-Security\Strings\$culture\Resources.resw"
