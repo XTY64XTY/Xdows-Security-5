@@ -53,6 +53,8 @@ Assert-Match $files.Protection 'confirmed-file-threat-user-timeout-block' 'confi
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
+Assert-Match $files.InterceptCode '\.Replace\("\."\s*,\s*"\.\\u200B"' 'semantic detection-name wrapping opportunities'
+Assert-Match $files.InterceptXaml 'ThreatTypeText[^>]+TextWrapping="WrapWholeWords"' 'whole detection-name segment wrapping'
 Assert-NotMatch $files.NativeModel 'Xdows\.Model\.Native\.' 'native-only detection prefix'
 Assert-Match $files.DriverProject '<SignMode>Off</SignMode>' 'self-contained test-signing build mode'
 Assert-Match $files.DriverProject '<XdowsDriverPackageDirectory>\$\(OutDir\)\$\(TargetName\)</XdowsDriverPackageDirectory>' 'active driver output signing path'

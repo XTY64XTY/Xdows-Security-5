@@ -82,9 +82,10 @@ namespace Xdows_Security
 
         private static string NormalizeDetectionName(string? detectionName)
         {
-            return string.IsNullOrWhiteSpace(detectionName)
+            string normalized = string.IsNullOrWhiteSpace(detectionName)
                 ? "Xdows.Model.Threat"
                 : detectionName.Replace("Xdows.Model.Native.", "Xdows.Model.", StringComparison.Ordinal);
+            return normalized.Replace(".", ".\u200B", StringComparison.Ordinal);
         }
 
         private static string FormatProtectionModule(

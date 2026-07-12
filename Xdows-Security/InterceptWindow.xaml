@@ -50,7 +50,7 @@
                     <Border Grid.Column="0" Background="{ThemeResource SystemFillColorCautionBackgroundBrush}" CornerRadius="{ThemeResource OverlayCornerRadius}" Padding="12" Margin="0,0,8,0" BorderThickness="1" BorderBrush="{ThemeResource SystemFillColorCautionBrush}">
                         <StackPanel>
                             <TextBlock x:Name="ThreatTypeLabelText" l:Uids.Uid="InterceptWindow_ThreatTypeLabel" Style="{StaticResource CaptionTextBlockStyle}"/>
-                            <TextBlock x:Name="ThreatTypeText" l:Uids.Uid="InterceptWindow_ThreatType_Default" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="ThreatTypeText" l:Uids.Uid="InterceptWindow_ThreatType_Default" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0" TextWrapping="WrapWholeWords"/>
                         </StackPanel>
                     </Border>
 
