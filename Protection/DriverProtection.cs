@@ -118,15 +118,20 @@ public sealed class DriverProtection : IProtectionModel
                     return false;
                 }
 
-                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
-                _scanner = new NativeModelScanner(ModelMode);
-                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
                 _client = new DriverBridgeClient();
                 Log("Bridge", "Connecting DriverBridgeClient...");
                 _client.Connect();
                 XdowsSecurityState state = _client.GetState();
                 Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8}");
+                if (state.ProcessProtectionEnabled == 0)
+                {
+                    throw new InvalidOperationException("The driver process protection module is not active.");
+                }
+
                 _client.RegisterProtectedProcess();
+                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
+                _scanner = new NativeModelScanner(ModelMode);
+                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
                 DriverBridgeClient client = _client;
                 _pumpTask = Task.Run(() => client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
                 _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));

@@ -54,6 +54,8 @@ Assert-Match $files.Protection 'confirmed-file-threat-user-timeout-block' 'confi
 Assert-NotMatch $files.Protection 'Cache\(processCacheKey,\s*decisionType' 'cached user process-block decision'
 Assert-Match $files.Protection 'sensitive-op-fast-allow' 'non-blocking sensitive-operation allow path'
 Assert-NotMatch $files.Protection 'private\s+Task<XdowsSecurityDecision>\s+HandleSensitiveOperationAsync(?s:.*?)SignerTrustService\.Evaluate' 'unused signature-chain work in sensitive-operation hot path'
+Assert-Match $files.Protection 'Connecting DriverBridgeClient(?s:.*?)RegisterProtectedProcess\(\)(?s:.*?)Creating NativeModelScanner' 'driver connection before model initialization'
+Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0' 'inactive process module startup rejection'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
