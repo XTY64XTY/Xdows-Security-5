@@ -4,8 +4,16 @@ namespace Protection
 {
     public static class CallBack
     {
-        public delegate void InterceptCallBack(bool isSucceed, string path, string type);
+        public delegate void InterceptCallBack(ProtectionInterceptEvent interceptEvent);
     }
+
+    public sealed record ProtectionInterceptEvent(
+        string Path,
+        bool IsSucceed,
+        string DetectionName,
+        double Probability,
+        Helper.ProtectionModule Module,
+        Helper.ProtectionBackend Backend);
 
     public enum ProtectionUserDecision
     {
@@ -26,7 +34,9 @@ namespace Protection
         string? ActorTrust = null,
         ulong CorrelationId = 0,
         string? ActorDetectionName = null,
-        double ActorProbability = 0);
+        double ActorProbability = 0,
+        Helper.ProtectionModule Module = Helper.ProtectionModule.Unknown,
+        Helper.ProtectionBackend Backend = Helper.ProtectionBackend.Driver);
 
     public interface IProtectionModel
     {

@@ -47,10 +47,7 @@
 		<XdowsModelNativeOutput Condition="'$(XdowsModelNativeOutput)' == ''">$(XdowsModelNativeProjectOutput)</XdowsModelNativeOutput>
 		<XdowsDriverProject>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj</XdowsDriverProject>
 		<XdowsDriverProjectPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\Xdows-Security-Driver</XdowsDriverProjectPackageOutput>
-		<XdowsDriverSolutionPackageOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\Xdows-Security-Driver</XdowsDriverSolutionPackageOutput>
-		<XdowsDriverPackageOutput Condition="Exists('$(XdowsDriverProjectPackageOutput)\Xdows-Security-Driver.inf')">$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
-		<XdowsDriverPackageOutput Condition="'$(XdowsDriverPackageOutput)' == '' AND Exists('$(XdowsDriverSolutionPackageOutput)\Xdows-Security-Driver.inf')">$(XdowsDriverSolutionPackageOutput)</XdowsDriverPackageOutput>
-		<XdowsDriverPackageOutput Condition="'$(XdowsDriverPackageOutput)' == ''">$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
+		<XdowsDriverPackageOutput>$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -169,6 +166,22 @@
 		<Copy SourceFiles="@(XdowsNativeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFiles="@(XdowsDriverFiles->'$(OutDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+	</Target>
+
+	<Target Name="VerifyPackagedXdowsDriver" AfterTargets="CollectXdowsDriverAndModelAssets"
+		Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys') AND Exists('$(OutDir)Driver\Xdows-Security-Driver.sys')">
+		<GetFileHash Files="$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys">
+			<Output TaskParameter="Items" ItemName="XdowsSourceDriverHash" />
+		</GetFileHash>
+		<GetFileHash Files="$(OutDir)Driver\Xdows-Security-Driver.sys">
+			<Output TaskParameter="Items" ItemName="XdowsPackagedDriverHash" />
+		</GetFileHash>
+		<PropertyGroup>
+			<XdowsSourceDriverHashValue>%(XdowsSourceDriverHash.FileHash)</XdowsSourceDriverHashValue>
+			<XdowsPackagedDriverHashValue>%(XdowsPackagedDriverHash.FileHash)</XdowsPackagedDriverHashValue>
+		</PropertyGroup>
+		<Error Condition="'$(XdowsSourceDriverHashValue)' != '$(XdowsPackagedDriverHashValue)'"
+			Text="Packaged Xdows Security driver hash does not match the current driver build output." />
 	</Target>
 
 	<Target Name="AddXdowsDriverAndModelAssetsToPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">

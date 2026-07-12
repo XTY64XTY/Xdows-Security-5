@@ -4,7 +4,9 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 1;
+    public const uint ProtocolVersion = 2;
+    public const ulong DriverBuildId = 2026071201;
+    public const int EventTypeCount = 9;
     public const int MaxPathChars = 520;
     public const int MaxCommandChars = 1024;
     public const int MaxReasonChars = 128;
@@ -106,7 +108,8 @@ internal struct XdowsRegisterResponse
     public uint Status;
     public uint ProtocolVersion;
     public uint DefaultKernelWaitTimeoutMs;
-    public uint Reserved;
+    public uint Capabilities;
+    public ulong DriverBuildId;
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.TokenChars + 1)]
     public string ShutdownToken;
@@ -168,7 +171,17 @@ internal struct XdowsSecurityState
     public uint DroppedEventCount;
     public uint ProcessProtectionEnabled;
     public uint ProtocolVersion;
-    public uint Reserved;
+    public uint Capabilities;
+    public ulong DriverBuildId;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.EventTypeCount)]
+    public uint[] ReceivedByType;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.EventTypeCount)]
+    public uint[] DroppedByType;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.EventTypeCount)]
+    public uint[] TimedOutByType;
 }
 
 [StructLayout(LayoutKind.Sequential)]

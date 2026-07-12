@@ -60,7 +60,7 @@ public sealed class NativeModelScanner : IDisposable
             try
             {
                 int status = XdowsModelNativeScanFile(_session, path, out XdowsNativeScanResult nativeResult);
-                string detectionName = PtrToStringAndFree(nativeResult.DetectionName);
+                string detectionName = NormalizeDetectionName(PtrToStringAndFree(nativeResult.DetectionName));
                 string? error = PtrToStringAndFree(nativeResult.ErrorMessage);
 
                 if (status == 0 && nativeResult.Status == 0)
@@ -166,6 +166,11 @@ public sealed class NativeModelScanner : IDisposable
             {
             }
         }
+    }
+
+    private static string NormalizeDetectionName(string detectionName)
+    {
+        return detectionName.Replace("Xdows.Model.Native.", "Xdows.Model.", StringComparison.Ordinal);
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using TrustQuarantine;
+using Helper;
 using static Protection.CallBack;
 
 namespace Protection
@@ -106,11 +107,23 @@ namespace Protection
                                         using var proc = Process.GetProcessById(pid);
                                         proc.Kill();
                                         _ = QuarantineManager.AddToQuarantine(path, result);
-                                        interceptCallBack(true, path, Name);
+                                        interceptCallBack(new ProtectionInterceptEvent(
+                                            path,
+                                            true,
+                                            result,
+                                            0,
+                                            ProtectionModule.Process,
+                                            ProtectionBackend.Compatibility));
                                     }
                                     catch (Exception)
                                     {
-                                        interceptCallBack(false, path, Name);
+                                        interceptCallBack(new ProtectionInterceptEvent(
+                                            path,
+                                            false,
+                                            result,
+                                            0,
+                                            ProtectionModule.Process,
+                                            ProtectionBackend.Compatibility));
                                     }
                                 }
                             }

@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.IO;
+using System.Globalization;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using Helper;
@@ -12,6 +13,8 @@ namespace Xdows_Security
     public sealed partial class InterceptWindow : Window
     {
         private readonly string? _originalFilePath;
+        private readonly Helper.ProtectionModule _protectionModule;
+        private readonly Helper.ProtectionBackend _protectionBackend;
         public string? ButtonPressedName { get; private set; }
 
         public static async Task<string> ShowOrActivate(InterceptWindowSetting interceptWindowSetting)
@@ -38,6 +41,8 @@ namespace Xdows_Security
             manager.IsAlwaysOnTop = true;
             this.SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
             _originalFilePath = setting.Path;
+            _protectionModule = setting.Module;
+            _protectionBackend = setting.Backend;
 
             RootPanel.Loaded += (_, _) =>
             {
@@ -51,22 +56,13 @@ namespace Xdows_Security
             WinUI3Localizer.Localizer.Get().LanguageChanged += (sender, e) =>
             {
                 ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
+                ProtectionModuleText.Text = FormatProtectionModule(_protectionModule, _protectionBackend);
             };
             ProgramNameText.Text = Path.GetFileName(_originalFilePath);
             FilePathText.Text = _originalFilePath;
-            DetectionTimeText.Text = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            ThreatTypeText.Text = string.IsNullOrWhiteSpace(setting.ProtectionType)
-                ? ThreatTypeText.Text
-                : setting.ProtectionType;
-            DetectionNameText.Text = string.IsNullOrWhiteSpace(setting.DetectionName)
-                ? string.Empty
-                : $"{setting.DetectionName}  {setting.Probability:F2}%";
-            ActorPathText.Text = string.IsNullOrWhiteSpace(setting.ActorPath)
-                ? string.Empty
-                : $"Actor: {setting.ActorPath} ({setting.ActorTrust ?? "unknown"})";
-            CorrelationText.Text = setting.CorrelationId == 0
-                ? string.Empty
-                : $"Correlation: {setting.CorrelationId}";
+            DetectionTimeText.Text = DateTime.Now.ToString("G", CultureInfo.CurrentCulture);
+            ThreatTypeText.Text = NormalizeDetectionName(setting.DetectionName);
+            ProtectionModuleText.Text = FormatProtectionModule(_protectionModule, _protectionBackend);
             ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
             if (setting.InterceptWindowButtonType == InterceptWindowButtonType.RestoreOrTrust)
             {
@@ -82,6 +78,34 @@ namespace Xdows_Security
             }
             PositionWindowAtBottomRight();
             App.PlayEntranceAnimation(RootPanel, "right");
+        }
+
+        private static string NormalizeDetectionName(string? detectionName)
+        {
+            return string.IsNullOrWhiteSpace(detectionName)
+                ? "Xdows.Model.Threat"
+                : detectionName.Replace("Xdows.Model.Native.", "Xdows.Model.", StringComparison.Ordinal);
+        }
+
+        private static string FormatProtectionModule(
+            Helper.ProtectionModule module,
+            Helper.ProtectionBackend backend)
+        {
+            var localizer = WinUI3Localizer.Localizer.Get();
+            string moduleKey = module switch
+            {
+                Helper.ProtectionModule.Process => "InterceptWindow_Module_Process",
+                Helper.ProtectionModule.File => "InterceptWindow_Module_File",
+                Helper.ProtectionModule.Injection => "InterceptWindow_Module_Injection",
+                Helper.ProtectionModule.Behavior => "InterceptWindow_Module_Behavior",
+                Helper.ProtectionModule.SelfProtection => "InterceptWindow_Module_SelfProtection",
+                _ => "InterceptWindow_Module_Unknown"
+            };
+            string backendKey = backend == Helper.ProtectionBackend.Driver
+                ? "InterceptWindow_Backend_Driver"
+                : "InterceptWindow_Backend_Compatibility";
+            string format = localizer.GetLocalizedString("InterceptWindow_ProtectionModule_Format");
+            return string.Format(CultureInfo.CurrentCulture, format, localizer.GetLocalizedString(moduleKey), localizer.GetLocalizedString(backendKey));
         }
 
         private void UpdateWindowHeightAndPosition()

@@ -1348,6 +1348,16 @@
   <data name="InterceptWindow_SecurityAdviceText.Text" xml:space="preserve">
     <value>建議立即隔離該文件，防止惡意程序繼續運行</value>
   </data>
+  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve"><value>防護模組</value></data>
+  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve"><value>{0} - {1}</value></data>
+  <data name="InterceptWindow_Module_Process" xml:space="preserve"><value>程序防護</value></data>
+  <data name="InterceptWindow_Module_File" xml:space="preserve"><value>文件防護</value></data>
+  <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>注入防護</value></data>
+  <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>行為防護</value></data>
+  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>自我防護</value></data>
+  <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>即時防護</value></data>
+  <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>驅動模式</value></data>
+  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve"><value>兼容模式</value></data>
   <data name="InterceptWindow_TrustButton.Content" xml:space="preserve">
     <value>恢復並信任</value>
   </data>

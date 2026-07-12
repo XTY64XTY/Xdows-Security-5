@@ -1,6 +1,7 @@
 using Microsoft.Win32.SafeHandles;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Threading.Channels;
 
 namespace Protection;
 
@@ -47,6 +48,15 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new Win32Exception(error, "Failed to register Xdows Security driver client.");
         }
 
+        if (response.ProtocolVersion != DriverProtocol.ProtocolVersion ||
+            response.DriverBuildId != DriverProtocol.DriverBuildId)
+        {
+            Disconnect();
+            throw new InvalidOperationException(
+                $"Driver protocol/build mismatch. Expected v{DriverProtocol.ProtocolVersion}/{DriverProtocol.DriverBuildId}, " +
+                $"received v{response.ProtocolVersion}/{response.DriverBuildId}.");
+        }
+
         _shutdownToken.Capture(response.ShutdownToken);
     }
 
@@ -60,6 +70,17 @@ internal sealed class DriverBridgeClient : IDisposable
         using var heartbeatCts = CancellationTokenSource.CreateLinkedTokenSource(token);
         Task heartbeatTask = Task.Run(() => HeartbeatLoopAsync(heartbeatCts.Token), heartbeatCts.Token);
 
+        int workerCount = Math.Clamp(Environment.ProcessorCount / 2, 2, 4);
+        var channel = Channel.CreateBounded<XdowsSecurityEvent>(new BoundedChannelOptions(256)
+        {
+            SingleWriter = true,
+            SingleReader = false,
+            FullMode = BoundedChannelFullMode.Wait
+        });
+        Task[] workers = Enumerable.Range(0, workerCount)
+            .Select(_ => RunDecisionWorkerAsync(channel.Reader, handler, token))
+            .ToArray();
+
         try
         {
             while (!token.IsCancellationRequested)
@@ -67,42 +88,56 @@ internal sealed class DriverBridgeClient : IDisposable
                 XdowsSecurityEvent? nextEvent = TryGetNextEvent();
                 if (nextEvent is null)
                 {
-                    await Task.Delay(150, token).ConfigureAwait(false);
                     continue;
                 }
-
-                _ = Task.Run(async () =>
-                {
-                    XdowsSecurityDecision decision;
-                    try
-                    {
-                        decision = await handler(nextEvent.Value, token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        decision = CreateDecision(nextEvent.Value.EventId, XdowsSecurityDecisionType.Timeout, "bridge-cancelled");
-                    }
-                    catch (Exception ex)
-                    {
-                        decision = CreateDecision(nextEvent.Value.EventId, XdowsSecurityDecisionType.Allow, "bridge-error:" + ex.GetType().Name);
-                    }
-
-                    try
-                    {
-                        SubmitDecision(decision);
-                    }
-                    catch
-                    {
-                    }
-                }, token);
+                await channel.Writer.WriteAsync(nextEvent.Value, token).ConfigureAwait(false);
             }
         }
         finally
         {
+            channel.Writer.TryComplete();
+            try
+            {
+                await Task.WhenAll(workers).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
             heartbeatCts.Cancel();
             try
             {
                 await heartbeatTask.ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+        }
+    }
+
+    private async Task RunDecisionWorkerAsync(
+        ChannelReader<XdowsSecurityEvent> reader,
+        Func<XdowsSecurityEvent, CancellationToken, Task<XdowsSecurityDecision>> handler,
+        CancellationToken token)
+    {
+        await foreach (XdowsSecurityEvent driverEvent in reader.ReadAllAsync(token).ConfigureAwait(false))
+        {
+            XdowsSecurityDecision decision;
+            try
+            {
+                decision = await handler(driverEvent, token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                decision = CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Timeout, "bridge-cancelled");
+            }
+            catch (Exception ex)
+            {
+                decision = CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Allow, "bridge-error:" + ex.GetType().Name);
+            }
+
+            try
+            {
+                SubmitDecision(decision);
             }
             catch
             {

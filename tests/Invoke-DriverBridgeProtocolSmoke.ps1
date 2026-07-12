@@ -54,7 +54,7 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 1 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
@@ -62,6 +62,10 @@ $constants = @(
     @{ C = "XDOWS_SECURITY_MAX_LOG_MODULE_CHARS"; Cs = "MaxLogModuleChars"; Expected = 32 },
     @{ C = "XDOWS_SECURITY_MAX_LOG_MESSAGE_CHARS"; Cs = "MaxLogMessageChars"; Expected = 256 }
 )
+
+$cBuildId = Read-Number $publicText "#define\s+XDOWS_SECURITY_DRIVER_BUILD_ID\s+([0-9]+)ULL" "XDOWS_SECURITY_DRIVER_BUILD_ID"
+$csBuildId = Read-Number $protocolText "public\s+const\s+ulong\s+DriverBuildId\s+=\s+([0-9]+);" "DriverBuildId"
+Assert-Equal $cBuildId $csBuildId "Driver build ID"
 
 foreach ($constant in $constants) {
     $cValue = Read-Number $publicText "#define\s+$($constant.C)\s+([0-9]+)u?" $constant.C

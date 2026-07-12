@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using TrustQuarantine;
+using Helper;
 using static Protection.CallBack;
 
 namespace Protection;
@@ -45,7 +47,9 @@ public sealed class DriverProtection : IProtectionModel
     // concurrent slots the limiter was exhausted by the FileCreate flood
     // (3357 events in 2 minutes), causing unrelated events to queue until
     // the 5s kernel timeout fired and blocked them.
-    private static readonly SemaphoreSlim ScanLimiter = new(16, 16);
+    private static readonly int ScanWorkerCount = Math.Clamp(Environment.ProcessorCount / 2, 2, 4);
+    private static readonly SemaphoreSlim ScanLimiter = new(ScanWorkerCount, ScanWorkerCount);
+    private static readonly ConcurrentDictionary<string, Lazy<Task<NativeModelScannerResult>>> InFlightScans = new(StringComparer.OrdinalIgnoreCase);
 
     private CancellationTokenSource? _cts;
     private Task? _pumpTask;
@@ -120,7 +124,8 @@ public sealed class DriverProtection : IProtectionModel
                 _client = new DriverBridgeClient();
                 Log("Bridge", "Connecting DriverBridgeClient...");
                 _client.Connect();
-                Log("Bridge", "DriverBridgeClient connected");
+                XdowsSecurityState state = _client.GetState();
+                Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8}");
                 _client.RegisterProtectedProcess();
                 DriverBridgeClient client = _client;
                 _pumpTask = Task.Run(() => client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
@@ -128,8 +133,24 @@ public sealed class DriverProtection : IProtectionModel
                 Log("Bridge", "Event pump and log pump started");
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Log("Bridge", $"Driver protection start failed: {ex}");
+                try
+                {
+                    if (DriverBridgeClient.TryQueryStateWithoutRegister(out var driverState, out _))
+                    {
+                        Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
+                    }
+                    else
+                    {
+                        Log("Bridge", "Unable to query runtime driver state after connection failure.");
+                    }
+                }
+                catch (Exception diagEx)
+                {
+                    Log("Bridge", $"State query after failure also failed: {diagEx.Message}");
+                }
                 CleanupLocked();
                 return false;
             }
@@ -287,7 +308,6 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
-        Log("Event", $"Received: id={driverEvent.EventId} type={(XdowsSecurityEventType)driverEvent.EventType} pid={driverEvent.ProcessId} image={CleanDriverString(driverEvent.ImagePath)}");
         return (XdowsSecurityEventType)driverEvent.EventType switch
         {
             XdowsSecurityEventType.ProcessCreate => await HandleProcessCreateAsync(driverEvent, token).ConfigureAwait(false),
@@ -305,7 +325,7 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
-        string imagePath = CleanDriverString(driverEvent.ImagePath);
+        string imagePath = DriverPathNormalizer.Normalize(CleanDriverString(driverEvent.ImagePath));
         string commandLine = CleanDriverString(driverEvent.CommandLine);
 
         if (string.IsNullOrWhiteSpace(imagePath))
@@ -315,8 +335,9 @@ public sealed class DriverProtection : IProtectionModel
             return Allow(driverEvent.EventId, "trusted-path", TimeSpan.FromMinutes(10));
 
         CleanupDecisionCache();
+        string processCacheKey = BuildDecisionCacheKey("process", imagePath);
 
-        if (DecisionCache.TryGetValue(imagePath, out var cached) &&
+        if (DecisionCache.TryGetValue(processCacheKey, out var cached) &&
             cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
             return DriverBridgeClient.CreateDecision(driverEvent.EventId, cached.Decision, cached.Reason);
@@ -328,16 +349,16 @@ public sealed class DriverProtection : IProtectionModel
         {
             // F3: Re-check cache after acquiring limiter; another thread may have
             // scanned the same image while we were queued.
-            if (DecisionCache.TryGetValue(imagePath, out var cachedAfterWait) &&
+            if (DecisionCache.TryGetValue(processCacheKey, out var cachedAfterWait) &&
                 cachedAfterWait.ExpiresAt > DateTimeOffset.UtcNow)
             {
                 return DriverBridgeClient.CreateDecision(driverEvent.EventId, cachedAfterWait.Decision, cachedAfterWait.Reason);
             }
 
-            NativeModelScanner scanner = _scanner ?? new NativeModelScanner(ModelMode);
             Log("Scan", $"ProcessCreate scanning: {imagePath}");
-            scan = scanner.ScanFile(imagePath);
-            Log("Scan", $"ProcessCreate result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine}");
+            long scanStarted = Stopwatch.GetTimestamp();
+            scan = await ScanSingleFlightAsync(imagePath, token).ConfigureAwait(false);
+            Log("Scan", $"ProcessCreate result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine} ElapsedMs={Stopwatch.GetElapsedTime(scanStarted).TotalMilliseconds:F1}");
         }
         finally
         {
@@ -370,22 +391,22 @@ public sealed class DriverProtection : IProtectionModel
 
             if (errorDecision == ProtectionUserDecision.Allow)
             {
-                Cache(imagePath, XdowsSecurityDecisionType.Allow, "user-release-model-error", TimeSpan.FromMinutes(5));
+                Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "user-release-model-error", TimeSpan.FromMinutes(5));
                 return Allow(driverEvent.EventId, "user-release-model-error");
             }
             if (errorDecision == ProtectionUserDecision.Timeout)
             {
-                Cache(imagePath, XdowsSecurityDecisionType.Allow, "model-error-timeout-allow", TimeSpan.FromSeconds(30));
+                Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "model-error-timeout-allow", TimeSpan.FromSeconds(30));
                 return Allow(driverEvent.EventId, "model-error-timeout-allow");
             }
 
-            Cache(imagePath, XdowsSecurityDecisionType.Block, "user-block-model-error", TimeSpan.FromSeconds(10));
+            Cache(processCacheKey, XdowsSecurityDecisionType.Block, "user-block-model-error", TimeSpan.FromSeconds(10));
             return DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Block, "user-block-model-error");
         }
 
         if (!scan.IsThreat)
         {
-            Cache(imagePath, XdowsSecurityDecisionType.Allow, "model-safe", TimeSpan.FromMinutes(1));
+            Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "model-safe", TimeSpan.FromMinutes(10));
             return Allow(driverEvent.EventId, "model-safe", TimeSpan.FromMinutes(1));
         }
 
@@ -401,18 +422,16 @@ public sealed class DriverProtection : IProtectionModel
 
         if (userDecision == ProtectionUserDecision.Allow)
         {
-            Cache(imagePath, XdowsSecurityDecisionType.Allow, "user-release", TimeSpan.FromMinutes(5));
+            Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "user-release", TimeSpan.FromMinutes(5));
             return Allow(driverEvent.EventId, "user-release", TimeSpan.FromMinutes(5));
         }
 
-        XdowsSecurityDecisionType decisionType = userDecision == ProtectionUserDecision.Timeout
-            ? XdowsSecurityDecisionType.Timeout
-            : XdowsSecurityDecisionType.Block;
+        XdowsSecurityDecisionType decisionType = XdowsSecurityDecisionType.Block;
         string reason = userDecision == ProtectionUserDecision.Timeout
-            ? "user-timeout-threat"
+            ? "confirmed-threat-user-timeout-block"
             : "user-block-threat";
 
-        Cache(imagePath, decisionType, reason, TimeSpan.FromSeconds(10));
+        Cache(processCacheKey, decisionType, reason, TimeSpan.FromMinutes(10));
         return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
     }
 
@@ -420,7 +439,7 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
-        string filePath = CleanDriverString(driverEvent.ImagePath);
+        string filePath = DriverPathNormalizer.Normalize(CleanDriverString(driverEvent.ImagePath));
         if (string.IsNullOrWhiteSpace(filePath))
             return Allow(driverEvent.EventId, "empty-file-path");
 
@@ -430,7 +449,7 @@ public sealed class DriverProtection : IProtectionModel
         if (TrustManager.IsPathTrusted(filePath))
             return Allow(driverEvent.EventId, "trusted-file", TimeSpan.FromMinutes(10));
 
-        string cacheKey = $"{driverEvent.EventType}:{filePath}";
+        string cacheKey = BuildDecisionCacheKey(driverEvent.EventType.ToString(), filePath);
         CleanupDecisionCache();
         if (DecisionCache.TryGetValue(cacheKey, out var cached) &&
             cached.ExpiresAt > DateTimeOffset.UtcNow)
@@ -453,10 +472,10 @@ public sealed class DriverProtection : IProtectionModel
                 return DriverBridgeClient.CreateDecision(driverEvent.EventId, cachedAfterWait.Decision, cachedAfterWait.Reason);
             }
 
-            NativeModelScanner scanner = _scanner ?? new NativeModelScanner(ModelMode);
             Log("Scan", $"FileEvent scanning: {filePath}");
-            scan = scanner.ScanFile(filePath);
-            Log("Scan", $"FileEvent result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine}");
+            long scanStarted = Stopwatch.GetTimestamp();
+            scan = await ScanSingleFlightAsync(filePath, token).ConfigureAwait(false);
+            Log("Scan", $"FileEvent result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine} ElapsedMs={Stopwatch.GetElapsedTime(scanStarted).TotalMilliseconds:F1}");
 
             if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
             {
@@ -466,7 +485,7 @@ public sealed class DriverProtection : IProtectionModel
 
             if (!scan.IsThreat)
             {
-                Cache(cacheKey, XdowsSecurityDecisionType.Allow, "model-safe", TimeSpan.FromMinutes(1));
+                Cache(cacheKey, XdowsSecurityDecisionType.Allow, "model-safe", TimeSpan.FromMinutes(10));
                 return Allow(driverEvent.EventId, "model-safe", TimeSpan.FromMinutes(1));
             }
 
@@ -479,7 +498,7 @@ public sealed class DriverProtection : IProtectionModel
                 !string.Equals(actorPath, filePath, StringComparison.OrdinalIgnoreCase))
             {
                 Log("Scan", $"SensitiveOp scanning actor: {actorPath}");
-                actorScan = scanner.ScanFile(actorPath);
+                actorScan = await ScanSingleFlightAsync(actorPath, token).ConfigureAwait(false);
                 Log("Scan", $"SensitiveOp actor result: IsThreat={actorScan.IsThreat} Prob={actorScan.Probability} Error={actorScan.ErrorMessage ?? "(none)"} Native={actorScan.UsedNativeEngine}");
             }
         }
@@ -512,11 +531,9 @@ public sealed class DriverProtection : IProtectionModel
             : scan.DetectionName;
         _ = QuarantineManager.AddToQuarantine(filePath, detectionName);
 
-        XdowsSecurityDecisionType decisionType = userDecision == ProtectionUserDecision.Timeout
-            ? XdowsSecurityDecisionType.Timeout
-            : XdowsSecurityDecisionType.Block;
+        XdowsSecurityDecisionType decisionType = XdowsSecurityDecisionType.Block;
         string reason = userDecision == ProtectionUserDecision.Timeout
-            ? "user-timeout-file-threat"
+            ? "confirmed-file-threat-user-timeout-block"
             : "user-block-file-threat";
 
         Cache(cacheKey, decisionType, reason, TimeSpan.FromSeconds(10));
@@ -572,7 +589,9 @@ public sealed class DriverProtection : IProtectionModel
             actorTrust?.Reason,
             driverEvent.CorrelationId,
             actorScan?.DetectionName,
-            actorScan?.Probability ?? 0);
+            actorScan?.Probability ?? 0,
+            DriverEventTypeToModule((XdowsSecurityEventType)driverEvent.EventType),
+            ProtectionBackend.Driver);
 
         if (DecisionCallback is not null)
         {
@@ -582,7 +601,13 @@ public sealed class DriverProtection : IProtectionModel
                 token).ConfigureAwait(false);
         }
 
-        _interceptCallBack?.Invoke(true, imagePath, protectionType);
+        _interceptCallBack?.Invoke(new ProtectionInterceptEvent(
+            imagePath,
+            true,
+            request.DetectionName,
+            request.Probability,
+            request.Module,
+            request.Backend));
         return ProtectionUserDecision.Block;
     }
 
@@ -598,6 +623,16 @@ public sealed class DriverProtection : IProtectionModel
         string reason,
         TimeSpan ttl)
     {
+        if (DecisionCache.Count >= 4096)
+        {
+            foreach (string key in DecisionCache
+                .OrderBy(entry => entry.Value.ExpiresAt)
+                .Take(256)
+                .Select(entry => entry.Key))
+            {
+                DecisionCache.TryRemove(key, out _);
+            }
+        }
         DecisionCache[imagePath] = new DecisionCacheEntry(decision, reason, DateTimeOffset.UtcNow.Add(ttl));
     }
 
@@ -611,9 +646,39 @@ public sealed class DriverProtection : IProtectionModel
         }
     }
 
+    private static string BuildDecisionCacheKey(string prefix, string path)
+    {
+        try
+        {
+            return $"{prefix}:{DriverPathNormalizer.GetStableFileIdentity(path)}";
+        }
+        catch
+        {
+            return $"{prefix}:{path}";
+        }
+    }
+
+    private async Task<NativeModelScannerResult> ScanSingleFlightAsync(string path, CancellationToken token)
+    {
+        string key = $"{ModelMode}:{path}";
+        Lazy<Task<NativeModelScannerResult>> lazy = InFlightScans.GetOrAdd(
+            key,
+            _ => new Lazy<Task<NativeModelScannerResult>>(
+                () => Task.Run(() => (_scanner ?? new NativeModelScanner(ModelMode)).ScanFile(path), token),
+                LazyThreadSafetyMode.ExecutionAndPublication));
+        try
+        {
+            return await lazy.Value.WaitAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            InFlightScans.TryRemove(new KeyValuePair<string, Lazy<Task<NativeModelScannerResult>>>(key, lazy));
+        }
+    }
+
     private static string? ResolveActorPath(XdowsSecurityEvent driverEvent)
     {
-        string actorPath = CleanDriverString(driverEvent.ActorImagePath);
+        string actorPath = DriverPathNormalizer.Normalize(CleanDriverString(driverEvent.ActorImagePath));
         if (!string.IsNullOrWhiteSpace(actorPath))
             return actorPath;
 
@@ -638,6 +703,21 @@ public sealed class DriverProtection : IProtectionModel
             XdowsSecurityEventType.ThreadHandle => "ThreadHandle",
             XdowsSecurityEventType.ImageLoad => "ImageLoad",
             _ => "Driver"
+        };
+    }
+
+    private static ProtectionModule DriverEventTypeToModule(XdowsSecurityEventType type)
+    {
+        return type switch
+        {
+            XdowsSecurityEventType.ProcessCreate => ProtectionModule.Process,
+            XdowsSecurityEventType.FileCreate or
+                XdowsSecurityEventType.FileWrite or
+                XdowsSecurityEventType.FileRename => ProtectionModule.File,
+            XdowsSecurityEventType.ProcessHandle or
+                XdowsSecurityEventType.ThreadHandle or
+                XdowsSecurityEventType.ImageLoad => ProtectionModule.Injection,
+            _ => ProtectionModule.Unknown
         };
     }
 

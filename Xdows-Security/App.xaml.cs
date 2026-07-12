@@ -20,6 +20,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using WinUI3Localizer;
 using Xdows_Security.Services;
+using Xdows_Security.Views;
 using static Protection.CallBack;
 
 namespace Xdows_Security
@@ -117,20 +118,24 @@ namespace Xdows_Security
             return IsRun(0) || IsRun(1) || IsRun(4) || IsRun(5);
         }
 
-        private static readonly InterceptCallBack interceptCallBack = (isSucceed, path, type) =>
+        private static readonly InterceptCallBack interceptCallBack = interceptEvent =>
         {
-            LogText.AddNewLog(LogText.LogLevel.WARN, "Protection", isSucceed
-                ? $"InterceptProcess：{path}"
-                : $"Cannot InterceptProcess：{path}");
+            LogText.AddNewLog(LogText.LogLevel.WARN, "Protection", interceptEvent.IsSucceed
+                ? $"Intercepted：{interceptEvent.Path}"
+                : $"Could not intercept：{interceptEvent.Path}");
             // string content = isSucceed ? "已发现威胁" : "无法处理威胁";
             // content = $"{AppInfo.AppName} {content}.{Environment.NewLine}相关数据：{Path.GetFileName(path)}{Environment.NewLine}单击此通知以查看详细信息";
             _ = (App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
             {
                 _ = InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
                 {
-                    Path = path,
-                    IsSucceed = isSucceed,
-                    InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
+                    Path = interceptEvent.Path,
+                    IsSucceed = interceptEvent.IsSucceed,
+                    InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust,
+                    DetectionName = interceptEvent.DetectionName,
+                    Probability = interceptEvent.Probability,
+                    Module = interceptEvent.Module,
+                    Backend = interceptEvent.Backend
                 });
             }));
             // Notifications.ShowNotification("发现威胁", content, path);
@@ -226,7 +231,9 @@ namespace Xdows_Security
                         ActorDetectionName = request.ActorDetectionName,
                         ActorProbability = request.ActorProbability,
                         CommandLine = request.CommandLine,
-                        CorrelationId = request.CorrelationId
+                        CorrelationId = request.CorrelationId,
+                        Module = request.Module,
+                        Backend = request.Backend
                     });
 
                     tcs.TrySetResult(button == "Release"
@@ -477,6 +484,9 @@ namespace Xdows_Security
             try
             {
                 ParseCommandLineArgs();
+
+                if (ProcessManagerView.TryRunDebugKillOnExitHelper(Environment.GetCommandLineArgs()))
+                    return;
 
                 if (!TryAcquireSingleInstance())
                 {

@@ -1,4 +1,5 @@
 using TrustQuarantine;
+using Helper;
 using static Protection.CallBack;
 namespace Protection
 {
@@ -140,12 +141,24 @@ namespace Protection
                     try
                     {
                         _ = QuarantineManager.AddToQuarantine(e.FullPath, result);
-                        _toastCallBack?.Invoke(true, e.FullPath, Name);
+                        _toastCallBack?.Invoke(new ProtectionInterceptEvent(
+                            e.FullPath,
+                            true,
+                            result,
+                            0,
+                            ProtectionModule.File,
+                            ProtectionBackend.Compatibility));
 
                     }
                     catch (Exception)
                     {
-                        _toastCallBack?.Invoke(false, e.FullPath, Name);
+                        _toastCallBack?.Invoke(new ProtectionInterceptEvent(
+                            e.FullPath,
+                            false,
+                            result,
+                            0,
+                            ProtectionModule.File,
+                            ProtectionBackend.Compatibility));
                     }
                 }
             }

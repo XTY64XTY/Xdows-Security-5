@@ -1,5 +1,21 @@
 namespace Helper
 {
+    public enum ProtectionModule
+    {
+        Unknown,
+        Process,
+        File,
+        Injection,
+        Behavior,
+        SelfProtection
+    }
+
+    public enum ProtectionBackend
+    {
+        Compatibility,
+        Driver
+    }
+
     public class InterceptWindowHelper
     {
         public class InterceptWindowSetting
@@ -17,6 +33,8 @@ namespace Helper
             public double ActorProbability { get; set; }
             public string? CommandLine { get; set; }
             public ulong CorrelationId { get; set; }
+            public ProtectionModule Module { get; set; } = ProtectionModule.Unknown;
+            public ProtectionBackend Backend { get; set; } = ProtectionBackend.Compatibility;
         }
         public enum InterceptWindowButtonType
         {

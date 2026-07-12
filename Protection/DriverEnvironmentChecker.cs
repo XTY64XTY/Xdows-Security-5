@@ -182,14 +182,24 @@ public static class DriverEnvironmentChecker
 
     private static DriverEnvironmentCheckItem CheckDriverCommunication(DriverProtectionRuntimeStatus status)
     {
-        bool ok = status == DriverProtectionRuntimeStatus.Protected ||
-            status == DriverProtectionRuntimeStatus.NotRunning;
+        DriverEnvironmentCheckStatus checkStatus = status switch
+        {
+            DriverProtectionRuntimeStatus.Protected => DriverEnvironmentCheckStatus.Passed,
+            DriverProtectionRuntimeStatus.NotRunning => DriverEnvironmentCheckStatus.Warning,
+            _ => DriverEnvironmentCheckStatus.Failed
+        };
+
+        string detail = status == DriverProtectionRuntimeStatus.Protected
+            ? $"Driver device query returned {status}."
+            : status == DriverProtectionRuntimeStatus.NotRunning
+                ? $"Driver device is reachable but no client is connected ({status}). Start driver protection."
+                : $"Driver device query failed: {status}.";
 
         return new DriverEnvironmentCheckItem(
             "communication",
             "Driver communication",
-            ok ? $"Driver device query returned {status}." : $"Driver device query failed: {status}.",
-            ok ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
+            detail,
+            checkStatus,
             status != DriverProtectionRuntimeStatus.NotInstalled,
             "Restart bridge");
     }

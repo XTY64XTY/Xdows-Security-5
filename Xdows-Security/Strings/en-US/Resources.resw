@@ -1349,6 +1349,16 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="InterceptWindow_SecurityAdviceText.Text" xml:space="preserve">
     <value>It is recommended to quarantine this file immediately.</value>
   </data>
+  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve"><value>Protection module</value></data>
+  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve"><value>{0} - {1}</value></data>
+  <data name="InterceptWindow_Module_Process" xml:space="preserve"><value>Process protection</value></data>
+  <data name="InterceptWindow_Module_File" xml:space="preserve"><value>File protection</value></data>
+  <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>Injection protection</value></data>
+  <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>Behavior protection</value></data>
+  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>Self protection</value></data>
+  <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>Real-time protection</value></data>
+  <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>Driver mode</value></data>
+  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve"><value>Compatibility mode</value></data>
   <data name="InterceptWindow_TrustButton.Content" xml:space="preserve">
     <value>Restore &amp; Trust</value>
   </data>

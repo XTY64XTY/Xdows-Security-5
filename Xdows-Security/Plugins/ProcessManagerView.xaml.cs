@@ -722,13 +722,36 @@ namespace Xdows_Security.Views
                 return result;
             }
 
+            AddAttempt(result, "启用 SeDebugPrivilege", TryEnableDebugPrivilege);
+
+            AddAttempt(result, "Restart Manager 强制关闭注册进程", () => TryRestartManagerShutdown(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "服务控制管理器停止服务进程", () => TryStopServiceProcess(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "控制台 Ctrl 事件结束进程", () => TryConsoleCtrlEvent(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
             AddAttempt(result, "直接结束目标进程", () => TryTerminateDirectly(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "NtTerminateProcess/ZwTerminateProcess 直接终止", () => TryNtTerminateProcess(processId));
             if (CompleteIfExited(result, processId)) return result;
 
             AddAttempt(result, "销毁目标所有线程使进程退出", () => TryTerminateThreads(processId));
             if (CompleteIfExited(result, processId)) return result;
 
             AddAttempt(result, "调试器 / 异常控制路径强制结束", () => TryDebugExceptionKill(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "调试器 kill-on-exit 强制结束", () => TryDebugKillOnExit(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "远程线程调用退出函数", () => TryRemoteExitRoutines(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "线程上下文劫持到退出函数", () => TryHijackThreadContextToExit(processId));
             if (CompleteIfExited(result, processId)) return result;
 
             AddAttempt(result, "制造目标进程不可恢复异常 / 崩溃", () => TryCrashWithRemoteFatalExit(processId));
@@ -738,6 +761,9 @@ namespace Xdows_Security.Views
             if (CompleteIfExited(result, processId)) return result;
 
             AddAttempt(result, "注入使其弹出窗口，再用 EndTask", () => TryInjectMessageBoxThenEndTask(processId));
+            if (CompleteIfExited(result, processId)) return result;
+
+            AddAttempt(result, "APC 注入调用退出函数", () => TryApcExitRoutines(processId));
             if (CompleteIfExited(result, processId)) return result;
 
             AddAttempt(result, "APC 注入指向无效地址直接崩溃", () => TryCrashWithApcGarbage(processId));
