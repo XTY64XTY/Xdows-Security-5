@@ -234,11 +234,14 @@ namespace Xdows_Security
                         CorrelationId = request.CorrelationId,
                         Module = request.Module,
                         Backend = request.Backend
-                    });
+                    }, token);
 
-                    tcs.TrySetResult(button == "Release"
-                        ? ProtectionUserDecision.Allow
-                        : ProtectionUserDecision.Block);
+                    tcs.TrySetResult(button switch
+                    {
+                        "Release" => ProtectionUserDecision.Allow,
+                        "Timeout" => ProtectionUserDecision.Timeout,
+                        _ => ProtectionUserDecision.Block
+                    });
                 }
                 catch
                 {

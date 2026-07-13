@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.IO;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using Helper;
@@ -18,12 +19,36 @@ namespace Xdows_Security
         private readonly Helper.ProtectionBackend _protectionBackend;
         public string? ButtonPressedName { get; private set; }
 
-        public static async Task<string> ShowOrActivate(InterceptWindowSetting interceptWindowSetting)
+        public static async Task<string> ShowOrActivate(
+            InterceptWindowSetting interceptWindowSetting,
+            CancellationToken cancellationToken = default)
         {
-            var tcs = new TaskCompletionSource<string>();
+            if (cancellationToken.IsCancellationRequested)
+                return "Timeout";
+
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
             var w = new InterceptWindow(interceptWindowSetting);
             w.Closed += (s, e) => tcs.TrySetResult(w.ButtonPressedName ?? "Unknown");
-            w.Activate();
+            using CancellationTokenRegistration registration = cancellationToken.Register(() =>
+            {
+                if (!tcs.TrySetResult("Timeout"))
+                    return;
+
+                _ = w.DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        w.Close();
+                    }
+                    catch
+                    {
+                    }
+                });
+            });
+
+            if (!tcs.Task.IsCompleted)
+                w.Activate();
+
             return await tcs.Task;
         }
 
