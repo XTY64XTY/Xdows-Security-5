@@ -5,8 +5,14 @@ namespace Protection;
 internal static class DriverProtocol
 {
     public const uint ProtocolVersion = 2;
-    public const ulong DriverBuildId = 2026071301;
+    public const ulong DriverBuildId = 2026071302;
     public const int EventTypeCount = 9;
+    public const uint ModuleTokenAuth = 0x00000001;
+    public const uint ModuleProcess = 0x00000002;
+    public const uint ModuleFile = 0x00000004;
+    public const uint ModuleInjection = 0x00000008;
+    public const uint ModuleSelfProtect = 0x00000010;
+    public const uint RequiredModules = ModuleTokenAuth | ModuleProcess | ModuleFile | ModuleInjection | ModuleSelfProtect;
     public const int MaxPathChars = 520;
     public const int MaxCommandChars = 1024;
     public const int MaxReasonChars = 128;
@@ -171,6 +177,7 @@ internal struct XdowsSecurityState
     public uint DroppedEventCount;
     public uint ProcessProtectionEnabled;
     public uint FileProtectionEnabled;
+    public uint ActiveModules;
     public uint ProtocolVersion;
     public uint Capabilities;
     public ulong DriverBuildId;

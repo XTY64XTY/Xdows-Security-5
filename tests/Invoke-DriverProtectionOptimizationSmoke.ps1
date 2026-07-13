@@ -6,6 +6,7 @@ $files = @{
     FileProtect = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\FileProtect.c"
     PublicHeader = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-Driver\Public.h"
     Bridge = Join-Path $repoRoot "Protection\DriverBridgeClient.cs"
+    Protocol = Join-Path $repoRoot "Protection\DriverProtocol.cs"
     Protection = Join-Path $repoRoot "Protection\DriverProtection.cs"
     Normalizer = Join-Path $repoRoot "Protection\DriverPathNormalizer.cs"
     InterceptXaml = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml"
@@ -61,6 +62,8 @@ Assert-Match $files.Protection 'Connecting DriverBridgeClient(?s:.*?)RegisterPro
 Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0' 'inactive process module startup rejection'
 Assert-Match $files.Protection 'FileProtectionEnabled\s*==\s*0' 'inactive file module startup rejection'
 Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0\s*\|\|\s*state\.FileProtectionEnabled\s*==\s*0' 'incomplete runtime protection status rejection'
+Assert-Match $files.Protection 'ActiveModules\s*&\s*DriverProtocol\.RequiredModules' 'required runtime module mask validation'
+Assert-Match $files.Protocol 'RequiredModules\s*=\s*ModuleTokenAuth\s*\|\s*ModuleProcess\s*\|\s*ModuleFile\s*\|\s*ModuleInjection\s*\|\s*ModuleSelfProtect' 'managed required module mask'
 Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'

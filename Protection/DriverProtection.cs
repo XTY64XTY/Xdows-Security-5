@@ -72,6 +72,11 @@ public sealed class DriverProtection : IProtectionModel
             0, 0, DriverProtectionLogSeverity.Info, 0, DateTimeOffset.Now, module, message));
     }
 
+    private static bool HasRequiredModules(XdowsSecurityState state)
+    {
+        return (state.ActiveModules & DriverProtocol.RequiredModules) == DriverProtocol.RequiredModules;
+    }
+
     public static DriverProtectionRuntimeStatus QueryRuntimeStatus()
     {
         if (DriverBridgeClient.TryQueryStateWithoutRegister(out var state, out int error))
@@ -79,7 +84,9 @@ public sealed class DriverProtection : IProtectionModel
             if (state.ClientConnected == 0)
                 return DriverProtectionRuntimeStatus.NotRunning;
 
-            return state.ProcessProtectionEnabled == 0 || state.FileProtectionEnabled == 0
+            return state.ProcessProtectionEnabled == 0 ||
+                state.FileProtectionEnabled == 0 ||
+                !HasRequiredModules(state)
                 ? DriverProtectionRuntimeStatus.NeedsRepair
                 : DriverProtectionRuntimeStatus.Protected;
         }
@@ -125,11 +132,13 @@ public sealed class DriverProtection : IProtectionModel
                 Log("Bridge", "Connecting DriverBridgeClient...");
                 _client.Connect();
                 XdowsSecurityState state = _client.GetState();
-                Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8} process={state.ProcessProtectionEnabled} file={state.FileProtectionEnabled}");
-                if (state.ProcessProtectionEnabled == 0 || state.FileProtectionEnabled == 0)
+                Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8} modules=0x{state.ActiveModules:X8} process={state.ProcessProtectionEnabled} file={state.FileProtectionEnabled}");
+                if (state.ProcessProtectionEnabled == 0 ||
+                    state.FileProtectionEnabled == 0 ||
+                    !HasRequiredModules(state))
                 {
                     throw new InvalidOperationException(
-                        $"Required driver protection modules are not active (process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
+                        $"Required driver protection modules are not active (modules=0x{state.ActiveModules:X8}, required=0x{DriverProtocol.RequiredModules:X8}, process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
                 }
 
                 _client.RegisterProtectedProcess();
@@ -149,7 +158,7 @@ public sealed class DriverProtection : IProtectionModel
                 {
                     if (DriverBridgeClient.TryQueryStateWithoutRegister(out var driverState, out _))
                     {
-                        Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId} process={driverState.ProcessProtectionEnabled} file={driverState.FileProtectionEnabled}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
+                        Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId} modules=0x{driverState.ActiveModules:X8} process={driverState.ProcessProtectionEnabled} file={driverState.FileProtectionEnabled}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
                     }
                     else
                     {
