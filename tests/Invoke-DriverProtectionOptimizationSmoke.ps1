@@ -8,6 +8,7 @@ $files = @{
     Bridge = Join-Path $repoRoot "Protection\DriverBridgeClient.cs"
     Protocol = Join-Path $repoRoot "Protection\DriverProtocol.cs"
     Protection = Join-Path $repoRoot "Protection\DriverProtection.cs"
+    DecisionService = Join-Path $repoRoot "Protection\DriverDecisionService.cs"
     LegacyFiles = Join-Path $repoRoot "Protection\LegacyFiles.cs"
     LegacyProcess = Join-Path $repoRoot "Protection\LegacyProcess.cs"
     Normalizer = Join-Path $repoRoot "Protection\DriverPathNormalizer.cs"
@@ -75,6 +76,8 @@ Assert-Match $files.Protection 'FileProtectionEnabled\s*==\s*0' 'inactive file m
 Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0\s*\|\|\s*state\.FileProtectionEnabled\s*==\s*0' 'incomplete runtime protection status rejection'
 Assert-Match $files.Protection 'ActiveModules\s*&\s*DriverProtocol\.RequiredModules' 'required runtime module mask validation'
 Assert-Match $files.Protocol 'RequiredModules\s*=\s*ModuleTokenAuth\s*\|\s*ModuleProcess\s*\|\s*ModuleFile\s*\|\s*ModuleInjection\s*\|\s*ModuleSelfProtect' 'managed required module mask'
+Assert-Match $files.DecisionService 'UiDecisionQueue\.WaitAsync\(0,\s*token\)(?s:.*?)CreateLinkedTokenSource\(token\)' 'non-blocking UI decision admission before timeout starts'
+Assert-NotMatch $files.DecisionService 'UiDecisionQueue\.WaitAsync\(timeoutCts\.Token\)' 'decision worker waiting behind an active popup'
 Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'
 Assert-Match $files.AppCode 'TaskCompletionSource<ProtectionUserDecision>\s+tcs\s*=\s*new\(TaskCreationOptions\.RunContinuationsAsynchronously\)' 'asynchronous driver-decision continuation'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'

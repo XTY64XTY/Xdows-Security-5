@@ -9,17 +9,18 @@ internal static class DriverDecisionService
         TimeSpan timeout,
         CancellationToken token)
     {
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
-        timeoutCts.CancelAfter(timeout);
-
         try
         {
-            await UiDecisionQueue.WaitAsync(timeoutCts.Token).ConfigureAwait(false);
+            if (!await UiDecisionQueue.WaitAsync(0, token).ConfigureAwait(false))
+                return ProtectionUserDecision.Timeout;
         }
         catch (OperationCanceledException)
         {
             return ProtectionUserDecision.Timeout;
         }
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(token);
+        timeoutCts.CancelAfter(timeout);
 
         try
         {
