@@ -8,6 +8,8 @@ $files = @{
     Bridge = Join-Path $repoRoot "Protection\DriverBridgeClient.cs"
     Protocol = Join-Path $repoRoot "Protection\DriverProtocol.cs"
     Protection = Join-Path $repoRoot "Protection\DriverProtection.cs"
+    LegacyFiles = Join-Path $repoRoot "Protection\LegacyFiles.cs"
+    LegacyProcess = Join-Path $repoRoot "Protection\LegacyProcess.cs"
     Normalizer = Join-Path $repoRoot "Protection\DriverPathNormalizer.cs"
     InterceptXaml = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml"
     InterceptCode = Join-Path $repoRoot "Xdows-Security\InterceptWindow.xaml.cs"
@@ -58,6 +60,12 @@ Assert-Match $files.Protection 'confirmed-file-threat-user-timeout-block' 'confi
 Assert-Match $files.Protection 'bool\s+quarantineSucceeded\s*=\s*await\s+QuarantineManager\s*\.AddToQuarantine' 'awaited driver quarantine result'
 Assert-Match $files.Protection 'quarantine-failed' 'driver quarantine failure reason'
 Assert-NotMatch $files.Protection '_\s*=\s*QuarantineManager\.AddToQuarantine' 'discarded driver quarantine task'
+Assert-Match $files.LegacyFiles 'async\s+void\s+OnChanged' 'async compatibility file event handler'
+Assert-Match $files.LegacyFiles 'bool\s+quarantineSucceeded\s*=\s*await\s+QuarantineManager\.AddToQuarantine' 'awaited compatibility file quarantine'
+Assert-NotMatch $files.LegacyFiles '_\s*=\s*QuarantineManager\.AddToQuarantine' 'discarded compatibility file quarantine task'
+Assert-Match $files.LegacyProcess 'WaitForExitAsync' 'process exit before compatibility quarantine'
+Assert-Match $files.LegacyProcess 'bool\s+quarantineSucceeded\s*=\s*await\s+QuarantineManager\.AddToQuarantine' 'awaited compatibility process quarantine'
+Assert-NotMatch $files.LegacyProcess '_\s*=\s*QuarantineManager\.AddToQuarantine' 'discarded compatibility process quarantine task'
 Assert-NotMatch $files.Protection 'Cache\(processCacheKey,\s*decisionType' 'cached user process-block decision'
 Assert-Match $files.Protection 'sensitive-op-fast-allow' 'non-blocking sensitive-operation allow path'
 Assert-NotMatch $files.Protection 'private\s+Task<XdowsSecurityDecision>\s+HandleSensitiveOperationAsync(?s:.*?)SignerTrustService\.Evaluate' 'unused signature-chain work in sensitive-operation hot path'

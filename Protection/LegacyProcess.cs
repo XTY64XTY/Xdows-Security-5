@@ -79,57 +79,58 @@ namespace Protection
                 try
                 {
                     var currentPids = GetProcessIdList();
+                    List<int> newPids;
                     lock (_oldPidsLock)
                     {
                         if (_oldPids.Count == 0)
                         {
                             _oldPids.UnionWith(currentPids);
+                            newPids = [];
                         }
                         else
                         {
-                            var newPids = currentPids.Except(_oldPids).Distinct().ToList();
-
-                            foreach (int pid in newPids)
-                            {
-                                string path = ProcessPidToPath(pid);
-                                if (string.IsNullOrEmpty(path))
-                                    continue;
-
-                                if (TrustManager.IsPathTrusted(path))
-                                    continue;
-
-                                var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
-
-                                if (isVirus)
-                                {
-                                    try
-                                    {
-                                        using var proc = Process.GetProcessById(pid);
-                                        proc.Kill();
-                                        _ = QuarantineManager.AddToQuarantine(path, result);
-                                        interceptCallBack(new ProtectionInterceptEvent(
-                                            path,
-                                            true,
-                                            result,
-                                            0,
-                                            ProtectionModule.Process,
-                                            ProtectionBackend.Compatibility));
-                                    }
-                                    catch (Exception)
-                                    {
-                                        interceptCallBack(new ProtectionInterceptEvent(
-                                            path,
-                                            false,
-                                            result,
-                                            0,
-                                            ProtectionModule.Process,
-                                            ProtectionBackend.Compatibility));
-                                    }
-                                }
-                            }
-
+                            newPids = currentPids.Except(_oldPids).Distinct().ToList();
                             _oldPids.Clear();
                             _oldPids.UnionWith(currentPids);
+                        }
+                    }
+
+                    foreach (int pid in newPids)
+                    {
+                        string path = ProcessPidToPath(pid);
+                        if (string.IsNullOrEmpty(path))
+                            continue;
+
+                        if (TrustManager.IsPathTrusted(path))
+                            continue;
+
+                        var (isVirus, result) = Helper.ScanEngine.ModelEngineScan.ScanFile(path);
+                        if (!isVirus)
+                            continue;
+
+                        try
+                        {
+                            using var proc = Process.GetProcessById(pid);
+                            proc.Kill();
+                            await proc.WaitForExitAsync(token).ConfigureAwait(false);
+                            bool quarantineSucceeded = await QuarantineManager.AddToQuarantine(path, result).ConfigureAwait(false);
+                            interceptCallBack(new ProtectionInterceptEvent(
+                                path,
+                                quarantineSucceeded,
+                                result,
+                                0,
+                                ProtectionModule.Process,
+                                ProtectionBackend.Compatibility));
+                        }
+                        catch (Exception)
+                        {
+                            interceptCallBack(new ProtectionInterceptEvent(
+                                path,
+                                false,
+                                result,
+                                0,
+                                ProtectionModule.Process,
+                                ProtectionBackend.Compatibility));
                         }
                     }
                 }

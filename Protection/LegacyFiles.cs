@@ -117,7 +117,7 @@ namespace Protection
                 return false;
             }
         }
-        private static void OnChanged(object sender, FileSystemEventArgs e)
+        private static async void OnChanged(object sender, FileSystemEventArgs e)
         {
             try
             {
@@ -140,10 +140,10 @@ namespace Protection
                 {
                     try
                     {
-                        _ = QuarantineManager.AddToQuarantine(e.FullPath, result);
+                        bool quarantineSucceeded = await QuarantineManager.AddToQuarantine(e.FullPath, result);
                         _toastCallBack?.Invoke(new ProtectionInterceptEvent(
                             e.FullPath,
-                            true,
+                            quarantineSucceeded,
                             result,
                             0,
                             ProtectionModule.File,
