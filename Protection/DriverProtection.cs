@@ -76,9 +76,12 @@ public sealed class DriverProtection : IProtectionModel
     {
         if (DriverBridgeClient.TryQueryStateWithoutRegister(out var state, out int error))
         {
-            return state.ClientConnected != 0
-                ? DriverProtectionRuntimeStatus.Protected
-                : DriverProtectionRuntimeStatus.NotRunning;
+            if (state.ClientConnected == 0)
+                return DriverProtectionRuntimeStatus.NotRunning;
+
+            return state.ProcessProtectionEnabled == 0 || state.FileProtectionEnabled == 0
+                ? DriverProtectionRuntimeStatus.NeedsRepair
+                : DriverProtectionRuntimeStatus.Protected;
         }
 
         return error switch
@@ -122,10 +125,11 @@ public sealed class DriverProtection : IProtectionModel
                 Log("Bridge", "Connecting DriverBridgeClient...");
                 _client.Connect();
                 XdowsSecurityState state = _client.GetState();
-                Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8}");
-                if (state.ProcessProtectionEnabled == 0)
+                Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8} process={state.ProcessProtectionEnabled} file={state.FileProtectionEnabled}");
+                if (state.ProcessProtectionEnabled == 0 || state.FileProtectionEnabled == 0)
                 {
-                    throw new InvalidOperationException("The driver process protection module is not active.");
+                    throw new InvalidOperationException(
+                        $"Required driver protection modules are not active (process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
                 }
 
                 _client.RegisterProtectedProcess();
@@ -145,7 +149,7 @@ public sealed class DriverProtection : IProtectionModel
                 {
                     if (DriverBridgeClient.TryQueryStateWithoutRegister(out var driverState, out _))
                     {
-                        Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
+                        Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId} process={driverState.ProcessProtectionEnabled} file={driverState.FileProtectionEnabled}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
                     }
                     else
                     {
