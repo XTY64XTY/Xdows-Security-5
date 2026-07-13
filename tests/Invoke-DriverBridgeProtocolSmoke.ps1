@@ -60,7 +60,12 @@ $constants = @(
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
     @{ C = "XDOWS_SECURITY_TOKEN_CHARS"; Cs = "TokenChars"; Expected = 64 },
     @{ C = "XDOWS_SECURITY_MAX_LOG_MODULE_CHARS"; Cs = "MaxLogModuleChars"; Expected = 32 },
-    @{ C = "XDOWS_SECURITY_MAX_LOG_MESSAGE_CHARS"; Cs = "MaxLogMessageChars"; Expected = 256 }
+    @{ C = "XDOWS_SECURITY_MAX_LOG_MESSAGE_CHARS"; Cs = "MaxLogMessageChars"; Expected = 256 },
+    @{ C = "XDOWS_SECURITY_MODULE_TOKEN_AUTH"; Cs = "ModuleTokenAuth"; Expected = 1 },
+    @{ C = "XDOWS_SECURITY_MODULE_PROCESS"; Cs = "ModuleProcess"; Expected = 2 },
+    @{ C = "XDOWS_SECURITY_MODULE_FILE"; Cs = "ModuleFile"; Expected = 4 },
+    @{ C = "XDOWS_SECURITY_MODULE_INJECTION"; Cs = "ModuleInjection"; Expected = 8 },
+    @{ C = "XDOWS_SECURITY_MODULE_SELF_PROTECT"; Cs = "ModuleSelfProtect"; Expected = 16 }
 )
 
 $cBuildId = Read-Number $publicText "#define\s+XDOWS_SECURITY_DRIVER_BUILD_ID\s+([0-9]+)ULL" "XDOWS_SECURITY_DRIVER_BUILD_ID"
@@ -68,11 +73,17 @@ $csBuildId = Read-Number $protocolText "public\s+const\s+ulong\s+DriverBuildId\s
 Assert-Equal $cBuildId $csBuildId "Driver build ID"
 
 foreach ($constant in $constants) {
-    $cValue = Read-Number $publicText "#define\s+$($constant.C)\s+([0-9]+)u?" $constant.C
-    $csValue = Read-Number $protocolText "public\s+const\s+(?:uint|int)\s+$($constant.Cs)\s+=\s+([0-9]+);" $constant.Cs
+    $cValue = Read-Number $publicText "#define\s+$($constant.C)\s+(0x[0-9A-Fa-f]+|[0-9]+)u?" $constant.C
+    $csValue = Read-Number $protocolText "public\s+const\s+(?:uint|int)\s+$($constant.Cs)\s+=\s+(0x[0-9A-Fa-f]+|[0-9]+);" $constant.Cs
     Assert-Equal $constant.Expected $cValue "$($constant.C) expected value"
     Assert-Equal $cValue $csValue "$($constant.C) mirrors DriverProtocol.$($constant.Cs)"
 }
+
+if ($publicText -notmatch 'ULONG\s+ProcessProtectionEnabled;\s*ULONG\s+FileProtectionEnabled;\s*ULONG\s+ActiveModules;\s*ULONG\s+ProtocolVersion;' -or
+    $protocolText -notmatch 'uint\s+ProcessProtectionEnabled;\s*public\s+uint\s+FileProtectionEnabled;\s*public\s+uint\s+ActiveModules;\s*public\s+uint\s+ProtocolVersion;') {
+    throw "XdowsSecurityState module fields are not mirrored in protocol order."
+}
+$checks.Add("XdowsSecurityState module field order") | Out-Null
 
 $cDeviceType = Read-Number $publicText "#define\s+FILE_DEVICE_XDOWS_SECURITY\s+(0x[0-9A-Fa-f]+)u?" "FILE_DEVICE_XDOWS_SECURITY"
 $csDeviceType = Read-Number $protocolText "private\s+const\s+uint\s+FileDeviceXdowsSecurity\s+=\s+(0x[0-9A-Fa-f]+);" "FileDeviceXdowsSecurity"
