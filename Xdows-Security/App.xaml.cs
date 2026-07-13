@@ -211,7 +211,7 @@ namespace Xdows_Security
             if (App.MainWindow?.DispatcherQueue is null)
                 return ProtectionUserDecision.Block;
 
-            TaskCompletionSource<ProtectionUserDecision> tcs = new();
+            TaskCompletionSource<ProtectionUserDecision> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
             using CancellationTokenRegistration registration = token.Register(() => tcs.TrySetResult(ProtectionUserDecision.Timeout));
 
             bool queued = App.MainWindow.DispatcherQueue.TryEnqueue(async () =>

@@ -76,6 +76,7 @@ Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0\s*\|\|\s*state
 Assert-Match $files.Protection 'ActiveModules\s*&\s*DriverProtocol\.RequiredModules' 'required runtime module mask validation'
 Assert-Match $files.Protocol 'RequiredModules\s*=\s*ModuleTokenAuth\s*\|\s*ModuleProcess\s*\|\s*ModuleFile\s*\|\s*ModuleInjection\s*\|\s*ModuleSelfProtect' 'managed required module mask'
 Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'
+Assert-Match $files.AppCode 'TaskCompletionSource<ProtectionUserDecision>\s+tcs\s*=\s*new\(TaskCreationOptions\.RunContinuationsAsynchronously\)' 'asynchronous driver-decision continuation'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
