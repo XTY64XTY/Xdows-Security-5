@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using Helper;
+using WinUI3Localizer;
 using static Helper.InterceptWindowHelper;
 
 namespace Xdows_Security
@@ -53,11 +54,8 @@ namespace Xdows_Security
                 });
             };
 
-            WinUI3Localizer.Localizer.Get().LanguageChanged += (sender, e) =>
-            {
-                ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
-                ProtectionModuleText.Text = FormatProtectionModule(_protectionModule, _protectionBackend);
-            };
+            WinUI3Localizer.Localizer.Get().LanguageChanged += OnLanguageChanged;
+            Closed += InterceptWindow_Closed;
             ProgramNameText.Text = Path.GetFileName(_originalFilePath);
             FilePathText.Text = _originalFilePath;
             DetectionTimeText.Text = DateTime.Now.ToString("G", CultureInfo.CurrentCulture);
@@ -78,6 +76,19 @@ namespace Xdows_Security
             }
             PositionWindowAtBottomRight();
             App.PlayEntranceAnimation(RootPanel, "right");
+        }
+
+        private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
+        {
+            ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
+            ProtectionModuleText.Text = FormatProtectionModule(_protectionModule, _protectionBackend);
+            DispatcherQueue.TryEnqueue(UpdateWindowHeightAndPosition);
+        }
+
+        private void InterceptWindow_Closed(object sender, WindowEventArgs args)
+        {
+            WinUI3Localizer.Localizer.Get().LanguageChanged -= OnLanguageChanged;
+            Closed -= InterceptWindow_Closed;
         }
 
         private static string NormalizeDetectionName(string? detectionName)
