@@ -548,12 +548,27 @@ public sealed class DriverProtection : IProtectionModel
         string detectionName = string.IsNullOrWhiteSpace(scan.DetectionName)
             ? "Xdows.Model.FileThreat"
             : scan.DetectionName;
-        _ = QuarantineManager.AddToQuarantine(filePath, detectionName);
+        bool quarantineSucceeded = await QuarantineManager
+            .AddToQuarantine(filePath, detectionName)
+            .ConfigureAwait(false);
+        if (!quarantineSucceeded)
+        {
+            LogCallback?.Invoke(new DriverProtectionLogEntry(
+                driverEvent.EventId,
+                driverEvent.CorrelationId,
+                DriverProtectionLogSeverity.Error,
+                0,
+                DateTimeOffset.Now,
+                "Quarantine",
+                $"Confirmed file threat could not be quarantined: {filePath}"));
+        }
 
         XdowsSecurityDecisionType decisionType = XdowsSecurityDecisionType.Block;
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "confirmed-file-threat-user-timeout-block"
             : "user-block-file-threat";
+        if (!quarantineSucceeded)
+            reason += "-quarantine-failed";
 
         Cache(cacheKey, decisionType, reason, TimeSpan.FromSeconds(10));
         return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
