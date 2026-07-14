@@ -86,6 +86,8 @@ public sealed class DriverProtection : IProtectionModel
 
             return state.ProcessProtectionEnabled == 0 ||
                 state.FileProtectionEnabled == 0 ||
+                state.SelfProtectionEnabled == 0 ||
+                state.ProtectedProcessId != (uint)Environment.ProcessId ||
                 !HasRequiredModules(state)
                 ? DriverProtectionRuntimeStatus.NeedsRepair
                 : DriverProtectionRuntimeStatus.Protected;
@@ -142,6 +144,15 @@ public sealed class DriverProtection : IProtectionModel
                 }
 
                 _client.RegisterProtectedProcess();
+                state = _client.GetState();
+                Log("Bridge", $"Self-protection registered active={state.SelfProtectionEnabled} protectedPid={state.ProtectedProcessId} expectedPid={Environment.ProcessId}");
+                if (state.SelfProtectionEnabled == 0 ||
+                    state.ProtectedProcessId != (uint)Environment.ProcessId)
+                {
+                    throw new InvalidOperationException(
+                        $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
+                }
+
                 Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
                 _scanner = new NativeModelScanner(ModelMode);
                 Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
