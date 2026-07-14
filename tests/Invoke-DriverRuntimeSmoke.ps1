@@ -9,8 +9,9 @@ $ErrorActionPreference = "Stop"
 $serviceName = "Xdows-Security-Driver"
 $devicePaths = @("\\.\XdowsSecurityDriver", "\\.\Global\XdowsSecurityDriver")
 $ioctlGetState = [Convert]::ToUInt32("80002014", 16)
-$expectedProtocolVersion = [uint32]2
-$expectedDriverBuildId = [uint64]2026071203
+$expectedProtocolVersion = [uint32]3
+$expectedDriverBuildId = [uint64]2026071501
+$expectedStateSize = [uint32]168
 
 function Test-IsAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -180,7 +181,7 @@ function Test-DriverBridge {
     }
 
     try {
-        $buffer = [byte[]]::new(152)
+        $buffer = [byte[]]::new($expectedStateSize)
         $bytesReturned = [uint32]0
         $ok = [XdowsDriverSmokeNative]::DeviceIoControl(
             $handle,
@@ -200,6 +201,10 @@ function Test-DriverBridge {
             }
         }
 
+        if ($bytesReturned -lt $expectedStateSize) {
+            throw "Driver state response is truncated. Expected at least $expectedStateSize bytes, received $bytesReturned."
+        }
+
         return [pscustomobject]@{
             Reachable = $true
             Win32Error = 0
@@ -210,9 +215,13 @@ function Test-DriverBridge {
                 PendingEventCount = [BitConverter]::ToUInt32($buffer, 12)
                 DroppedEventCount = [BitConverter]::ToUInt32($buffer, 16)
                 ProcessProtectionEnabled = [BitConverter]::ToUInt32($buffer, 20)
-                ProtocolVersion = [BitConverter]::ToUInt32($buffer, 24)
-                Capabilities = [BitConverter]::ToUInt32($buffer, 28)
-                DriverBuildId = [BitConverter]::ToUInt64($buffer, 32)
+                FileProtectionEnabled = [BitConverter]::ToUInt32($buffer, 24)
+                SelfProtectionEnabled = [BitConverter]::ToUInt32($buffer, 28)
+                ProtectedProcessId = [BitConverter]::ToUInt32($buffer, 32)
+                ActiveModules = [BitConverter]::ToUInt32($buffer, 36)
+                ProtocolVersion = [BitConverter]::ToUInt32($buffer, 40)
+                Capabilities = [BitConverter]::ToUInt32($buffer, 44)
+                DriverBuildId = [BitConverter]::ToUInt64($buffer, 48)
             }
         }
     }

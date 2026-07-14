@@ -6,8 +6,9 @@ $driverPublicHeader = Join-Path $codeRoot "Xdows-Security-Driver\Xdows-Security-
 $protocolCs = Join-Path $repoRoot "Protection\DriverProtocol.cs"
 $bridgeClientCs = Join-Path $repoRoot "Protection\DriverBridgeClient.cs"
 $driverProtectionCs = Join-Path $repoRoot "Protection\DriverProtection.cs"
+$runtimeSmokePs1 = Join-Path $repoRoot "tests\Invoke-DriverRuntimeSmoke.ps1"
 
-foreach ($required in @($driverPublicHeader, $protocolCs, $bridgeClientCs, $driverProtectionCs)) {
+foreach ($required in @($driverPublicHeader, $protocolCs, $bridgeClientCs, $driverProtectionCs, $runtimeSmokePs1)) {
     if (!(Test-Path $required)) {
         throw "Required source file was not found: $required"
     }
@@ -17,6 +18,7 @@ $publicText = Get-Content -Raw -LiteralPath $driverPublicHeader
 $protocolText = Get-Content -Raw -LiteralPath $protocolCs
 $bridgeText = Get-Content -Raw -LiteralPath $bridgeClientCs
 $protectionText = Get-Content -Raw -LiteralPath $driverProtectionCs
+$runtimeSmokeText = Get-Content -Raw -LiteralPath $runtimeSmokePs1
 
 $checks = New-Object System.Collections.Generic.List[string]
 
@@ -70,7 +72,24 @@ $constants = @(
 
 $cBuildId = Read-Number $publicText "#define\s+XDOWS_SECURITY_DRIVER_BUILD_ID\s+([0-9]+)ULL" "XDOWS_SECURITY_DRIVER_BUILD_ID"
 $csBuildId = Read-Number $protocolText "public\s+const\s+ulong\s+DriverBuildId\s+=\s+([0-9]+);" "DriverBuildId"
+$runtimeBuildId = Read-Number $runtimeSmokeText '\$expectedDriverBuildId\s*=\s*\[uint64\]([0-9]+)' "runtime smoke driver build ID"
 Assert-Equal $cBuildId $csBuildId "Driver build ID"
+Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
+
+$runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
+Assert-Equal 3 $runtimeProtocolVersion "Runtime smoke protocol version"
+
+foreach ($offsetCheck in @(
+    @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
+    @{ Pattern = 'SelfProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*28\)'; Name = "runtime self-protection offset" },
+    @{ Pattern = 'ProtocolVersion\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*40\)'; Name = "runtime protocol offset" },
+    @{ Pattern = 'DriverBuildId\s*=\s*\[BitConverter\]::ToUInt64\(\$buffer,\s*48\)'; Name = "runtime build ID offset" }
+)) {
+    if ($runtimeSmokeText -notmatch $offsetCheck.Pattern) {
+        throw "$($offsetCheck.Name) was not found in $runtimeSmokePs1"
+    }
+    $checks.Add($offsetCheck.Name) | Out-Null
+}
 
 foreach ($constant in $constants) {
     $cValue = Read-Number $publicText "#define\s+$($constant.C)\s+(0x[0-9A-Fa-f]+|[0-9]+)u?" $constant.C
