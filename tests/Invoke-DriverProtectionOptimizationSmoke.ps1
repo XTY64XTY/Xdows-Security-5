@@ -36,7 +36,7 @@ function Assert-NotMatch([string]$Path, [string]$Pattern, [string]$Name) {
     if ($text -match $Pattern) { throw "$Name is still present in $Path" }
 }
 
-Assert-Match $files.PublicHeader 'XDOWS_SECURITY_PROTOCOL_VERSION\s+2u' 'protocol v2'
+Assert-Match $files.PublicHeader 'XDOWS_SECURITY_PROTOCOL_VERSION\s+3u' 'protocol v3'
 Assert-Match $files.PublicHeader 'XDOWS_SECURITY_DRIVER_BUILD_ID' 'driver build identity'
 Assert-Match $files.FileProtect 'FLT_STREAMHANDLE_CONTEXT' 'dirty stream-handle context'
 Assert-Match $files.FileProtect 'Contexts\[0\]\.Size\s*=\s*sizeof\(XDOWS_DIRTY_HANDLE_CONTEXT\)' 'WDK-compatible stream-handle context size'
