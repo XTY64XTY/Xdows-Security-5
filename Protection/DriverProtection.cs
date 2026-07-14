@@ -143,6 +143,15 @@ public sealed class DriverProtection : IProtectionModel
                         $"Required driver protection modules are not active (modules=0x{state.ActiveModules:X8}, required=0x{DriverProtocol.RequiredModules:X8}, process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
                 }
 
+                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
+                _scanner = new NativeModelScanner(ModelMode);
+                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
+                if (!_scanner.NativeReady)
+                {
+                    throw new InvalidOperationException(
+                        $"Native model initialization failed: {_scanner.InitializationError ?? "unknown"}.");
+                }
+
                 _client.RegisterProtectedProcess();
                 state = _client.GetState();
                 Log("Bridge", $"Self-protection registered active={state.SelfProtectionEnabled} protectedPid={state.ProtectedProcessId} expectedPid={Environment.ProcessId}");
@@ -153,9 +162,6 @@ public sealed class DriverProtection : IProtectionModel
                         $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
                 }
 
-                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
-                _scanner = new NativeModelScanner(ModelMode);
-                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
                 DriverBridgeClient client = _client;
                 _pumpTask = Task.Run(() => client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
                 _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));

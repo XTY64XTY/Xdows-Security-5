@@ -26,6 +26,7 @@ public sealed class NativeModelScanner : IDisposable
     private readonly NativeModelScannerMode _mode;
 
     public bool NativeReady => _nativeReady;
+    public string? InitializationError => _nativeInitializationError;
     public NativeModelScannerMode Mode => _mode;
 
     public NativeModelScanner(NativeModelScannerMode mode = NativeModelScannerMode.Standard, string? modelDirectory = null)

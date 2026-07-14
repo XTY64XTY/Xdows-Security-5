@@ -18,6 +18,9 @@ foreach ($forbidden in @(
 if ($text -notmatch '_nativeInitializationError\s*=\s*\$"native-init-status:\{status\}"') {
     throw "Native initialization status diagnostics were not found."
 }
+if ($text -notmatch 'public\s+string\?\s+InitializationError\s*=>\s*_nativeInitializationError') {
+    throw "Native initialization diagnostics are not exposed to the protection startup path."
+}
 if ($text -notmatch 'if\s*\(!_nativeReady\)(?s:.*?)native-not-ready') {
     throw "Native-only unavailable verdict was not found."
 }
