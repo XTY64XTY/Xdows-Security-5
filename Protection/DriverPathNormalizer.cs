@@ -15,8 +15,28 @@ internal static class DriverPathNormalizer
             return string.Empty;
 
         string normalized = path.Trim();
+        if (normalized.StartsWith(@"\SystemRoot\", StringComparison.OrdinalIgnoreCase))
+            return Path.Combine(GetSystemRoot(), normalized[@"\SystemRoot\".Length..]);
+
+        if (normalized.StartsWith(@"\??\UNC\", StringComparison.OrdinalIgnoreCase))
+            return @"\\" + normalized[@"\??\UNC\".Length..];
+
         if (normalized.StartsWith(@"\??\", StringComparison.Ordinal))
-            normalized = normalized[4..];
+        {
+            normalized = normalized[@"\??\".Length..];
+            if (normalized.StartsWith("Volume{", StringComparison.OrdinalIgnoreCase))
+                return @"\\?\" + normalized;
+        }
+
+        if (normalized.StartsWith(@"\DosDevices\", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized[@"\DosDevices\".Length..];
+            if (normalized.StartsWith(@"UNC\", StringComparison.OrdinalIgnoreCase))
+                return @"\\" + normalized[@"UNC\".Length..];
+        }
+
+        if (normalized.StartsWith(@"\Device\Mup\", StringComparison.OrdinalIgnoreCase))
+            return @"\\" + normalized[@"\Device\Mup\".Length..];
 
         if (!normalized.StartsWith(@"\Device\", StringComparison.OrdinalIgnoreCase))
             return normalized;
@@ -75,6 +95,15 @@ internal static class DriverPathNormalizer
         return mappings
             .OrderByDescending(mapping => mapping.Device.Length)
             .ToArray();
+    }
+
+    private static string GetSystemRoot()
+    {
+        string? systemRoot = Environment.GetEnvironmentVariable("SystemRoot");
+        if (!string.IsNullOrWhiteSpace(systemRoot))
+            return systemRoot.TrimEnd('\\');
+
+        return Environment.GetFolderPath(Environment.SpecialFolder.Windows).TrimEnd('\\');
     }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
