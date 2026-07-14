@@ -18,26 +18,33 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <CalendarDatePicker x:Name="FromDatePicker" PlaceholderText="From"/>
+                <CalendarDatePicker x:Name="FromDatePicker"
+                                    l:Uids.Uid="LogExportDialog_FromDate"
+                                    AutomationProperties.AutomationId="LogExportFromDatePicker"/>
                 <TextBlock Grid.Column="1" Text="–" VerticalAlignment="Center" Margin="8,0"/>
-                <CalendarDatePicker x:Name="ToDatePicker" Grid.Column="2" PlaceholderText="To"/>
+                <CalendarDatePicker x:Name="ToDatePicker"
+                                    Grid.Column="2"
+                                    l:Uids.Uid="LogExportDialog_ToDate"
+                                    AutomationProperties.AutomationId="LogExportToDatePicker"/>
             </Grid>
         </StackPanel>
 
         <StackPanel Spacing="4">
             <TextBlock l:Uids.Uid="LogExportDialog_LevelFilter" FontWeight="SemiBold"/>
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <CheckBox x:Name="LevelDebug" Content="DEBUG" IsChecked="True"/>
-                <CheckBox x:Name="LevelInfo" Content="INFO" IsChecked="True"/>
-                <CheckBox x:Name="LevelWarn" Content="WARN" IsChecked="True"/>
-                <CheckBox x:Name="LevelError" Content="ERROR" IsChecked="True"/>
-                <CheckBox x:Name="LevelFatal" Content="FATAL" IsChecked="True"/>
+                <CheckBox x:Name="LevelDebug" Content="DEBUG" IsChecked="True" AutomationProperties.AutomationId="LogExportLevelDebug"/>
+                <CheckBox x:Name="LevelInfo" Content="INFO" IsChecked="True" AutomationProperties.AutomationId="LogExportLevelInfo"/>
+                <CheckBox x:Name="LevelWarn" Content="WARN" IsChecked="True" AutomationProperties.AutomationId="LogExportLevelWarn"/>
+                <CheckBox x:Name="LevelError" Content="ERROR" IsChecked="True" AutomationProperties.AutomationId="LogExportLevelError"/>
+                <CheckBox x:Name="LevelFatal" Content="FATAL" IsChecked="True" AutomationProperties.AutomationId="LogExportLevelFatal"/>
             </StackPanel>
         </StackPanel>
 
         <StackPanel Spacing="4">
             <TextBlock l:Uids.Uid="LogExportDialog_Keyword" FontWeight="SemiBold"/>
-            <TextBox x:Name="KeywordBox" PlaceholderText="Optional keyword filter"/>
+            <TextBox x:Name="KeywordBox"
+                     l:Uids.Uid="LogExportDialog_KeywordBox"
+                     AutomationProperties.AutomationId="LogExportKeywordBox"/>
         </StackPanel>
     </StackPanel>
 </ContentDialog>

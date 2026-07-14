@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
@@ -10,7 +11,18 @@ namespace Xdows_Security.Services
     public static class LogService
     {
         private const int BATCH_SIZE = 50;
-        private static readonly Channel<LogEntry> _writeChannel = Channel.CreateUnbounded<LogEntry>();
+
+        private abstract record LogQueueItem;
+        private sealed record PendingLog(LogEntry Entry) : LogQueueItem;
+        private sealed record FlushRequest(TaskCompletionSource<bool> Completion) : LogQueueItem;
+
+        private static readonly Channel<LogQueueItem> _writeChannel = Channel.CreateUnbounded<LogQueueItem>(
+            new UnboundedChannelOptions
+            {
+                SingleReader = true,
+                SingleWriter = false,
+                AllowSynchronousContinuations = false
+            });
 
         public static event EventHandler<LogEntry>? LogAdded;
 
@@ -29,8 +41,17 @@ namespace Xdows_Security.Services
                 Text = text,
                 ThreadId = Environment.CurrentManagedThreadId
             };
-            _writeChannel.Writer.TryWrite(entry);
+            _writeChannel.Writer.TryWrite(new PendingLog(entry));
             LogAdded?.Invoke(null, entry);
+        }
+
+        public static async Task FlushAsync(CancellationToken token = default)
+        {
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            await _writeChannel.Writer
+                .WriteAsync(new FlushRequest(completion), token)
+                .ConfigureAwait(false);
+            await completion.Task.WaitAsync(token).ConfigureAwait(false);
         }
 
         public static List<LogEntry> GetLatestLogs(int count, LogText.LogLevel[]? levels = null, string? keyword = null)
@@ -115,10 +136,13 @@ namespace Xdows_Security.Services
         }
 
         public static async Task ExportAsync(string filePath, LogText.LogLevel[]? levels = null,
-            string? keyword = null, string? fromDate = null, string? toDate = null)
+            string? keyword = null, string? fromDate = null, string? toDate = null,
+            CancellationToken token = default)
         {
+            await FlushAsync(token).ConfigureAwait(false);
+
             using var conn = LogStorage.GetConnection();
-            conn.Open();
+            await conn.OpenAsync(token).ConfigureAwait(false);
             conn.DefaultTimeout = 5;
             await using var writer = new StreamWriter(filePath, append: false);
 
@@ -130,8 +154,8 @@ namespace Xdows_Security.Services
             foreach (var (name, value) in args)
                 cmd.Parameters.AddWithValue(name, value);
 
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 var entry = new LogEntry
                 {
@@ -142,45 +166,67 @@ namespace Xdows_Security.Services
                     Text = reader.GetString(4),
                     ThreadId = reader.GetInt32(5)
                 };
-                await writer.WriteLineAsync(entry.Formatted);
+                await writer.WriteLineAsync(entry.Formatted.AsMemory(), token).ConfigureAwait(false);
             }
         }
 
         private static async Task WritePumpAsync()
         {
             var batch = new List<LogEntry>(BATCH_SIZE);
+            Exception? writeError = null;
 
-            while (await _writeChannel.Reader.WaitToReadAsync())
+            while (await _writeChannel.Reader.WaitToReadAsync().ConfigureAwait(false))
             {
-                batch.Clear();
-                while (batch.Count < BATCH_SIZE && _writeChannel.Reader.TryRead(out var entry))
-                    batch.Add(entry);
+                while (_writeChannel.Reader.TryRead(out LogQueueItem? item))
+                {
+                    switch (item)
+                    {
+                        case PendingLog pending:
+                            batch.Add(pending.Entry);
+                            if (batch.Count >= BATCH_SIZE)
+                                PersistPendingBatch(batch, ref writeError);
+                            break;
 
-                if (batch.Count == 0) continue;
+                        case FlushRequest flush:
+                            PersistPendingBatch(batch, ref writeError);
+                            if (writeError is null)
+                                flush.Completion.TrySetResult(true);
+                            else
+                                flush.Completion.TrySetException(
+                                    new InvalidOperationException("Pending logs could not be persisted before export.", writeError));
+                            break;
+                    }
+                }
 
-                bool success = false;
+                PersistPendingBatch(batch, ref writeError);
+            }
+        }
+
+        private static void PersistPendingBatch(List<LogEntry> batch, ref Exception? writeError)
+        {
+            if (batch.Count == 0)
+                return;
+
+            Exception? lastError = null;
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
                 try
                 {
                     using var conn = LogStorage.GetConnection();
                     conn.Open();
                     conn.DefaultTimeout = 5;
                     LogStorage.InsertBatch(conn, batch);
-                    success = true;
+                    batch.Clear();
+                    return;
                 }
-                catch { }
-
-                if (!success)
+                catch (Exception ex)
                 {
-                    try
-                    {
-                        using var conn = LogStorage.GetConnection();
-                        conn.Open();
-                        conn.DefaultTimeout = 5;
-                        LogStorage.InsertBatch(conn, batch);
-                    }
-                    catch { }
+                    lastError = ex;
                 }
             }
+
+            batch.Clear();
+            writeError = lastError;
         }
 
         private static (string where, List<(string name, object value)> args) BuildExportWhere(

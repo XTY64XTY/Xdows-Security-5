@@ -1503,6 +1503,21 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="LogExportDialog_Export.Content" xml:space="preserve">
     <value>Export</value>
   </data>
+  <data name="LogExportDialog_FromDate.PlaceholderText" xml:space="preserve">
+    <value>Start date</value>
+  </data>
+  <data name="LogExportDialog_ToDate.PlaceholderText" xml:space="preserve">
+    <value>End date</value>
+  </data>
+  <data name="LogExportDialog_KeywordBox.PlaceholderText" xml:space="preserve">
+    <value>Optional keyword filter</value>
+  </data>
+  <data name="LogExportDialog_Failed_Title" xml:space="preserve">
+    <value>Log export failed</value>
+  </data>
+  <data name="LogExportDialog_Failed_Message" xml:space="preserve">
+    <value>Unable to export logs: {0}</value>
+  </data>
   <data name="UsbScanWindow_Title.Title" xml:space="preserve">
     <value>USB Device Scan</value>
   </data>

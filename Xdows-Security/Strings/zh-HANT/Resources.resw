@@ -1502,6 +1502,21 @@
   <data name="LogExportDialog_Export.Content" xml:space="preserve">
     <value>匯出</value>
   </data>
+  <data name="LogExportDialog_FromDate.PlaceholderText" xml:space="preserve">
+    <value>開始日期</value>
+  </data>
+  <data name="LogExportDialog_ToDate.PlaceholderText" xml:space="preserve">
+    <value>結束日期</value>
+  </data>
+  <data name="LogExportDialog_KeywordBox.PlaceholderText" xml:space="preserve">
+    <value>可選關鍵詞篩選</value>
+  </data>
+  <data name="LogExportDialog_Failed_Title" xml:space="preserve">
+    <value>匯出日誌失敗</value>
+  </data>
+  <data name="LogExportDialog_Failed_Message" xml:space="preserve">
+    <value>無法匯出日誌：{0}</value>
+  </data>
   <data name="UsbScanWindow_Title.Title" xml:space="preserve">
     <value>USB 設備掃描</value>
   </data>

@@ -207,7 +207,9 @@
                                     <TextBlock l:Uids.Uid="HomePage_LogManage"/>
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="LogExportButton" Click="ExportLog_Click">
+                            <Button x:Name="LogExportButton"
+                                    Click="ExportLog_Click"
+                                    AutomationProperties.AutomationId="LogExportButton">
                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                     <FontIcon Glyph="&#xEDE1;" FontSize="16"/>
                                     <TextBlock l:Uids.Uid="HomePage_ExportLog"/>

@@ -11,7 +11,6 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
-using WinRT.Interop;
 using WinUI3Localizer;
 using Xdows_Security.Services;
 
@@ -390,9 +389,22 @@ namespace Xdows_Security.Views
             LogEmptyStateText.Text = Localizer.Get().GetLocalizedString("HomePage_LogEmptyState");
         }
 
-        private void ExportLog_Click(object sender, RoutedEventArgs e)
+        private async void ExportLog_Click(object sender, RoutedEventArgs e)
         {
-            _ = ShowExportDialogAsync();
+            LogExportButton.IsEnabled = false;
+            try
+            {
+                await ShowExportDialogAsync();
+            }
+            catch (Exception ex)
+            {
+                LogText.AddNewLog(LogText.LogLevel.WARN, "ExportLog", ex.ToString());
+                await TryShowExportFailureAsync(ex.Message);
+            }
+            finally
+            {
+                LogExportButton.IsEnabled = true;
+            }
         }
 
         private async Task ShowExportDialogAsync()
@@ -404,28 +416,41 @@ namespace Xdows_Security.Views
             var result = await dialog.ShowAsync();
             if (result != ContentDialogResult.Primary) return;
 
+            var picker = new FileSavePicker(XamlRoot.ContentIslandEnvironment.AppWindowId)
+            {
+                SuggestedFileName = $"XdowsSecurity_Log_{DateTime.Now:yyyyMMdd_HHmmss}.log",
+                DefaultFileExtension = ".log",
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+            };
+
+            PickFileResult? file = await picker.PickSaveFileAsync();
+            if (file is null) return;
+
+            await LogService.ExportAsync(file.Path,
+                dialog.SelectedLevels, dialog.SearchKeyword,
+                dialog.FromDate, dialog.ToDate);
+        }
+
+        private async Task TryShowExportFailureAsync(string detail)
+        {
             try
             {
-                var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-                var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hwnd);
-                var picker = new FileSavePicker(windowId)
+                string title = Localizer.Get().GetLocalizedString("LogExportDialog_Failed_Title");
+                string messageFormat = Localizer.Get().GetLocalizedString("LogExportDialog_Failed_Message");
+                var failureDialog = new ContentDialog
                 {
-                    SuggestedFileName = $"XdowsSecurity_Log_{DateTime.Now:yyyyMMdd_HHmmss}.log",
-                    DefaultFileExtension = ".log",
-                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-                    SuggestedFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                    XamlRoot = XamlRoot,
+                    Title = title,
+                    Content = string.Format(messageFormat, detail),
+                    CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close"),
+                    DefaultButton = ContentDialogButton.Close
                 };
-
-                PickFileResult file = await picker.PickSaveFileAsync();
-                if (file is null) return;
-
-                await LogService.ExportAsync(file.Path,
-                    dialog.SelectedLevels, dialog.SearchKeyword,
-                    dialog.FromDate, dialog.ToDate);
+                await failureDialog.ShowAsync();
             }
-            catch (Exception ex)
+            catch
             {
-                LogText.AddNewLog(LogText.LogLevel.WARN, "ExportLog", ex.Message);
+                // The original exception has already been persisted to the log.
             }
         }
 
