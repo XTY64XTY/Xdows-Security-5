@@ -22,6 +22,7 @@ public sealed class NativeModelScanner : IDisposable
 
     private IntPtr _session;
     private bool _nativeReady;
+    private string? _nativeInitializationError;
     private readonly NativeModelScannerMode _mode;
 
     public bool NativeReady => _nativeReady;
@@ -35,18 +36,23 @@ public sealed class NativeModelScanner : IDisposable
         {
             int status = XdowsModelNativeInitialize(modelDirectory, (int)mode, out _session);
             _nativeReady = status == 0 && _session != IntPtr.Zero;
+            if (!_nativeReady)
+                _nativeInitializationError = $"native-init-status:{status}";
         }
-        catch (DllNotFoundException)
+        catch (DllNotFoundException ex)
         {
             _nativeReady = false;
+            _nativeInitializationError = $"native-init-exception:{ex.GetType().Name}:{ex.Message}";
         }
-        catch (EntryPointNotFoundException)
+        catch (EntryPointNotFoundException ex)
         {
             _nativeReady = false;
+            _nativeInitializationError = $"native-init-exception:{ex.GetType().Name}:{ex.Message}";
         }
-        catch
+        catch (Exception ex)
         {
             _nativeReady = false;
+            _nativeInitializationError = $"native-init-exception:{ex.GetType().Name}:{ex.Message}";
         }
     }
 
@@ -55,33 +61,38 @@ public sealed class NativeModelScanner : IDisposable
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return new NativeModelScannerResult(false, 0, string.Empty, _nativeReady, "file-not-found");
 
-        if (_nativeReady)
+        if (!_nativeReady)
+            return new NativeModelScannerResult(
+                false,
+                0,
+                string.Empty,
+                false,
+                $"native-not-ready:{_nativeInitializationError ?? "unknown"}");
+
+        try
         {
-            try
-            {
-                int status = XdowsModelNativeScanFile(_session, path, out XdowsNativeScanResult nativeResult);
-                string detectionName = NormalizeDetectionName(PtrToStringAndFree(nativeResult.DetectionName));
-                string? error = PtrToStringAndFree(nativeResult.ErrorMessage);
+            int status = XdowsModelNativeScanFile(_session, path, out XdowsNativeScanResult nativeResult);
+            string detectionName = NormalizeDetectionName(PtrToStringAndFree(nativeResult.DetectionName));
+            string? error = PtrToStringAndFree(nativeResult.ErrorMessage);
 
-                if (status == 0 && nativeResult.Status == 0)
-                {
-                    return new NativeModelScannerResult(
-                        nativeResult.IsThreat != 0,
-                        nativeResult.Probability,
-                        detectionName,
-                        true,
-                        error);
-                }
-
-                return new NativeModelScannerResult(false, 0, detectionName, true, error ?? $"native-status:{status}/{nativeResult.Status}");
-            }
-            catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or SEHException or BadImageFormatException)
+            if (status == 0 && nativeResult.Status == 0)
             {
-                _nativeReady = false;
+                return new NativeModelScannerResult(
+                    nativeResult.IsThreat != 0,
+                    nativeResult.Probability,
+                    detectionName,
+                    true,
+                    error);
             }
+
+            return new NativeModelScannerResult(false, 0, detectionName, true, error ?? $"native-status:{status}/{nativeResult.Status}");
         }
-
-        return ScanWithManagedInvokerFallback(path);
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or SEHException or BadImageFormatException)
+        {
+            _nativeReady = false;
+            _nativeInitializationError = $"native-scan-exception:{ex.GetType().Name}:{ex.Message}";
+            return new NativeModelScannerResult(false, 0, string.Empty, true, _nativeInitializationError);
+        }
     }
 
     public void Dispose()
@@ -100,51 +111,6 @@ public sealed class NativeModelScanner : IDisposable
         }
 
         _nativeReady = false;
-    }
-
-    private NativeModelScannerResult ScanWithManagedInvokerFallback(string path)
-    {
-        try
-        {
-            Xdows_Model_Invoker.ModelMode mode = _mode switch
-            {
-                NativeModelScannerMode.Flash => Xdows_Model_Invoker.ModelMode.Flash,
-                NativeModelScannerMode.Pro => Xdows_Model_Invoker.ModelMode.Pro,
-                _ => Xdows_Model_Invoker.ModelMode.Standard
-            };
-
-            switch (mode)
-            {
-                case Xdows_Model_Invoker.ModelMode.Flash:
-                    Xdows_Model_Invoker.ModelInvoker.InitializeFlash();
-                    break;
-                case Xdows_Model_Invoker.ModelMode.Pro:
-                    Xdows_Model_Invoker.ModelInvoker.InitializePro();
-                    break;
-                default:
-                    Xdows_Model_Invoker.ModelInvoker.Initialize();
-                    break;
-            }
-
-            var (isVirus, probability) = Xdows_Model_Invoker.ModelInvoker.ScanFile(path);
-            string modeTag = mode switch
-            {
-                Xdows_Model_Invoker.ModelMode.Flash => "Flash",
-                Xdows_Model_Invoker.ModelMode.Pro => "Pro",
-                _ => "Standard"
-            };
-
-            return new NativeModelScannerResult(
-                isVirus,
-                probability,
-                isVirus ? $"Xdows.Model.{modeTag}.Probability{(int)probability}" : string.Empty,
-                false,
-                null);
-        }
-        catch (Exception ex)
-        {
-            return new NativeModelScannerResult(false, 0, string.Empty, false, ex.GetType().Name);
-        }
     }
 
     private static string PtrToStringAndFree(IntPtr ptr)
