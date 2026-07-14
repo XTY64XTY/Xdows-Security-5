@@ -55,6 +55,7 @@ public sealed class NativeModelScanner : IDisposable
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return new NativeModelScannerResult(false, 0, string.Empty, _nativeReady, "file-not-found");
 
+        NativeModelScannerResult? nativeFailure = null;
         if (_nativeReady)
         {
             try
@@ -73,15 +74,35 @@ public sealed class NativeModelScanner : IDisposable
                         error);
                 }
 
-                return new NativeModelScannerResult(false, 0, detectionName, true, error ?? $"native-status:{status}/{nativeResult.Status}");
+                nativeFailure = new NativeModelScannerResult(
+                    false,
+                    0,
+                    detectionName,
+                    true,
+                    error ?? $"native-status:{status}/{nativeResult.Status}");
             }
             catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or SEHException or BadImageFormatException)
             {
                 _nativeReady = false;
+                nativeFailure = new NativeModelScannerResult(
+                    false,
+                    0,
+                    string.Empty,
+                    true,
+                    $"native-exception:{ex.GetType().Name}:{ex.Message}");
             }
         }
 
-        return ScanWithManagedInvokerFallback(path);
+        NativeModelScannerResult managedResult = ScanWithManagedInvokerFallback(path);
+        if (nativeFailure is not null && !string.IsNullOrWhiteSpace(managedResult.ErrorMessage))
+        {
+            return managedResult with
+            {
+                ErrorMessage = $"native-error:{nativeFailure.ErrorMessage};managed-error:{managedResult.ErrorMessage}"
+            };
+        }
+
+        return managedResult;
     }
 
     public void Dispose()
