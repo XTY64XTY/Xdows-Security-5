@@ -388,38 +388,13 @@ public sealed class DriverProtection : IProtectionModel
         // scans, causing driver timeouts and system lockup.
         if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
         {
-            // Model feature-extraction failed. For ProcessCreate this means
-            // we cannot determine if the executable is safe. Fail-ask:
-            // prompt the user rather than silently allowing a potentially
-            // malicious binary (e.g. malware with malformed PE header that
-            // bypasses IsPeFile). User Allow -> cache; user Block -> block;
-            // user Timeout -> allow (fail-open to avoid system lockup).
-            Log("Scan", $"ProcessCreate model-error, escalating to user: {scan.ErrorMessage}");
-            NativeModelScannerResult errorScan = new NativeModelScannerResult(
-                true, 50, "ModelExtractionError", false, scan.ErrorMessage);
-            ProtectionUserDecision errorDecision = await AskUserForThreatDecisionAsync(
-                imagePath,
-                commandLine,
-                driverEvent,
-                errorScan,
-                actorPath: ResolveActorPath(driverEvent),
-                actorTrust: null,
-                actorScan: null,
-                token).ConfigureAwait(false);
-
-            if (errorDecision == ProtectionUserDecision.Allow)
-            {
-                Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "user-release-model-error", TimeSpan.FromMinutes(5));
-                return Allow(driverEvent.EventId, "user-release-model-error");
-            }
-            if (errorDecision == ProtectionUserDecision.Timeout)
-            {
-                Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "model-error-timeout-allow", TimeSpan.FromSeconds(30));
-                return Allow(driverEvent.EventId, "model-error-timeout-allow");
-            }
-
-            Cache(processCacheKey, XdowsSecurityDecisionType.Block, "user-block-model-error", TimeSpan.FromSeconds(10));
-            return DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Block, "user-block-model-error");
+            // Extraction/runtime failures are infrastructure failures, not
+            // confirmed threats. Fail open briefly and keep the error in the
+            // diagnostic log; presenting a synthetic threat here causes every
+            // unsupported or temporarily inaccessible file to be reported.
+            Log("Scan", $"ProcessCreate model infrastructure error, allowing briefly: {scan.ErrorMessage}");
+            Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "model-infrastructure-error-allow", TimeSpan.FromSeconds(30));
+            return Allow(driverEvent.EventId, "model-infrastructure-error-allow");
         }
 
         if (!scan.IsThreat)
