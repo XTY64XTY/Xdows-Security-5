@@ -29,11 +29,6 @@
 		<IlcInstructionSet>x86-64-v2</IlcInstructionSet>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<XdowsCodeRoot>$(MSBuildProjectDirectory)\..\..</XdowsCodeRoot>
-		<XdowsNoDriverBuild Condition="'$(LaunchProfileName)' == 'Xdows-Security (Unpackaged - No Driver Build)' Or '$(ActiveDebugProfile)' == 'Xdows-Security (Unpackaged - No Driver Build)'">true</XdowsNoDriverBuild>
-		<XdowsBuildDriver Condition="'$(XdowsNoDriverBuild)' == 'true'">false</XdowsBuildDriver>
-		<XdowsNativeConfiguration Condition="'$(XdowsNoDriverBuild)' == 'true'">Debug</XdowsNativeConfiguration>
-		<XdowsDriverConfiguration Condition="'$(XdowsNoDriverBuild)' == 'true'">Debug</XdowsDriverConfiguration>
-		<XdowsRuntimeProjectConfiguration Condition="'$(XdowsNoDriverBuild)' == 'true'">Debug</XdowsRuntimeProjectConfiguration>
 		<XdowsBuildDriver Condition="'$(XdowsBuildDriver)' == ''">true</XdowsBuildDriver>
 		<XdowsNativeConfiguration Condition="'$(XdowsNativeConfiguration)' == ''">$(Configuration)</XdowsNativeConfiguration>
 		<XdowsDriverConfiguration Condition="'$(XdowsDriverConfiguration)' == ''">$(Configuration)</XdowsDriverConfiguration>
@@ -147,6 +142,7 @@
 			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
 			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Flash.onnx" />
 			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro.onnx" />
+			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro-*.onnx" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
@@ -222,6 +218,7 @@
 			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
 			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Flash.onnx" />
 			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro.onnx" />
+			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro-*.onnx" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />

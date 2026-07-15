@@ -173,6 +173,7 @@ namespace Xdows_Security
                     protection.ModelMode = modeStr switch
                     {
                         "Flash" => NativeModelScannerMode.Flash,
+                        "Adaptive" => NativeModelScannerMode.Adaptive,
                         "Pro" => NativeModelScannerMode.Pro,
                         _ => NativeModelScannerMode.Standard
                     };

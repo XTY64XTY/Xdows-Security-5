@@ -170,6 +170,7 @@
                             <ComboBox x:Name="ModelModeComboBox" SelectionChanged="ModelModeComboBox_SelectionChanged">
                                 <ComboBoxItem Content="Flash" Tag="Flash" />
                                 <ComboBoxItem Content="Standard" Tag="Standard" />
+                                <ComboBoxItem Content="Adaptive" Tag="Adaptive" />
                                 <ComboBoxItem Content="Pro" Tag="Pro" />
                             </ComboBox>
                         </controls:SettingsCard>

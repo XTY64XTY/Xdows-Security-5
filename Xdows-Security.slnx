@@ -28,10 +28,16 @@
   <Folder Name="/Xdows-Model/">
     <Project Path="../Xdows-Model/Xdows-Model-Config/Xdows-Model-Config.csproj" />
     <Project Path="../Xdows-Model/Xdows-Model-Invoker/Xdows-Model-Invoker.csproj" />
-    <Project Path="../Xdows-Model/Xdows-Model-Native/Xdows-Model-Native.vcxproj" Id="6f1f6583-bc87-4d4a-8c39-3c147144cfb7" />
+    <Project Path="../Xdows-Model/Xdows-Model-Native/Xdows-Model-Native.vcxproj" Id="6f1f6583-bc87-4d4a-8c39-3c147144cfb7">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
   </Folder>
   <Folder Name="/Xdows-Security-Driver/">
-    <Project Path="../Xdows-Security-Driver/Xdows-Security-Driver/Xdows-Security-Driver.vcxproj" Id="58180c53-dbe7-b205-6bba-ad9d2c81eaa4" />
+    <Project Path="../Xdows-Security-Driver/Xdows-Security-Driver/Xdows-Security-Driver.vcxproj" Id="58180c53-dbe7-b205-6bba-ad9d2c81eaa4">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
   </Folder>
   <Project Path="Helper/Helper.csproj" />
   <Project Path="Protection/Protection.csproj" />

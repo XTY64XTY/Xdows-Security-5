@@ -2,9 +2,6 @@
   "profiles": {
     "Xdows-Security (Unpackaged)": {
       "commandName": "Project"
-    },
-    "Xdows-Security (Unpackaged - No Driver Build)": {
-      "commandName": "Project"
     }
   }
 }

@@ -6,7 +6,8 @@ public enum NativeModelScannerMode
 {
     Standard = 0,
     Flash = 1,
-    Pro = 2
+    Pro = 2,
+    Adaptive = 3
 }
 
 public sealed record NativeModelScannerResult(

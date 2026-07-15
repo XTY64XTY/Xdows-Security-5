@@ -1716,6 +1716,7 @@ namespace Xdows_Security.Views
                 string modeTag = Helper.ScanEngine.ModelEngineScan.Mode switch
                 {
                     Xdows_Model_Invoker.ModelMode.Flash => "Flash",
+                    Xdows_Model_Invoker.ModelMode.Adaptive => "Adaptive",
                     Xdows_Model_Invoker.ModelMode.Pro => "Pro",
                     _ => "Standard"
                 };

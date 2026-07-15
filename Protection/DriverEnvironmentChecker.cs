@@ -212,6 +212,10 @@ public static class DriverEnvironmentChecker
             "Xdows-Model.onnx",
             "Xdows-Model-Flash.onnx",
             "Xdows-Model-Pro.onnx",
+            "Xdows-Model-Pro-Standard.onnx",
+            "Xdows-Model-Pro-Flash.onnx",
+            "Xdows-Model-Pro-RawStat.onnx",
+            "Xdows-Model-Pro-Structural.onnx",
             "onnxruntime.dll",
             "onnxruntime_providers_shared.dll"
         ];

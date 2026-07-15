@@ -33,6 +33,11 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Link>Xdows-Model-Pro.onnx</Link>
     </Content>
+    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Pro-*.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <Link>%(Filename)%(Extension)</Link>
+    </Content>
   </ItemGroup>
 
   <Target Name="RemoveDia2LibFromPublish" AfterTargets="ResolveReferences">

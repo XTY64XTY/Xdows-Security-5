@@ -84,6 +84,7 @@ namespace Helper
                         _mode = modeStr switch
                         {
                             "Flash" => Xdows_Model_Invoker.ModelMode.Flash,
+                            "Adaptive" => Xdows_Model_Invoker.ModelMode.Adaptive,
                             "Pro" => Xdows_Model_Invoker.ModelMode.Pro,
                             _ => Xdows_Model_Invoker.ModelMode.Standard
                         };
@@ -142,6 +143,9 @@ namespace Helper
                     case Xdows_Model_Invoker.ModelMode.Pro:
                         Xdows_Model_Invoker.ModelInvoker.InitializePro();
                         break;
+                    case Xdows_Model_Invoker.ModelMode.Adaptive:
+                        Xdows_Model_Invoker.ModelInvoker.InitializeAdaptive();
+                        break;
                     default:
                         Xdows_Model_Invoker.ModelInvoker.Initialize();
                         break;
@@ -158,6 +162,7 @@ namespace Helper
                         string modeTag = _mode switch
                         {
                             Xdows_Model_Invoker.ModelMode.Flash => "Flash",
+                            Xdows_Model_Invoker.ModelMode.Adaptive => "Adaptive",
                             Xdows_Model_Invoker.ModelMode.Pro => "Pro",
                             _ => "Standard"
                         };
@@ -173,6 +178,7 @@ namespace Helper
                 string modeTag = _mode switch
                 {
                     Xdows_Model_Invoker.ModelMode.Flash => "Flash",
+                    Xdows_Model_Invoker.ModelMode.Adaptive => "Adaptive",
                     Xdows_Model_Invoker.ModelMode.Pro => "Pro",
                     _ => "Standard"
                 };
