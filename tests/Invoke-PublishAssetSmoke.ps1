@@ -39,6 +39,11 @@ if (!$outputDir) {
     throw "App output directory was not found for $Platform/$Configuration."
 }
 
+$nativeBuildOutput = Join-Path $appProjectRoot "obj\XdowsModelNative\$Platform\$Configuration\Xdows-Model-Native.dll"
+if (!(Test-Path -LiteralPath $nativeBuildOutput)) {
+    throw "Deterministic native model build output was not found: $nativeBuildOutput"
+}
+
 $requiredFiles = @(
     "Xdows-Model.onnx",
     "Xdows-Model-Flash.onnx",
@@ -46,6 +51,7 @@ $requiredFiles = @(
     "Xdows-Model-Native.dll",
     "onnxruntime.dll",
     "onnxruntime_providers_shared.dll",
+    "Xdows-Security-Driver.sys",
     "Driver\Xdows-Security-Driver.inf",
     "Driver\Xdows-Security-Driver.sys",
     "Driver\xdows-security-driver.cat"
@@ -66,6 +72,27 @@ $results = foreach ($relative in $requiredFiles) {
         RelativePath = $relative
         Length = $item.Length
     }
+}
+
+$packagedNative = Join-Path $outputDir "Xdows-Model-Native.dll"
+$sourceNativeHash = (Get-FileHash -LiteralPath $nativeBuildOutput -Algorithm SHA256).Hash
+$packagedNativeHash = (Get-FileHash -LiteralPath $packagedNative -Algorithm SHA256).Hash
+if ($sourceNativeHash -ne $packagedNativeHash) {
+    throw "Packaged native model hash does not match the current native build output. Source=$sourceNativeHash Packaged=$packagedNativeHash"
+}
+
+$driverSource = Join-Path (Split-Path -Parent $repoRoot) "Xdows-Security-Driver\Xdows-Security-Driver\$Platform\$Configuration\Xdows-Security-Driver\Xdows-Security-Driver.sys"
+$driverRootCopy = Join-Path $outputDir "Xdows-Security-Driver.sys"
+$driverPackageCopy = Join-Path $outputDir "Driver\Xdows-Security-Driver.sys"
+if (!(Test-Path -LiteralPath $driverSource)) {
+    throw "Current driver build output was not found: $driverSource"
+}
+
+$driverHashes = @($driverSource, $driverRootCopy, $driverPackageCopy) |
+    ForEach-Object { (Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash } |
+    Select-Object -Unique
+if ($driverHashes.Count -ne 1) {
+    throw "Driver hashes differ between source, output root, and packaged Driver directory: $($driverHashes -join ', ')"
 }
 
 $results | Format-Table -AutoSize
