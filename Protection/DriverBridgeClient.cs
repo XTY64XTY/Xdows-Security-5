@@ -17,10 +17,11 @@ internal sealed class DriverBridgeClient : IDisposable
     internal const int ErrorRevisionMismatch = 1306;
 
     private SafeFileHandle? _handle;
+    private SafeFileHandle? _eventHandle;
     private uint _clientProcessId;
     private readonly DriverShutdownToken _shutdownToken = new();
 
-    public bool IsConnected => _handle is { IsClosed: false, IsInvalid: false };
+    public bool IsConnected => IsHandleOpen(_handle) && IsHandleOpen(_eventHandle);
     public bool HasShutdownToken => _shutdownToken.HasToken;
 
     public void Connect()
@@ -62,6 +63,13 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new InvalidOperationException(
                 $"Driver protocol/build mismatch. Expected v{DriverProtocol.ProtocolVersion}/{DriverProtocol.DriverBuildId}, " +
                 $"received v{response.ProtocolVersion}/{response.DriverBuildId}.");
+        }
+
+        _eventHandle = OpenDriverDevice(out int eventOpenError);
+        if (_eventHandle is null)
+        {
+            Disconnect();
+            throw new Win32Exception(eventOpenError, "Failed to open the Xdows Security driver event channel.");
         }
 
         _shutdownToken.Capture(response.ShutdownToken);
@@ -273,6 +281,9 @@ internal sealed class DriverBridgeClient : IDisposable
 
     public void Disconnect()
     {
+        _eventHandle?.Dispose();
+        _eventHandle = null;
+
         if (_handle is { IsClosed: false, IsInvalid: false })
         {
             _ = DeviceIoControlNoBuffers(DriverProtocol.DisconnectClient);
@@ -339,7 +350,7 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
-        bool ok = DeviceIoControlNoInput(DriverProtocol.GetNextEvent, out XdowsSecurityEvent securityEvent);
+        bool ok = DeviceIoControlNoInput(_eventHandle!, DriverProtocol.GetNextEvent, out XdowsSecurityEvent securityEvent);
         if (ok)
             return securityEvent;
 
@@ -360,9 +371,12 @@ internal sealed class DriverBridgeClient : IDisposable
 
     private void EnsureConnected()
     {
-        if (!IsConnected)
+        if (!IsHandleOpen(_handle))
             throw new InvalidOperationException("Driver bridge is not connected.");
     }
+
+    private static bool IsHandleOpen(SafeFileHandle? handle) =>
+        handle is { IsClosed: false, IsInvalid: false };
 
     private static SafeFileHandle? OpenDriverDevice(out int win32Error)
     {
@@ -399,12 +413,21 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
+        return DeviceIoControlNoInput(_handle!, ioctl, out output);
+    }
+
+    private static bool DeviceIoControlNoInput<TOut>(
+        SafeFileHandle handle,
+        uint ioctl,
+        out TOut output) where TOut : struct
+    {
+
         int outSize = Marshal.SizeOf<TOut>();
         IntPtr outPtr = Marshal.AllocHGlobal(outSize);
         try
         {
             ZeroMemory(outPtr, outSize);
-            bool ok = DeviceIoControl(_handle!, ioctl, IntPtr.Zero, 0, outPtr, (uint)outSize, out _, IntPtr.Zero);
+            bool ok = DeviceIoControl(handle, ioctl, IntPtr.Zero, 0, outPtr, (uint)outSize, out _, IntPtr.Zero);
             output = ok ? Marshal.PtrToStructure<TOut>(outPtr) : default;
             return ok;
         }
