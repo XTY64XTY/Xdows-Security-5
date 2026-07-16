@@ -237,12 +237,19 @@ namespace Xdows_Security
                         Backend = request.Backend
                     }, token);
 
-                    tcs.TrySetResult(button switch
+                    ProtectionUserDecision userDecision = button switch
                     {
                         "Release" => ProtectionUserDecision.Allow,
                         "Timeout" => ProtectionUserDecision.Timeout,
                         _ => ProtectionUserDecision.Block
-                    });
+                    };
+                    if (tcs.TrySetResult(userDecision))
+                    {
+                        LogText.AddNewLog(
+                            LogText.LogLevel.INFO,
+                            "DriverProtection",
+                            $"User decision submitted: {userDecision} cid:{request.CorrelationId}");
+                    }
                 }
                 catch
                 {

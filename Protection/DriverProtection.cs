@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading.Channels;
 using TrustQuarantine;
 using Helper;
 using static Protection.CallBack;
@@ -40,6 +41,11 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityDecisionType Decision,
         string Reason,
         DateTimeOffset ExpiresAt);
+    private sealed record PendingQuarantine(
+        ulong EventId,
+        ulong CorrelationId,
+        string Path,
+        string DetectionName);
 
     private static readonly Lock StateLock = new();
     private static readonly ConcurrentDictionary<string, DecisionCacheEntry> DecisionCache = new(StringComparer.OrdinalIgnoreCase);
@@ -50,10 +56,13 @@ public sealed class DriverProtection : IProtectionModel
     private static readonly int ScanWorkerCount = Math.Clamp(Environment.ProcessorCount / 2, 2, 4);
     private static readonly SemaphoreSlim ScanLimiter = new(ScanWorkerCount, ScanWorkerCount);
     private static readonly ConcurrentDictionary<string, Lazy<Task<NativeModelScannerResult>>> InFlightScans = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<ulong, PendingQuarantine> _pendingQuarantines = new();
 
     private CancellationTokenSource? _cts;
     private Task? _pumpTask;
     private Task? _logTask;
+    private Task? _quarantineTask;
+    private Channel<PendingQuarantine>? _quarantineChannel;
     private DriverBridgeClient? _client;
     private NativeModelScanner? _scanner;
     private InterceptCallBack? _interceptCallBack;
@@ -163,7 +172,17 @@ public sealed class DriverProtection : IProtectionModel
                 }
 
                 DriverBridgeClient client = _client;
-                _pumpTask = Task.Run(() => client.RunEventPumpAsync(HandleDriverEventAsync, _cts.Token));
+                _quarantineChannel = Channel.CreateBounded<PendingQuarantine>(new BoundedChannelOptions(32)
+                {
+                    SingleReader = true,
+                    SingleWriter = false,
+                    FullMode = BoundedChannelFullMode.Wait
+                });
+                _quarantineTask = Task.Run(() => RunQuarantinePumpAsync(_quarantineChannel.Reader, _cts.Token));
+                _pumpTask = Task.Run(() => client.RunEventPumpAsync(
+                    HandleDriverEventAsync,
+                    QueuePostDecisionWorkAsync,
+                    _cts.Token));
                 _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));
                 Log("Bridge", "Event pump and log pump started");
                 return true;
@@ -206,6 +225,7 @@ public sealed class DriverProtection : IProtectionModel
                 {
                     _pumpTask?.Wait(2000);
                     _logTask?.Wait(2000);
+                    _quarantineTask?.Wait(2000);
                 }
                 catch
                 {
@@ -251,6 +271,9 @@ public sealed class DriverProtection : IProtectionModel
 
     private void CleanupLocked()
     {
+        _quarantineChannel?.Writer.TryComplete();
+        _pendingQuarantines.Clear();
+
         try
         {
             _client?.Disconnect();
@@ -269,7 +292,79 @@ public sealed class DriverProtection : IProtectionModel
         _cts = null;
         _pumpTask = null;
         _logTask = null;
+        _quarantineTask = null;
+        _quarantineChannel = null;
         _interceptCallBack = null;
+    }
+
+    private void QueueQuarantineAfterBlock(
+        XdowsSecurityEvent driverEvent,
+        string path,
+        string detectionName)
+    {
+        _pendingQuarantines[driverEvent.EventId] = new PendingQuarantine(
+            driverEvent.EventId,
+            driverEvent.CorrelationId,
+            path,
+            detectionName);
+    }
+
+    private async ValueTask QueuePostDecisionWorkAsync(
+        XdowsSecurityEvent driverEvent,
+        XdowsSecurityDecision decision,
+        CancellationToken token)
+    {
+        if (decision.Decision == (uint)XdowsSecurityDecisionType.Block)
+        {
+            LogCallback?.Invoke(new DriverProtectionLogEntry(
+                driverEvent.EventId,
+                driverEvent.CorrelationId,
+                DriverProtectionLogSeverity.Info,
+                0,
+                DateTimeOffset.Now,
+                "Decision",
+                "Block decision submitted to kernel."));
+        }
+
+        if (!_pendingQuarantines.TryRemove(driverEvent.EventId, out PendingQuarantine? pending) ||
+            decision.Decision != (uint)XdowsSecurityDecisionType.Block)
+        {
+            return;
+        }
+
+        Channel<PendingQuarantine>? channel = _quarantineChannel;
+        if (channel is null)
+            return;
+
+        await channel.Writer.WriteAsync(pending, token).ConfigureAwait(false);
+    }
+
+    private async Task RunQuarantinePumpAsync(
+        ChannelReader<PendingQuarantine> reader,
+        CancellationToken token)
+    {
+        try
+        {
+            await foreach (PendingQuarantine pending in reader.ReadAllAsync(token).ConfigureAwait(false))
+            {
+                bool quarantineSucceeded = await QuarantineManager
+                    .AddToQuarantine(pending.Path, pending.DetectionName)
+                    .ConfigureAwait(false);
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    pending.EventId,
+                    pending.CorrelationId,
+                    quarantineSucceeded ? DriverProtectionLogSeverity.Info : DriverProtectionLogSeverity.Error,
+                    0,
+                    DateTimeOffset.Now,
+                    "Quarantine",
+                    quarantineSucceeded
+                        ? $"Blocked threat quarantined: {pending.Path}"
+                        : $"Blocked threat could not be quarantined: {pending.Path}"));
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
     }
 
     private async Task RunLogPumpAsync(DriverBridgeClient client, CancellationToken token)
@@ -440,6 +535,10 @@ public sealed class DriverProtection : IProtectionModel
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "confirmed-threat-user-timeout-block"
             : "user-block-threat";
+        string detectionName = string.IsNullOrWhiteSpace(scan.DetectionName)
+            ? "Xdows.Model.ProcessThreat"
+            : scan.DetectionName;
+        QueueQuarantineAfterBlock(driverEvent, imagePath, detectionName);
 
         // Do not cache an interactive block. Each later execution attempt must
         // surface a fresh interception prompt instead of being blocked silently.
@@ -540,28 +639,12 @@ public sealed class DriverProtection : IProtectionModel
         string detectionName = string.IsNullOrWhiteSpace(scan.DetectionName)
             ? "Xdows.Model.FileThreat"
             : scan.DetectionName;
-        bool quarantineSucceeded = await QuarantineManager
-            .AddToQuarantine(filePath, detectionName)
-            .ConfigureAwait(false);
-        if (!quarantineSucceeded)
-        {
-            LogCallback?.Invoke(new DriverProtectionLogEntry(
-                driverEvent.EventId,
-                driverEvent.CorrelationId,
-                DriverProtectionLogSeverity.Error,
-                0,
-                DateTimeOffset.Now,
-                "Quarantine",
-                $"Confirmed file threat could not be quarantined: {filePath}"));
-        }
+        QueueQuarantineAfterBlock(driverEvent, filePath, detectionName);
 
         XdowsSecurityDecisionType decisionType = XdowsSecurityDecisionType.Block;
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "confirmed-file-threat-user-timeout-block"
             : "user-block-file-threat";
-        if (!quarantineSucceeded)
-            reason += "-quarantine-failed";
-
         Cache(cacheKey, decisionType, reason, TimeSpan.FromSeconds(10));
         return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
     }

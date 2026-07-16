@@ -77,6 +77,7 @@ internal sealed class DriverBridgeClient : IDisposable
 
     public async Task RunEventPumpAsync(
         Func<XdowsSecurityEvent, CancellationToken, Task<XdowsSecurityDecision>> handler,
+        Func<XdowsSecurityEvent, XdowsSecurityDecision, CancellationToken, ValueTask>? afterDecisionSubmitted,
         CancellationToken token)
     {
         ArgumentNullException.ThrowIfNull(handler);
@@ -93,7 +94,7 @@ internal sealed class DriverBridgeClient : IDisposable
             FullMode = BoundedChannelFullMode.Wait
         });
         Task[] workers = Enumerable.Range(0, workerCount)
-            .Select(_ => RunDecisionWorkerAsync(channel.Reader, handler, token))
+            .Select(_ => RunDecisionWorkerAsync(channel.Reader, handler, afterDecisionSubmitted, token))
             .ToArray();
 
         try
@@ -132,6 +133,7 @@ internal sealed class DriverBridgeClient : IDisposable
     private async Task RunDecisionWorkerAsync(
         ChannelReader<XdowsSecurityEvent> reader,
         Func<XdowsSecurityEvent, CancellationToken, Task<XdowsSecurityDecision>> handler,
+        Func<XdowsSecurityEvent, XdowsSecurityDecision, CancellationToken, ValueTask>? afterDecisionSubmitted,
         CancellationToken token)
     {
         await foreach (XdowsSecurityEvent driverEvent in reader.ReadAllAsync(token).ConfigureAwait(false))
@@ -153,9 +155,25 @@ internal sealed class DriverBridgeClient : IDisposable
             try
             {
                 SubmitDecision(decision);
+                if (afterDecisionSubmitted is not null)
+                    await afterDecisionSubmitted(driverEvent, decision, token).ConfigureAwait(false);
             }
             catch
             {
+                if (afterDecisionSubmitted is not null)
+                {
+                    try
+                    {
+                        XdowsSecurityDecision failedSubmission = CreateDecision(
+                            driverEvent.EventId,
+                            XdowsSecurityDecisionType.Allow,
+                            "decision-submit-failed");
+                        await afterDecisionSubmitted(driverEvent, failedSubmission, token).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
     }
