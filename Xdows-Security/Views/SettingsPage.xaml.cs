@@ -676,8 +676,8 @@ namespace Xdows_Security.Views
             {
                 App.SetRunOOBE(true);
                 var currentProcess = Process.GetCurrentProcess();
-                Process.Start(currentProcess.MainModule?.FileName ?? currentProcess.ProcessName);
-                Application.Current.Exit();
+                string executablePath = currentProcess.MainModule?.FileName ?? currentProcess.ProcessName;
+                App.MainWindow?.RestartVoluntarily(executablePath);
             }
             catch { }
         }
@@ -1230,8 +1230,7 @@ namespace Xdows_Security.Views
                 }
                 catch { }
 
-                App.MainWindow?.Close();
-                Environment.Exit(0);
+                App.MainWindow?.CloseVoluntarily();
             }
         }
 

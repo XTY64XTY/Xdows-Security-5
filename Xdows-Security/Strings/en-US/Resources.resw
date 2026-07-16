@@ -1103,6 +1103,12 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="TrayMenu_Quit" xml:space="preserve">
     <value>Quit</value>
   </data>
+  <data name="MainWindow_CloseConfirmation_Title" xml:space="preserve">
+    <value>Quit Xdows Security?</value>
+  </data>
+  <data name="MainWindow_CloseConfirmation_Content" xml:space="preserve">
+    <value>Protection will stop after Xdows Security exits. Confirm that you want to quit.</value>
+  </data>
   <data name="TrayMenu_Settings" xml:space="preserve">
     <value>Settings</value>
   </data>

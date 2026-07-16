@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.Windows.Storage;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -26,7 +27,8 @@ namespace Xdows_Security
         public WinUIEx.WindowManager? Manager { get; private set; }
 
         private bool _isOOBEShown;
-        private bool _allowCloseFromTray;
+        private bool _voluntaryExitAuthorized;
+        private bool _closeConfirmationPending;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
 
@@ -332,31 +334,8 @@ namespace Xdows_Security
             };
             _trayQuitItem.Click += async (s, e) =>
             {
-                bool disabledVerify = false;
-                if (App.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool boolValue)
-                {
-                    disabledVerify = boolValue;
-                }
-                if (disabledVerify)
-                {
-                    _allowCloseFromTray = true;
-                    this.Close();
-                }
-                else
-                {
-                    var verifyTask = UserConsentVerifier.RequestVerificationAsync(string.Empty);
-                    var result = verifyTask.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
-
-                    if (result is UserConsentVerificationResult.DeviceNotPresent or
-                    UserConsentVerificationResult.DisabledByPolicy or
-                    UserConsentVerificationResult.NotConfiguredForUser or
-                    UserConsentVerificationResult.Verified)
-                    {
-                        _allowCloseFromTray = true;
-                        this.Close();
-                    }
-                    return;
-                }
+                if (await CanCloseAfterVerificationAsync())
+                    CloseVoluntarily();
             };
 
             _trayMenu = new MenuFlyout();
@@ -501,47 +480,132 @@ namespace Xdows_Security
         }
         private void MainWindow_Closing(object sender, AppWindowClosingEventArgs e)
         {
-            bool trayVisible = !App.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? trayVisibleToggle) || (trayVisibleToggle is bool trayVisibleValue && trayVisibleValue);
-            if (trayVisible && !_allowCloseFromTray)
+            if (_voluntaryExitAuthorized)
+                return;
+
+            e.Cancel = true;
+            HandleUntrustedCloseRequest();
+        }
+
+        public void CloseVoluntarily()
+        {
+            AuthorizeVoluntaryExit();
+            Close();
+        }
+
+        public void RestartVoluntarily(string executablePath)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(executablePath);
+            if (!AuthorizeVoluntaryExit())
+                return;
+
+            try
             {
-                e.Cancel = true;
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = executablePath,
+                    UseShellExecute = true
+                });
+            }
+            finally
+            {
+                Close();
+            }
+        }
+
+        private bool AuthorizeVoluntaryExit()
+        {
+            if (_voluntaryExitAuthorized)
+                return false;
+
+            _voluntaryExitAuthorized = true;
+            ProtectionStatus.PrepareVoluntaryExit();
+            App.ReleaseResources();
+            return true;
+        }
+
+        private void HandleUntrustedCloseRequest()
+        {
+            if (_voluntaryExitAuthorized)
+                return;
+
+            bool trayVisible = !App.LocalSettings.Values.TryGetValue("TrayVisibleToggle", out object? raw) ||
+                raw is bool isVisible && isVisible;
+            if (trayVisible)
+            {
                 this.Hide();
                 return;
             }
-            if (_allowCloseFromTray)
-            {
-                ProtectionStatus.PrepareVoluntaryExit();
-                App.ReleaseResources();
-                _allowCloseFromTray = false;
-                return;
-            }
-            bool disabledVerify = false;
-            if (App.LocalSettings.Values.TryGetValue("DisabledVerify", out object? isDisabledVerify) && isDisabledVerify is bool disabledVerifyValue)
-            {
-                disabledVerify = disabledVerifyValue;
-            }
-            if (!disabledVerify)
-            {
-                var verifyTask = UserConsentVerifier.RequestVerificationAsync(string.Empty);
-                var result = verifyTask.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
-                e.Cancel = true;
 
-                if (result is UserConsentVerificationResult.DeviceNotPresent or
-                UserConsentVerificationResult.DisabledByPolicy or
-                UserConsentVerificationResult.NotConfiguredForUser or
-                UserConsentVerificationResult.Verified)
+            if (_closeConfirmationPending)
+                return;
+
+            _closeConfirmationPending = true;
+            if (!DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
                 {
-                    ProtectionStatus.PrepareVoluntaryExit();
-                    App.ReleaseResources();
-                    e.Cancel = false;
-                    _allowCloseFromTray = false;
+                    await ConfirmCloseAsync();
                 }
-                return;
+                catch (Exception ex)
+                {
+                    LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"Close confirmation failed: {ex.Message}");
+                }
+                finally
+                {
+                    _closeConfirmationPending = false;
+                }
+            }))
+            {
+                _closeConfirmationPending = false;
             }
+        }
 
-            ProtectionStatus.PrepareVoluntaryExit();
-            App.ReleaseResources();
-            _allowCloseFromTray = false;
+        private async Task ConfirmCloseAsync()
+        {
+            Activate();
+            XamlRoot? xamlRoot = RootGrid.XamlRoot;
+            if (xamlRoot is null)
+                return;
+
+            ContentDialog dialog = new()
+            {
+                Title = Localizer.Get().GetLocalizedString("MainWindow_CloseConfirmation_Title"),
+                Content = Localizer.Get().GetLocalizedString("MainWindow_CloseConfirmation_Content"),
+                PrimaryButtonText = Localizer.Get().GetLocalizedString("TrayMenu_Quit"),
+                CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = xamlRoot,
+                RequestedTheme = (xamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+            };
+
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary &&
+                await CanCloseAfterVerificationAsync())
+            {
+                CloseVoluntarily();
+            }
+        }
+
+        private static async Task<bool> CanCloseAfterVerificationAsync()
+        {
+            bool disabledVerify = App.LocalSettings.Values.TryGetValue("DisabledVerify", out object? raw) &&
+                raw is bool isDisabled && isDisabled;
+            if (disabledVerify)
+                return true;
+
+            try
+            {
+                UserConsentVerificationResult result = await UserConsentVerifier.RequestVerificationAsync(string.Empty);
+                return result is UserConsentVerificationResult.DeviceNotPresent or
+                    UserConsentVerificationResult.DisabledByPolicy or
+                    UserConsentVerificationResult.NotConfiguredForUser or
+                    UserConsentVerificationResult.Verified;
+            }
+            catch (Exception ex)
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", $"Exit verification failed: {ex.Message}");
+                return false;
+            }
         }
         private void Nav_Loaded(object sender, RoutedEventArgs e)
         {
@@ -645,6 +709,15 @@ namespace Xdows_Security
 
         private nint DeviceChangeSubClassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
         {
+            bool isCloseMessage = Msg == WindowMessage.WM_CLOSE ||
+                (Msg == WindowMessage.WM_SYSCOMMAND &&
+                 (SYSTEMCOMMAND)(wParam.ToUInt32() & 0xFFF0) == SYSTEMCOMMAND.SC_CLOSE);
+            if (isCloseMessage && !_voluntaryExitAuthorized)
+            {
+                HandleUntrustedCloseRequest();
+                return 0;
+            }
+
             if (Msg == WindowMessage.WM_DEVICECHANGE)
             {
                 const int DBT_DEVICEARRIVAL = 0x8000;

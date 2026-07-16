@@ -1102,6 +1102,12 @@
   <data name="TrayMenu_Quit" xml:space="preserve">
     <value>退出</value>
   </data>
+  <data name="MainWindow_CloseConfirmation_Title" xml:space="preserve">
+    <value>退出 Xdows Security？</value>
+  </data>
+  <data name="MainWindow_CloseConfirmation_Content" xml:space="preserve">
+    <value>退出 Xdows Security 后防护将停止。请确认是否退出。</value>
+  </data>
   <data name="TrayMenu_Settings" xml:space="preserve">
     <value>设置</value>
   </data>
