@@ -1241,7 +1241,8 @@ namespace Xdows_Security.Views
             {
                 Byte[] mbr = Helper.DiskOperator.ReadBootSector(0);
                 if (mbr.Length == 0) return;
-                FileSavePicker picker = new(XamlRoot.ContentIslandEnvironment.AppWindowId)
+                var ownerWindowId = App.MainWindow!.AppWindow.Id;
+                FileSavePicker picker = new(ownerWindowId)
                 {
                     SuggestedFileName = "Data",
                     DefaultFileExtension = ".bin",

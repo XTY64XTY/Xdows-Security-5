@@ -416,7 +416,8 @@ namespace Xdows_Security.Views
             var result = await dialog.ShowAsync();
             if (result != ContentDialogResult.Primary) return;
 
-            var picker = new FileSavePicker(XamlRoot.ContentIslandEnvironment.AppWindowId)
+            var ownerWindowId = App.MainWindow!.AppWindow.Id;
+            var picker = new FileSavePicker(ownerWindowId)
             {
                 SuggestedFileName = $"XdowsSecurity_Log_{DateTime.Now:yyyyMMdd_HHmmss}.log",
                 DefaultFileExtension = ".log",

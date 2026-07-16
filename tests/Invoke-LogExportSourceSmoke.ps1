@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $homePage = Join-Path $repoRoot "Xdows-Security\Views\HomePage.xaml.cs"
+$settingsPage = Join-Path $repoRoot "Xdows-Security\Views\SettingsPage.xaml.cs"
 $homeXaml = Join-Path $repoRoot "Xdows-Security\Views\HomePage.xaml"
 $exportDialogXaml = Join-Path $repoRoot "Xdows-Security\Dialog\LogExportDialog.xaml"
 $logService = Join-Path $repoRoot "Xdows-Security\Services\LogService.cs"
@@ -11,7 +12,7 @@ $resourceFiles = @(
     (Join-Path $repoRoot "Xdows-Security\Strings\zh-HANT\Resources.resw")
 )
 
-$requiredFiles = @($homePage, $homeXaml, $exportDialogXaml, $logService) + $resourceFiles
+$requiredFiles = @($homePage, $settingsPage, $homeXaml, $exportDialogXaml, $logService) + $resourceFiles
 foreach ($path in $requiredFiles) {
     if (!(Test-Path -LiteralPath $path)) { throw "Required file missing: $path" }
 }
@@ -28,7 +29,10 @@ function Assert-NotMatch([string]$Path, [string]$Pattern, [string]$Name) {
 
 Assert-Match $homePage 'private\s+async\s+void\s+ExportLog_Click(?s:.*?)await\s+ShowExportDialogAsync\(\)' 'awaited export click handler'
 Assert-NotMatch $homePage '_\s*=\s*ShowExportDialogAsync\(\)' 'discarded export task'
-Assert-Match $homePage 'XamlRoot\.ContentIslandEnvironment\.AppWindowId' 'page-owned save picker'
+Assert-Match $homePage 'App\.MainWindow!\.AppWindow\.Id' 'top-level log save-picker owner'
+Assert-NotMatch $homePage 'new\s+FileSavePicker\(XamlRoot\.ContentIslandEnvironment\.AppWindowId\)' 'content-island log save-picker owner'
+Assert-Match $settingsPage 'App\.MainWindow!\.AppWindow\.Id' 'top-level settings save-picker owner'
+Assert-NotMatch $settingsPage 'new\(XamlRoot\.ContentIslandEnvironment\.AppWindowId\)' 'content-island settings save-picker owner'
 Assert-Match $logService 'ExportAsync(?s:.*?)await\s+FlushAsync\(token\)' 'log write barrier before export'
 Assert-Match $homePage 'LogExportDialog_Failed_Title' 'localized export failure title'
 Assert-Match $homePage 'LogExportDialog_Failed_Message' 'localized export failure message'
