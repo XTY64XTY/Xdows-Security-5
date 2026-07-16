@@ -27,9 +27,12 @@ internal static class DriverServiceControl
     private const uint ScManagerConnect = 0x0001;
     private const uint ServiceQueryStatus = 0x0004;
     private const uint ServiceStart = 0x0010;
+    private const uint ServiceStop = 0x0020;
+    private const uint ServiceControlStop = 0x00000001;
     private const int ScStatusProcessInfo = 0;
     private const int ErrorServiceAlreadyRunning = 1056;
     private const int ErrorServiceDoesNotExist = 1060;
+    private const int ErrorServiceNotActive = 1062;
 
     public static DriverServiceSnapshot Query(string serviceName)
     {
@@ -78,6 +81,49 @@ internal static class DriverServiceControl
         return startError == ErrorServiceAlreadyRunning
             ? new DriverServiceOperationResult(true, startError, "Driver service is already running.")
             : new DriverServiceOperationResult(false, startError, FormatError("StartService failed", startError));
+    }
+
+    public static DriverServiceOperationResult Stop(string serviceName)
+    {
+        using SafeServiceHandle manager = NativeMethods.OpenSCManager(null, null, ScManagerConnect);
+        if (manager.IsInvalid)
+        {
+            int error = Marshal.GetLastWin32Error();
+            return new DriverServiceOperationResult(false, error, FormatError("OpenSCManager failed", error));
+        }
+
+        using SafeServiceHandle service = NativeMethods.OpenService(
+            manager,
+            serviceName,
+            ServiceQueryStatus | ServiceStop);
+        if (service.IsInvalid)
+        {
+            int error = Marshal.GetLastWin32Error();
+            return new DriverServiceOperationResult(false, error, FormatError("OpenService failed", error));
+        }
+
+        DriverServiceSnapshot snapshot = QueryStatus(service);
+        if (snapshot.State == DriverServiceState.Stopped)
+            return new DriverServiceOperationResult(true, 0, "Driver service is already stopped.");
+        if (snapshot.State == DriverServiceState.StopPending)
+            return new DriverServiceOperationResult(true, 0, "Driver service stop is already pending.");
+
+        if (NativeMethods.ControlService(service, ServiceControlStop, out _))
+            return new DriverServiceOperationResult(true, 0, "ControlService(STOP) accepted.");
+
+        int stopError = Marshal.GetLastWin32Error();
+        DriverServiceSnapshot afterFailure = QueryStatus(service);
+        if (afterFailure.State is DriverServiceState.Stopped or DriverServiceState.StopPending)
+        {
+            return new DriverServiceOperationResult(
+                true,
+                stopError,
+                $"Driver service entered {afterFailure.State} while ControlService returned an error.");
+        }
+
+        return stopError == ErrorServiceNotActive
+            ? new DriverServiceOperationResult(true, stopError, "Driver service is already stopped.")
+            : new DriverServiceOperationResult(false, stopError, FormatError("ControlService(STOP) failed", stopError));
     }
 
     private static DriverServiceSnapshot QueryStatus(SafeServiceHandle service)
@@ -145,6 +191,18 @@ internal static class DriverServiceControl
         public uint ServiceFlags;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ServiceStatus
+    {
+        public uint ServiceType;
+        public uint CurrentState;
+        public uint ControlsAccepted;
+        public uint Win32ExitCode;
+        public uint ServiceSpecificExitCode;
+        public uint CheckPoint;
+        public uint WaitHint;
+    }
+
     private sealed class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
         private SafeServiceHandle()
@@ -187,6 +245,13 @@ internal static class DriverServiceControl
             SafeServiceHandle service,
             int serviceArgumentCount,
             nint serviceArguments);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ControlService(
+            SafeServiceHandle service,
+            uint control,
+            out ServiceStatus serviceStatus);
 
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]

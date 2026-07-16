@@ -218,8 +218,16 @@ public sealed class DriverProtection : IProtectionModel
             if (!IsRun())
                 return true;
 
+            bool shutdownAuthorized = false;
             try
             {
+                shutdownAuthorized = _client?.SubmitAuthorizedShutdown() == true;
+                if (!shutdownAuthorized)
+                {
+                    Log("Bridge", "Driver stop denied because shutdown token authorization failed.");
+                    return false;
+                }
+
                 _cts?.Cancel();
                 try
                 {
@@ -231,22 +239,43 @@ public sealed class DriverProtection : IProtectionModel
                 {
                 }
 
-                try
+                CleanupLocked();
+
+                DriverServiceOperationResult stop = DriverServiceControl.Stop(DriverPackageLocator.ServiceName);
+                if (!stop.Success)
                 {
-                    _client?.SubmitAuthorizedShutdown();
-                }
-                catch
-                {
+                    Log("Bridge", $"Authorized driver stop failed: {stop.Message}");
+                    RelockDriverUnloadAfterFailedStop();
+                    return false;
                 }
 
-                CleanupLocked();
+                Log("Bridge", $"Authorized driver stop accepted: {stop.Message}");
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
-                CleanupLocked();
+                Log("Bridge", $"Driver stop failed: {ex.Message}");
+                if (shutdownAuthorized)
+                {
+                    CleanupLocked();
+                    RelockDriverUnloadAfterFailedStop();
+                }
                 return false;
             }
+        }
+    }
+
+    private void RelockDriverUnloadAfterFailedStop()
+    {
+        try
+        {
+            using var relockClient = new DriverBridgeClient();
+            relockClient.Connect();
+            Log("Bridge", "Driver unload relocked after failed SCM stop.");
+        }
+        catch (Exception ex)
+        {
+            Log("Bridge", $"CRITICAL: failed to relock driver unload after SCM stop failure: {ex.Message}");
         }
     }
 
