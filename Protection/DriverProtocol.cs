@@ -5,7 +5,7 @@ namespace Protection;
 internal static class DriverProtocol
 {
     public const uint ProtocolVersion = 3;
-    public const ulong DriverBuildId = 2026071501;
+    public const ulong DriverBuildId = 2026071701;
     public const int EventTypeCount = 9;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
