@@ -3,6 +3,7 @@ using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Settings;
 using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.Globalization;
 using Protection;
@@ -494,7 +495,40 @@ namespace Xdows_Security
         public App()
         {
             LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "Attempting to load the MainWindow...");
+            EnableXamlOptionalChanges();
             this.InitializeComponent();
+        }
+
+        /// <summary>
+        /// 启用 Windows App SDK 2.3.1 引入的可选 XAML 性能优化。
+        /// 必须在 InitializeComponent（XAML 初始化）之前调用，否则不会生效。
+        /// </summary>
+        private static void EnableXamlOptionalChanges()
+        {
+            // 以下优化需通过 XamlOptionalChanges API 显式选择启用（见 2.3.1 发行说明）：
+            //  - DefaultStyleOptimizations: 优化 XamlControlsResources 样式，含 ScrollBar 模板
+            //  - IconNoGridOptimization: FontIcon/BitmapIcon 不再插入额外 Grid
+            //  - OptimizeApplyStyles: 跳过不应用值的样式设置器，并延迟应用样式到元素入树后
+            //  - DeferContextFlyoutInit: 延迟 TextBlock/RichTextBlock 默认 ContextFlyout 初始化
+            XamlChangeId[] changes =
+            [
+                XamlChangeId.DefaultStyleOptimizations,
+                XamlChangeId.IconNoGridOptimization,
+                XamlChangeId.OptimizeApplyStyles,
+                XamlChangeId.DeferContextFlyoutInit
+            ];
+
+            foreach (XamlChangeId change in changes)
+            {
+                try
+                {
+                    XamlOptionalChanges.EnableChange(change);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Failed to enable XamlChangeId {change}: {ex.Message}");
+                }
+            }
         }
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
