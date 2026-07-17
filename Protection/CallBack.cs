@@ -32,11 +32,13 @@ namespace Protection
         string? CommandLine,
         string? ActorPath = null,
         string? ActorTrust = null,
+        ulong EventId = 0,
         ulong CorrelationId = 0,
         string? ActorDetectionName = null,
         double ActorProbability = 0,
         Helper.ProtectionModule Module = Helper.ProtectionModule.Unknown,
-        Helper.ProtectionBackend Backend = Helper.ProtectionBackend.Driver);
+        Helper.ProtectionBackend Backend = Helper.ProtectionBackend.Driver,
+        DateTimeOffset DecisionDeadline = default);
 
     public interface IProtectionModel
     {

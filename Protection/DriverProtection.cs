@@ -37,6 +37,8 @@ public sealed record DriverProtectionLogEntry(
 
 public sealed class DriverProtection : IProtectionModel
 {
+    private static readonly TimeSpan UserDecisionTimeout = TimeSpan.FromSeconds(25);
+
     private sealed record DecisionCacheEntry(
         XdowsSecurityDecisionType Decision,
         string Reason,
@@ -574,7 +576,7 @@ public sealed class DriverProtection : IProtectionModel
         }
 
         // AskUser outside ScanLimiter to avoid deadlock: holding the limiter
-        // during a 30s popup would exhaust the 16 slots and block all other
+        // during a 25s popup would exhaust the worker slots and block all other
         // scans, causing driver timeouts and system lockup.
         if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
         {
@@ -696,7 +698,7 @@ public sealed class DriverProtection : IProtectionModel
         }
 
         // AskUser outside ScanLimiter to avoid deadlock: holding the limiter
-        // during a 30s popup would exhaust the 16 slots and block all other
+        // during a 25s popup would exhaust the worker slots and block all other
         // scans, causing driver timeouts and system lockup.
         ProtectionUserDecision userDecision = await AskUserForThreatDecisionAsync(
             filePath,
@@ -762,6 +764,28 @@ public sealed class DriverProtection : IProtectionModel
         CancellationToken token)
     {
         string protectionType = DriverEventTypeToProtectionType((XdowsSecurityEventType)driverEvent.EventType);
+        DriverBridgeClient? client = _client;
+        if (client is null)
+            return ProtectionUserDecision.Block;
+
+        try
+        {
+            client.SubmitPendingDecision(driverEvent.EventId);
+        }
+        catch (Exception ex)
+        {
+            LogCallback?.Invoke(new DriverProtectionLogEntry(
+                driverEvent.EventId,
+                driverEvent.CorrelationId,
+                DriverProtectionLogSeverity.Error,
+                0,
+                DateTimeOffset.Now,
+                "Decision",
+                $"Confirmed threat could not enter user-decision hold; blocking immediately: {ex.GetType().Name}"));
+            return ProtectionUserDecision.Block;
+        }
+
+        DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
         var request = new ProtectionDecisionRequest(
             imagePath,
             protectionType,
@@ -772,18 +796,32 @@ public sealed class DriverProtection : IProtectionModel
             string.IsNullOrWhiteSpace(commandLine) ? null : commandLine,
             actorPath,
             actorTrust?.Reason,
+            driverEvent.EventId,
             driverEvent.CorrelationId,
             actorScan?.DetectionName,
             actorScan?.Probability ?? 0,
             DriverEventTypeToModule((XdowsSecurityEventType)driverEvent.EventType),
-            ProtectionBackend.Driver);
+            ProtectionBackend.Driver,
+            decisionDeadline);
 
         if (DecisionCallback is not null)
         {
-            return await DriverDecisionService.AskUserAsync(
+            ProtectionUserDecision decision = await DriverDecisionService.AskUserAsync(
                 callbackToken => DecisionCallback(request, callbackToken),
-                TimeSpan.FromSeconds(30),
+                decisionDeadline - DateTimeOffset.UtcNow,
                 token).ConfigureAwait(false);
+            if (decision == ProtectionUserDecision.Timeout)
+            {
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    driverEvent.EventId,
+                    driverEvent.CorrelationId,
+                    DriverProtectionLogSeverity.Warning,
+                    0,
+                    DateTimeOffset.Now,
+                    "Decision",
+                    $"user-decision-timeout-blocked module={request.Module} path={imagePath}"));
+            }
+            return decision;
         }
 
         _interceptCallBack?.Invoke(new ProtectionInterceptEvent(

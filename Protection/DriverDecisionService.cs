@@ -9,6 +9,9 @@ internal static class DriverDecisionService
         TimeSpan timeout,
         CancellationToken token)
     {
+        if (timeout <= TimeSpan.Zero)
+            return ProtectionUserDecision.Timeout;
+
         try
         {
             if (!await UiDecisionQueue.WaitAsync(0, token).ConfigureAwait(false))

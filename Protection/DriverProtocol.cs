@@ -4,19 +4,21 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 4;
-    public const ulong DriverBuildId = 2026071702;
-    public const uint LegacyUpgradeProtocolVersion = 3;
-    public const ulong LegacyUpgradeDriverBuildId = 2026071701;
+    public const uint ProtocolVersion = 5;
+    public const ulong DriverBuildId = 2026071703;
+    public const uint LegacyUpgradeProtocolVersion = 4;
+    public const ulong LegacyUpgradeDriverBuildId = 2026071702;
     public const int EventTypeCount = 9;
     public const uint CapabilityPriorityQueue = 0x00000001;
     public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
     public const uint CapabilityBuildId = 0x00000004;
     public const uint CapabilityStartupSelfProtect = 0x00000008;
+    public const uint CapabilityUserDecisionHold = 0x00000010;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
-        CapabilityStartupSelfProtect;
+        CapabilityStartupSelfProtect |
+        CapabilityUserDecisionHold;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
@@ -82,7 +84,8 @@ internal enum XdowsSecurityDecisionType : uint
     Unknown = 0,
     Allow = 1,
     Block = 2,
-    Timeout = 3
+    Timeout = 3,
+    Pending = 4
 }
 
 internal enum XdowsSecurityModelMode : uint

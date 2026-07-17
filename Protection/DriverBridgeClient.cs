@@ -429,6 +429,14 @@ internal sealed class DriverBridgeClient : IDisposable
         };
     }
 
+    public void SubmitPendingDecision(ulong eventId)
+    {
+        SubmitDecision(CreateDecision(
+            eventId,
+            XdowsSecurityDecisionType.Pending,
+            "confirmed-threat-awaiting-user"));
+    }
+
     private async Task HeartbeatLoopAsync(CancellationToken token)
     {
         while (!token.IsCancellationRequested)

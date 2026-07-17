@@ -17,6 +17,9 @@ namespace Xdows_Security
         private readonly string? _originalFilePath;
         private readonly Helper.ProtectionModule _protectionModule;
         private readonly Helper.ProtectionBackend _protectionBackend;
+        private readonly DateTimeOffset? _decisionDeadline;
+        private DispatcherTimer? _decisionTimer;
+        private bool _decisionTimeoutHandled;
         public string? ButtonPressedName { get; private set; }
 
         public static async Task<string> ShowOrActivate(
@@ -31,19 +34,8 @@ namespace Xdows_Security
             w.Closed += (s, e) => tcs.TrySetResult(w.ButtonPressedName ?? "Unknown");
             using CancellationTokenRegistration registration = cancellationToken.Register(() =>
             {
-                if (!tcs.TrySetResult("Timeout"))
-                    return;
-
-                _ = w.DispatcherQueue.TryEnqueue(() =>
-                {
-                    try
-                    {
-                        w.Close();
-                    }
-                    catch
-                    {
-                    }
-                });
+                if (!w.DispatcherQueue.TryEnqueue(w.HandleDecisionTimeout))
+                    tcs.TrySetResult("Timeout");
             });
 
             if (!tcs.Task.IsCompleted)
@@ -69,6 +61,7 @@ namespace Xdows_Security
             _originalFilePath = setting.Path;
             _protectionModule = setting.Module;
             _protectionBackend = setting.Backend;
+            _decisionDeadline = setting.DecisionDeadline;
 
             RootPanel.Loaded += (_, _) =>
             {
@@ -86,7 +79,7 @@ namespace Xdows_Security
             DetectionTimeText.Text = DateTime.Now.ToString("G", CultureInfo.CurrentCulture);
             ThreatTypeText.Text = NormalizeDetectionName(setting.DetectionName);
             ProtectionModuleText.Text = FormatProtectionModule(_protectionModule, _protectionBackend);
-            ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
+            UpdateConfirmButtonContent();
             if (setting.InterceptWindowButtonType == InterceptWindowButtonType.RestoreOrTrust)
             {
                 ReleaseButton.Visibility = Visibility.Collapsed;
@@ -99,21 +92,76 @@ namespace Xdows_Security
             {
                 ReleaseButton.Visibility = Visibility.Collapsed;
             }
+            if (setting.InterceptWindowButtonType == InterceptWindowButtonType.InterceptOrRelease &&
+                _decisionDeadline.HasValue)
+            {
+                _decisionTimer = new DispatcherTimer
+                {
+                    Interval = TimeSpan.FromMilliseconds(250)
+                };
+                _decisionTimer.Tick += DecisionTimer_Tick;
+                _decisionTimer.Start();
+            }
             PositionWindowAtBottomRight();
             App.PlayEntranceAnimation(RootPanel, "right");
         }
 
         private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
         {
-            ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
+            UpdateConfirmButtonContent();
             ProtectionModuleText.Text = FormatProtectionModule(_protectionModule, _protectionBackend);
             DispatcherQueue.TryEnqueue(UpdateWindowHeightAndPosition);
         }
 
         private void InterceptWindow_Closed(object sender, WindowEventArgs args)
         {
+            _decisionTimer?.Stop();
+            if (_decisionTimer is not null)
+                _decisionTimer.Tick -= DecisionTimer_Tick;
             WinUI3Localizer.Localizer.Get().LanguageChanged -= OnLanguageChanged;
             Closed -= InterceptWindow_Closed;
+        }
+
+        private void DecisionTimer_Tick(object? sender, object e)
+        {
+            UpdateConfirmButtonContent();
+        }
+
+        private void UpdateConfirmButtonContent()
+        {
+            if (!_decisionDeadline.HasValue)
+            {
+                ConfirmButton.Content = WinUI3Localizer.Localizer.Get().GetLocalizedString("Button_Confirm");
+                return;
+            }
+
+            TimeSpan remaining = _decisionDeadline.Value - DateTimeOffset.UtcNow;
+            if (remaining <= TimeSpan.Zero)
+            {
+                _ = DispatcherQueue.TryEnqueue(HandleDecisionTimeout);
+                return;
+            }
+
+            int remainingSeconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds));
+            string format = WinUI3Localizer.Localizer.Get().GetLocalizedString("InterceptWindow_ConfirmCountdown");
+            ConfirmButton.Content = string.Format(CultureInfo.CurrentCulture, format, remainingSeconds);
+        }
+
+        private void HandleDecisionTimeout()
+        {
+            if (_decisionTimeoutHandled || ButtonPressedName is not null)
+                return;
+
+            _decisionTimeoutHandled = true;
+            ButtonPressedName = "Timeout";
+            _decisionTimer?.Stop();
+            try
+            {
+                Close();
+            }
+            catch
+            {
+            }
         }
 
         private static string NormalizeDetectionName(string? detectionName)
@@ -214,7 +262,7 @@ namespace Xdows_Security
             await RestoreOnly();
         }
 
-        private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
+        private void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             ButtonPressedName = "Confirm";
             this.Close();

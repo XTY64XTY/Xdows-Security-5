@@ -693,6 +693,9 @@
   <data name="Button_Confirm" xml:space="preserve">
     <value>确定</value>
   </data>
+  <data name="InterceptWindow_ConfirmCountdown" xml:space="preserve">
+    <value>确定（{0} 秒）</value>
+  </data>
   <data name="Button_Download" xml:space="preserve">
     <value>下载</value>
   </data>

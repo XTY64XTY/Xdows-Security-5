@@ -236,7 +236,8 @@ namespace Xdows_Security
                         CommandLine = request.CommandLine,
                         CorrelationId = request.CorrelationId,
                         Module = request.Module,
-                        Backend = request.Backend
+                        Backend = request.Backend,
+                        DecisionDeadline = request.DecisionDeadline
                     }, token);
 
                     ProtectionUserDecision userDecision = button switch
@@ -245,7 +246,15 @@ namespace Xdows_Security
                         "Timeout" => ProtectionUserDecision.Timeout,
                         _ => ProtectionUserDecision.Block
                     };
-                    if (tcs.TrySetResult(userDecision))
+                    bool submitted = tcs.TrySetResult(userDecision);
+                    if (userDecision == ProtectionUserDecision.Timeout)
+                    {
+                        LogText.AddNewLog(
+                            LogText.LogLevel.WARN,
+                            "DriverProtection",
+                            $"user-decision-timeout-blocked eventId:{request.EventId} cid:{request.CorrelationId} module:{request.Module} path:{request.Path}");
+                    }
+                    else if (submitted)
                     {
                         LogText.AddNewLog(
                             LogText.LogLevel.INFO,

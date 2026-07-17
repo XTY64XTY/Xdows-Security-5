@@ -35,6 +35,7 @@ namespace Helper
             public ulong CorrelationId { get; set; }
             public ProtectionModule Module { get; set; } = ProtectionModule.Unknown;
             public ProtectionBackend Backend { get; set; } = ProtectionBackend.Compatibility;
+            public DateTimeOffset? DecisionDeadline { get; set; }
         }
         public enum InterceptWindowButtonType
         {

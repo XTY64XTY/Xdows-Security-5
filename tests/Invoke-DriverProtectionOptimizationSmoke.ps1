@@ -36,7 +36,7 @@ function Assert-NotMatch([string]$Path, [string]$Pattern, [string]$Name) {
     if ($text -match $Pattern) { throw "$Name is still present in $Path" }
 }
 
-Assert-Match $files.PublicHeader 'XDOWS_SECURITY_PROTOCOL_VERSION\s+4u' 'protocol v4'
+Assert-Match $files.PublicHeader 'XDOWS_SECURITY_PROTOCOL_VERSION\s+5u' 'protocol v5'
 Assert-Match $files.PublicHeader 'XDOWS_SECURITY_DRIVER_BUILD_ID' 'driver build identity'
 Assert-Match $files.FileProtect 'FLT_STREAMHANDLE_CONTEXT' 'dirty stream-handle context'
 Assert-Match $files.FileProtect 'Contexts\[0\]\.Size\s*=\s*sizeof\(XDOWS_DIRTY_HANDLE_CONTEXT\)' 'WDK-compatible stream-handle context size'
@@ -89,7 +89,7 @@ Assert-NotMatch $files.DecisionService 'UiDecisionQueue\.WaitAsync\(timeoutCts\.
 Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'
 Assert-Match $files.AppCode 'TaskCompletionSource<ProtectionUserDecision>\s+tcs\s*=\s*new\(TaskCreationOptions\.RunContinuationsAsynchronously\)' 'asynchronous driver-decision continuation'
 Assert-Match $files.AppCode 'User decision submitted:.*cid:' 'user decision timing log'
-Assert-Match $files.AppCode 'Backend\s*=\s*request\.Backend\s*\r?\n\s*\},\s*token\);' 'driver popup cancellation propagation'
+Assert-Match $files.AppCode 'Backend\s*=\s*request\.Backend,\s*\r?\n\s*DecisionDeadline\s*=\s*request\.DecisionDeadline\s*\r?\n\s*\},\s*token\);' 'driver popup cancellation propagation'
 Assert-NotMatch $files.InterceptXaml 'DetectionNameText|ActorPathText|CorrelationText' 'empty detail card'
 Assert-Match $files.InterceptXaml 'InterceptWindow_ProtectionModuleLabel' 'protection module card'
 Assert-Match $files.InterceptCode 'ThreatTypeText\.Text\s*=\s*NormalizeDetectionName\(setting\.DetectionName\)' 'detection name as threat type'
@@ -106,7 +106,9 @@ Assert-Match $files.DriverProject '<XdowsDriverPackageDirectory>\$\(OutDir\)\$\(
 Assert-Match $files.AppProject 'OutDir=\$\(XdowsDriverProjectOutput\)' 'isolated current driver build output'
 Assert-NotMatch $files.SelfProtect 'MainThreadId\s*==\s*0' 'zero main-thread rejection'
 Assert-Match $files.SelfProtect 'PsGetThreadProcessId' 'all guarded-process threads covered by self-protection'
-Assert-Match $files.ProcessProtect 'XDOWS_PROCESS_LAUNCH_VERDICT_TIMEOUT_MS\s+32000u' 'process verdict timeout aligned with the 30-second UI decision window'
+Assert-Match $files.ProcessProtect 'XDOWS_PROCESS_LAUNCH_VERDICT_TIMEOUT_MS\s+5000u' 'bounded process infrastructure timeout'
+Assert-Match $files.Protection 'SubmitPendingDecision\(driverEvent\.EventId\)' 'confirmed threat user-decision hold'
+Assert-Match $files.Protection 'UserDecisionTimeout\s*=\s*TimeSpan\.FromSeconds\(25\)' '25-second user decision timeout'
 
 foreach ($culture in @('zh-HANS', 'zh-HANT', 'en-US')) {
     $resource = Join-Path $repoRoot "Xdows-Security\Strings\$culture\Resources.resw"

@@ -56,11 +56,12 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 4 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 5 },
     @{ C = "XDOWS_SECURITY_CAP_PRIORITY_QUEUE"; Cs = "CapabilityPriorityQueue"; Expected = 1 },
     @{ C = "XDOWS_SECURITY_CAP_DIRTY_WRITE_COALESCING"; Cs = "CapabilityDirtyWriteCoalescing"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_CAP_BUILD_ID"; Cs = "CapabilityBuildId"; Expected = 4 },
     @{ C = "XDOWS_SECURITY_CAP_STARTUP_SELF_PROTECT"; Cs = "CapabilityStartupSelfProtect"; Expected = 8 },
+    @{ C = "XDOWS_SECURITY_CAP_USER_DECISION_HOLD"; Cs = "CapabilityUserDecisionHold"; Expected = 16 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
@@ -81,7 +82,7 @@ Assert-Equal $cBuildId $csBuildId "Driver build ID"
 Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
 
 $runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
-Assert-Equal 4 $runtimeProtocolVersion "Runtime smoke protocol version"
+Assert-Equal 5 $runtimeProtocolVersion "Runtime smoke protocol version"
 
 foreach ($offsetCheck in @(
     @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
