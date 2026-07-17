@@ -252,6 +252,77 @@ internal sealed class DriverBridgeClient : IDisposable
         }
     }
 
+    public static bool TryAuthorizeLegacyUpgradeShutdown(out string message)
+    {
+        using SafeFileHandle? handle = OpenDriverDevice(out int openError);
+        if (handle is null)
+        {
+            message = $"Failed to open the loaded driver for legacy upgrade authorization (Win32 {openError}).";
+            return false;
+        }
+
+        uint processId = checked((uint)Environment.ProcessId);
+        var registerRequest = new XdowsRegisterRequest
+        {
+            Header = new XdowsProtocolHeader
+            {
+                Size = (uint)Marshal.SizeOf<XdowsRegisterRequest>(),
+                Version = DriverProtocol.LegacyUpgradeProtocolVersion
+            },
+            ClientProcessId = processId,
+            HeartbeatTimeoutMs = 10_000
+        };
+
+        if (!DeviceIoControl(
+                handle,
+                registerRequest,
+                DriverProtocol.RegisterClient,
+                out XdowsRegisterResponse response))
+        {
+            message = $"Legacy driver client registration failed (Win32 {Marshal.GetLastWin32Error()}).";
+            return false;
+        }
+
+        bool expectedLegacyDriver =
+            response.Status == 0 &&
+            response.Header.Version == DriverProtocol.LegacyUpgradeProtocolVersion &&
+            response.ProtocolVersion == DriverProtocol.LegacyUpgradeProtocolVersion &&
+            response.DriverBuildId == DriverProtocol.LegacyUpgradeDriverBuildId &&
+            !string.IsNullOrWhiteSpace(response.ShutdownToken);
+        if (!expectedLegacyDriver)
+        {
+            _ = DeviceIoControlNoBuffers(handle, DriverProtocol.DisconnectClient);
+            message =
+                $"Loaded driver is not the supported legacy upgrade source " +
+                $"v{DriverProtocol.LegacyUpgradeProtocolVersion}/{DriverProtocol.LegacyUpgradeDriverBuildId}; " +
+                $"received v{response.ProtocolVersion}/{response.DriverBuildId}.";
+            return false;
+        }
+
+        var shutdownRequest = new XdowsShutdownRequest
+        {
+            Header = new XdowsProtocolHeader
+            {
+                Size = (uint)Marshal.SizeOf<XdowsShutdownRequest>(),
+                Version = DriverProtocol.LegacyUpgradeProtocolVersion
+            },
+            ShutdownToken = response.ShutdownToken
+        };
+
+        if (!DeviceIoControlNoOutput(handle, shutdownRequest, DriverProtocol.AuthorizedShutdown))
+        {
+            int shutdownError = Marshal.GetLastWin32Error();
+            _ = DeviceIoControlNoBuffers(handle, DriverProtocol.DisconnectClient);
+            message = $"Legacy driver shutdown authorization failed (Win32 {shutdownError}).";
+            return false;
+        }
+
+        message =
+            $"Legacy driver v{DriverProtocol.LegacyUpgradeProtocolVersion}/" +
+            $"{DriverProtocol.LegacyUpgradeDriverBuildId} accepted its one-time shutdown token.";
+        return true;
+    }
+
     public void RegisterProtectedProcess(uint mainThreadId = 0)
     {
         EnsureConnected();
@@ -447,7 +518,12 @@ internal sealed class DriverBridgeClient : IDisposable
     private bool DeviceIoControlNoBuffers(uint ioctl)
     {
         EnsureConnected();
-        return DeviceIoControl(_handle!, ioctl, IntPtr.Zero, 0, IntPtr.Zero, 0, out _, IntPtr.Zero);
+        return DeviceIoControlNoBuffers(_handle!, ioctl);
+    }
+
+    private static bool DeviceIoControlNoBuffers(SafeFileHandle handle, uint ioctl)
+    {
+        return DeviceIoControl(handle, ioctl, IntPtr.Zero, 0, IntPtr.Zero, 0, out _, IntPtr.Zero);
     }
 
     private bool DeviceIoControlNoInput<TOut>(uint ioctl, out TOut output) where TOut : struct
@@ -482,12 +558,21 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
+        return DeviceIoControlNoOutput(_handle!, input, ioctl);
+    }
+
+    private static bool DeviceIoControlNoOutput<TIn>(
+        SafeFileHandle handle,
+        TIn input,
+        uint ioctl) where TIn : struct
+    {
+
         int inSize = Marshal.SizeOf<TIn>();
         IntPtr inPtr = Marshal.AllocHGlobal(inSize);
         try
         {
             Marshal.StructureToPtr(input, inPtr, false);
-            return DeviceIoControl(_handle!, ioctl, inPtr, (uint)inSize, IntPtr.Zero, 0, out _, IntPtr.Zero);
+            return DeviceIoControl(handle, ioctl, inPtr, (uint)inSize, IntPtr.Zero, 0, out _, IntPtr.Zero);
         }
         finally
         {
@@ -502,6 +587,18 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
+        return DeviceIoControl(_handle!, input, ioctl, out output);
+    }
+
+    private static bool DeviceIoControl<TIn, TOut>(
+        SafeFileHandle handle,
+        TIn input,
+        uint ioctl,
+        out TOut output)
+        where TIn : struct
+        where TOut : struct
+    {
+
         int inSize = Marshal.SizeOf<TIn>();
         int outSize = Marshal.SizeOf<TOut>();
         IntPtr inPtr = Marshal.AllocHGlobal(inSize);
@@ -511,7 +608,7 @@ internal sealed class DriverBridgeClient : IDisposable
             Marshal.StructureToPtr(input, inPtr, false);
             ZeroMemory(outPtr, outSize);
 
-            bool ok = DeviceIoControl(_handle!, ioctl, inPtr, (uint)inSize, outPtr, (uint)outSize, out _, IntPtr.Zero);
+            bool ok = DeviceIoControl(handle, ioctl, inPtr, (uint)inSize, outPtr, (uint)outSize, out _, IntPtr.Zero);
             output = ok ? Marshal.PtrToStructure<TOut>(outPtr) : default;
             return ok;
         }

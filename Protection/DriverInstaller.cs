@@ -252,11 +252,31 @@ internal static class DriverLoadWorkflow
         CancellationToken token)
     {
         DriverLoadSnapshot initial = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        DriverPackage? package = null;
+        bool packageTrusted = false;
         if (initial.BridgeReady)
             return new DriverRepairResult(true, $"{successPrefix}: {initial.RuntimeStatus}.");
 
         if (initial.Service.IsRunning)
-            return CreateLoadedWithoutBridgeResult(initial);
+        {
+            if (initial.RuntimeStatus != DriverProtectionRuntimeStatus.NeedsRepair)
+                return CreateLoadedWithoutBridgeResult(initial);
+
+            package = DriverPackageLocator.Find();
+            if (package is null)
+                return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
+
+            DriverRepairResult legacyTrust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+            if (!legacyTrust.Success)
+                return legacyTrust;
+            packageTrusted = true;
+
+            DriverRepairResult legacyStop = await TryStopLegacyDriverForUpgradeAsync(token).ConfigureAwait(false);
+            if (!legacyStop.Success)
+                return legacyStop;
+
+            initial = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        }
 
         if (initial.Service.IsTransitioning)
         {
@@ -272,13 +292,16 @@ internal static class DriverLoadWorkflow
                 $"Unable to query driver service. {initial.Service.Detail}");
         }
 
-        DriverPackage? package = DriverPackageLocator.Find();
+        package ??= DriverPackageLocator.Find();
         if (package is null)
             return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
 
-        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
-        if (!trust.Success)
-            return trust;
+        if (!packageTrusted)
+        {
+            DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+            if (!trust.Success)
+                return trust;
+        }
 
         DriverRepairResult install = await InstallPackageAsync(package, token).ConfigureAwait(false);
         if (!install.Success)
@@ -313,6 +336,40 @@ internal static class DriverLoadWorkflow
         return new DriverRepairResult(
             false,
             $"Driver did not become ready. Runtime: {ready.RuntimeStatus}. Service: {ready.Service.Detail}. Install: {install.Message}. Start: {start.Message}");
+    }
+
+    private static async Task<DriverRepairResult> TryStopLegacyDriverForUpgradeAsync(
+        CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!DriverBridgeClient.TryAuthorizeLegacyUpgradeShutdown(out string authorizationMessage))
+        {
+            return new DriverRepairResult(
+                false,
+                $"Loaded driver could not be authorized for in-place upgrade. {authorizationMessage} Restart Windows, then retry the repair.");
+        }
+
+        DriverServiceOperationResult stop = DriverServiceControl.Stop(ServiceName);
+        if (!stop.Success)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Legacy driver accepted upgrade authorization, but SCM stop failed. {stop.Message}");
+        }
+
+        DriverServiceSnapshot stopped = await WaitForServiceStateAsync(
+            DriverServiceState.Stopped,
+            token).ConfigureAwait(false);
+        if (stopped.State != DriverServiceState.Stopped)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Legacy driver did not stop after upgrade authorization. {stopped.Detail}");
+        }
+
+        return new DriverRepairResult(
+            true,
+            $"{authorizationMessage} Driver service stopped and is ready for package replacement.");
     }
 
     private static Task<DriverRepairResult> InstallPackageAsync(DriverPackage package, CancellationToken token)
