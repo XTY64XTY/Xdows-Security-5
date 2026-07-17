@@ -56,7 +56,11 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 3 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 4 },
+    @{ C = "XDOWS_SECURITY_CAP_PRIORITY_QUEUE"; Cs = "CapabilityPriorityQueue"; Expected = 1 },
+    @{ C = "XDOWS_SECURITY_CAP_DIRTY_WRITE_COALESCING"; Cs = "CapabilityDirtyWriteCoalescing"; Expected = 2 },
+    @{ C = "XDOWS_SECURITY_CAP_BUILD_ID"; Cs = "CapabilityBuildId"; Expected = 4 },
+    @{ C = "XDOWS_SECURITY_CAP_STARTUP_SELF_PROTECT"; Cs = "CapabilityStartupSelfProtect"; Expected = 8 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
@@ -77,13 +81,14 @@ Assert-Equal $cBuildId $csBuildId "Driver build ID"
 Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
 
 $runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
-Assert-Equal 3 $runtimeProtocolVersion "Runtime smoke protocol version"
+Assert-Equal 4 $runtimeProtocolVersion "Runtime smoke protocol version"
 
 foreach ($offsetCheck in @(
     @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
     @{ Pattern = 'SelfProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*28\)'; Name = "runtime self-protection offset" },
-    @{ Pattern = 'ProtocolVersion\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*40\)'; Name = "runtime protocol offset" },
-    @{ Pattern = 'DriverBuildId\s*=\s*\[BitConverter\]::ToUInt64\(\$buffer,\s*48\)'; Name = "runtime build ID offset" }
+    @{ Pattern = 'StartupProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*36\)'; Name = "runtime startup protection offset" },
+    @{ Pattern = 'ProtocolVersion\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*44\)'; Name = "runtime protocol offset" },
+    @{ Pattern = 'DriverBuildId\s*=\s*\[BitConverter\]::ToUInt64\(\$buffer,\s*56\)'; Name = "runtime build ID offset" }
 )) {
     if ($runtimeSmokeText -notmatch $offsetCheck.Pattern) {
         throw "$($offsetCheck.Name) was not found in $runtimeSmokePs1"
@@ -98,8 +103,8 @@ foreach ($constant in $constants) {
     Assert-Equal $cValue $csValue "$($constant.C) mirrors DriverProtocol.$($constant.Cs)"
 }
 
-if ($publicText -notmatch 'ULONG\s+ProcessProtectionEnabled;\s*ULONG\s+FileProtectionEnabled;\s*ULONG\s+SelfProtectionEnabled;\s*ULONG\s+ProtectedProcessId;\s*ULONG\s+ActiveModules;\s*ULONG\s+ProtocolVersion;' -or
-    $protocolText -notmatch 'uint\s+ProcessProtectionEnabled;\s*public\s+uint\s+FileProtectionEnabled;\s*public\s+uint\s+SelfProtectionEnabled;\s*public\s+uint\s+ProtectedProcessId;\s*public\s+uint\s+ActiveModules;\s*public\s+uint\s+ProtocolVersion;') {
+if ($publicText -notmatch 'ULONG\s+ProcessProtectionEnabled;\s*ULONG\s+FileProtectionEnabled;\s*ULONG\s+SelfProtectionEnabled;\s*ULONG\s+ProtectedProcessId;\s*ULONG\s+StartupProtectionEnabled;\s*ULONG\s+ActiveModules;\s*ULONG\s+ProtocolVersion;' -or
+    $protocolText -notmatch 'uint\s+ProcessProtectionEnabled;\s*public\s+uint\s+FileProtectionEnabled;\s*public\s+uint\s+SelfProtectionEnabled;\s*public\s+uint\s+ProtectedProcessId;\s*public\s+uint\s+StartupProtectionEnabled;\s*public\s+uint\s+ActiveModules;\s*public\s+uint\s+ProtocolVersion;') {
     throw "XdowsSecurityState module fields are not mirrored in protocol order."
 }
 $checks.Add("XdowsSecurityState module field order") | Out-Null
@@ -118,7 +123,8 @@ $ioctls = @(
     @{ C = "REGISTER_PROTECTED_PROCESS"; Cs = "RegisterProtectedProcess"; Function = 0x807 },
     @{ C = "SET_VOLUNTARY_EXIT"; Cs = "SetVoluntaryExit"; Function = 0x808 },
     @{ C = "AUTHORIZED_SHUTDOWN"; Cs = "AuthorizedShutdown"; Function = 0x809 },
-    @{ C = "GET_NEXT_LOG"; Cs = "GetNextLog"; Function = 0x80A }
+    @{ C = "GET_NEXT_LOG"; Cs = "GetNextLog"; Function = 0x80A },
+    @{ C = "SET_STARTUP_PROTECTION"; Cs = "SetStartupProtection"; Function = 0x80B }
 )
 
 foreach ($ioctl in $ioctls) {

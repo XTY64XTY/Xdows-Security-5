@@ -27,17 +27,67 @@ namespace Xdows_Security.Services
 
         public static bool EnableStartup()
         {
+            bool wasEnabled = IsStartupEnabled();
+            if (!TryGetStartupCommand(out string startupCommand))
+                return false;
+
+            if (!global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(true))
+                return false;
+
             try
             {
-                string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
-                if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
-                    return false;
+                using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, true);
+                if (key == null)
+                    throw new InvalidOperationException("HKLM Run key is unavailable.");
 
+                object? previousValue = key.GetValue(
+                    AppInfo.AppId,
+                    null,
+                    RegistryValueOptions.DoNotExpandEnvironmentNames);
+                RegistryValueKind previousKind = previousValue != null
+                    ? key.GetValueKind(AppInfo.AppId)
+                    : RegistryValueKind.String;
+                key.SetValue(AppInfo.AppId, startupCommand, RegistryValueKind.String);
+                if (!global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(true))
+                {
+                    if (previousValue == null)
+                        key.DeleteValue(AppInfo.AppId, false);
+                    else
+                        key.SetValue(AppInfo.AppId, previousValue, previousKind);
+
+                    _ = global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(wasEnabled);
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                _ = global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(wasEnabled);
+                return false;
+            }
+        }
+
+        public static bool DisableStartup()
+        {
+            object? previousValue = null;
+            RegistryValueKind previousKind = RegistryValueKind.String;
+            try
+            {
                 using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, true);
                 if (key == null) return false;
 
-                key.SetValue(AppInfo.AppId, $"\"{exePath}\" {MinimizedArg}", RegistryValueKind.String);
-                return true;
+                previousValue = key.GetValue(AppInfo.AppId, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                if (previousValue != null)
+                    previousKind = key.GetValueKind(AppInfo.AppId);
+
+                key.DeleteValue(AppInfo.AppId, false);
+                if (global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(false))
+                    return true;
+
+                if (previousValue != null)
+                    key.SetValue(AppInfo.AppId, previousValue, previousKind);
+                _ = global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(true);
+                return false;
             }
             catch
             {
@@ -45,14 +95,16 @@ namespace Xdows_Security.Services
             }
         }
 
-        public static bool DisableStartup()
+        private static bool TryGetStartupCommand(out string startupCommand)
         {
+            startupCommand = string.Empty;
             try
             {
-                using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, true);
-                if (key == null) return false;
+                string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
+                if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+                    return false;
 
-                key.DeleteValue(AppInfo.AppId, false);
+                startupCommand = $"\"{exePath}\" {MinimizedArg}";
                 return true;
             }
             catch

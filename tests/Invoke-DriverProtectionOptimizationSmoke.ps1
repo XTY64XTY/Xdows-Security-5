@@ -36,7 +36,7 @@ function Assert-NotMatch([string]$Path, [string]$Pattern, [string]$Name) {
     if ($text -match $Pattern) { throw "$Name is still present in $Path" }
 }
 
-Assert-Match $files.PublicHeader 'XDOWS_SECURITY_PROTOCOL_VERSION\s+3u' 'protocol v3'
+Assert-Match $files.PublicHeader 'XDOWS_SECURITY_PROTOCOL_VERSION\s+4u' 'protocol v4'
 Assert-Match $files.PublicHeader 'XDOWS_SECURITY_DRIVER_BUILD_ID' 'driver build identity'
 Assert-Match $files.FileProtect 'FLT_STREAMHANDLE_CONTEXT' 'dirty stream-handle context'
 Assert-Match $files.FileProtect 'Contexts\[0\]\.Size\s*=\s*sizeof\(XDOWS_DIRTY_HANDLE_CONTEXT\)' 'WDK-compatible stream-handle context size'
@@ -83,6 +83,7 @@ Assert-Match $files.Protection 'FileProtectionEnabled\s*==\s*0' 'inactive file m
 Assert-Match $files.Protection 'ProcessProtectionEnabled\s*==\s*0\s*\|\|\s*state\.FileProtectionEnabled\s*==\s*0' 'incomplete runtime protection status rejection'
 Assert-Match $files.Protection 'ActiveModules\s*&\s*DriverProtocol\.RequiredModules' 'required runtime module mask validation'
 Assert-Match $files.Protocol 'RequiredModules\s*=\s*ModuleTokenAuth\s*\|\s*ModuleProcess\s*\|\s*ModuleFile\s*\|\s*ModuleInjection\s*\|\s*ModuleSelfProtect' 'managed required module mask'
+Assert-Match $files.Protection 'Capabilities\s*&\s*DriverProtocol\.RequiredCapabilities' 'required runtime capability mask validation'
 Assert-Match $files.DecisionService 'UiDecisionQueue\.WaitAsync\(0,\s*token\)(?s:.*?)CreateLinkedTokenSource\(token\)' 'non-blocking UI decision admission before timeout starts'
 Assert-NotMatch $files.DecisionService 'UiDecisionQueue\.WaitAsync\(timeoutCts\.Token\)' 'decision worker waiting behind an active popup'
 Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'

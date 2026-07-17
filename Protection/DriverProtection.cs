@@ -74,6 +74,7 @@ public sealed class DriverProtection : IProtectionModel
 
     public Func<ProtectionDecisionRequest, CancellationToken, Task<ProtectionUserDecision>>? DecisionCallback { get; set; }
     public Action<DriverProtectionLogEntry>? LogCallback { get; set; }
+    public Func<bool>? StartupProtectionStateProvider { get; set; }
 
     private void Log(string module, string message)
     {
@@ -84,6 +85,12 @@ public sealed class DriverProtection : IProtectionModel
     private static bool HasRequiredModules(XdowsSecurityState state)
     {
         return (state.ActiveModules & DriverProtocol.RequiredModules) == DriverProtocol.RequiredModules;
+    }
+
+    private static bool HasRequiredCapabilities(XdowsSecurityState state)
+    {
+        return (state.Capabilities & DriverProtocol.RequiredCapabilities) ==
+            DriverProtocol.RequiredCapabilities;
     }
 
     public static DriverProtectionRuntimeStatus QueryRuntimeStatus()
@@ -97,7 +104,8 @@ public sealed class DriverProtection : IProtectionModel
                 state.FileProtectionEnabled == 0 ||
                 state.SelfProtectionEnabled == 0 ||
                 state.ProtectedProcessId != (uint)Environment.ProcessId ||
-                !HasRequiredModules(state)
+                !HasRequiredModules(state) ||
+                !HasRequiredCapabilities(state)
                 ? DriverProtectionRuntimeStatus.NeedsRepair
                 : DriverProtectionRuntimeStatus.Protected;
         }
@@ -146,10 +154,14 @@ public sealed class DriverProtection : IProtectionModel
                 Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8} modules=0x{state.ActiveModules:X8} process={state.ProcessProtectionEnabled} file={state.FileProtectionEnabled}");
                 if (state.ProcessProtectionEnabled == 0 ||
                     state.FileProtectionEnabled == 0 ||
-                    !HasRequiredModules(state))
+                    !HasRequiredModules(state) ||
+                    !HasRequiredCapabilities(state))
                 {
                     throw new InvalidOperationException(
-                        $"Required driver protection modules are not active (modules=0x{state.ActiveModules:X8}, required=0x{DriverProtocol.RequiredModules:X8}, process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
+                        $"Required driver protection modules or capabilities are not active " +
+                        $"(modules=0x{state.ActiveModules:X8}, requiredModules=0x{DriverProtocol.RequiredModules:X8}, " +
+                        $"capabilities=0x{state.Capabilities:X8}, requiredCapabilities=0x{DriverProtocol.RequiredCapabilities:X8}, " +
+                        $"process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
                 }
 
                 Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
@@ -170,6 +182,17 @@ public sealed class DriverProtection : IProtectionModel
                     throw new InvalidOperationException(
                         $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
                 }
+
+                bool startupProtectionEnabled = StartupProtectionStateProvider?.Invoke() == true;
+                _client.SetStartupProtection(startupProtectionEnabled);
+                state = _client.GetState();
+                if ((state.StartupProtectionEnabled != 0) != startupProtectionEnabled)
+                {
+                    throw new InvalidOperationException(
+                        $"Driver startup self-protection state mismatch " +
+                        $"(active={state.StartupProtectionEnabled}, expected={startupProtectionEnabled}).");
+                }
+                Log("Bridge", $"Startup self-protection synchronized active={state.StartupProtectionEnabled}");
 
                 DriverBridgeClient client = _client;
                 _quarantineChannel = Channel.CreateBounded<PendingQuarantine>(new BoundedChannelOptions(32)
@@ -393,6 +416,32 @@ public sealed class DriverProtection : IProtectionModel
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+        }
+    }
+
+    public bool TrySetStartupProtection(bool enabled)
+    {
+        lock (StateLock)
+        {
+            if (!IsRun() || _client is null)
+                return true;
+
+            try
+            {
+                _client.SetStartupProtection(enabled);
+                XdowsSecurityState state = _client.GetState();
+                bool synchronized = (state.StartupProtectionEnabled != 0) == enabled;
+                if (!synchronized)
+                {
+                    Log("Bridge", $"Startup self-protection state mismatch active={state.StartupProtectionEnabled} expected={enabled}");
+                }
+                return synchronized;
+            }
+            catch (Exception ex)
+            {
+                Log("Bridge", $"Failed to synchronize startup self-protection: {ex.Message}");
+                return false;
+            }
         }
     }
 

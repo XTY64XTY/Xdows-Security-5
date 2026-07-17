@@ -150,7 +150,8 @@ namespace Xdows_Security
             DriverProtection protection = new()
             {
                 DecisionCallback = DriverDecisionCallbackAsync,
-                LogCallback = DriverLogCallback
+                LogCallback = DriverLogCallback,
+                StartupProtectionStateProvider = StartupService.IsStartupEnabled
             };
             ApplyDriverProtectionModelMode(protection);
             return protection;
@@ -349,6 +350,11 @@ namespace Xdows_Security
         public static void PrepareVoluntaryExit()
         {
             DriverProtection.TrySetVoluntaryExit(true);
+        }
+
+        public static bool SynchronizeStartupProtection(bool enabled)
+        {
+            return DriverProtection.TrySetStartupProtection(enabled);
         }
 
         public static string GetDriverStatusKey()

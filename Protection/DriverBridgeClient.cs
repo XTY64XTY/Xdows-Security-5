@@ -64,6 +64,14 @@ internal sealed class DriverBridgeClient : IDisposable
                 $"Driver protocol/build mismatch. Expected v{DriverProtocol.ProtocolVersion}/{DriverProtocol.DriverBuildId}, " +
                 $"received v{response.ProtocolVersion}/{response.DriverBuildId}.");
         }
+        if ((response.Capabilities & DriverProtocol.RequiredCapabilities) !=
+            DriverProtocol.RequiredCapabilities)
+        {
+            Disconnect();
+            throw new InvalidOperationException(
+                $"Driver capabilities are incomplete. Expected 0x{DriverProtocol.RequiredCapabilities:X8}, " +
+                $"received 0x{response.Capabilities:X8}.");
+        }
 
         _eventHandle = OpenDriverDevice(out int eventOpenError);
         if (_eventHandle is null)
@@ -272,6 +280,21 @@ internal sealed class DriverBridgeClient : IDisposable
 
         if (!DeviceIoControlNoOutput(request, DriverProtocol.SetVoluntaryExit))
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to set voluntary exit state.");
+    }
+
+    public void SetStartupProtection(bool enabled)
+    {
+        EnsureConnected();
+
+        var request = new XdowsStartupProtectionRequest
+        {
+            Header = DriverProtocol.Header<XdowsStartupProtectionRequest>(),
+            ProcessId = _clientProcessId,
+            Enabled = enabled ? 1u : 0u
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.SetStartupProtection))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to set startup self-protection state.");
     }
 
     public bool SubmitAuthorizedShutdown()

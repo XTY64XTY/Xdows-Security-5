@@ -4,9 +4,17 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 3;
-    public const ulong DriverBuildId = 2026071701;
+    public const uint ProtocolVersion = 4;
+    public const ulong DriverBuildId = 2026071702;
     public const int EventTypeCount = 9;
+    public const uint CapabilityPriorityQueue = 0x00000001;
+    public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
+    public const uint CapabilityBuildId = 0x00000004;
+    public const uint CapabilityStartupSelfProtect = 0x00000008;
+    public const uint RequiredCapabilities = CapabilityPriorityQueue |
+        CapabilityDirtyWriteCoalescing |
+        CapabilityBuildId |
+        CapabilityStartupSelfProtect;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
@@ -37,6 +45,7 @@ internal static class DriverProtocol
     public static readonly uint SetVoluntaryExit = CtlCode(FileDeviceXdowsSecurity, 0x808, MethodBuffered, FileAnyAccess);
     public static readonly uint AuthorizedShutdown = CtlCode(FileDeviceXdowsSecurity, 0x809, MethodBuffered, FileAnyAccess);
     public static readonly uint GetNextLog = CtlCode(FileDeviceXdowsSecurity, 0x80A, MethodBuffered, FileAnyAccess);
+    public static readonly uint SetStartupProtection = CtlCode(FileDeviceXdowsSecurity, 0x80B, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -179,6 +188,7 @@ internal struct XdowsSecurityState
     public uint FileProtectionEnabled;
     public uint SelfProtectionEnabled;
     public uint ProtectedProcessId;
+    public uint StartupProtectionEnabled;
     public uint ActiveModules;
     public uint ProtocolVersion;
     public uint Capabilities;
@@ -222,6 +232,15 @@ internal struct XdowsShutdownRequest
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.TokenChars + 1)]
     public string ShutdownToken;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct XdowsStartupProtectionRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint ProcessId;
+    public uint Enabled;
+    public uint Reserved;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
