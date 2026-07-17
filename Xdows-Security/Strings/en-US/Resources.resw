@@ -340,7 +340,7 @@
     <value>Waiting</value>
   </data>
   <data name="SecurityPage_Status_Processing" xml:space="preserve">
-    <value>Processing files...</value>
+    <value>Indexing files...</value>
   </data>
   <data name="SecurityPage_Status_Scanning" xml:space="preserve">
     <value>Scanning: {0}</value>

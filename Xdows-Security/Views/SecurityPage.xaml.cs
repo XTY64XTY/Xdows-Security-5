@@ -8,7 +8,6 @@ using Microsoft.UI.Xaml.Documents;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.Windows.Storage;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
@@ -1806,20 +1805,8 @@ namespace Xdows_Security.Views
                 {
                     bool parallelIndex = scanIndexMode == "Parallel";
 
-                    IEnumerable<string> files;
-                    int total;
-
-                    if (parallelIndex)
-                    {
-                        files = EnumerateFilesStreaming(mode, userPath, customPaths);
-                        total = 0;
-                    }
-                    else
-                    {
-                        var filesList = EnumerateFiles(mode, userPath, customPaths);
-                        files = filesList;
-                        total = filesList.Count;
-                    }
+                    IEnumerable<string> files = EnumerateFilesStreaming(mode, userPath, customPaths);
+                    int total = parallelIndex ? 0 : CountFiles(mode, userPath, customPaths);
 
                     DateTime startTime = DateTime.Now;
                     DateTime lastSpeedUpdateUtc = DateTime.UtcNow;
@@ -2757,26 +2744,82 @@ namespace Xdows_Security.Views
             catch { return null; }
         }
 
-        private static List<String> EnumerateFiles(ScanMode mode, String? userPath, IReadOnlyList<String>? customPaths) => mode switch
+        private static Int32 CountFiles(ScanMode mode, String? userPath, IReadOnlyList<String>? customPaths) => mode switch
         {
-            ScanMode.Quick => [.. GetEnumerateQuickScanFiles()],
-            ScanMode.Full => [.. EnumerateFullScanFiles()],
-            ScanMode.File => (userPath != null && System.IO.File.Exists(userPath))
-                              ? [userPath]
-                              : [],
-            ScanMode.Folder => (userPath != null && Directory.Exists(userPath))
-                              ? [.. SafeEnumerateFolder(userPath)]
-                              : [],
-            ScanMode.More => customPaths?.SelectMany(p =>
-            {
-                if (Directory.Exists(p))
-                    return SafeEnumerateFolder(p);
-                else if (System.IO.File.Exists(p))
-                    return [p];
-                return [];
-            }).ToList() ?? [],
-            _ => []
+            ScanMode.Quick => CountQuickScanFiles(),
+            ScanMode.Full => CountFullScanFiles(),
+            ScanMode.File => (userPath != null && System.IO.File.Exists(userPath)) ? 1 : 0,
+            ScanMode.Folder => (userPath != null && Directory.Exists(userPath)) ? CountFilesInFolder(userPath) : 0,
+            ScanMode.More => customPaths?.Sum(p =>
+                Directory.Exists(p) ? CountFilesInFolder(p)
+                : (System.IO.File.Exists(p) ? 1 : 0)) ?? 0,
+            _ => 0
         };
+
+        private static Int32 CountFilesInFolder(String folder)
+        {
+            Int32 total = 0;
+            Stack<String> stack = new();
+            stack.Push(folder);
+
+            while (stack.Count > 0)
+            {
+                String dir = stack.Pop();
+
+                IEnumerable<String> entries;
+                try { entries = Directory.EnumerateFileSystemEntries(dir); }
+                catch { continue; }
+
+                Int32 dirCount = 0;
+                foreach (String entry in entries)
+                {
+                    System.IO.FileAttributes attr;
+                    try { attr = System.IO.File.GetAttributes(entry); }
+                    catch { continue; }
+
+                    if ((attr & System.IO.FileAttributes.Directory) != 0)
+                        stack.Push(entry);
+                    else
+                        dirCount++;
+                }
+                total += dirCount;
+            }
+            return total;
+        }
+
+        private static Int32 CountQuickScanFiles()
+        {
+            String[] criticalPaths =
+            [
+                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                 Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "System32"),
+                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysWOW64")
+            ];
+
+            HashSet<String> extensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".com", ".scr", ".bat" };
+
+            return criticalPaths
+                   .Where(Directory.Exists)
+                   .SelectMany(dir =>
+                   {
+                       try
+                       {
+                           return Directory.EnumerateFiles(dir, "*", SearchOption.TopDirectoryOnly)
+                                           .Where(f => extensions.Contains(Path.GetExtension(f)));
+                       }
+                       catch
+                       {
+                           return [];
+                       }
+                   })
+                   .Distinct(StringComparer.OrdinalIgnoreCase)
+                   .Count();
+        }
 
         private static IEnumerable<String> SafeEnumerateFolder(String folder)
         {
@@ -2838,18 +2881,59 @@ namespace Xdows_Security.Views
                    .Distinct(StringComparer.OrdinalIgnoreCase);
         }
 
-        private static IEnumerable<String> EnumerateFullScanFiles()
+        private static Int32 CountFullScanFiles()
         {
-            HashSet<String> scanned = [with(StringComparer.OrdinalIgnoreCase)];
+            HashSet<String> scanned = new(StringComparer.OrdinalIgnoreCase);
+            Int32 total = 0;
 
             foreach (DriveInfo drive in DriveInfo.GetDrives())
             {
                 if (!drive.IsReady || drive.DriveType is DriveType.CDRom or DriveType.Network)
                     continue;
 
-                foreach (String file in SafeEnumerateFiles(drive.RootDirectory.FullName, scanned))
-                    yield return file;
+                total += CountFilesInTree(drive.RootDirectory.FullName, scanned);
             }
+            return total;
+        }
+
+        private static Int32 CountFilesInTree(String root, HashSet<String> scanned)
+        {
+            Int32 total = 0;
+            Stack<String> stack = new();
+            stack.Push(root);
+
+            while (stack.Count > 0)
+            {
+                String currentDir = stack.Pop();
+
+                if (!scanned.Add(currentDir))
+                    continue;
+
+                IEnumerable<String>? entries;
+                try
+                {
+                    entries = Directory.EnumerateFileSystemEntries(currentDir);
+                }
+                catch
+                {
+                    continue;
+                }
+
+                Int32 dirCount = 0;
+                foreach (String entry in entries)
+                {
+                    if (Directory.Exists(entry))
+                    {
+                        stack.Push(entry);
+                    }
+                    else if (System.IO.File.Exists(entry) && scanned.Add(entry))
+                    {
+                        dirCount++;
+                    }
+                }
+                total += dirCount;
+            }
+            return total;
         }
 
         private static IEnumerable<String> SafeEnumerateFiles(String root, HashSet<String> scanned)

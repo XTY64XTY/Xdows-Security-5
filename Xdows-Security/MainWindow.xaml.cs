@@ -4,7 +4,6 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.Windows.Storage;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,12 +30,8 @@ namespace Xdows_Security
         private bool _closeConfirmationPending;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
-
-        // 事件驱动的 SecurityPage 就绪通知，替代旧的 Task.Delay + 轮询
         private TaskCompletionSource<SecurityPage?>? _securityPageReadyTcs;
         private static readonly TimeSpan SecurityPageWaitTimeout = TimeSpan.FromSeconds(5);
-
-        // 托盘右键菜单缓存：首次右键时构建，后续直接复用，语言切换时刷新文本
         private MenuFlyout? _trayMenu;
         private MenuFlyoutItem? _trayOpenItem;
         private MenuFlyoutItem? _traySettingsItem;
@@ -73,7 +68,6 @@ namespace Xdows_Security
                 e.Flyout = GetOrCreateTrayMenu();
             };
 
-            // 处理启动时的扫描请求：直接 enqueue，等待 SecurityPage 就绪由 WaitForSecurityPageAsync 内部处理
             if (App.ScanTargetPaths.Count > 0)
             {
                 _ = DispatcherQueue.TryEnqueue(() =>
@@ -230,19 +224,11 @@ namespace Xdows_Security
             });
         }
 
-        /// <summary>
-        /// 等待 SecurityPage 就绪（Loaded 已触发）。优先复用已 Loaded 的当前实例；
-        /// 否则订阅由 SecurityPage.Loaded 触发的就绪通知，带超时兜底避免永久阻塞。
-        /// 并发调用时复用同一等待者，避免相互取消。
-        /// </summary>
         private async Task<SecurityPage?> WaitForSecurityPageAsync()
         {
-            // 仅在 SecurityPage 已 Loaded 时直接复用；Frame.Navigate 同步设置 Content 但 Loaded 异步触发，
-            // 若不检查 IsLoaded 会拿到尚未完成 Loaded 的实例，导致 StartScanAsync 在 SetupRadarAnimations 之前运行
             if (navContainer.Content is SecurityPage { IsLoaded: true } loadedPage)
                 return loadedPage;
 
-            // 复用尚未完成的等待者，避免并发 TriggerScanForPaths 相互取消
             var existing = _securityPageReadyTcs;
             if (existing is { Task.IsCompleted: false })
                 return await existing.Task;
@@ -256,9 +242,6 @@ namespace Xdows_Security
             return await tcs.Task;
         }
 
-        /// <summary>
-        /// 由 SecurityPage.Loaded 调用，通知主窗口页面已就绪。
-        /// </summary>
         internal void NotifySecurityPageReady(SecurityPage page)
         {
             var tcs = _securityPageReadyTcs;
@@ -302,9 +285,6 @@ namespace Xdows_Security
         }
         private void OnLangChanged(object? sender, LanguageChangedEventArgs e) => LoadLocalizerData();
 
-        /// <summary>
-        /// 构建或复用托盘右键菜单。首次调用时构建并缓存，避免每次右键都新建 MenuFlyout + 3 个 Item + 3 个 FontIcon + 4 个事件订阅。
-        /// </summary>
         private MenuFlyout GetOrCreateTrayMenu()
         {
             if (_trayMenu != null) return _trayMenu;
@@ -346,19 +326,12 @@ namespace Xdows_Security
 
             return _trayMenu;
         }
-
-        /// <summary>
-        /// 语言切换时刷新托盘菜单文本（菜单已构建才需要刷新）。
-        /// </summary>
         private void RefreshTrayMenuText()
         {
             if (_trayMenu == null) return;
-            if (_trayOpenItem != null)
-                _trayOpenItem.Text = Localizer.Get().GetLocalizedString("TrayMenu_Open");
-            if (_traySettingsItem != null)
-                _traySettingsItem.Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings");
-            if (_trayQuitItem != null)
-                _trayQuitItem.Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit");
+            _trayOpenItem?.Text = Localizer.Get().GetLocalizedString("TrayMenu_Open");
+            _traySettingsItem?.Text = Localizer.Get().GetLocalizedString("TrayMenu_Settings");
+            _trayQuitItem?.Text = Localizer.Get().GetLocalizedString("TrayMenu_Quit");
         }
         private void LoadLocalizerData()
         {

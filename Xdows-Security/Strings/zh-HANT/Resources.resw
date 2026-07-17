@@ -340,7 +340,7 @@
     <value>等待掃描</value>
   </data>
   <data name="SecurityPage_Status_Processing" xml:space="preserve">
-    <value>正在處理文件...</value>
+    <value>正在索引文件...</value>
   </data>
   <data name="SecurityPage_Status_Scanning" xml:space="preserve">
     <value>正在掃描：{0}</value>
