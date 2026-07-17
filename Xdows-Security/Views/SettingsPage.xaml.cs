@@ -1,7 +1,5 @@
 using CommunityToolkit.WinUI.Controls;
 using CommunityToolkit.WinUI.UI.Controls;
-using Microsoft.Windows.Storage;
-using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -18,6 +16,7 @@ using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
 using Xdows_Security.Services;
 using static Xdows_Security.LogText;
+using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContainer;
 
 namespace Xdows_Security.Views
 {
@@ -436,6 +435,23 @@ namespace Xdows_Security.Views
         {
             var settings = App.LocalSettings;
 
+            if (!settings.Values.ContainsKey("TrayVisibleToggle"))
+            {
+                settings.Values["TrayVisibleToggle"] = true;
+            }
+            if (!settings.Values.ContainsKey("ModelScan"))
+            {
+                settings.Values["ModelScan"] = true;
+            }
+            if (!settings.Values.ContainsKey("ShowTaskbarScanProgress"))
+            {
+                settings.Values["ShowTaskbarScanProgress"] = true;
+            }
+            if (!settings.Values.ContainsKey("UsbAutoScan"))
+            {
+                settings.Values["UsbAutoScan"] = true;
+            }
+
             List<ToggleSwitch> toggles =
             [
                 ScanProgressToggle,
@@ -471,11 +487,6 @@ namespace Xdows_Security.Views
                 {
                     toggle.IsOn = isOn;
                 }
-            }
-
-            if (!settings.Values.ContainsKey("ModelScan"))
-            {
-                settings.Values["ModelScan"] = true;
             }
 
             if (!settings.Values.ContainsKey("ModelMode"))
@@ -525,25 +536,10 @@ namespace Xdows_Security.Views
             Files_CompatibilityMode.IsOn = true;
             Files_CompatibilityMode.IsEnabled = false;
 
-            if (!settings.Values.ContainsKey("TrayVisibleToggle"))
-            {
-                settings.Values["TrayVisibleToggle"] = true;
-            }
-
-            if (!settings.Values.ContainsKey("ShowTaskbarScanProgress"))
-            {
-                settings.Values["ShowTaskbarScanProgress"] = true;
-            }
-
             if (!settings.Values.ContainsKey("IsBackButtonVisible"))
             {
                 settings.Values["IsBackButtonVisible"] = true;
                 SettingsPage_Appearance_Nav_IsBackButtonVisible.IsOn = true;
-            }
-
-            if (!settings.Values.ContainsKey("UsbAutoScan"))
-            {
-                settings.Values["UsbAutoScan"] = true;
             }
 
             InfectorCleanerToggle.IsEnabled = VirusFamilyToggle.IsOn;
