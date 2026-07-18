@@ -41,12 +41,12 @@
                     <StackPanel Grid.Column="2"
                                 Margin="16,8,0,0"
                                 Orientation="Horizontal"
-                                Spacing="4">
+                                Spacing="16">
                         <ToggleSwitch x:Name="ViewModeToggle"
                                       AutomationProperties.AutomationId="ProcessManagerTreeModeToggle"
                                       MinWidth="0"
                                       OffContent="列表"
-                                      OnContent="树状图"
+                                      OnContent="树状"
                                       Toggled="ViewModeToggle_Toggled"/>
                         <ToggleSwitch x:Name="DriverModeToggle"
                                       x:Uid="ProcessManager_DriverModeToggle"
