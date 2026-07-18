@@ -29,6 +29,7 @@ Assert-Match $protection 'GetProcesses\(\)(?s:.*?)client\.QueryProcesses' 'drive
 Assert-Match $protection 'OperateProcess\(uint processId(?s:.*?)client\.OperateProcess' 'driver process operation public API'
 Assert-Match $app 'GetDriverProcesses\(\)' 'app driver process list bridge'
 Assert-Match $xaml 'x:Name="ViewModeToggle"(?s:.*?)x:Name="DriverModeToggle"' 'driver toggle after tree toggle'
+Assert-Match $xaml '<StackPanel(?s:.*?)Orientation="Horizontal"(?s:.*?)Spacing="4"(?s:.*?)x:Name="ViewModeToggle"(?s:.*?)MinWidth="0"(?s:.*?)x:Name="DriverModeToggle"(?s:.*?)MinWidth="0"' 'compact shared toggle layout'
 Assert-Match $xaml 'AutomationProperties\.AutomationId="ProcessManagerDriverModeToggle"' 'driver toggle automation ID'
 Assert-Match $view 'if \(!ProtectionStatus\.IsRun\(5\)\)(?s:.*?)SetDriverModeToggleSilently\(false\)' 'driver protection prerequisite'
 Assert-Match $view 'ShowDriverModeDisclaimerAsync\(\)' 'per-enable disclaimer'
