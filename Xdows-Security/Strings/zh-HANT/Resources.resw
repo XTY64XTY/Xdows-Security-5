@@ -1237,6 +1237,12 @@
   <data name="SettingsPage_Scan_IndexMode_After.Content" xml:space="preserve">
     <value>獨立</value>
   </data>
+  <data name="SettingsPage_Scan_IndexMode_FastIndex.Header" xml:space="preserve">
+    <value>嘗試使用更快的索引方式</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_FastIndex.Description" xml:space="preserve">
+    <value>在支援的分割區格式上嘗試使用更快的索引方式</value>
+  </data>
   <data name="BugReportPage_FailedInit" xml:space="preserve">
     <value>初始化TCP客戶端失敗: {0}</value>
   </data>

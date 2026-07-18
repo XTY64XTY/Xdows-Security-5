@@ -1236,7 +1236,13 @@ Files can be restored from quarantine after handling. Some files may be deleted 
     <value>Parallel</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode_After.Content" xml:space="preserve">
-    <value>After</value>
+    <value>Independent</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_FastIndex.Header" xml:space="preserve">
+    <value>Try a faster indexing method</value>
+  </data>
+  <data name="SettingsPage_Scan_IndexMode_FastIndex.Description" xml:space="preserve">
+    <value>Try a faster indexing method on supported partition formats</value>
   </data>
   <data name="BugReportPage_FailedInit" xml:space="preserve">
     <value>Failed to initialize TCP client: {0}</value>

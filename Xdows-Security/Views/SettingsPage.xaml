@@ -115,6 +115,14 @@
                     </ComboBox>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_IndexMode_FastIndex"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE945;}">
+                            <ToggleSwitch x:Name="FastIndexToggle"
+                                          AutomationProperties.AutomationId="FastIndexToggle"
+                                          Tag="UseFastIndexing"
+                                          Toggled="Toggled_SaveToggleData" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_IndexMode_ScanProgress"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF0B5;}"
                            x:Name="Scan_ScanProgress">

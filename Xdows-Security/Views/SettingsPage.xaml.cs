@@ -447,6 +447,10 @@ namespace Xdows_Security.Views
             {
                 settings.Values["ShowTaskbarScanProgress"] = true;
             }
+            if (!settings.Values.ContainsKey("UseFastIndexing"))
+            {
+                settings.Values["UseFastIndexing"] = true;
+            }
             if (!settings.Values.ContainsKey("UsbAutoScan"))
             {
                 settings.Values["UsbAutoScan"] = true;
@@ -456,6 +460,7 @@ namespace Xdows_Security.Views
             [
                 ScanProgressToggle,
                 TaskbarScanProgressToggle,
+                FastIndexToggle,
                 DeepScanToggle,
                 ExtraDataToggle,
                 ScanInsideToggle,
@@ -577,7 +582,7 @@ namespace Xdows_Security.Views
                             break;
                         }
                     }
-                    // If Parallel mode, disable ScanProgress toggle
+                    // Options that require a separate indexing pass are only available in Independent mode.
                     try
                     {
                         ToggleSwitch toggle = this.FindName("ScanProgressToggle") as ToggleSwitch ?? new();
@@ -593,6 +598,8 @@ namespace Xdows_Security.Views
                                 toggle.IsEnabled = true;
                             }
                         }
+
+                        FastIndexToggle.IsEnabled = mode == "After";
                     }
                     catch { }
                 }
@@ -622,6 +629,8 @@ namespace Xdows_Security.Views
                         {
                             toggle.IsEnabled = true;
                         }
+
+                        FastIndexToggle.IsEnabled = tag == "After";
                     }
                 }
                 catch { }

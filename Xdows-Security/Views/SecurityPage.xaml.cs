@@ -1675,6 +1675,7 @@ namespace Xdows_Security.Views
             bool showScanProgress = settings.Values.TryGetValue("ShowScanProgress", out object? showProgressRaw) && showProgressRaw is bool showProgress && showProgress;
             bool showTaskbarProgress = !settings.Values.TryGetValue("ShowTaskbarScanProgress", out object? taskbarRaw) || taskbarRaw is not bool taskbar || taskbar;
             string scanIndexMode = settings.Values.TryGetValue("ScanIndexMode", out object? indexModeRaw) && indexModeRaw is string indexMode ? indexMode : "Parallel";
+            bool useFastIndexing = !settings.Values.TryGetValue("UseFastIndexing", out object? fastIndexRaw) || fastIndexRaw is not bool fastIndex || fastIndex;
             bool DeepScan = settings.Values.TryGetValue("DeepScan", out object? deepRaw) && deepRaw is bool deep && deep;
             bool ExtraData = settings.Values.TryGetValue("ExtraData", out object? extraRaw) && extraRaw is bool extra && extra;
             bool UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
@@ -1805,8 +1806,18 @@ namespace Xdows_Security.Views
                 {
                     bool parallelIndex = scanIndexMode == "Parallel";
 
-                    IEnumerable<string> files = EnumerateFilesStreaming(mode, userPath, customPaths);
-                    int total = parallelIndex ? 0 : CountFiles(mode, userPath, customPaths);
+                    IEnumerable<string> files;
+                    int total;
+                    if (!parallelIndex && useFastIndexing && TryEnumerateFilesUsingNtfsTable(mode, userPath, customPaths, out IReadOnlyList<string> indexedFiles))
+                    {
+                        files = indexedFiles;
+                        total = indexedFiles.Count;
+                    }
+                    else
+                    {
+                        files = EnumerateFilesStreaming(mode, userPath, customPaths);
+                        total = parallelIndex ? 0 : CountFiles(mode, userPath, customPaths);
+                    }
 
                     DateTime startTime = DateTime.Now;
                     DateTime lastSpeedUpdateUtc = DateTime.UtcNow;
@@ -2755,6 +2766,71 @@ namespace Xdows_Security.Views
                 : (System.IO.File.Exists(p) ? 1 : 0)) ?? 0,
             _ => 0
         };
+
+        private static bool TryEnumerateFilesUsingNtfsTable(
+            ScanMode mode,
+            String? userPath,
+            IReadOnlyList<String>? customPaths,
+            out IReadOnlyList<String> files)
+        {
+            files = [];
+            if (mode is ScanMode.Quick or ScanMode.File)
+                return false;
+
+            HashSet<String> indexedFiles = new(StringComparer.OrdinalIgnoreCase);
+            bool usedNtfsTable = false;
+
+            void AddDirectory(String directory)
+            {
+                if (NtfsFileTableIndexer.TryEnumerateFiles(directory, out IReadOnlyList<String> ntfsFiles, out String? errorMessage))
+                {
+                    usedNtfsTable = true;
+                    indexedFiles.UnionWith(ntfsFiles);
+                    LogText.AddNewLog(
+                        LogText.LogLevel.INFO,
+                        "Security - FastIndex",
+                        $"NTFS file table indexing succeeded for '{directory}'. Indexed {ntfsFiles.Count} files.");
+                    return;
+                }
+
+                LogText.AddNewLog(
+                    LogText.LogLevel.WARN,
+                    "Security - FastIndex",
+                    $"NTFS file table indexing failed for '{directory}'. Falling back to directory enumeration. Error: {errorMessage ?? "Unknown error."}");
+                indexedFiles.UnionWith(SafeEnumerateFolder(directory));
+            }
+
+            switch (mode)
+            {
+                case ScanMode.Full:
+                    foreach (DriveInfo drive in DriveInfo.GetDrives())
+                    {
+                        if (drive.IsReady && drive.DriveType is not DriveType.CDRom and not DriveType.Network)
+                            AddDirectory(drive.RootDirectory.FullName);
+                    }
+                    break;
+                case ScanMode.Folder when userPath != null && Directory.Exists(userPath):
+                    AddDirectory(userPath);
+                    break;
+                case ScanMode.More when customPaths != null:
+                    foreach (String path in customPaths)
+                    {
+                        if (Directory.Exists(path))
+                            AddDirectory(path);
+                        else if (System.IO.File.Exists(path))
+                            indexedFiles.Add(path);
+                    }
+                    break;
+                default:
+                    return false;
+            }
+
+            if (!usedNtfsTable)
+                return false;
+
+            files = indexedFiles.ToArray();
+            return true;
+        }
 
         private static Int32 CountFilesInFolder(String folder)
         {
