@@ -287,14 +287,16 @@ internal sealed class DriverBridgeClient : IDisposable
             response.Status == 0 &&
             response.Header.Version == DriverProtocol.LegacyUpgradeProtocolVersion &&
             response.ProtocolVersion == DriverProtocol.LegacyUpgradeProtocolVersion &&
-            response.DriverBuildId == DriverProtocol.LegacyUpgradeDriverBuildId &&
+            (response.DriverBuildId == DriverProtocol.LegacyUpgradeDriverBuildId ||
+             response.DriverBuildId == DriverProtocol.PreviousLegacyUpgradeDriverBuildId) &&
             !string.IsNullOrWhiteSpace(response.ShutdownToken);
         if (!expectedLegacyDriver)
         {
             _ = DeviceIoControlNoBuffers(handle, DriverProtocol.DisconnectClient);
             message =
                 $"Loaded driver is not the supported legacy upgrade source " +
-                $"v{DriverProtocol.LegacyUpgradeProtocolVersion}/{DriverProtocol.LegacyUpgradeDriverBuildId}; " +
+                $"v{DriverProtocol.LegacyUpgradeProtocolVersion}/" +
+                $"{DriverProtocol.LegacyUpgradeDriverBuildId} or {DriverProtocol.PreviousLegacyUpgradeDriverBuildId}; " +
                 $"received v{response.ProtocolVersion}/{response.DriverBuildId}.";
             return false;
         }

@@ -8,6 +8,7 @@ internal static class DriverProtocol
     public const ulong DriverBuildId = 2026071801;
     public const uint LegacyUpgradeProtocolVersion = 5;
     public const ulong LegacyUpgradeDriverBuildId = 2026071704;
+    public const ulong PreviousLegacyUpgradeDriverBuildId = 2026071703;
     public const int EventTypeCount = 9;
     public const uint CapabilityPriorityQueue = 0x00000001;
     public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
