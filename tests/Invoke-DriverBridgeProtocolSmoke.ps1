@@ -56,18 +56,21 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 5 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 6 },
     @{ C = "XDOWS_SECURITY_CAP_PRIORITY_QUEUE"; Cs = "CapabilityPriorityQueue"; Expected = 1 },
     @{ C = "XDOWS_SECURITY_CAP_DIRTY_WRITE_COALESCING"; Cs = "CapabilityDirtyWriteCoalescing"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_CAP_BUILD_ID"; Cs = "CapabilityBuildId"; Expected = 4 },
     @{ C = "XDOWS_SECURITY_CAP_STARTUP_SELF_PROTECT"; Cs = "CapabilityStartupSelfProtect"; Expected = 8 },
     @{ C = "XDOWS_SECURITY_CAP_USER_DECISION_HOLD"; Cs = "CapabilityUserDecisionHold"; Expected = 16 },
+    @{ C = "XDOWS_SECURITY_CAP_PROCESS_MANAGEMENT"; Cs = "CapabilityProcessManagement"; Expected = 32 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
     @{ C = "XDOWS_SECURITY_TOKEN_CHARS"; Cs = "TokenChars"; Expected = 64 },
     @{ C = "XDOWS_SECURITY_MAX_LOG_MODULE_CHARS"; Cs = "MaxLogModuleChars"; Expected = 32 },
     @{ C = "XDOWS_SECURITY_MAX_LOG_MESSAGE_CHARS"; Cs = "MaxLogMessageChars"; Expected = 256 },
+    @{ C = "XDOWS_SECURITY_MAX_PROCESS_NAME_CHARS"; Cs = "MaxProcessNameChars"; Expected = 260 },
+    @{ C = "XDOWS_SECURITY_PROCESS_BATCH_SIZE"; Cs = "ProcessBatchSize"; Expected = 64 },
     @{ C = "XDOWS_SECURITY_MODULE_TOKEN_AUTH"; Cs = "ModuleTokenAuth"; Expected = 1 },
     @{ C = "XDOWS_SECURITY_MODULE_PROCESS"; Cs = "ModuleProcess"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_MODULE_FILE"; Cs = "ModuleFile"; Expected = 4 },
@@ -82,7 +85,7 @@ Assert-Equal $cBuildId $csBuildId "Driver build ID"
 Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
 
 $runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
-Assert-Equal 5 $runtimeProtocolVersion "Runtime smoke protocol version"
+Assert-Equal 6 $runtimeProtocolVersion "Runtime smoke protocol version"
 
 foreach ($offsetCheck in @(
     @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
@@ -125,7 +128,9 @@ $ioctls = @(
     @{ C = "SET_VOLUNTARY_EXIT"; Cs = "SetVoluntaryExit"; Function = 0x808 },
     @{ C = "AUTHORIZED_SHUTDOWN"; Cs = "AuthorizedShutdown"; Function = 0x809 },
     @{ C = "GET_NEXT_LOG"; Cs = "GetNextLog"; Function = 0x80A },
-    @{ C = "SET_STARTUP_PROTECTION"; Cs = "SetStartupProtection"; Function = 0x80B }
+    @{ C = "SET_STARTUP_PROTECTION"; Cs = "SetStartupProtection"; Function = 0x80B },
+    @{ C = "QUERY_PROCESSES"; Cs = "QueryProcesses"; Function = 0x80C },
+    @{ C = "OPERATE_PROCESS"; Cs = "OperateProcess"; Function = 0x80D }
 )
 
 foreach ($ioctl in $ioctls) {
@@ -162,7 +167,11 @@ $enums = @(
     @{ C = "XdowsSecurityLogInfo"; Cs = "Info"; Value = 1 },
     @{ C = "XdowsSecurityLogWarning"; Cs = "Warning"; Value = 2 },
     @{ C = "XdowsSecurityLogError"; Cs = "Error"; Value = 3 },
-    @{ C = "XdowsSecurityLogFatal"; Cs = "Fatal"; Value = 4 }
+    @{ C = "XdowsSecurityLogFatal"; Cs = "Fatal"; Value = 4 },
+    @{ C = "XdowsSecurityProcessOperationNone"; Cs = "None"; Value = 0 },
+    @{ C = "XdowsSecurityProcessOperationSuspend"; Cs = "Suspend"; Value = 1 },
+    @{ C = "XdowsSecurityProcessOperationResume"; Cs = "Resume"; Value = 2 },
+    @{ C = "XdowsSecurityProcessOperationTerminate"; Cs = "Terminate"; Value = 3 }
 )
 
 foreach ($enum in $enums) {
@@ -185,6 +194,18 @@ if ($bridgeText -notmatch "ErrorNoMoreItems\s+=\s+259") {
 }
 
 $checks.Add("DriverBridgeClient handles ERROR_NO_MORE_ITEMS") | Out-Null
+
+if ($publicText -notmatch 'XDOWS_SECURITY_PROCESS_QUERY_REQUEST(?s:.*?)ULONG\s+Cursor;\s*ULONG\s+Reserved;\s*WCHAR\s+AuthorizationToken\[XDOWS_SECURITY_TOKEN_CHARS\s*\+\s*1\]' -or
+    $protocolText -notmatch 'XdowsProcessQueryRequest(?s:.*?)uint\s+Cursor;\s*public\s+uint\s+Reserved;(?s:.*?)string\s+AuthorizationToken;') {
+    throw "Process query request fields are not mirrored in protocol order."
+}
+$checks.Add("Process query request field order") | Out-Null
+
+if ($publicText -notmatch 'XDOWS_SECURITY_PROCESS_ENTRY(?s:.*?)ULONG\s+ProcessId;\s*ULONG\s+ParentProcessId;\s*ULONG\s+SessionId;\s*ULONG\s+ThreadCount;\s*ULONG\s+HandleCount;\s*ULONG\s+BasePriority;\s*ULONGLONG\s+WorkingSetBytes;\s*ULONGLONG\s+PrivateBytes;' -or
+    $protocolText -notmatch 'XdowsDriverProcessEntry(?s:.*?)uint\s+ProcessId;\s*public\s+uint\s+ParentProcessId;\s*public\s+uint\s+SessionId;\s*public\s+uint\s+ThreadCount;\s*public\s+uint\s+HandleCount;\s*public\s+uint\s+BasePriority;\s*public\s+ulong\s+WorkingSetBytes;\s*public\s+ulong\s+PrivateBytes;') {
+    throw "Process entry fields are not mirrored in protocol order."
+}
+$checks.Add("Process entry field order") | Out-Null
 
 [pscustomobject]@{
     SourceHeader = $driverPublicHeader

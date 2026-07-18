@@ -1,14 +1,18 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Protection;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using WinUI3Localizer;
 
 namespace Xdows_Security.Views
 {
@@ -218,6 +222,9 @@ namespace Xdows_Security.Views
     {
         private List<ProcessInfoEx> _allProcesses = [];
         private bool _isTreeView;
+        private bool _isDriverMode;
+        private bool _suppressDriverModeToggle;
+        private int _refreshGeneration;
 
         public ProcessManagerView()
         {
@@ -241,18 +248,23 @@ namespace Xdows_Security.Views
 
         private async Task RefreshProcesses()
         {
+            int refreshGeneration = Interlocked.Increment(ref _refreshGeneration);
+            bool useDriverMode = _isDriverMode;
             LoadingPanel.Visibility = Visibility.Visible;
             ProcessList.Visibility = Visibility.Collapsed;
             ProcessTree.Visibility = Visibility.Collapsed;
 
             try
             {
-                var list = await Task.Run(() =>
-                    Process.GetProcesses()
-                        .Select(p => new ProcessInfoEx(p))
-                        .OrderBy(p => p.Name)
+                var list = await Task.Run(() => useDriverMode
+                    ? ProtectionStatus.GetDriverProcesses()
+                        .Select(process => new ProcessInfoEx(process))
+                        .OrderBy(process => process.Name)
                         .ToList()
-                );
+                    : GetUserModeProcessSnapshot());
+
+                if (refreshGeneration != Volatile.Read(ref _refreshGeneration))
+                    return;
 
                 _allProcesses = list;
 
@@ -268,15 +280,29 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                await ShowDialogAsync("刷新失败", ex.Message);
+                if (refreshGeneration != Volatile.Read(ref _refreshGeneration))
+                    return;
+
+                if (useDriverMode && !ProtectionStatus.IsRun(5))
+                {
+                    _isDriverMode = false;
+                    SetDriverModeToggleSilently(false);
+                }
+
+                await ShowDialogAsync(
+                    Localize("ProcessManager_RefreshFailed_Title"),
+                    FormatLocalized("ProcessManager_RefreshFailed_Text", ex.Message));
             }
             finally
             {
-                LoadingPanel.Visibility = Visibility.Collapsed;
-                if (IsTreeView)
-                    ProcessTree.Visibility = Visibility.Visible;
-                else
-                    ProcessList.Visibility = Visibility.Visible;
+                if (refreshGeneration == Volatile.Read(ref _refreshGeneration))
+                {
+                    LoadingPanel.Visibility = Visibility.Collapsed;
+                    if (IsTreeView)
+                        ProcessTree.Visibility = Visibility.Visible;
+                    else
+                        ProcessList.Visibility = Visibility.Visible;
+                }
             }
         }
 
@@ -312,6 +338,81 @@ namespace Xdows_Security.Views
             else
             {
                 ApplyFilterAndSort();
+            }
+        }
+
+        private async void DriverModeToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (_suppressDriverModeToggle)
+                return;
+
+            if (!DriverModeToggle.IsOn)
+            {
+                _isDriverMode = false;
+                await RefreshProcesses();
+                return;
+            }
+
+            if (!ProtectionStatus.IsRun(5))
+            {
+                SetDriverModeToggleSilently(false);
+                await ShowDialogAsync(
+                    Localize("ProcessManager_DriverMode_RequiresProtection_Title"),
+                    Localize("ProcessManager_DriverMode_RequiresProtection_Text"));
+                return;
+            }
+
+            if (!await ShowDriverModeDisclaimerAsync())
+            {
+                SetDriverModeToggleSilently(false);
+                return;
+            }
+
+            _isDriverMode = true;
+            await RefreshProcesses();
+        }
+
+        private async Task<bool> ShowDriverModeDisclaimerAsync()
+        {
+            ContentDialogResult result = await new ContentDialog
+            {
+                Title = Localize("ProcessManager_DriverMode_Disclaimer_Title"),
+                Content = new TextBlock
+                {
+                    Text = Localize("ProcessManager_DriverMode_Disclaimer_Text"),
+                    TextWrapping = TextWrapping.Wrap
+                },
+                PrimaryButtonText = Localize("Button_Confirm"),
+                CloseButtonText = Localize("Button_Cancel"),
+                XamlRoot = this.XamlRoot,
+                RequestedTheme = GetDialogTheme(),
+                DefaultButton = ContentDialogButton.Close
+            }.ShowAsync();
+
+            return result == ContentDialogResult.Primary;
+        }
+
+        private void SetDriverModeToggleSilently(bool isOn)
+        {
+            _suppressDriverModeToggle = true;
+            DriverModeToggle.IsOn = isOn;
+            _suppressDriverModeToggle = false;
+        }
+
+        private static List<ProcessInfoEx> GetUserModeProcessSnapshot()
+        {
+            Process[] processes = Process.GetProcesses();
+            try
+            {
+                return processes
+                    .Select(process => new ProcessInfoEx(process))
+                    .OrderBy(process => process.Name)
+                    .ToList();
+            }
+            finally
+            {
+                foreach (Process process in processes)
+                    process.Dispose();
             }
         }
 
@@ -444,16 +545,36 @@ namespace Xdows_Security.Views
         {
             var confirm = new ContentDialog
             {
-                Title = $"你希望结束 {info.Name} ({info.Id}) 吗？",
-                Content = "如果某个打开的程序与此进程关联，则会关闭此程序并且将丢失所有未保存的数据。如果结束某个系统进程，则可能导致系统不稳定。你确定要继续吗？",
-                PrimaryButtonText = "结束",
-                CloseButtonText = "取消",
+                Title = FormatLocalized("ProcessManager_Terminate_Confirm_Title", info.Name, info.Id),
+                Content = Localize("ProcessManager_Terminate_Confirm_Text"),
+                PrimaryButtonText = Localize("ProcessManager_Terminate_Button"),
+                CloseButtonText = Localize("Button_Cancel"),
                 XamlRoot = this.XamlRoot,
                 RequestedTheme = GetDialogTheme(),
                 DefaultButton = ContentDialogButton.Primary
             };
 
             if (await confirm.ShowAsync() != ContentDialogResult.Primary) return;
+
+            if (_isDriverMode)
+            {
+                try
+                {
+                    await Task.Run(() => ProtectionStatus.OperateDriverProcess(info.Id, DriverProcessOperation.Terminate));
+                    await ShowDialogAsync(
+                        Localize("ProcessManager_Terminate_Success_Title"),
+                        FormatLocalized("ProcessManager_Terminate_Success_Text", info.Name));
+                }
+                catch (Exception ex)
+                {
+                    await ShowDialogAsync(
+                        Localize("ProcessManager_Terminate_Failed_Title"),
+                        FormatLocalized("ProcessManager_Operation_Failed_Text", info.Name, ex.Message));
+                }
+
+                await RefreshProcesses();
+                return;
+            }
 
             var result = await Task.Run(() => KillProcessWithFallbacks((int)info.Id));
 
@@ -469,12 +590,16 @@ namespace Xdows_Security.Views
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
+            bool useDriverMode = _isDriverMode;
 
             var (success, error) = await Task.Run(() =>
             {
                 try
                 {
-                    SuspendProcess((int)info.Id);
+                    if (useDriverMode)
+                        ProtectionStatus.OperateDriverProcess(info.Id, DriverProcessOperation.Suspend);
+                    else
+                        SuspendProcess((int)info.Id);
                     return (true, "");
                 }
                 catch (Exception ex)
@@ -484,21 +609,29 @@ namespace Xdows_Security.Views
             });
 
             if (success)
-                await ShowDialogAsync("挂起成功", $"进程 {info.Name} 已挂起。");
+                await ShowDialogAsync(
+                    Localize("ProcessManager_Suspend_Success_Title"),
+                    FormatLocalized("ProcessManager_Suspend_Success_Text", info.Name));
             else
-                await ShowDialogAsync("挂起失败", $"无法挂起进程: {error}");
+                await ShowDialogAsync(
+                    Localize("ProcessManager_Suspend_Failed_Title"),
+                    FormatLocalized("ProcessManager_Operation_Failed_Text", info.Name, error));
         }
 
         private async void Resume_Click(object sender, RoutedEventArgs e)
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
+            bool useDriverMode = _isDriverMode;
 
             var (success, error) = await Task.Run(() =>
             {
                 try
                 {
-                    ResumeProcess((int)info.Id);
+                    if (useDriverMode)
+                        ProtectionStatus.OperateDriverProcess(info.Id, DriverProcessOperation.Resume);
+                    else
+                        ResumeProcess((int)info.Id);
                     return (true, "");
                 }
                 catch (Exception ex)
@@ -508,9 +641,13 @@ namespace Xdows_Security.Views
             });
 
             if (success)
-                await ShowDialogAsync("恢复成功", $"进程 {info.Name} 已恢复。");
+                await ShowDialogAsync(
+                    Localize("ProcessManager_Resume_Success_Title"),
+                    FormatLocalized("ProcessManager_Resume_Success_Text", info.Name));
             else
-                await ShowDialogAsync("恢复失败", $"无法恢复进程: {error}");
+                await ShowDialogAsync(
+                    Localize("ProcessManager_Resume_Failed_Title"),
+                    FormatLocalized("ProcessManager_Operation_Failed_Text", info.Name, error));
         }
 
         private async void ShowProcessDetail_Click(object sender, RoutedEventArgs e)
@@ -676,6 +813,15 @@ namespace Xdows_Security.Views
 
         private ElementTheme GetDialogTheme()
             => (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
+
+        private static string Localize(string key)
+        {
+            string value = Localizer.Get().GetLocalizedString(key);
+            return string.IsNullOrWhiteSpace(value) ? key : value;
+        }
+
+        private static string FormatLocalized(string key, params object[] args)
+            => string.Format(CultureInfo.CurrentCulture, Localize(key), args);
 
         public static void SuspendProcess(int processId)
         {
@@ -1598,6 +1744,27 @@ namespace Xdows_Security.Views
                 Memory = "N/A";
                 PrivateMemory = "N/A";
             }
+        }
+
+        public ProcessInfoEx(DriverProcessInfo process)
+        {
+            Name = string.IsNullOrWhiteSpace(process.Name)
+                ? $"PID {process.ProcessId}"
+                : process.Name;
+            Id = process.ProcessId;
+            SessionId = process.SessionId;
+            ThreadCount = process.ThreadCount;
+            HandleCount = process.HandleCount;
+            PriorityClass = process.BasePriority;
+            MemoryBytes = process.WorkingSetBytes > long.MaxValue
+                ? long.MaxValue
+                : (long)process.WorkingSetBytes;
+            Memory = FormatSize(MemoryBytes);
+            PrivateMemory = FormatSize(process.PrivateBytes > long.MaxValue
+                ? long.MaxValue
+                : (long)process.PrivateBytes);
+            _parentId = process.ParentProcessId;
+            _parentIdLoaded = true;
         }
 
         public void LoadParentId()

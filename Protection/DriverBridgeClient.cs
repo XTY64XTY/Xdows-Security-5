@@ -368,6 +368,65 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to set startup self-protection state.");
     }
 
+    public IReadOnlyList<XdowsDriverProcessEntry> QueryProcesses()
+    {
+        EnsureConnected();
+
+        string token = GetAuthorizationToken();
+        var processes = new List<XdowsDriverProcessEntry>();
+        uint cursor = 0;
+
+        for (;;)
+        {
+            var request = new XdowsProcessQueryRequest
+            {
+                Header = DriverProtocol.Header<XdowsProcessQueryRequest>(),
+                Cursor = cursor,
+                AuthorizationToken = token
+            };
+
+            if (!DeviceIoControl(request, DriverProtocol.QueryProcesses, out XdowsProcessQueryResponse response))
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to query the driver process list.");
+
+            int responseSize = Marshal.SizeOf<XdowsProcessQueryResponse>();
+            if (response.Header.Size != (uint)responseSize ||
+                response.Header.Version != DriverProtocol.ProtocolVersion ||
+                response.Count > DriverProtocol.ProcessBatchSize ||
+                response.Entries is null)
+            {
+                throw new InvalidDataException("The driver returned an invalid process-list response.");
+            }
+
+            processes.AddRange(response.Entries.Take(checked((int)response.Count)));
+            if (response.HasMore == 0)
+                return processes;
+
+            if (response.NextCursor <= cursor)
+                throw new InvalidDataException("The driver process-list cursor did not advance.");
+
+            cursor = response.NextCursor;
+        }
+    }
+
+    public void OperateProcess(uint processId, XdowsSecurityProcessOperation operation)
+    {
+        EnsureConnected();
+
+        if (operation is XdowsSecurityProcessOperation.None)
+            throw new ArgumentOutOfRangeException(nameof(operation));
+
+        var request = new XdowsProcessOperationRequest
+        {
+            Header = DriverProtocol.Header<XdowsProcessOperationRequest>(),
+            ProcessId = processId,
+            Operation = (uint)operation,
+            AuthorizationToken = GetAuthorizationToken()
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.OperateProcess))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), $"Driver process operation {operation} failed.");
+    }
+
     public bool SubmitAuthorizedShutdown()
     {
         EnsureConnected();
@@ -493,6 +552,15 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         if (!IsHandleOpen(_handle))
             throw new InvalidOperationException("Driver bridge is not connected.");
+    }
+
+    private string GetAuthorizationToken()
+    {
+        string? token = _shutdownToken.CopyForAuthorization();
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("Driver authorization token is unavailable.");
+
+        return token;
     }
 
     private static bool IsHandleOpen(SafeFileHandle? handle) =>

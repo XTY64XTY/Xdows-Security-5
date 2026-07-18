@@ -20,6 +20,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="进程管理器"
@@ -27,6 +28,7 @@
                                Margin="12,16,0,0"
                                FontSize="16"/>
                     <ComboBox x:Name="SortCombo"
+                              AutomationProperties.AutomationId="ProcessManagerSortCombo"
                               Grid.Column="1"
                               Margin="16,12,0,0"
                               SelectionChanged="SortCombo_SelectionChanged"
@@ -38,13 +40,21 @@
                         <ComboBoxItem Content="句柄" Tag="Handles"/>
                     </ComboBox>
                     <ToggleSwitch x:Name="ViewModeToggle"
+                                  AutomationProperties.AutomationId="ProcessManagerTreeModeToggle"
                                   Grid.Column="2"
                                   Margin="16,8,0,0"
                                   OffContent="列表"
                                   OnContent="树状图"
                                   Toggled="ViewModeToggle_Toggled"/>
+                    <ToggleSwitch x:Name="DriverModeToggle"
+                                  x:Uid="ProcessManager_DriverModeToggle"
+                                  AutomationProperties.AutomationId="ProcessManagerDriverModeToggle"
+                                  Grid.Column="3"
+                                  Margin="16,8,0,0"
+                                  Toggled="DriverModeToggle_Toggled"/>
                     <AutoSuggestBox x:Name="SearchBox"
-                                    Grid.Column="3"
+                                    AutomationProperties.AutomationId="ProcessManagerSearchBox"
+                                    Grid.Column="4"
                                     PlaceholderText="搜索进程名称或 PID..."
                                     HorizontalAlignment="Center"
                                     MinWidth="260"
@@ -53,19 +63,19 @@
                                     QueryIcon="Find"/>
                 </Grid>
             </CommandBar.Content>
-            <AppBarButton Icon="Refresh" Label="刷新列表" Click="Refresh_Click"/>
-            <AppBarButton Icon="Cancel" Label="结束进程" Click="Kill_Click"/>
-            <AppBarButton Label="挂起" Click="Suspend_Click">
+            <AppBarButton AutomationProperties.AutomationId="ProcessManagerRefreshButton" Icon="Refresh" Label="刷新列表" Click="Refresh_Click"/>
+            <AppBarButton AutomationProperties.AutomationId="ProcessManagerTerminateButton" Icon="Cancel" Label="结束进程" Click="Kill_Click"/>
+            <AppBarButton AutomationProperties.AutomationId="ProcessManagerSuspendButton" Label="挂起" Click="Suspend_Click">
                 <AppBarButton.Icon>
                     <FontIcon Glyph="&#xE769;"/>
                 </AppBarButton.Icon>
             </AppBarButton>
-            <AppBarButton Label="恢复" Click="Resume_Click">
+            <AppBarButton AutomationProperties.AutomationId="ProcessManagerResumeButton" Label="恢复" Click="Resume_Click">
                 <AppBarButton.Icon>
                     <FontIcon Glyph="&#xE768;"/>
                 </AppBarButton.Icon>
             </AppBarButton>
-            <AppBarButton Label="详细信息" Click="ShowProcessDetail_Click">
+            <AppBarButton AutomationProperties.AutomationId="ProcessManagerDetailsButton" Label="详细信息" Click="ShowProcessDetail_Click">
                 <AppBarButton.Icon>
                     <FontIcon Glyph="&#xE946;"/>
                 </AppBarButton.Icon>
@@ -88,7 +98,7 @@
         </Grid>
 
         <Grid Grid.Row="2">
-            <ListView x:Name="ProcessList" SelectionMode="Single" DoubleTapped="ShowProcessDetail_Click">
+            <ListView x:Name="ProcessList" AutomationProperties.AutomationId="ProcessManagerList" SelectionMode="Single" DoubleTapped="ShowProcessDetail_Click">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="local:ProcessInfoEx">
                         <Grid Padding="0,4">
@@ -140,7 +150,7 @@
                 </ListView.ItemTemplate>
             </ListView>
 
-            <TreeView x:Name="ProcessTree" Visibility="Collapsed" DoubleTapped="ShowProcessDetail_Click"/>
+            <TreeView x:Name="ProcessTree" AutomationProperties.AutomationId="ProcessManagerTree" Visibility="Collapsed" DoubleTapped="ShowProcessDetail_Click"/>
 
             <StackPanel x:Name="LoadingPanel"
                         HorizontalAlignment="Center"

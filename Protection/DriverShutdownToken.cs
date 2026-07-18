@@ -18,6 +18,11 @@ internal sealed class DriverShutdownToken
         return token;
     }
 
+    public string? CopyForAuthorization()
+    {
+        return _token;
+    }
+
     public void Clear()
     {
         _token = null;

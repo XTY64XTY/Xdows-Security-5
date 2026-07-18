@@ -1704,4 +1704,67 @@
   <data name="SecurityPage_Risk_Allow" xml:space="preserve">
     <value>允許</value>
   </data>
+  <data name="ProcessManager_DriverModeToggle.OffContent" xml:space="preserve">
+    <value>驅動模式</value>
+  </data>
+  <data name="ProcessManager_DriverModeToggle.OnContent" xml:space="preserve">
+    <value>驅動模式</value>
+  </data>
+  <data name="ProcessManager_DriverMode_RequiresProtection_Title" xml:space="preserve">
+    <value>需要啟用驅動防護</value>
+  </data>
+  <data name="ProcessManager_DriverMode_RequiresProtection_Text" xml:space="preserve">
+    <value>使用者需要啟動驅動防護才能開啟驅動模式。請先前往「設定 - 防護」啟用驅動防護。</value>
+  </data>
+  <data name="ProcessManager_DriverMode_Disclaimer_Title" xml:space="preserve">
+    <value>進程管理驅動模式免責聲明</value>
+  </data>
+  <data name="ProcessManager_DriverMode_Disclaimer_Text" xml:space="preserve">
+    <value>驅動模式會使用核心驅動列舉進程，並直接暫停、恢復或終止目標進程。對系統進程執行不當操作可能造成應用程式無回應、資料遺失或系統不穩定。驅動會拒絕操作 Xdows Security 本身和關鍵系統進程，但你仍應確認目標進程無誤。僅在理解並接受這些風險後繼續。</value>
+  </data>
+  <data name="ProcessManager_RefreshFailed_Title" xml:space="preserve">
+    <value>重新整理失敗</value>
+  </data>
+  <data name="ProcessManager_RefreshFailed_Text" xml:space="preserve">
+    <value>無法重新整理進程清單：{0}</value>
+  </data>
+  <data name="ProcessManager_Terminate_Confirm_Title" xml:space="preserve">
+    <value>你希望結束 {0} ({1}) 嗎？</value>
+  </data>
+  <data name="ProcessManager_Terminate_Confirm_Text" xml:space="preserve">
+    <value>與此進程關聯的程式會關閉，並可能遺失未儲存的資料。結束系統進程可能導致系統不穩定。你確定要繼續嗎？</value>
+  </data>
+  <data name="ProcessManager_Terminate_Button" xml:space="preserve">
+    <value>結束</value>
+  </data>
+  <data name="ProcessManager_Terminate_Success_Title" xml:space="preserve">
+    <value>結束成功</value>
+  </data>
+  <data name="ProcessManager_Terminate_Success_Text" xml:space="preserve">
+    <value>進程 {0} 已結束。</value>
+  </data>
+  <data name="ProcessManager_Terminate_Failed_Title" xml:space="preserve">
+    <value>結束失敗</value>
+  </data>
+  <data name="ProcessManager_Operation_Failed_Text" xml:space="preserve">
+    <value>無法操作進程 {0}：{1}</value>
+  </data>
+  <data name="ProcessManager_Suspend_Success_Title" xml:space="preserve">
+    <value>暫停成功</value>
+  </data>
+  <data name="ProcessManager_Suspend_Success_Text" xml:space="preserve">
+    <value>進程 {0} 已暫停。</value>
+  </data>
+  <data name="ProcessManager_Suspend_Failed_Title" xml:space="preserve">
+    <value>暫停失敗</value>
+  </data>
+  <data name="ProcessManager_Resume_Success_Title" xml:space="preserve">
+    <value>恢復成功</value>
+  </data>
+  <data name="ProcessManager_Resume_Success_Text" xml:space="preserve">
+    <value>進程 {0} 已恢復。</value>
+  </data>
+  <data name="ProcessManager_Resume_Failed_Title" xml:space="preserve">
+    <value>恢復失敗</value>
+  </data>
 </root>

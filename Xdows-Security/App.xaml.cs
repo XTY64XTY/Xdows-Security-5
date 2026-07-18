@@ -367,6 +367,16 @@ namespace Xdows_Security
             return DriverProtection.TrySetStartupProtection(enabled);
         }
 
+        public static IReadOnlyList<DriverProcessInfo> GetDriverProcesses()
+        {
+            return DriverProtection.GetProcesses();
+        }
+
+        public static void OperateDriverProcess(uint processId, DriverProcessOperation operation)
+        {
+            DriverProtection.OperateProcess(processId, operation);
+        }
+
         public static string GetDriverStatusKey()
         {
             if (DriverProtection.IsRun())

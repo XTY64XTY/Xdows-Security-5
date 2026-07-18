@@ -4,21 +4,23 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 5;
-    public const ulong DriverBuildId = 2026071704;
+    public const uint ProtocolVersion = 6;
+    public const ulong DriverBuildId = 2026071801;
     public const uint LegacyUpgradeProtocolVersion = 5;
-    public const ulong LegacyUpgradeDriverBuildId = 2026071703;
+    public const ulong LegacyUpgradeDriverBuildId = 2026071704;
     public const int EventTypeCount = 9;
     public const uint CapabilityPriorityQueue = 0x00000001;
     public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
     public const uint CapabilityBuildId = 0x00000004;
     public const uint CapabilityStartupSelfProtect = 0x00000008;
     public const uint CapabilityUserDecisionHold = 0x00000010;
+    public const uint CapabilityProcessManagement = 0x00000020;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
         CapabilityStartupSelfProtect |
-        CapabilityUserDecisionHold;
+        CapabilityUserDecisionHold |
+        CapabilityProcessManagement;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
@@ -31,6 +33,8 @@ internal static class DriverProtocol
     public const int TokenChars = 64;
     public const int MaxLogModuleChars = 32;
     public const int MaxLogMessageChars = 256;
+    public const int MaxProcessNameChars = 260;
+    public const int ProcessBatchSize = 64;
     public const string DevicePath = @"\\.\XdowsSecurityDriver";
     public const string GlobalDevicePath = @"\\.\Global\XdowsSecurityDriver";
     public static readonly string[] DevicePaths = [DevicePath, GlobalDevicePath];
@@ -50,6 +54,8 @@ internal static class DriverProtocol
     public static readonly uint AuthorizedShutdown = CtlCode(FileDeviceXdowsSecurity, 0x809, MethodBuffered, FileAnyAccess);
     public static readonly uint GetNextLog = CtlCode(FileDeviceXdowsSecurity, 0x80A, MethodBuffered, FileAnyAccess);
     public static readonly uint SetStartupProtection = CtlCode(FileDeviceXdowsSecurity, 0x80B, MethodBuffered, FileAnyAccess);
+    public static readonly uint QueryProcesses = CtlCode(FileDeviceXdowsSecurity, 0x80C, MethodBuffered, FileAnyAccess);
+    public static readonly uint OperateProcess = CtlCode(FileDeviceXdowsSecurity, 0x80D, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -102,6 +108,14 @@ internal enum XdowsSecurityLogSeverity : uint
     Warning = 2,
     Error = 3,
     Fatal = 4
+}
+
+internal enum XdowsSecurityProcessOperation : uint
+{
+    None = 0,
+    Suspend = 1,
+    Resume = 2,
+    Terminate = 3
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -246,6 +260,57 @@ internal struct XdowsStartupProtectionRequest
     public uint ProcessId;
     public uint Enabled;
     public uint Reserved;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsProcessQueryRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint Cursor;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.TokenChars + 1)]
+    public string AuthorizationToken;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsDriverProcessEntry
+{
+    public uint ProcessId;
+    public uint ParentProcessId;
+    public uint SessionId;
+    public uint ThreadCount;
+    public uint HandleCount;
+    public uint BasePriority;
+    public ulong WorkingSetBytes;
+    public ulong PrivateBytes;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxProcessNameChars)]
+    public string ImageName;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsProcessQueryResponse
+{
+    public XdowsProtocolHeader Header;
+    public uint Count;
+    public uint NextCursor;
+    public uint HasMore;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.ProcessBatchSize)]
+    public XdowsDriverProcessEntry[] Entries;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsProcessOperationRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint ProcessId;
+    public uint Operation;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.TokenChars + 1)]
+    public string AuthorizationToken;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

@@ -35,6 +35,24 @@ public sealed record DriverProtectionLogEntry(
     string Module,
     string Message);
 
+public enum DriverProcessOperation
+{
+    Suspend,
+    Resume,
+    Terminate
+}
+
+public sealed record DriverProcessInfo(
+    uint ProcessId,
+    uint ParentProcessId,
+    uint SessionId,
+    uint ThreadCount,
+    uint HandleCount,
+    uint BasePriority,
+    ulong WorkingSetBytes,
+    ulong PrivateBytes,
+    string Name);
+
 public sealed class DriverProtection : IProtectionModel
 {
     private static readonly TimeSpan UserDecisionTimeout = TimeSpan.FromSeconds(25);
@@ -349,6 +367,51 @@ public sealed class DriverProtection : IProtectionModel
         _quarantineTask = null;
         _quarantineChannel = null;
         _interceptCallBack = null;
+    }
+
+    public IReadOnlyList<DriverProcessInfo> GetProcesses()
+    {
+        lock (StateLock)
+        {
+            DriverBridgeClient client = GetRunningClient();
+            return client.QueryProcesses()
+                .Select(entry => new DriverProcessInfo(
+                    entry.ProcessId,
+                    entry.ParentProcessId,
+                    entry.SessionId,
+                    entry.ThreadCount,
+                    entry.HandleCount,
+                    entry.BasePriority,
+                    entry.WorkingSetBytes,
+                    entry.PrivateBytes,
+                    entry.ImageName ?? string.Empty))
+                .ToArray();
+        }
+    }
+
+    public void OperateProcess(uint processId, DriverProcessOperation operation)
+    {
+        lock (StateLock)
+        {
+            DriverBridgeClient client = GetRunningClient();
+            XdowsSecurityProcessOperation driverOperation = operation switch
+            {
+                DriverProcessOperation.Suspend => XdowsSecurityProcessOperation.Suspend,
+                DriverProcessOperation.Resume => XdowsSecurityProcessOperation.Resume,
+                DriverProcessOperation.Terminate => XdowsSecurityProcessOperation.Terminate,
+                _ => throw new ArgumentOutOfRangeException(nameof(operation))
+            };
+
+            client.OperateProcess(processId, driverOperation);
+        }
+    }
+
+    private DriverBridgeClient GetRunningClient()
+    {
+        if (!IsRun() || _client is not { IsConnected: true } client)
+            throw new InvalidOperationException("Driver protection must be running before using driver process management.");
+
+        return client;
     }
 
     private void QueueQuarantineAfterBlock(

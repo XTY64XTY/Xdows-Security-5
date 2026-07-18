@@ -1705,4 +1705,67 @@ This action may cause you to accidentally run a threat file.</value>
   <data name="SecurityPage_Risk_Allow" xml:space="preserve">
     <value>Allow</value>
   </data>
+  <data name="ProcessManager_DriverModeToggle.OffContent" xml:space="preserve">
+    <value>Driver mode</value>
+  </data>
+  <data name="ProcessManager_DriverModeToggle.OnContent" xml:space="preserve">
+    <value>Driver mode</value>
+  </data>
+  <data name="ProcessManager_DriverMode_RequiresProtection_Title" xml:space="preserve">
+    <value>Driver protection is required</value>
+  </data>
+  <data name="ProcessManager_DriverMode_RequiresProtection_Text" xml:space="preserve">
+    <value>You must start driver protection before enabling driver mode. Go to Settings - Protection and enable Driver protection first.</value>
+  </data>
+  <data name="ProcessManager_DriverMode_Disclaimer_Title" xml:space="preserve">
+    <value>Process manager driver mode disclaimer</value>
+  </data>
+  <data name="ProcessManager_DriverMode_Disclaimer_Text" xml:space="preserve">
+    <value>Driver mode uses the kernel driver to enumerate processes and directly suspend, resume, or terminate a target. Incorrect operations on system processes may make apps unresponsive, cause data loss, or destabilize Windows. The driver rejects operations against Xdows Security itself and critical system processes, but you must still verify the target. Continue only if you understand and accept these risks.</value>
+  </data>
+  <data name="ProcessManager_RefreshFailed_Title" xml:space="preserve">
+    <value>Refresh failed</value>
+  </data>
+  <data name="ProcessManager_RefreshFailed_Text" xml:space="preserve">
+    <value>Could not refresh the process list: {0}</value>
+  </data>
+  <data name="ProcessManager_Terminate_Confirm_Title" xml:space="preserve">
+    <value>Do you want to terminate {0} ({1})?</value>
+  </data>
+  <data name="ProcessManager_Terminate_Confirm_Text" xml:space="preserve">
+    <value>Programs associated with this process will close and may lose unsaved data. Terminating a system process may destabilize Windows. Are you sure you want to continue?</value>
+  </data>
+  <data name="ProcessManager_Terminate_Button" xml:space="preserve">
+    <value>Terminate</value>
+  </data>
+  <data name="ProcessManager_Terminate_Success_Title" xml:space="preserve">
+    <value>Process terminated</value>
+  </data>
+  <data name="ProcessManager_Terminate_Success_Text" xml:space="preserve">
+    <value>{0} was terminated.</value>
+  </data>
+  <data name="ProcessManager_Terminate_Failed_Title" xml:space="preserve">
+    <value>Termination failed</value>
+  </data>
+  <data name="ProcessManager_Operation_Failed_Text" xml:space="preserve">
+    <value>Could not operate on {0}: {1}</value>
+  </data>
+  <data name="ProcessManager_Suspend_Success_Title" xml:space="preserve">
+    <value>Process suspended</value>
+  </data>
+  <data name="ProcessManager_Suspend_Success_Text" xml:space="preserve">
+    <value>{0} was suspended.</value>
+  </data>
+  <data name="ProcessManager_Suspend_Failed_Title" xml:space="preserve">
+    <value>Suspend failed</value>
+  </data>
+  <data name="ProcessManager_Resume_Success_Title" xml:space="preserve">
+    <value>Process resumed</value>
+  </data>
+  <data name="ProcessManager_Resume_Success_Text" xml:space="preserve">
+    <value>{0} was resumed.</value>
+  </data>
+  <data name="ProcessManager_Resume_Failed_Title" xml:space="preserve">
+    <value>Resume failed</value>
+  </data>
 </root>

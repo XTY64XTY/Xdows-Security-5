@@ -22,8 +22,8 @@ function Assert-Match([string]$Path, [string]$Pattern, [string]$Name) {
     if ($text -notmatch $Pattern) { throw "$Name was not found in $Path" }
 }
 
-Assert-Match $files.Protocol 'ProtocolVersion\s*=\s*5' 'managed protocol v5'
-Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026071703' 'managed driver build identity'
+Assert-Match $files.Protocol 'ProtocolVersion\s*=\s*6' 'managed protocol v6'
+Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026071801' 'managed driver build identity'
 Assert-Match $files.Protocol 'Pending\s*=\s*4' 'managed pending verdict'
 Assert-Match $files.Protocol 'CapabilityUserDecisionHold\s*=\s*0x00000010' 'managed user-decision capability'
 Assert-Match $files.DriverPublic 'XDOWS_SECURITY_CAP_USER_DECISION_HOLD\s+0x00000010u' 'native user-decision capability'

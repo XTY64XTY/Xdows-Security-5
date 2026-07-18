@@ -20,7 +20,7 @@ function Assert-NotMatch([string]$Path, [string]$Pattern, [string]$Name) {
 }
 
 Assert-Match $protocolPath 'LegacyUpgradeProtocolVersion\s*=\s*5;' 'exact legacy upgrade protocol version'
-Assert-Match $protocolPath 'LegacyUpgradeDriverBuildId\s*=\s*2026071703;' 'exact legacy upgrade driver build ID'
+Assert-Match $protocolPath 'LegacyUpgradeDriverBuildId\s*=\s*2026071704;' 'exact legacy upgrade driver build ID'
 Assert-Match $bridgePath 'TryAuthorizeLegacyUpgradeShutdown' 'legacy token authorization API'
 Assert-Match $bridgePath 'response\.ProtocolVersion\s*==\s*DriverProtocol\.LegacyUpgradeProtocolVersion' 'exact legacy protocol acceptance'
 Assert-Match $bridgePath 'response\.DriverBuildId\s*==\s*DriverProtocol\.LegacyUpgradeDriverBuildId' 'exact legacy build acceptance'

@@ -1704,4 +1704,67 @@
   <data name="SecurityPage_Risk_Allow" xml:space="preserve">
     <value>允许</value>
   </data>
+  <data name="ProcessManager_DriverModeToggle.OffContent" xml:space="preserve">
+    <value>驱动模式</value>
+  </data>
+  <data name="ProcessManager_DriverModeToggle.OnContent" xml:space="preserve">
+    <value>驱动模式</value>
+  </data>
+  <data name="ProcessManager_DriverMode_RequiresProtection_Title" xml:space="preserve">
+    <value>需要启用驱动防护</value>
+  </data>
+  <data name="ProcessManager_DriverMode_RequiresProtection_Text" xml:space="preserve">
+    <value>用户需要启动驱动防护才能打开驱动模式。请先前往“设置 - 防护”启用驱动防护。</value>
+  </data>
+  <data name="ProcessManager_DriverMode_Disclaimer_Title" xml:space="preserve">
+    <value>进程管理驱动模式免责声明</value>
+  </data>
+  <data name="ProcessManager_DriverMode_Disclaimer_Text" xml:space="preserve">
+    <value>驱动模式会使用内核驱动枚举进程，并直接挂起、恢复或终止目标进程。对系统进程执行不当操作可能造成应用无响应、数据丢失或系统不稳定。驱动会拒绝操作 Xdows Security 自身和关键系统进程，但你仍应确认目标进程无误。仅在理解并接受这些风险后继续。</value>
+  </data>
+  <data name="ProcessManager_RefreshFailed_Title" xml:space="preserve">
+    <value>刷新失败</value>
+  </data>
+  <data name="ProcessManager_RefreshFailed_Text" xml:space="preserve">
+    <value>无法刷新进程列表：{0}</value>
+  </data>
+  <data name="ProcessManager_Terminate_Confirm_Title" xml:space="preserve">
+    <value>你希望结束 {0} ({1}) 吗？</value>
+  </data>
+  <data name="ProcessManager_Terminate_Confirm_Text" xml:space="preserve">
+    <value>与此进程关联的程序会关闭，并可能丢失未保存的数据。结束系统进程可能导致系统不稳定。你确定要继续吗？</value>
+  </data>
+  <data name="ProcessManager_Terminate_Button" xml:space="preserve">
+    <value>结束</value>
+  </data>
+  <data name="ProcessManager_Terminate_Success_Title" xml:space="preserve">
+    <value>结束成功</value>
+  </data>
+  <data name="ProcessManager_Terminate_Success_Text" xml:space="preserve">
+    <value>进程 {0} 已结束。</value>
+  </data>
+  <data name="ProcessManager_Terminate_Failed_Title" xml:space="preserve">
+    <value>结束失败</value>
+  </data>
+  <data name="ProcessManager_Operation_Failed_Text" xml:space="preserve">
+    <value>无法操作进程 {0}：{1}</value>
+  </data>
+  <data name="ProcessManager_Suspend_Success_Title" xml:space="preserve">
+    <value>挂起成功</value>
+  </data>
+  <data name="ProcessManager_Suspend_Success_Text" xml:space="preserve">
+    <value>进程 {0} 已挂起。</value>
+  </data>
+  <data name="ProcessManager_Suspend_Failed_Title" xml:space="preserve">
+    <value>挂起失败</value>
+  </data>
+  <data name="ProcessManager_Resume_Success_Title" xml:space="preserve">
+    <value>恢复成功</value>
+  </data>
+  <data name="ProcessManager_Resume_Success_Text" xml:space="preserve">
+    <value>进程 {0} 已恢复。</value>
+  </data>
+  <data name="ProcessManager_Resume_Failed_Title" xml:space="preserve">
+    <value>恢复失败</value>
+  </data>
 </root>
