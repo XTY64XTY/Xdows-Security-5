@@ -10,7 +10,7 @@ $serviceName = "Xdows-Security-Driver"
 $devicePaths = @("\\.\XdowsSecurityDriver", "\\.\Global\XdowsSecurityDriver")
 $ioctlGetState = [Convert]::ToUInt32("80002014", 16)
 $expectedProtocolVersion = [uint32]5
-$expectedDriverBuildId = [uint64]2026071703
+$expectedDriverBuildId = [uint64]2026071704
 $expectedStateSize = [uint32]176
 $expectedCapabilities = [uint32]0x0000001F
 

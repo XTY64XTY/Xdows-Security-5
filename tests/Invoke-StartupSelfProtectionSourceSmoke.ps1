@@ -23,7 +23,7 @@ function Assert-Match([string]$Path, [string]$Pattern, [string]$Name) {
 }
 
 Assert-Match $files.Protocol 'ProtocolVersion\s*=\s*5;' 'protocol v5 mirror'
-Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026071703;' 'startup protection driver build mirror'
+Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026071704;' 'startup protection driver build mirror'
 Assert-Match $files.Protocol 'SetStartupProtection\s*=\s*CtlCode\(FileDeviceXdowsSecurity,\s*0x80B' 'startup protection IOCTL mirror'
 Assert-Match $files.Protocol 'uint\s+StartupProtectionEnabled;' 'startup protection runtime state mirror'
 Assert-Match $files.Protocol 'struct\s+XdowsStartupProtectionRequest' 'startup protection request mirror'
@@ -32,10 +32,13 @@ Assert-Match $files.Bridge 'DriverProtocol\.SetStartupProtection' 'managed start
 Assert-Match $files.Protection 'RegisterProtectedProcess\(\);(?s:.*?)SetStartupProtection' 'startup state synchronized after guarded process registration'
 Assert-Match $files.Protection 'TrySetStartupProtection\(bool\s+enabled\)(?s:.*?)lock\s*\(StateLock\)' 'serialized runtime startup state synchronization'
 Assert-Match $files.Startup 'SynchronizeStartupProtection\(true\)(?s:.*?)SetValue' 'enable kernel protection before creating startup value'
+Assert-Match $files.Startup 'IsStartupConfiguredForCurrentExecutable' 'current startup executable validation'
+Assert-Match $files.Startup 'string\.Equals\(configuredPath,\s*currentPath,\s*StringComparison\.OrdinalIgnoreCase\)' 'startup path equality check'
+Assert-Match $files.Startup 'EnsureCurrentStartupCommand\(\)(?s:.*?)EnableStartup\(\)' 'stale startup command repair'
 Assert-Match $files.Startup 'SetValue(?s:.*?)SynchronizeStartupProtection\(true\)' 'enable state re-synchronized after creating startup value'
 Assert-Match $files.Startup 'EnableStartup\(\)(?s:.*?)SetValue(?s:.*?)catch(?s:.*?)SynchronizeStartupProtection\(wasEnabled\)' 'enable failure kernel rollback'
 Assert-Match $files.Startup 'DeleteValue(?s:.*?)SynchronizeStartupProtection\(false\)' 'disable value deletion before kernel protection disable'
 Assert-Match $files.Startup 'SynchronizeStartupProtection\(false\)(?s:.*?)SetValue' 'disable synchronization failure registry rollback'
-Assert-Match $files.App 'SynchronizeStartupProtection\(bool\s+enabled\)' 'application startup protection synchronization boundary'
+Assert-Match $files.App 'EnsureDefaultStartup\(\)(?s:.*?)EnsureCurrentStartupCommand\(\)' 'startup command validation on launch'
 
 Write-Host "Managed startup self-protection source smoke passed."

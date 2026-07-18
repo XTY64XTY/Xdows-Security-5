@@ -67,6 +67,34 @@ namespace Xdows_Security.Services
             }
         }
 
+        public static bool EnsureCurrentStartupCommand()
+        {
+            return IsStartupConfiguredForCurrentExecutable() || EnableStartup();
+        }
+
+        private static bool IsStartupConfiguredForCurrentExecutable()
+        {
+            try
+            {
+                using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, false);
+                string? command = key?.GetValue(
+                    AppInfo.AppId,
+                    null,
+                    RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
+                if (!TryParseExecutablePath(command, out string configuredPath) ||
+                    !TryGetCurrentExecutablePath(out string currentPath))
+                {
+                    return false;
+                }
+
+                return string.Equals(configuredPath, currentPath, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public static bool DisableStartup()
         {
             object? previousValue = null;
@@ -98,14 +126,57 @@ namespace Xdows_Security.Services
         private static bool TryGetStartupCommand(out string startupCommand)
         {
             startupCommand = string.Empty;
+            if (!TryGetCurrentExecutablePath(out string exePath))
+                return false;
+
+            startupCommand = $"\"{exePath}\" {MinimizedArg}";
+            return true;
+        }
+
+        private static bool TryGetCurrentExecutablePath(out string executablePath)
+        {
+            executablePath = string.Empty;
             try
             {
-                string? exePath = Process.GetCurrentProcess().MainModule?.FileName;
-                if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+                string? path = Process.GetCurrentProcess().MainModule?.FileName;
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
                     return false;
 
-                startupCommand = $"\"{exePath}\" {MinimizedArg}";
+                executablePath = Path.GetFullPath(path);
                 return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryParseExecutablePath(string? command, out string executablePath)
+        {
+            executablePath = string.Empty;
+            if (string.IsNullOrWhiteSpace(command))
+                return false;
+
+            string trimmed = command.Trim();
+            string rawPath;
+            if (trimmed[0] == '"')
+            {
+                int closingQuote = trimmed.IndexOf('"', 1);
+                if (closingQuote <= 1)
+                    return false;
+
+                rawPath = trimmed[1..closingQuote];
+            }
+            else
+            {
+                int separator = trimmed.IndexOfAny([' ', '\t']);
+                rawPath = separator < 0 ? trimmed : trimmed[..separator];
+            }
+
+            try
+            {
+                executablePath = Path.GetFullPath(Environment.ExpandEnvironmentVariables(rawPath));
+                return File.Exists(executablePath);
             }
             catch
             {

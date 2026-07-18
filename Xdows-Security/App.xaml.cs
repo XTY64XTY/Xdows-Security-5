@@ -764,10 +764,7 @@ namespace Xdows_Security
         {
             try
             {
-                if (!StartupService.IsStartupEnabled())
-                {
-                    StartupService.EnableStartup();
-                }
+                StartupService.EnsureCurrentStartupCommand();
             }
             catch { }
         }
