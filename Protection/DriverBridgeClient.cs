@@ -7,6 +7,21 @@ namespace Protection;
 
 internal sealed class DriverBridgeClient : IDisposable
 {
+    private sealed record LegacyUpgradeSource(uint ProtocolVersion, ulong[] BuildIds);
+
+    private static readonly LegacyUpgradeSource[] LegacyUpgradeSources =
+    [
+        new(
+            DriverProtocol.LegacyUpgradeProtocolVersion,
+            [DriverProtocol.LegacyUpgradeDriverBuildId]),
+        new(
+            DriverProtocol.PreviousLegacyUpgradeProtocolVersion,
+            [
+                DriverProtocol.PreviousLegacyUpgradeDriverBuildId,
+                DriverProtocol.OldestLegacyUpgradeDriverBuildId
+            ])
+    ];
+
     private const uint GenericRead = 0x80000000;
     private const uint GenericWrite = 0x40000000;
     private const uint FileShareRead = 0x00000001;
@@ -254,6 +269,27 @@ internal sealed class DriverBridgeClient : IDisposable
 
     public static bool TryAuthorizeLegacyUpgradeShutdown(out string message)
     {
+        var attemptMessages = new List<string>();
+        foreach (LegacyUpgradeSource source in LegacyUpgradeSources)
+        {
+            if (TryAuthorizeUpgradeSourceShutdown(source, out bool revisionMismatch, out message))
+                return true;
+
+            attemptMessages.Add(message);
+            if (!revisionMismatch)
+                return false;
+        }
+
+        message = string.Join(" ", attemptMessages);
+        return false;
+    }
+
+    private static bool TryAuthorizeUpgradeSourceShutdown(
+        LegacyUpgradeSource source,
+        out bool revisionMismatch,
+        out string message)
+    {
+        revisionMismatch = false;
         using SafeFileHandle? handle = OpenDriverDevice(out int openError);
         if (handle is null)
         {
@@ -267,7 +303,7 @@ internal sealed class DriverBridgeClient : IDisposable
             Header = new XdowsProtocolHeader
             {
                 Size = (uint)Marshal.SizeOf<XdowsRegisterRequest>(),
-                Version = DriverProtocol.LegacyUpgradeProtocolVersion
+                Version = source.ProtocolVersion
             },
             ClientProcessId = processId,
             HeartbeatTimeoutMs = 10_000
@@ -279,24 +315,26 @@ internal sealed class DriverBridgeClient : IDisposable
                 DriverProtocol.RegisterClient,
                 out XdowsRegisterResponse response))
         {
-            message = $"Legacy driver client registration failed (Win32 {Marshal.GetLastWin32Error()}).";
+            int registrationError = Marshal.GetLastWin32Error();
+            revisionMismatch = registrationError == ErrorRevisionMismatch;
+            message =
+                $"Legacy driver v{source.ProtocolVersion} client registration failed " +
+                $"(Win32 {registrationError}).";
             return false;
         }
 
         bool expectedLegacyDriver =
             response.Status == 0 &&
-            response.Header.Version == DriverProtocol.LegacyUpgradeProtocolVersion &&
-            response.ProtocolVersion == DriverProtocol.LegacyUpgradeProtocolVersion &&
-            (response.DriverBuildId == DriverProtocol.LegacyUpgradeDriverBuildId ||
-             response.DriverBuildId == DriverProtocol.PreviousLegacyUpgradeDriverBuildId) &&
+            response.Header.Version == source.ProtocolVersion &&
+            response.ProtocolVersion == source.ProtocolVersion &&
+            source.BuildIds.Contains(response.DriverBuildId) &&
             !string.IsNullOrWhiteSpace(response.ShutdownToken);
         if (!expectedLegacyDriver)
         {
             _ = DeviceIoControlNoBuffers(handle, DriverProtocol.DisconnectClient);
             message =
                 $"Loaded driver is not the supported legacy upgrade source " +
-                $"v{DriverProtocol.LegacyUpgradeProtocolVersion}/" +
-                $"{DriverProtocol.LegacyUpgradeDriverBuildId} or {DriverProtocol.PreviousLegacyUpgradeDriverBuildId}; " +
+                $"v{source.ProtocolVersion}/[{string.Join(", ", source.BuildIds)}]; " +
                 $"received v{response.ProtocolVersion}/{response.DriverBuildId}.";
             return false;
         }
@@ -306,7 +344,7 @@ internal sealed class DriverBridgeClient : IDisposable
             Header = new XdowsProtocolHeader
             {
                 Size = (uint)Marshal.SizeOf<XdowsShutdownRequest>(),
-                Version = DriverProtocol.LegacyUpgradeProtocolVersion
+                Version = source.ProtocolVersion
             },
             ShutdownToken = response.ShutdownToken
         };
@@ -320,8 +358,8 @@ internal sealed class DriverBridgeClient : IDisposable
         }
 
         message =
-            $"Legacy driver v{DriverProtocol.LegacyUpgradeProtocolVersion}/" +
-            $"{DriverProtocol.LegacyUpgradeDriverBuildId} accepted its one-time shutdown token.";
+            $"Legacy driver v{response.ProtocolVersion}/{response.DriverBuildId} " +
+            $"accepted its one-time shutdown token.";
         return true;
     }
 
