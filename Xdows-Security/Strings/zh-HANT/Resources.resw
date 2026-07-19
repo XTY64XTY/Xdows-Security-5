@@ -1773,4 +1773,43 @@
   <data name="ProcessManager_Resume_Failed_Title" xml:space="preserve">
     <value>恢復失敗</value>
   </data>
+  <data name="SettingsPage_Feature.Text" xml:space="preserve">
+    <value>功能</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode.Header" xml:space="preserve">
+    <value>通知模式</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode.Description" xml:space="preserve">
+    <value>選擇即時防護顯示威脅通知的方式</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_Normal.Content" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_Compact.Content" xml:space="preserve">
+    <value>較小</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming.Header" xml:space="preserve">
+    <value>僅在開啟遊戲時使用較小的通知</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming.Description" xml:space="preserve">
+    <value>執行 Windows 遊戲清單中的遊戲時自動使用較小的通知</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Header" xml:space="preserve">
+    <value>遊戲清單</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Description" xml:space="preserve">
+    <value>開啟 Windows 遊戲模式設定</value>
+  </data>
+  <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
+    <value>已自動處理威脅</value>
+  </data>
+  <data name="SmallThreatNotification_Failed_Title" xml:space="preserve">
+    <value>無法處理威脅</value>
+  </data>
+  <data name="SmallThreatNotification_Detail_Format" xml:space="preserve">
+    <value>{0} · {1}，按一下以檢視詳細資料</value>
+  </data>
+  <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
+    <value>威脅通知，按一下以檢視詳細資料</value>
+  </data>
 </root>

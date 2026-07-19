@@ -87,7 +87,8 @@ namespace Xdows_Security.Views
                         LoadThemeSettingAsync,
                         LoadBackdropSettingAsync,
                         LoadSoundSettingAsync,
-                        LoadTransitionSettingAsync
+                        LoadTransitionSettingAsync,
+                        LoadThreatNotificationSettingAsync
                     );
                     WinUI3Localizer.Localizer.Get().LanguageChanged += (s, e) => UpdateAppText();
                     UpdateAppText();
@@ -211,6 +212,14 @@ namespace Xdows_Security.Views
             get
             {
                 return RunOnDispatcher(LoadTransitionSetting);
+            }
+        }
+
+        private Task LoadThreatNotificationSettingAsync
+        {
+            get
+            {
+                return RunOnDispatcher(LoadThreatNotificationSetting);
             }
         }
 
@@ -1327,6 +1336,69 @@ namespace Xdows_Security.Views
                     TransitionComboBox.SelectedItem = item;
                     break;
                 }
+            }
+        }
+
+        private void LoadThreatNotificationSetting()
+        {
+            var settings = App.LocalSettings;
+            string savedMode = settings.Values.TryGetValue(
+                ThreatNotificationModeService.NotificationModeSetting,
+                out object? modeRaw) && modeRaw is string mode
+                    ? mode
+                    : ThreatNotificationModeService.NormalMode;
+            bool onlyWhenGaming = settings.Values.TryGetValue(
+                ThreatNotificationModeService.UseCompactWhenGamingSetting,
+                out object? gamingRaw) && gamingRaw is bool gaming && gaming;
+
+            if (!settings.Values.ContainsKey(ThreatNotificationModeService.NotificationModeSetting))
+                settings.Values[ThreatNotificationModeService.NotificationModeSetting] = ThreatNotificationModeService.NormalMode;
+            if (!settings.Values.ContainsKey(ThreatNotificationModeService.UseCompactWhenGamingSetting))
+                settings.Values[ThreatNotificationModeService.UseCompactWhenGamingSetting] = false;
+
+            foreach (ComboBoxItem item in ThreatNotificationModeComboBox.Items.Cast<ComboBoxItem>())
+            {
+                if (string.Equals(item.Tag as string, savedMode, StringComparison.Ordinal))
+                {
+                    ThreatNotificationModeComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+
+            if (ThreatNotificationModeComboBox.SelectedItem is null)
+                ThreatNotificationModeComboBox.SelectedIndex = 0;
+
+            CompactNotificationWhenGamingToggle.IsOn = onlyWhenGaming;
+            ThreatNotificationModeComboBox.IsEnabled = !onlyWhenGaming;
+        }
+
+        private void ThreatNotificationModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsInitialize || sender is not ComboBox { SelectedItem: ComboBoxItem item } || item.Tag is not string mode)
+                return;
+
+            App.LocalSettings.Values[ThreatNotificationModeService.NotificationModeSetting] = mode;
+        }
+
+        private void CompactNotificationWhenGamingToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (sender is not ToggleSwitch toggle)
+                return;
+
+            ThreatNotificationModeComboBox.IsEnabled = !toggle.IsOn;
+            if (!IsInitialize)
+                App.LocalSettings.Values[ThreatNotificationModeService.UseCompactWhenGamingSetting] = toggle.IsOn;
+        }
+
+        private async void OpenGameListButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await Windows.System.Launcher.LaunchUriAsync(new Uri(ThreatNotificationModeService.GameListSettingsUri));
+            }
+            catch (Exception ex)
+            {
+                AddNewLog(LogLevel.ERROR, "Settings", $"Failed to open Windows gaming settings: {ex.Message}");
             }
         }
 

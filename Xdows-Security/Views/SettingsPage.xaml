@@ -375,6 +375,37 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+                <TextBlock x:Name="Feature_Header"
+                           Margin="0,4,0,8"
+                           l:Uids.Uid="SettingsPage_Feature" />
+                <controls:SettingsExpander x:Name="Feature_ThreatNotificationMode"
+                                           l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode"
+                                           HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
+                                           Margin="0,0,0,4">
+                    <ComboBox x:Name="ThreatNotificationModeComboBox"
+                              AutomationProperties.AutomationId="ThreatNotificationModeComboBox"
+                              SelectionChanged="ThreatNotificationModeComboBox_SelectionChanged">
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Normal"
+                                      Tag="Normal" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Compact"
+                                      Tag="Compact" />
+                    </ComboBox>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming"
+                                               HeaderIcon="{ui:FontIcon Glyph=&#xE7FC;}">
+                            <ToggleSwitch x:Name="CompactNotificationWhenGamingToggle"
+                                          AutomationProperties.AutomationId="CompactNotificationWhenGamingToggle"
+                                          Tag="UseCompactThreatNotificationsWhenGaming"
+                                          Toggled="CompactNotificationWhenGamingToggle_Toggled" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GameList"
+                                               HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}">
+                            <Button AutomationProperties.AutomationId="OpenGameListButton"
+                                    l:Uids.Uid="AllPage_OpenLink"
+                                    Click="OpenGameListButton_Click" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Other"/>
                 <controls:SettingsCard 
                     l:Uids.Uid="SettingsPage_Other_Language"

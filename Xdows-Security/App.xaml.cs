@@ -124,22 +124,16 @@ namespace Xdows_Security
             LogText.AddNewLog(LogText.LogLevel.WARN, "Protection", interceptEvent.IsSucceed
                 ? $"Intercepted：{interceptEvent.Path}"
                 : $"Could not intercept：{interceptEvent.Path}");
-            // string content = isSucceed ? "已发现威胁" : "无法处理威胁";
-            // content = $"{AppInfo.AppName} {content}.{Environment.NewLine}相关数据：{Path.GetFileName(path)}{Environment.NewLine}单击此通知以查看详细信息";
-            _ = (App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+            _ = ShowProcessedThreatNotificationAsync(new InterceptWindowHelper.InterceptWindowSetting
             {
-                _ = InterceptWindow.ShowOrActivate(new InterceptWindowHelper.InterceptWindowSetting
-                {
-                    Path = interceptEvent.Path,
-                    IsSucceed = interceptEvent.IsSucceed,
-                    InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust,
-                    DetectionName = interceptEvent.DetectionName,
-                    Probability = interceptEvent.Probability,
-                    Module = interceptEvent.Module,
-                    Backend = interceptEvent.Backend
-                });
-            }));
-            // Notifications.ShowNotification("发现威胁", content, path);
+                Path = interceptEvent.Path,
+                IsSucceed = interceptEvent.IsSucceed,
+                InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust,
+                DetectionName = interceptEvent.DetectionName,
+                Probability = interceptEvent.Probability,
+                Module = interceptEvent.Module,
+                Backend = interceptEvent.Backend
+            });
         };
         private static readonly IProtectionModel LegacyProcessProtection = new LegacyProcessProtection();
         private static readonly IProtectionModel LegacyFilesProtection = new LegacyFilesProtection();
@@ -214,6 +208,38 @@ namespace Xdows_Security
             if (App.MainWindow?.DispatcherQueue is null)
                 return ProtectionUserDecision.Block;
 
+            if (await ThreatNotificationModeService.ShouldUseCompactAsync().ConfigureAwait(false))
+            {
+                bool compactNotificationQueued = App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    SmallThreatNotificationWindow.ShowOrUpdate(new InterceptWindowHelper.InterceptWindowSetting
+                    {
+                        Path = request.Path,
+                        IsSucceed = true,
+                        InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.ReminderOnly,
+                        ProtectionType = request.ProtectionType,
+                        DetectionName = request.DetectionName,
+                        Probability = request.Probability,
+                        ActorPath = request.ActorPath,
+                        ActorTrust = request.ActorTrust,
+                        ActorDetectionName = request.ActorDetectionName,
+                        ActorProbability = request.ActorProbability,
+                        CommandLine = request.CommandLine,
+                        CorrelationId = request.CorrelationId,
+                        Module = request.Module,
+                        Backend = request.Backend
+                    });
+                });
+
+                LogText.AddNewLog(
+                    compactNotificationQueued ? LogText.LogLevel.INFO : LogText.LogLevel.WARN,
+                    "DriverProtection",
+                    compactNotificationQueued
+                        ? $"Threat automatically blocked with compact notification cid:{request.CorrelationId}"
+                        : $"Threat automatically blocked; compact notification queue unavailable cid:{request.CorrelationId}");
+                return ProtectionUserDecision.Block;
+            }
+
             TaskCompletionSource<ProtectionUserDecision> tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
             using CancellationTokenRegistration registration = token.Register(() => tcs.TrySetResult(ProtectionUserDecision.Timeout));
 
@@ -272,6 +298,25 @@ namespace Xdows_Security
                 return ProtectionUserDecision.Block;
 
             return await tcs.Task;
+        }
+
+        private static async Task ShowProcessedThreatNotificationAsync(InterceptWindowHelper.InterceptWindowSetting setting)
+        {
+            try
+            {
+                bool useCompact = await ThreatNotificationModeService.ShouldUseCompactAsync().ConfigureAwait(false);
+                App.MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+                {
+                    if (useCompact)
+                        SmallThreatNotificationWindow.ShowOrUpdate(setting);
+                    else
+                        _ = InterceptWindow.ShowOrActivate(setting);
+                });
+            }
+            catch (Exception ex)
+            {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "Protection", $"Failed to show threat notification: {ex.Message}");
+            }
         }
 
         public static bool Run(int RunID)

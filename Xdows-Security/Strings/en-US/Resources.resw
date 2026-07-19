@@ -1774,4 +1774,43 @@ This action may cause you to accidentally run a threat file.</value>
   <data name="ProcessManager_Resume_Failed_Title" xml:space="preserve">
     <value>Resume failed</value>
   </data>
+  <data name="SettingsPage_Feature.Text" xml:space="preserve">
+    <value>Features</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode.Header" xml:space="preserve">
+    <value>Notification mode</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode.Description" xml:space="preserve">
+    <value>Choose how real-time protection displays threat notifications</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_Normal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_Compact.Content" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming.Header" xml:space="preserve">
+    <value>Use compact notifications only while gaming</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming.Description" xml:space="preserve">
+    <value>Automatically use compact notifications while a game in the Windows game list is running</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Header" xml:space="preserve">
+    <value>Game list</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Description" xml:space="preserve">
+    <value>Open Windows Game Mode settings</value>
+  </data>
+  <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
+    <value>Threat handled automatically</value>
+  </data>
+  <data name="SmallThreatNotification_Failed_Title" xml:space="preserve">
+    <value>Threat could not be handled</value>
+  </data>
+  <data name="SmallThreatNotification_Detail_Format" xml:space="preserve">
+    <value>{0} · {1}. Click to view details</value>
+  </data>
+  <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
+    <value>Threat notification. Click to view details</value>
+  </data>
 </root>
