@@ -2,11 +2,14 @@ using Helper;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Hosting;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
+using Windows.UI.ViewManagement;
 using WinUI3Localizer;
 using static Helper.InterceptWindowHelper;
 
@@ -21,6 +24,8 @@ public sealed partial class SmallThreatNotificationWindow : Window
     private const uint NoActivatePosition = 0x0010;
     private const uint ShowWindowPosition = 0x0040;
     private const int AutoDismissSeconds = 8;
+    private static readonly TimeSpan EntranceAnimationDuration = TimeSpan.FromMilliseconds(220);
+    private static readonly TimeSpan ExitAnimationDuration = TimeSpan.FromMilliseconds(160);
     private static readonly IntPtr TopMostWindow = new(-1);
 
     private static SmallThreatNotificationWindow? _current;
@@ -29,6 +34,8 @@ public sealed partial class SmallThreatNotificationWindow : Window
     private MicaController? _micaController;
     private ICompositionSupportsSystemBackdrop? _backdropTarget;
     private InterceptWindowSetting _setting;
+    private int _animationGeneration;
+    private bool _isClosing;
 
     private SmallThreatNotificationWindow(InterceptWindowSetting setting)
     {
@@ -96,6 +103,7 @@ public sealed partial class SmallThreatNotificationWindow : Window
 
     private void ShowWithoutTakingFocus()
     {
+        _isClosing = false;
         PositionAtBottomRight();
         IntPtr hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
         _ = ShowWindow(hwnd, ShowWithoutActivation);
@@ -107,8 +115,123 @@ public sealed partial class SmallThreatNotificationWindow : Window
             AppWindow.Size.Width,
             AppWindow.Size.Height,
             NoActivatePosition | ShowWindowPosition);
+        PlayEntranceAnimation();
         _dismissTimer.Stop();
         _dismissTimer.Start();
+    }
+
+    private void PlayEntranceAnimation()
+    {
+        int generation = ++_animationGeneration;
+        Visual visual = ElementCompositionPreview.GetElementVisual(RootGrid);
+        visual.StopAnimation("Offset");
+        visual.StopAnimation("Opacity");
+        visual.Offset = Vector3.Zero;
+        visual.Opacity = 1;
+
+        if (!AreAnimationsEnabled())
+            return;
+
+        Compositor compositor = visual.Compositor;
+        var easing = compositor.CreateCubicBezierEasingFunction(
+            new Vector2(0.1f, 0.9f),
+            new Vector2(0.2f, 1f));
+        Vector3KeyFrameAnimation offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
+        offsetAnimation.InsertKeyFrame(0, new Vector3(32, 0, 0));
+        offsetAnimation.InsertKeyFrame(1, Vector3.Zero, easing);
+        offsetAnimation.Duration = EntranceAnimationDuration;
+
+        ScalarKeyFrameAnimation opacityAnimation = compositor.CreateScalarKeyFrameAnimation();
+        opacityAnimation.InsertKeyFrame(0, 0);
+        opacityAnimation.InsertKeyFrame(1, 1, easing);
+        opacityAnimation.Duration = EntranceAnimationDuration;
+
+        CompositionScopedBatch batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
+        visual.StartAnimation("Offset", offsetAnimation);
+        visual.StartAnimation("Opacity", opacityAnimation);
+        batch.End();
+        batch.Completed += OnEntranceCompleted;
+
+        void OnEntranceCompleted(object sender, CompositionBatchCompletedEventArgs args)
+        {
+            batch.Completed -= OnEntranceCompleted;
+            if (generation != _animationGeneration || _isClosing)
+                return;
+
+            visual.Offset = Vector3.Zero;
+            visual.Opacity = 1;
+        }
+    }
+
+    private void BeginExitAnimation(bool openNormalNotification)
+    {
+        if (_isClosing)
+            return;
+
+        _isClosing = true;
+        _dismissTimer.Stop();
+        int generation = ++_animationGeneration;
+
+        if (!AreAnimationsEnabled())
+        {
+            CompleteExit(generation, openNormalNotification);
+            return;
+        }
+
+        Visual visual = ElementCompositionPreview.GetElementVisual(RootGrid);
+        visual.StopAnimation("Offset");
+        visual.StopAnimation("Opacity");
+        visual.Offset = Vector3.Zero;
+        visual.Opacity = 1;
+
+        Compositor compositor = visual.Compositor;
+        var easing = compositor.CreateCubicBezierEasingFunction(
+            new Vector2(0.7f, 0),
+            new Vector2(1f, 0.5f));
+        Vector3KeyFrameAnimation offsetAnimation = compositor.CreateVector3KeyFrameAnimation();
+        offsetAnimation.InsertKeyFrame(0, Vector3.Zero);
+        offsetAnimation.InsertKeyFrame(1, new Vector3(24, 0, 0), easing);
+        offsetAnimation.Duration = ExitAnimationDuration;
+
+        ScalarKeyFrameAnimation opacityAnimation = compositor.CreateScalarKeyFrameAnimation();
+        opacityAnimation.InsertKeyFrame(0, 1);
+        opacityAnimation.InsertKeyFrame(1, 0, easing);
+        opacityAnimation.Duration = ExitAnimationDuration;
+
+        CompositionScopedBatch batch = compositor.CreateScopedBatch(CompositionBatchTypes.Animation);
+        visual.StartAnimation("Offset", offsetAnimation);
+        visual.StartAnimation("Opacity", opacityAnimation);
+        batch.End();
+        batch.Completed += OnExitCompleted;
+
+        void OnExitCompleted(object sender, CompositionBatchCompletedEventArgs args)
+        {
+            batch.Completed -= OnExitCompleted;
+            CompleteExit(generation, openNormalNotification);
+        }
+    }
+
+    private void CompleteExit(int generation, bool openNormalNotification)
+    {
+        if (!_isClosing || generation != _animationGeneration)
+            return;
+
+        InterceptWindowSetting setting = _setting;
+        Close();
+        if (openNormalNotification)
+            _ = InterceptWindow.ShowOrActivate(setting);
+    }
+
+    private static bool AreAnimationsEnabled()
+    {
+        try
+        {
+            return new UISettings().AnimationsEnabled;
+        }
+        catch
+        {
+            return true;
+        }
     }
 
     private void ApplyNonActivatingWindowStyles()
@@ -165,8 +288,7 @@ public sealed partial class SmallThreatNotificationWindow : Window
 
     private void DismissTimer_Tick(object? sender, object e)
     {
-        _dismissTimer.Stop();
-        Close();
+        BeginExitAnimation(false);
     }
 
     private void SmallThreatNotificationWindow_Closed(object sender, WindowEventArgs args)
@@ -186,10 +308,7 @@ public sealed partial class SmallThreatNotificationWindow : Window
 
     private void NotificationButton_Click(object sender, RoutedEventArgs e)
     {
-        InterceptWindowSetting setting = _setting;
-        _dismissTimer.Stop();
-        Close();
-        _ = InterceptWindow.ShowOrActivate(setting);
+        BeginExitAnimation(true);
     }
 
     [DllImport("user32.dll", SetLastError = true)]

@@ -38,7 +38,12 @@ Assert-Match $files.CompactCode 'manager\.IsAlwaysOnTop\s*=\s*true' 'always-on-t
 Assert-Match $files.CompactCode 'SystemBackdropConfiguration.*IsInputActive\s*=\s*true' 'always-active Mica configuration'
 Assert-Match $files.CompactCode 'static SmallThreatNotificationWindow\? _current' 'single compact window bound'
 Assert-Match $files.CompactCode 'DispatcherTimer.*TimeSpan\.FromSeconds\(AutoDismissSeconds\)' 'automatic compact notification dismissal'
-Assert-Match $files.CompactCode 'NotificationButton_Click(?s:.*?)InterceptWindow\.ShowOrActivate' 'click opens normal notification'
+Assert-Match $files.CompactCode 'PlayEntranceAnimation(?s:.*?)CreateVector3KeyFrameAnimation(?s:.*?)CreateScalarKeyFrameAnimation' 'slide and fade entrance animation'
+Assert-Match $files.CompactCode 'BeginExitAnimation(?s:.*?)CreateScopedBatch\(CompositionBatchTypes\.Animation\)' 'batched exit animation'
+Assert-Match $files.CompactCode 'UISettings\(\)\.AnimationsEnabled' 'system animation preference respected'
+Assert-Match $files.CompactCode 'DismissTimer_Tick(?s:.*?)BeginExitAnimation\(false\)' 'automatic dismissal plays exit animation'
+Assert-Match $files.CompactCode 'NotificationButton_Click(?s:.*?)BeginExitAnimation\(true\)' 'click plays exit animation before normal notification'
+Assert-Match $files.CompactCode 'CompleteExit(?s:.*?)InterceptWindow\.ShowOrActivate' 'completed click exit opens normal notification'
 Assert-Match $files.CompactXaml 'SmallThreatNotificationButton' 'compact notification accessible click target'
 
 Assert-Match $files.App 'ThreatNotificationModeService\.ShouldUseCompactAsync' 'notification mode routing'
