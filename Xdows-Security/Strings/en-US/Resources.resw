@@ -528,17 +528,11 @@
   <data name="SettingsPage_Protection_Files.Header" xml:space="preserve">
     <value>Files Scan</value>
   </data>
-  <data name="SettingsPage_Protection_Behavior.Header" xml:space="preserve">
-    <value>Behavior Check</value>
-  </data>
   <data name="SettingsPage_Protection_Boot.Header" xml:space="preserve">
     <value>Boot Guard</value>
   </data>
   <data name="SettingsPage_Protection_Registry.Header" xml:space="preserve">
     <value>Registry Guard</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior.Description" xml:space="preserve">
-    <value>Block programs during high-risk operations</value>
   </data>
   <data name="SettingsPage_Protection_Boot.Description" xml:space="preserve">
     <value>Attempt to repair the boot sector if it is tampered with.</value>
@@ -563,18 +557,6 @@
   </data>
   <data name="SettingsPage_Protection_Files_CompatibilityMode.Description" xml:space="preserve">
     <value>Protection using traditional files polling is resource-intensive but stable.</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_Remote.Description" xml:space="preserve">
-    <value>May impact some remote control software</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_Remote.Header" xml:space="preserve">
-    <value>Remote command execution</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_URL.Description" xml:space="preserve">
-    <value>May cause false positives or affect system stability.</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_URL.Header" xml:space="preserve">
-    <value>Access unknown URLs</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Description" xml:space="preserve">
     <value>Recovers system boot sector from backup</value>

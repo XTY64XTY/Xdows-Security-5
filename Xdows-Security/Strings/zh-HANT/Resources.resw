@@ -528,17 +528,11 @@
   <data name="SettingsPage_Protection_Files.Header" xml:space="preserve">
     <value>文件掃描</value>
   </data>
-  <data name="SettingsPage_Protection_Behavior.Header" xml:space="preserve">
-    <value>行爲檢測</value>
-  </data>
   <data name="SettingsPage_Protection_Boot.Header" xml:space="preserve">
     <value>引導防護</value>
   </data>
   <data name="SettingsPage_Protection_Registry.Header" xml:space="preserve">
     <value>注冊表防護</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior.Description" xml:space="preserve">
-    <value>在程序進行高危操作時攔截，保護系統安全</value>
   </data>
   <data name="SettingsPage_Protection_Boot.Description" xml:space="preserve">
     <value>當系統磁盤引導部分被惡意篡改時嘗試修復</value>
@@ -563,18 +557,6 @@
   </data>
   <data name="SettingsPage_Protection_Files_CompatibilityMode.Description" xml:space="preserve">
     <value>使用傳統文件輪詢的方式進行防護，佔用大但穩定</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_Remote.Description" xml:space="preserve">
-    <value>在程序嘗試遠程執行命令時提示攔截，此功能可能會影響部分遠控軟件</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_Remote.Header" xml:space="preserve">
-    <value>遠程執行命令</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_URL.Description" xml:space="preserve">
-    <value>在程序嘗試訪問未知網址時提示攔截，此功能可能誤報較大或影響系統</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_URL.Header" xml:space="preserve">
-    <value>訪問未知網址</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Description" xml:space="preserve">
     <value>將當前系統磁盤引導部分恢復爲備份內容</value>

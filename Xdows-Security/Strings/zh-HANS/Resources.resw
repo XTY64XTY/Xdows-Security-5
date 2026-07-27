@@ -528,17 +528,11 @@
   <data name="SettingsPage_Protection_Files.Header" xml:space="preserve">
     <value>文件扫描</value>
   </data>
-  <data name="SettingsPage_Protection_Behavior.Header" xml:space="preserve">
-    <value>行为检测</value>
-  </data>
   <data name="SettingsPage_Protection_Boot.Header" xml:space="preserve">
     <value>引导防护</value>
   </data>
   <data name="SettingsPage_Protection_Registry.Header" xml:space="preserve">
     <value>注册表防护</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior.Description" xml:space="preserve">
-    <value>在程序进行高危操作时拦截，保护系统安全</value>
   </data>
   <data name="SettingsPage_Protection_Boot.Description" xml:space="preserve">
     <value>当系统磁盘引导部分被恶意篡改时尝试修复</value>
@@ -563,18 +557,6 @@
   </data>
   <data name="SettingsPage_Protection_Files_CompatibilityMode.Description" xml:space="preserve">
     <value>使用传统文件轮询的方式进行防护，占用大但稳定</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_Remote.Description" xml:space="preserve">
-    <value>在程序尝试远程执行命令时提示拦截，此功能可能会影响部分远控软件</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_Remote.Header" xml:space="preserve">
-    <value>远程执行命令</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_URL.Description" xml:space="preserve">
-    <value>在程序尝试访问未知网址时提示拦截，此功能可能误报较大或影响系统</value>
-  </data>
-  <data name="SettingsPage_Protection_Behavior_URL.Header" xml:space="preserve">
-    <value>访问未知网址</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Description" xml:space="preserve">
     <value>将当前系统磁盘引导部分恢复为备份内容</value>

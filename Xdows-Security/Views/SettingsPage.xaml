@@ -270,27 +270,6 @@
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
                VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Protection_Behavior"
-               HeaderIcon="{ui:FontIcon Glyph=&#xE8FC;}"
-               Margin="0,0,0,4">
-                    <ToggleSwitch  IsEnabled="False" />
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Protection_Behavior_Remote"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE756;}"
-                       IsEnabled="False">
-                            <ToggleSwitch />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Protection_Behavior_URL"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE774;}"
-                       IsEnabled="False">
-                            <ToggleSwitch />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
-               VerticalAlignment="Top"
                l:Uids.Uid="SettingsPage_Protection_Boot"
                HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
                Margin="0,0,0,4">
