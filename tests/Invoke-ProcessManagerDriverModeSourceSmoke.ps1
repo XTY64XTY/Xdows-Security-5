@@ -19,7 +19,7 @@ function Assert-Match([string]$Text, [string]$Pattern, [string]$Name) {
     }
 }
 
-Assert-Match $protocol 'ProtocolVersion\s*=\s*6' 'protocol v6'
+Assert-Match $protocol 'ProtocolVersion\s*=\s*7' 'protocol v7'
 Assert-Match $protocol 'CapabilityProcessManagement\s*=\s*0x00000020' 'process management capability mirror'
 Assert-Match $protocol 'QueryProcesses\s*=\s*CtlCode\(FileDeviceXdowsSecurity,\s*0x80C' 'process query IOCTL mirror'
 Assert-Match $protocol 'OperateProcess\s*=\s*CtlCode\(FileDeviceXdowsSecurity,\s*0x80D' 'process operation IOCTL mirror'
@@ -29,7 +29,7 @@ Assert-Match $protection 'GetProcesses\(\)(?s:.*?)client\.QueryProcesses' 'drive
 Assert-Match $protection 'OperateProcess\(uint processId(?s:.*?)client\.OperateProcess' 'driver process operation public API'
 Assert-Match $app 'GetDriverProcesses\(\)' 'app driver process list bridge'
 Assert-Match $xaml 'x:Name="ViewModeToggle"(?s:.*?)x:Name="DriverModeToggle"' 'driver toggle after tree toggle'
-Assert-Match $xaml '<StackPanel(?s:.*?)Orientation="Horizontal"(?s:.*?)Spacing="4"(?s:.*?)x:Name="ViewModeToggle"(?s:.*?)MinWidth="0"(?s:.*?)x:Name="DriverModeToggle"(?s:.*?)MinWidth="0"' 'compact shared toggle layout'
+Assert-Match $xaml '<StackPanel(?s:.*?)Orientation="Horizontal"(?s:.*?)Spacing="16"(?s:.*?)x:Name="ViewModeToggle"(?s:.*?)MinWidth="0"(?s:.*?)x:Name="DriverModeToggle"(?s:.*?)MinWidth="0"' 'shared toggle layout'
 Assert-Match $xaml 'AutomationProperties\.AutomationId="ProcessManagerDriverModeToggle"' 'driver toggle automation ID'
 Assert-Match $view 'if \(!ProtectionStatus\.IsRun\(5\)\)(?s:.*?)SetDriverModeToggleSilently\(false\)' 'driver protection prerequisite'
 Assert-Match $view 'ShowDriverModeDisclaimerAsync\(\)' 'per-enable disclaimer'

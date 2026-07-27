@@ -4,15 +4,16 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 6;
-    public const ulong DriverBuildId = 2026072801;
+    public const uint ProtocolVersion = 7;
+    public const ulong DriverBuildId = 2026072802;
     public const uint LegacyUpgradeProtocolVersion = 6;
-    public const ulong LegacyUpgradeDriverBuildId = 2026071802;
-    public const ulong OlderLegacyUpgradeDriverBuildId = 2026071801;
+    public const ulong LegacyUpgradeDriverBuildId = 2026072801;
+    public const ulong OlderLegacyUpgradeDriverBuildId = 2026071802;
+    public const ulong OldestProtocolV6UpgradeDriverBuildId = 2026071801;
     public const uint PreviousLegacyUpgradeProtocolVersion = 5;
     public const ulong PreviousLegacyUpgradeDriverBuildId = 2026071704;
     public const ulong OldestLegacyUpgradeDriverBuildId = 2026071703;
-    public const int EventTypeCount = 9;
+    public const int EventTypeCount = 10;
     public const uint CapabilityPriorityQueue = 0x00000001;
     public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
     public const uint CapabilityBuildId = 0x00000004;
@@ -20,19 +21,22 @@ internal static class DriverProtocol
     public const uint CapabilityUserDecisionHold = 0x00000010;
     public const uint CapabilityProcessManagement = 0x00000020;
     public const uint CapabilityEnhancedSelfProtect = 0x00000040;
+    public const uint CapabilityR0BehaviorProtection = 0x00000080;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
         CapabilityStartupSelfProtect |
         CapabilityUserDecisionHold |
         CapabilityProcessManagement |
-        CapabilityEnhancedSelfProtect;
+        CapabilityEnhancedSelfProtect |
+        CapabilityR0BehaviorProtection;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
     public const uint ModuleInjection = 0x00000008;
     public const uint ModuleSelfProtect = 0x00000010;
-    public const uint RequiredModules = ModuleTokenAuth | ModuleProcess | ModuleFile | ModuleInjection | ModuleSelfProtect;
+    public const uint ModuleBehavior = 0x00000020;
+    public const uint RequiredModules = ModuleTokenAuth | ModuleProcess | ModuleFile | ModuleInjection | ModuleSelfProtect | ModuleBehavior;
     public const int MaxPathChars = 520;
     public const int MaxCommandChars = 1024;
     public const int MaxReasonChars = 128;
@@ -88,7 +92,21 @@ internal enum XdowsSecurityEventType : uint
     ProcessHandle = 5,
     ThreadHandle = 6,
     ImageLoad = 7,
-    DriverLog = 8
+    DriverLog = 8,
+    Behavior = 9
+}
+
+internal enum XdowsSecurityBehaviorType : uint
+{
+    None = 0,
+    VssDeletion = 1,
+    HiddenPowerShell = 2,
+    EncodedCommand = 3,
+    PolicyBypass = 4,
+    DownloadExecute = 5,
+    LolbinAbuse = 6,
+    ProcessInjection = 7,
+    ThreadInjection = 8
 }
 
 internal enum XdowsSecurityDecisionType : uint
@@ -176,7 +194,7 @@ internal struct XdowsSecurityEvent
     public uint CreatingProcessId;
     public uint CreatingThreadId;
     public uint KernelWaitTimeoutMs;
-    public uint Reserved;
+    public uint BehaviorType;
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxPathChars)]
     public string ImagePath;

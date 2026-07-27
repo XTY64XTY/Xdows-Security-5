@@ -56,7 +56,8 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 6 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 7 },
+    @{ C = "XDOWS_SECURITY_EVENT_TYPE_COUNT"; Cs = "EventTypeCount"; Expected = 10 },
     @{ C = "XDOWS_SECURITY_CAP_PRIORITY_QUEUE"; Cs = "CapabilityPriorityQueue"; Expected = 1 },
     @{ C = "XDOWS_SECURITY_CAP_DIRTY_WRITE_COALESCING"; Cs = "CapabilityDirtyWriteCoalescing"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_CAP_BUILD_ID"; Cs = "CapabilityBuildId"; Expected = 4 },
@@ -64,6 +65,7 @@ $constants = @(
     @{ C = "XDOWS_SECURITY_CAP_USER_DECISION_HOLD"; Cs = "CapabilityUserDecisionHold"; Expected = 16 },
     @{ C = "XDOWS_SECURITY_CAP_PROCESS_MANAGEMENT"; Cs = "CapabilityProcessManagement"; Expected = 32 },
     @{ C = "XDOWS_SECURITY_CAP_ENHANCED_SELF_PROTECT"; Cs = "CapabilityEnhancedSelfProtect"; Expected = 64 },
+    @{ C = "XDOWS_SECURITY_CAP_R0_BEHAVIOR_PROTECTION"; Cs = "CapabilityR0BehaviorProtection"; Expected = 128 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
@@ -76,7 +78,8 @@ $constants = @(
     @{ C = "XDOWS_SECURITY_MODULE_PROCESS"; Cs = "ModuleProcess"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_MODULE_FILE"; Cs = "ModuleFile"; Expected = 4 },
     @{ C = "XDOWS_SECURITY_MODULE_INJECTION"; Cs = "ModuleInjection"; Expected = 8 },
-    @{ C = "XDOWS_SECURITY_MODULE_SELF_PROTECT"; Cs = "ModuleSelfProtect"; Expected = 16 }
+    @{ C = "XDOWS_SECURITY_MODULE_SELF_PROTECT"; Cs = "ModuleSelfProtect"; Expected = 16 },
+    @{ C = "XDOWS_SECURITY_MODULE_BEHAVIOR"; Cs = "ModuleBehavior"; Expected = 32 }
 )
 
 $cBuildId = Read-Number $publicText "#define\s+XDOWS_SECURITY_DRIVER_BUILD_ID\s+([0-9]+)ULL" "XDOWS_SECURITY_DRIVER_BUILD_ID"
@@ -86,7 +89,7 @@ Assert-Equal $cBuildId $csBuildId "Driver build ID"
 Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
 
 $runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
-Assert-Equal 6 $runtimeProtocolVersion "Runtime smoke protocol version"
+Assert-Equal 7 $runtimeProtocolVersion "Runtime smoke protocol version"
 
 foreach ($offsetCheck in @(
     @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
@@ -157,6 +160,15 @@ $enums = @(
     @{ C = "XdowsSecurityEventThreadHandle"; Cs = "ThreadHandle"; Value = 6 },
     @{ C = "XdowsSecurityEventImageLoad"; Cs = "ImageLoad"; Value = 7 },
     @{ C = "XdowsSecurityEventDriverLog"; Cs = "DriverLog"; Value = 8 },
+    @{ C = "XdowsSecurityEventBehavior"; Cs = "Behavior"; Value = 9 },
+    @{ C = "XdowsSecurityBehaviorVssDeletion"; Cs = "VssDeletion"; Value = 1 },
+    @{ C = "XdowsSecurityBehaviorHiddenPowerShell"; Cs = "HiddenPowerShell"; Value = 2 },
+    @{ C = "XdowsSecurityBehaviorEncodedCommand"; Cs = "EncodedCommand"; Value = 3 },
+    @{ C = "XdowsSecurityBehaviorPolicyBypass"; Cs = "PolicyBypass"; Value = 4 },
+    @{ C = "XdowsSecurityBehaviorDownloadExecute"; Cs = "DownloadExecute"; Value = 5 },
+    @{ C = "XdowsSecurityBehaviorLolbinAbuse"; Cs = "LolbinAbuse"; Value = 6 },
+    @{ C = "XdowsSecurityBehaviorProcessInjection"; Cs = "ProcessInjection"; Value = 7 },
+    @{ C = "XdowsSecurityBehaviorThreadInjection"; Cs = "ThreadInjection"; Value = 8 },
     @{ C = "XdowsSecurityDecisionUnknown"; Cs = "Unknown"; Value = 0 },
     @{ C = "XdowsSecurityDecisionAllow"; Cs = "Allow"; Value = 1 },
     @{ C = "XdowsSecurityDecisionBlock"; Cs = "Block"; Value = 2 },
@@ -182,7 +194,7 @@ foreach ($enum in $enums) {
     Assert-Equal $cValue $csValue "$($enum.C) mirrors C# enum $($enum.Cs)"
 }
 
-foreach ($eventName in @("ProcessCreate", "FileCreate", "FileWrite", "FileRename", "ProcessHandle", "ThreadHandle", "ImageLoad")) {
+foreach ($eventName in @("ProcessCreate", "FileCreate", "FileWrite", "FileRename", "ProcessHandle", "ThreadHandle", "ImageLoad", "Behavior")) {
     if ($protectionText -notmatch "XdowsSecurityEventType\.$eventName\b") {
         throw "DriverProtection does not handle XdowsSecurityEventType.$eventName"
     }

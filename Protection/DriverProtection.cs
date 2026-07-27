@@ -590,8 +590,70 @@ public sealed class DriverProtection : IProtectionModel
             XdowsSecurityEventType.ProcessHandle or
                 XdowsSecurityEventType.ThreadHandle or
                 XdowsSecurityEventType.ImageLoad => await HandleSensitiveOperationAsync(driverEvent, token).ConfigureAwait(false),
+            XdowsSecurityEventType.Behavior => await HandleBehaviorEventAsync(driverEvent, token).ConfigureAwait(false),
             _ => DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Allow, "unsupported-event")
         };
+    }
+
+    private async Task<XdowsSecurityDecision> HandleBehaviorEventAsync(
+        XdowsSecurityEvent driverEvent,
+        CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!TryEnterUserDecisionHold(driverEvent))
+        {
+            return DriverBridgeClient.CreateDecision(
+                driverEvent.EventId,
+                XdowsSecurityDecisionType.Block,
+                "behavior-user-hold-failed-block");
+        }
+
+        XdowsSecurityBehaviorType behaviorType = (XdowsSecurityBehaviorType)driverEvent.BehaviorType;
+        string imagePath = DriverPathNormalizer.Normalize(CleanDriverString(driverEvent.ImagePath));
+        string actorPath = ResolveActorPath(driverEvent) ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(imagePath) && driverEvent.ProcessId != 0)
+        {
+            imagePath = DriverPathNormalizer.Normalize(
+                SignerTrustService.TryResolveProcessPath(driverEvent.ProcessId));
+        }
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            imagePath = !string.IsNullOrWhiteSpace(actorPath)
+                ? actorPath
+                : $"PID {driverEvent.ProcessId}";
+        }
+
+        DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
+        var request = new ProtectionDecisionRequest(
+            imagePath,
+            "Behavior",
+            BehaviorTypeToDetectionName(behaviorType),
+            100,
+            checked((int)driverEvent.ProcessId),
+            checked((int)driverEvent.ParentProcessId),
+            CleanDriverString(driverEvent.CommandLine),
+            string.IsNullOrWhiteSpace(actorPath) ? null : actorPath,
+            EventId: driverEvent.EventId,
+            CorrelationId: driverEvent.CorrelationId,
+            Module: ProtectionModule.Behavior,
+            Backend: ProtectionBackend.Driver,
+            DecisionDeadline: decisionDeadline);
+
+        ProtectionUserDecision userDecision = await AskUserAfterHoldAsync(
+            request,
+            driverEvent,
+            token).ConfigureAwait(false);
+
+        if (userDecision == ProtectionUserDecision.Allow)
+            return Allow(driverEvent.EventId, "user-release-behavior");
+
+        string reason = userDecision == ProtectionUserDecision.Timeout
+            ? "behavior-user-timeout-block"
+            : "user-block-behavior";
+        return DriverBridgeClient.CreateDecision(
+            driverEvent.EventId,
+            XdowsSecurityDecisionType.Block,
+            reason);
     }
 
     private async Task<XdowsSecurityDecision> HandleProcessCreateAsync(
@@ -826,28 +888,10 @@ public sealed class DriverProtection : IProtectionModel
         NativeModelScannerResult? actorScan,
         CancellationToken token)
     {
+        if (!TryEnterUserDecisionHold(driverEvent))
+            return ProtectionUserDecision.Block;
+
         string protectionType = DriverEventTypeToProtectionType((XdowsSecurityEventType)driverEvent.EventType);
-        DriverBridgeClient? client = _client;
-        if (client is null)
-            return ProtectionUserDecision.Block;
-
-        try
-        {
-            client.SubmitPendingDecision(driverEvent.EventId);
-        }
-        catch (Exception ex)
-        {
-            LogCallback?.Invoke(new DriverProtectionLogEntry(
-                driverEvent.EventId,
-                driverEvent.CorrelationId,
-                DriverProtectionLogSeverity.Error,
-                0,
-                DateTimeOffset.Now,
-                "Decision",
-                $"Confirmed threat could not enter user-decision hold; blocking immediately: {ex.GetType().Name}"));
-            return ProtectionUserDecision.Block;
-        }
-
         DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
         var request = new ProtectionDecisionRequest(
             imagePath,
@@ -867,11 +911,44 @@ public sealed class DriverProtection : IProtectionModel
             ProtectionBackend.Driver,
             decisionDeadline);
 
+        return await AskUserAfterHoldAsync(request, driverEvent, token).ConfigureAwait(false);
+    }
+
+    private bool TryEnterUserDecisionHold(XdowsSecurityEvent driverEvent)
+    {
+        DriverBridgeClient? client = _client;
+        if (client is null)
+            return false;
+
+        try
+        {
+            client.SubmitPendingDecision(driverEvent.EventId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            LogCallback?.Invoke(new DriverProtectionLogEntry(
+                driverEvent.EventId,
+                driverEvent.CorrelationId,
+                DriverProtectionLogSeverity.Error,
+                0,
+                DateTimeOffset.Now,
+                "Decision",
+                $"Confirmed threat could not enter user-decision hold; blocking immediately: {ex.GetType().Name}"));
+            return false;
+        }
+    }
+
+    private async Task<ProtectionUserDecision> AskUserAfterHoldAsync(
+        ProtectionDecisionRequest request,
+        XdowsSecurityEvent driverEvent,
+        CancellationToken token)
+    {
         if (DecisionCallback is not null)
         {
             ProtectionUserDecision decision = await DriverDecisionService.AskUserAsync(
                 callbackToken => DecisionCallback(request, callbackToken),
-                decisionDeadline - DateTimeOffset.UtcNow,
+                request.DecisionDeadline - DateTimeOffset.UtcNow,
                 token).ConfigureAwait(false);
             if (decision == ProtectionUserDecision.Timeout)
             {
@@ -882,13 +959,13 @@ public sealed class DriverProtection : IProtectionModel
                     0,
                     DateTimeOffset.Now,
                     "Decision",
-                    $"user-decision-timeout-blocked module={request.Module} path={imagePath}"));
+                    $"user-decision-timeout-blocked module={request.Module} path={request.Path}"));
             }
             return decision;
         }
 
         _interceptCallBack?.Invoke(new ProtectionInterceptEvent(
-            imagePath,
+            request.Path,
             true,
             request.DetectionName,
             request.Probability,
@@ -988,7 +1065,24 @@ public sealed class DriverProtection : IProtectionModel
             XdowsSecurityEventType.ProcessHandle => "ProcessHandle",
             XdowsSecurityEventType.ThreadHandle => "ThreadHandle",
             XdowsSecurityEventType.ImageLoad => "ImageLoad",
+            XdowsSecurityEventType.Behavior => "Behavior",
             _ => "Driver"
+        };
+    }
+
+    private static string BehaviorTypeToDetectionName(XdowsSecurityBehaviorType type)
+    {
+        return type switch
+        {
+            XdowsSecurityBehaviorType.VssDeletion => "Xdows.Behavior.ShadowCopyDestruction",
+            XdowsSecurityBehaviorType.HiddenPowerShell => "Xdows.Behavior.HiddenPowerShell",
+            XdowsSecurityBehaviorType.EncodedCommand => "Xdows.Behavior.EncodedCommand",
+            XdowsSecurityBehaviorType.PolicyBypass => "Xdows.Behavior.PolicyBypass",
+            XdowsSecurityBehaviorType.DownloadExecute => "Xdows.Behavior.DownloadExecute",
+            XdowsSecurityBehaviorType.LolbinAbuse => "Xdows.Behavior.LolbinAbuse",
+            XdowsSecurityBehaviorType.ProcessInjection => "Xdows.Behavior.ProcessInjection",
+            XdowsSecurityBehaviorType.ThreadInjection => "Xdows.Behavior.ThreadInjection",
+            _ => "Xdows.Behavior.Unknown"
         };
     }
 
@@ -1003,6 +1097,7 @@ public sealed class DriverProtection : IProtectionModel
             XdowsSecurityEventType.ProcessHandle or
                 XdowsSecurityEventType.ThreadHandle or
                 XdowsSecurityEventType.ImageLoad => ProtectionModule.Injection,
+            XdowsSecurityEventType.Behavior => ProtectionModule.Behavior,
             _ => ProtectionModule.Unknown
         };
     }

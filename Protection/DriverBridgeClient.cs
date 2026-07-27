@@ -15,7 +15,8 @@ internal sealed class DriverBridgeClient : IDisposable
             DriverProtocol.LegacyUpgradeProtocolVersion,
             [
                 DriverProtocol.LegacyUpgradeDriverBuildId,
-                DriverProtocol.OlderLegacyUpgradeDriverBuildId
+                DriverProtocol.OlderLegacyUpgradeDriverBuildId,
+                DriverProtocol.OldestProtocolV6UpgradeDriverBuildId
             ]),
         new(
             DriverProtocol.PreviousLegacyUpgradeProtocolVersion,

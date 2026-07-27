@@ -22,14 +22,14 @@ function Assert-Match([string]$Path, [string]$Pattern, [string]$Name) {
     if ($text -notmatch $Pattern) { throw "$Name was not found in $Path" }
 }
 
-Assert-Match $files.Protocol 'ProtocolVersion\s*=\s*6' 'managed protocol v6'
-Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026072801' 'managed driver build identity'
+Assert-Match $files.Protocol 'ProtocolVersion\s*=\s*7' 'managed protocol v7'
+Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026072802' 'managed driver build identity'
 Assert-Match $files.Protocol 'Pending\s*=\s*4' 'managed pending verdict'
 Assert-Match $files.Protocol 'CapabilityUserDecisionHold\s*=\s*0x00000010' 'managed user-decision capability'
 Assert-Match $files.DriverPublic 'XDOWS_SECURITY_CAP_USER_DECISION_HOLD\s+0x00000010u' 'native user-decision capability'
 Assert-Match $files.Bridge 'SubmitPendingDecision\(ulong eventId\)(?s:.*?)XdowsSecurityDecisionType\.Pending' 'pending verdict submission API'
 Assert-Match $files.Protection 'UserDecisionTimeout\s*=\s*TimeSpan\.FromSeconds\(25\)' '25 second user decision timeout'
-Assert-Match $files.Protection 'SubmitPendingDecision\(driverEvent\.EventId\)(?s:.*?)DecisionDeadline' 'pending verdict before popup deadline'
+Assert-Match $files.Protection 'TryEnterUserDecisionHold\(driverEvent\)(?s:.*?)DecisionDeadline' 'pending verdict before popup deadline'
 Assert-Match $files.Protection 'user-decision-timeout-blocked' 'user timeout block diagnostic'
 Assert-Match $files.Callback 'ulong\s+EventId\s*=\s*0(?s:.*?)DateTimeOffset\s+DecisionDeadline' 'decision identity and deadline'
 Assert-Match $files.Helper 'DateTimeOffset\?\s+DecisionDeadline' 'intercept-window deadline setting'
