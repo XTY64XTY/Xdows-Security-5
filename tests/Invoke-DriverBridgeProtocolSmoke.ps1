@@ -63,6 +63,7 @@ $constants = @(
     @{ C = "XDOWS_SECURITY_CAP_STARTUP_SELF_PROTECT"; Cs = "CapabilityStartupSelfProtect"; Expected = 8 },
     @{ C = "XDOWS_SECURITY_CAP_USER_DECISION_HOLD"; Cs = "CapabilityUserDecisionHold"; Expected = 16 },
     @{ C = "XDOWS_SECURITY_CAP_PROCESS_MANAGEMENT"; Cs = "CapabilityProcessManagement"; Expected = 32 },
+    @{ C = "XDOWS_SECURITY_CAP_ENHANCED_SELF_PROTECT"; Cs = "CapabilityEnhancedSelfProtect"; Expected = 64 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },

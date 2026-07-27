@@ -5,9 +5,10 @@ namespace Protection;
 internal static class DriverProtocol
 {
     public const uint ProtocolVersion = 6;
-    public const ulong DriverBuildId = 2026071802;
+    public const ulong DriverBuildId = 2026072801;
     public const uint LegacyUpgradeProtocolVersion = 6;
-    public const ulong LegacyUpgradeDriverBuildId = 2026071801;
+    public const ulong LegacyUpgradeDriverBuildId = 2026071802;
+    public const ulong OlderLegacyUpgradeDriverBuildId = 2026071801;
     public const uint PreviousLegacyUpgradeProtocolVersion = 5;
     public const ulong PreviousLegacyUpgradeDriverBuildId = 2026071704;
     public const ulong OldestLegacyUpgradeDriverBuildId = 2026071703;
@@ -18,12 +19,14 @@ internal static class DriverProtocol
     public const uint CapabilityStartupSelfProtect = 0x00000008;
     public const uint CapabilityUserDecisionHold = 0x00000010;
     public const uint CapabilityProcessManagement = 0x00000020;
+    public const uint CapabilityEnhancedSelfProtect = 0x00000040;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
         CapabilityStartupSelfProtect |
         CapabilityUserDecisionHold |
-        CapabilityProcessManagement;
+        CapabilityProcessManagement |
+        CapabilityEnhancedSelfProtect;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;

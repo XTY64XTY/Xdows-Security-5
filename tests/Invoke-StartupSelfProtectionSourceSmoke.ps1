@@ -23,7 +23,7 @@ function Assert-Match([string]$Path, [string]$Pattern, [string]$Name) {
 }
 
 Assert-Match $files.Protocol 'ProtocolVersion\s*=\s*6;' 'protocol v6 mirror'
-Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026071802;' 'startup protection driver build mirror'
+Assert-Match $files.Protocol 'DriverBuildId\s*=\s*2026072801;' 'startup protection driver build mirror'
 Assert-Match $files.Protocol 'SetStartupProtection\s*=\s*CtlCode\(FileDeviceXdowsSecurity,\s*0x80B' 'startup protection IOCTL mirror'
 Assert-Match $files.Protocol 'uint\s+StartupProtectionEnabled;' 'startup protection runtime state mirror'
 Assert-Match $files.Protocol 'struct\s+XdowsStartupProtectionRequest' 'startup protection request mirror'
