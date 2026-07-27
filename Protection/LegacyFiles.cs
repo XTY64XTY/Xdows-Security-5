@@ -13,12 +13,13 @@ namespace Protection
         string IProtectionModel.Name => Name;
         public bool Run(InterceptCallBack toastCallBack)
         {
-            Helper.ScanEngine.ModelEngineScan.InitializeForProtection();
-
             if (_isMonitoring)
             {
                 return false;
             }
+
+            if (!Helper.ScanEngine.ModelEngineScan.InitializeForProtection())
+                return false;
 
             _isMonitoring = true;
             _toastCallBack = toastCallBack;

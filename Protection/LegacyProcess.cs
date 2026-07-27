@@ -19,10 +19,12 @@ namespace Protection
 
         public bool Run(InterceptCallBack toastCallBack)
         {
-            Helper.ScanEngine.ModelEngineScan.InitializeForProtection();
-
             if (IsRun())
                 return true;
+
+            if (!Helper.ScanEngine.ModelEngineScan.InitializeForProtection())
+                return false;
+
             try
             {
                 _cts = new CancellationTokenSource();

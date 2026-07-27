@@ -86,7 +86,7 @@ Assert-Match $files.Protocol 'RequiredModules\s*=\s*ModuleTokenAuth\s*\|\s*Modul
 Assert-Match $files.Protection 'Capabilities\s*&\s*DriverProtocol\.RequiredCapabilities' 'required runtime capability mask validation'
 Assert-Match $files.DecisionService 'UiDecisionQueue\.WaitAsync\(0,\s*token\)(?s:.*?)CreateLinkedTokenSource\(token\)' 'non-blocking UI decision admission before timeout starts'
 Assert-NotMatch $files.DecisionService 'UiDecisionQueue\.WaitAsync\(timeoutCts\.Token\)' 'decision worker waiting behind an active popup'
-Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreProtections\(\);(?s:.*?)await InitializeLocalizer\(\);' 'protection restore before optional startup work'
+Assert-Match $files.AppCode 'StartPipeListener\(\);(?s:.*?)Task\s+restoreDriverProtectionTask\s*=\s*Task\.Run\(\(\)\s*=>\s*\{(?s:.*?)ProtectionStatus\.RestoreDriverProtection\(\);(?s:.*?)await InitializeLocalizer\(\);' 'driver protection restore before optional startup work'
 Assert-Match $files.AppCode 'TaskCompletionSource<ProtectionUserDecision>\s+tcs\s*=\s*new\(TaskCreationOptions\.RunContinuationsAsynchronously\)' 'asynchronous driver-decision continuation'
 Assert-Match $files.AppCode 'User decision submitted:.*cid:' 'user decision timing log'
 Assert-Match $files.AppCode 'Backend\s*=\s*request\.Backend,\s*\r?\n\s*DecisionDeadline\s*=\s*request\.DecisionDeadline\s*\r?\n\s*\},\s*token\);' 'driver popup cancellation propagation'

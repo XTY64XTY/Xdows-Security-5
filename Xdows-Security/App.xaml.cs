@@ -357,8 +357,17 @@ namespace Xdows_Security
 
         public static void RestoreProtections()
         {
-            RestoreProtection(5);
+            RestoreDriverProtection();
+            RestoreLegacyProtections();
+        }
 
+        public static void RestoreDriverProtection()
+        {
+            RestoreProtection(5);
+        }
+
+        public static void RestoreLegacyProtections()
+        {
             if (!IsRun(5))
             {
                 RestoreProtection(0);
@@ -617,16 +626,16 @@ namespace Xdows_Security
                 }
 
                 StartPipeListener();
-                // 单实例确认后立即恢复防护，避免本地化和启动项检查期间出现驱动桥接空档。
-                _ = Task.Run(() =>
+                // 单实例确认后立即恢复驱动防护，避免本地化和启动项检查期间出现驱动桥接空档。
+                Task restoreDriverProtectionTask = Task.Run(() =>
                 {
                     try
                     {
-                        ProtectionStatus.RestoreProtections();
+                        ProtectionStatus.RestoreDriverProtection();
                     }
                     catch (Exception ex)
                     {
-                        LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Async restore protections failed: {ex.Message}");
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Async restore driver protection failed: {ex.Message}");
                     }
                 });
 
@@ -637,6 +646,20 @@ namespace Xdows_Security
                     Task.Run(() => EnsureDefaultStartup())
                 );
                 InitializeMainWindow();
+
+                // 兼容防护会初始化用户态模型，等待窗口和启动资源就绪后再恢复。
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await restoreDriverProtectionTask.ConfigureAwait(false);
+                        ProtectionStatus.RestoreLegacyProtections();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Async restore legacy protections failed: {ex.Message}");
+                    }
+                });
             }
             catch (Exception ex)
             {
