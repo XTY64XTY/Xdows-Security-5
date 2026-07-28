@@ -1,13 +1,16 @@
 using CommunityToolkit.WinUI.Controls;
 using CommunityToolkit.WinUI.UI.Controls;
+using Helper;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,6 +29,9 @@ namespace Xdows_Security.Views
         private DispatcherTimer? ProtectionStatusTimer;
         private const string DriverProtectionDisclaimerAcceptedSetting = "DriverProtectionDisclaimerAccepted";
         private bool _driverProtectionOperationInProgress;
+        private bool _bootOperationInProgress;
+
+        private sealed record BootDiskChoice(PhysicalDiskInfo Disk, String Title);
 
         public SettingsPage()
         {
@@ -1250,25 +1256,305 @@ namespace Xdows_Security.Views
 
         private async void Boot_Save_Button_Click(Object sender, RoutedEventArgs e)
         {
-            try
+            await RunBootOperationAsync(async () =>
             {
-                Byte[] mbr = Helper.DiskOperator.ReadBootSector(0);
-                if (mbr.Length == 0) return;
-                var ownerWindowId = App.MainWindow!.AppWindow.Id;
-                FileSavePicker picker = new(ownerWindowId)
+                BootDiskChoice? selected = await SelectBootDiskAsync(
+                    BootText("SettingsPage_Protection_Boot_DiskDialog_BackupInstruction"));
+                if (selected is null)
+                    return;
+
+                Byte[] bootSector = await Task.Run(() => DiskOperator.ReadBootSector(selected.Disk.Index));
+                if (!DiskOperator.IsValidBootSector(bootSector))
                 {
-                    SuggestedFileName = "Data",
-                    DefaultFileExtension = ".bin",
+                    await ShowBootMessageAsync(
+                        BootText("SettingsPage_Protection_Boot_InvalidSource_Title"),
+                        BootText("SettingsPage_Protection_Boot_InvalidSource_Message"));
+                    return;
+                }
+
+                FileSavePicker picker = new(XamlRoot.ContentIslandEnvironment.AppWindowId)
+                {
+                    SuggestedFileName = $"Xdows-Boot-Disk{selected.Disk.Index}-{DateTime.Now:yyyyMMdd-HHmmss}",
                     SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
                     SuggestedFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
                 };
+                picker.FileTypeChoices.Add(
+                    BootText("SettingsPage_Protection_Boot_BackupFileType"),
+                    [".bin"]);
 
-                PickFileResult file = await picker.PickSaveFileAsync();
-                if (file is null) { return; }
+                PickFileResult? file = await picker.PickSaveFileAsync();
+                if (file is null)
+                    return;
 
-                _ = File.WriteAllBytesAsync(file.Path, mbr);
+                await File.WriteAllBytesAsync(file.Path, bootSector);
+                await ShowBootMessageAsync(
+                    BootText("SettingsPage_Protection_Boot_BackupSuccess_Title"),
+                    BootFormat(
+                        "SettingsPage_Protection_Boot_BackupSuccess_Message",
+                        selected.Title,
+                        file.Path));
+            });
+        }
+
+        private async void Boot_Restore_Button_Click(Object sender, RoutedEventArgs e)
+        {
+            await RunBootOperationAsync(async () =>
+            {
+                FileOpenPicker picker = new(XamlRoot.ContentIslandEnvironment.AppWindowId)
+                {
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+                };
+                picker.FileTypeFilter.Add(".bin");
+
+                PickFileResult? file = await picker.PickSingleFileAsync();
+                if (file is null)
+                    return;
+
+                Byte[] bootSector = await File.ReadAllBytesAsync(file.Path);
+                if (!DiskOperator.IsValidBootSector(bootSector))
+                {
+                    await ShowBootMessageAsync(
+                        BootText("SettingsPage_Protection_Boot_InvalidBackup_Title"),
+                        BootText("SettingsPage_Protection_Boot_InvalidBackup_Message"));
+                    return;
+                }
+
+                BootDiskChoice? selected = await SelectBootDiskAsync(
+                    BootText("SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction"));
+                if (selected is null ||
+                    !await ConfirmBootRestoreAsync(file.Path, selected))
+                {
+                    return;
+                }
+
+                await Task.Run(() => DiskOperator.WriteBootSector(selected.Disk.Index, bootSector));
+                await ShowBootMessageAsync(
+                    BootText("SettingsPage_Protection_Boot_RestoreSuccess_Title"),
+                    BootFormat(
+                        "SettingsPage_Protection_Boot_RestoreSuccess_Message",
+                        selected.Title));
+            });
+        }
+
+        private async Task RunBootOperationAsync(Func<Task> operation)
+        {
+            if (_bootOperationInProgress)
+                return;
+
+            _bootOperationInProgress = true;
+            BootSaveButton.IsEnabled = false;
+            BootRestoreButton.IsEnabled = false;
+            try
+            {
+                await operation();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                await ShowBootMessageAsync(
+                    BootText("SettingsPage_Protection_Boot_OperationFailed_Title"),
+                    BootFormat(
+                        "SettingsPage_Protection_Boot_OperationFailed_Message",
+                        $"0x{ex.HResult:X8}"));
+            }
+            finally
+            {
+                BootSaveButton.IsEnabled = true;
+                BootRestoreButton.IsEnabled = true;
+                _bootOperationInProgress = false;
+            }
+        }
+
+        private async Task<BootDiskChoice?> SelectBootDiskAsync(String instruction)
+        {
+            IReadOnlyList<PhysicalDiskInfo> disks = await Task.Run(DiskOperator.GetPhysicalDisks);
+            if (disks.Count == 0)
+            {
+                await ShowBootMessageAsync(
+                    BootText("SettingsPage_Protection_Boot_NoDisks_Title"),
+                    BootText("SettingsPage_Protection_Boot_NoDisks_Message"));
+                return null;
+            }
+
+            List<BootDiskChoice> choices = disks
+                .Select(disk => new BootDiskChoice(disk, FormatDiskTitle(disk)))
+                .ToList();
+            ComboBox diskSelector = new()
+            {
+                Header = BootText("SettingsPage_Protection_Boot_DiskDialog_ComboHeader"),
+                ItemsSource = choices,
+                DisplayMemberPath = nameof(BootDiskChoice.Title),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                MinWidth = 440,
+                SelectedIndex = Math.Max(0, choices.FindIndex(choice => choice.Disk.IsSystemDisk))
+            };
+            AutomationProperties.SetAutomationId(diskSelector, "BootPhysicalDiskSelector");
+
+            TextBlock details = new()
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style
+            };
+            void UpdateDetails()
+            {
+                details.Text = diskSelector.SelectedItem is BootDiskChoice choice
+                    ? FormatDiskDetails(choice.Disk)
+                    : String.Empty;
+            }
+            diskSelector.SelectionChanged += (_, _) => UpdateDetails();
+            UpdateDetails();
+
+            StackPanel content = new()
+            {
+                Spacing = 12,
+                MinWidth = 440
+            };
+            content.Children.Add(new TextBlock
+            {
+                Text = instruction,
+                TextWrapping = TextWrapping.Wrap
+            });
+            content.Children.Add(diskSelector);
+            content.Children.Add(details);
+
+            ContentDialog dialog = new()
+            {
+                Title = BootText("SettingsPage_Protection_Boot_DiskDialog_Title"),
+                Content = content,
+                PrimaryButtonText = BootText("SettingsPage_Protection_Boot_Dialog_Continue"),
+                CloseButtonText = BootText("SettingsPage_Protection_Boot_Dialog_Cancel"),
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = XamlRoot,
+                RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+            };
+
+            return await dialog.ShowAsync() == ContentDialogResult.Primary
+                ? diskSelector.SelectedItem as BootDiskChoice
+                : null;
+        }
+
+        private async Task<Boolean> ConfirmBootRestoreAsync(
+            String backupPath,
+            BootDiskChoice selected)
+        {
+            StackPanel content = new()
+            {
+                Spacing = 12,
+                MinWidth = 440
+            };
+            content.Children.Add(new TextBlock
+            {
+                Text = BootFormat(
+                    "SettingsPage_Protection_Boot_RestoreConfirm_Summary",
+                    Path.GetFileName(backupPath),
+                    selected.Title),
+                TextWrapping = TextWrapping.Wrap
+            });
+            content.Children.Add(new TextBlock
+            {
+                Text = FormatDiskDetails(selected.Disk),
+                TextWrapping = TextWrapping.Wrap,
+                Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style
+            });
+            content.Children.Add(new InfoBar
+            {
+                IsOpen = true,
+                IsClosable = false,
+                Severity = InfoBarSeverity.Warning,
+                Message = BootText("SettingsPage_Protection_Boot_RestoreConfirm_Warning")
+            });
+
+            ContentDialog dialog = new()
+            {
+                Title = BootText("SettingsPage_Protection_Boot_RestoreConfirm_Title"),
+                Content = content,
+                PrimaryButtonText = BootText("SettingsPage_Protection_Boot_RestoreConfirm_Primary"),
+                CloseButtonText = BootText("SettingsPage_Protection_Boot_Dialog_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot,
+                RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+            };
+
+            return await dialog.ShowAsync() == ContentDialogResult.Primary;
+        }
+
+        private async Task ShowBootMessageAsync(String title, String message)
+        {
+            ContentDialog dialog = new()
+            {
+                Title = title,
+                Content = new TextBlock
+                {
+                    Text = message,
+                    TextWrapping = TextWrapping.Wrap
+                },
+                CloseButtonText = BootText("SettingsPage_Protection_Boot_Dialog_Close"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot,
+                RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+            };
+            await dialog.ShowAsync();
+        }
+
+        private static String FormatDiskTitle(PhysicalDiskInfo disk)
+        {
+            String model = String.IsNullOrWhiteSpace(disk.Model)
+                ? BootText("SettingsPage_Protection_Boot_Disk_UnknownModel")
+                : disk.Model;
+            if (model.Length > 60)
+                model = model[..59] + "…";
+
+            String systemSuffix = disk.IsSystemDisk
+                ? BootText("SettingsPage_Protection_Boot_Disk_SystemSuffix")
+                : String.Empty;
+            return BootFormat(
+                "SettingsPage_Protection_Boot_Disk_TitleFormat",
+                disk.Index,
+                model,
+                systemSuffix);
+        }
+
+        private static String FormatDiskDetails(PhysicalDiskInfo disk)
+        {
+            String unknown = BootText("SettingsPage_Protection_Boot_Disk_UnknownValue");
+            String serial = String.IsNullOrWhiteSpace(disk.SerialNumber) ? unknown : disk.SerialNumber;
+            String busType = String.Equals(disk.BusType, "Unknown", StringComparison.Ordinal)
+                ? unknown
+                : disk.BusType;
+            String size = disk.SizeBytes > 0
+                ? BootFormat(
+                    "SettingsPage_Protection_Boot_Disk_SizeFormat",
+                    disk.SizeBytes / 1024d / 1024d / 1024d)
+                : unknown;
+
+            return BootFormat(
+                "SettingsPage_Protection_Boot_Disk_DetailsFormat",
+                disk.DevicePath,
+                serial,
+                size,
+                PartitionStyleText(disk.PartitionStyle),
+                busType);
+        }
+
+        private static String PartitionStyleText(PhysicalDiskPartitionStyle style)
+        {
+            String suffix = style switch
+            {
+                PhysicalDiskPartitionStyle.Mbr => "Mbr",
+                PhysicalDiskPartitionStyle.Gpt => "Gpt",
+                PhysicalDiskPartitionStyle.Raw => "Raw",
+                _ => "Unknown"
+            };
+            return BootText($"SettingsPage_Protection_Boot_Disk_Partition_{suffix}");
+        }
+
+        private static String BootText(String key)
+        {
+            return Localizer.Get().GetLocalizedString(key);
+        }
+
+        private static String BootFormat(String key, params Object[] values)
+        {
+            return String.Format(CultureInfo.CurrentCulture, BootText(key), values);
         }
 
         private async void SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled(object sender, RoutedEventArgs e)

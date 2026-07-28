@@ -559,7 +559,7 @@
     <value>使用传统文件轮询的方式进行防护，占用大但稳定</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Description" xml:space="preserve">
-    <value>将当前系统磁盘引导部分恢复为备份内容</value>
+    <value>将 .bin 备份在线写回所选物理磁盘的第一个扇区</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Header" xml:space="preserve">
     <value>创建引导备份</value>
@@ -568,13 +568,13 @@
     <value>恢复引导备份</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Description" xml:space="preserve">
-    <value>将当前系统磁盘引导部分保存到指定路径</value>
+    <value>将所选物理磁盘的第一个扇区保存为 .bin 文件</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Button.Content" xml:space="preserve">
     <value>另存文件</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open_Button.Content" xml:space="preserve">
-    <value>打开文件</value>
+    <value>选择并还原</value>
   </data>
   <data name="SettingsPage_Protection_Registry_Others.Header" xml:space="preserve">
     <value>保护其它项目</value>
@@ -1794,4 +1794,45 @@
   <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
     <value>威胁通知，单击查看详细信息</value>
   </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve"><value>选择物理磁盘</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve"><value>选择要创建引导备份的物理磁盘。请根据型号、序列号和容量确认磁盘身份。</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve"><value>选择要写入引导备份的物理磁盘。选错磁盘可能导致系统无法启动。</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve"><value>目标磁盘</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve"><value>继续</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve"><value>关闭</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve"><value>未知磁盘</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve"><value>未知</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve"><value>（系统盘）</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve"><value>磁盘 {0} - {1}{2}</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve"><value>设备：{0}
+序列号：{1}
+容量：{2}
+分区样式：{3}
+总线：{4}</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve"><value>{0:N1} GiB</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve"><value>MBR</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve"><value>GPT</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve"><value>RAW</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve"><value>未知</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve"><value>引导备份</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve"><value>无法创建备份</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve"><value>当前磁盘的第一个扇区不是带有 55 AA 签名的有效 512 字节引导扇区。</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve"><value>无效的引导备份</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve"><value>选择的 .bin 文件必须正好为 512 字节，并以 55 AA 引导签名结尾。</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve"><value>备份已创建</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve"><value>已将 {0} 的引导扇区保存到：
+{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve"><value>确认在线还原</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve"><value>备份文件：{0}
+目标磁盘：{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve"><value>将立即覆盖目标物理磁盘的第一个 512 字节扇区。此在线操作不会锁定或卸载卷；选错磁盘或使用不匹配的备份可能导致系统无法启动。</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve"><value>写入并还原</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve"><value>引导备份已还原</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve"><value>已将引导备份写入 {0}，并通过重新读取验证。</value></data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve"><value>操作失败</value></data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve"><value>无法完成引导备份操作。错误代码：{0}
+请确认应用以管理员身份运行，且磁盘访问未被其他安全软件阻止。</value></data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>未找到物理磁盘</value></data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows 未返回可用的 PhysicalDrive 设备。</value></data>
 </root>

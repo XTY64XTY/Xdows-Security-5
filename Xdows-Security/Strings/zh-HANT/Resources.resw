@@ -559,7 +559,7 @@
     <value>使用傳統文件輪詢的方式進行防護，佔用大但穩定</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Description" xml:space="preserve">
-    <value>將當前系統磁盤引導部分恢復爲備份內容</value>
+    <value>將 .bin 備份線上寫回所選實體磁碟的第一個磁區</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Header" xml:space="preserve">
     <value>創建引導備份</value>
@@ -568,13 +568,13 @@
     <value>恢復引導備份</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Description" xml:space="preserve">
-    <value>將當前系統磁盤引導部分保存到指定路徑</value>
+    <value>將所選實體磁碟的第一個磁區儲存為 .bin 檔案</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Button.Content" xml:space="preserve">
     <value>另存文件</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open_Button.Content" xml:space="preserve">
-    <value>打開文件</value>
+    <value>選擇並還原</value>
   </data>
   <data name="SettingsPage_Protection_Registry_Others.Header" xml:space="preserve">
     <value>保護其它項目</value>
@@ -1794,4 +1794,45 @@
   <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
     <value>威脅通知，按一下以檢視詳細資料</value>
   </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve"><value>選擇實體磁碟</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve"><value>選擇要建立開機備份的實體磁碟。請根據型號、序號和容量確認磁碟身分。</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve"><value>選擇要寫入開機備份的實體磁碟。選錯磁碟可能導致系統無法啟動。</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve"><value>目標磁碟</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve"><value>繼續</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve"><value>取消</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve"><value>關閉</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve"><value>未知磁碟</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve"><value>未知</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve"><value>（系統磁碟）</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve"><value>磁碟 {0} - {1}{2}</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve"><value>裝置：{0}
+序號：{1}
+容量：{2}
+分割樣式：{3}
+匯流排：{4}</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve"><value>{0:N1} GiB</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve"><value>MBR</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve"><value>GPT</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve"><value>RAW</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve"><value>未知</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve"><value>開機備份</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve"><value>無法建立備份</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve"><value>目前磁碟的第一個磁區不是具有 55 AA 簽章的有效 512 位元組開機磁區。</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve"><value>無效的開機備份</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve"><value>選取的 .bin 檔案必須正好為 512 位元組，並以 55 AA 開機簽章結尾。</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve"><value>備份已建立</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve"><value>已將 {0} 的開機磁區儲存至：
+{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve"><value>確認線上還原</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve"><value>備份檔案：{0}
+目標磁碟：{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve"><value>將立即覆寫目標實體磁碟的第一個 512 位元組磁區。此線上操作不會鎖定或卸載磁碟區；選錯磁碟或使用不相符的備份可能導致系統無法啟動。</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve"><value>寫入並還原</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve"><value>開機備份已還原</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve"><value>已將開機備份寫入 {0}，並通過重新讀取驗證。</value></data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve"><value>操作失敗</value></data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve"><value>無法完成開機備份操作。錯誤代碼：{0}
+請確認應用程式以系統管理員身分執行，且磁碟存取未被其他安全軟體阻止。</value></data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>找不到實體磁碟</value></data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows 未傳回可用的 PhysicalDrive 裝置。</value></data>
 </root>

@@ -559,7 +559,7 @@
     <value>Protection using traditional files polling is resource-intensive but stable.</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Description" xml:space="preserve">
-    <value>Recovers system boot sector from backup</value>
+    <value>Write a .bin backup online to the first sector of the selected physical disk</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Header" xml:space="preserve">
     <value>Create boot backup</value>
@@ -568,13 +568,13 @@
     <value>Restore boot backup</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Description" xml:space="preserve">
-    <value>Save the current system boot sector to a file.</value>
+    <value>Save the first sector of the selected physical disk as a .bin file</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Button.Content" xml:space="preserve">
-    <value>Save  File</value>
+    <value>Save file</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open_Button.Content" xml:space="preserve">
-    <value>Open File</value>
+    <value>Select and restore</value>
   </data>
   <data name="SettingsPage_Protection_Registry_Others.Header" xml:space="preserve">
     <value>Protect miscellaneous items</value>
@@ -1795,4 +1795,45 @@ This action may cause you to accidentally run a threat file.</value>
   <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
     <value>Threat notification. Click to view details</value>
   </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve"><value>Select a physical disk</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve"><value>Select the physical disk to back up. Confirm its identity using the model, serial number, and capacity.</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve"><value>Select the physical disk that will receive the boot backup. Selecting the wrong disk can prevent Windows from starting.</value></data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve"><value>Target disk</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve"><value>Continue</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve"><value>Unknown disk</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve"><value>Unknown</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve"><value> (system disk)</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve"><value>Disk {0} - {1}{2}</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve"><value>Device: {0}
+Serial number: {1}
+Capacity: {2}
+Partition style: {3}
+Bus: {4}</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve"><value>{0:N1} GiB</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve"><value>MBR</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve"><value>GPT</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve"><value>RAW</value></data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve"><value>Boot backup</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve"><value>Backup cannot be created</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve"><value>The disk's first sector is not a valid 512-byte boot sector ending in the 55 AA signature.</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve"><value>Invalid boot backup</value></data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve"><value>The selected .bin file must be exactly 512 bytes and end with the 55 AA boot signature.</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve"><value>Backup created</value></data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve"><value>The boot sector for {0} was saved to:
+{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve"><value>Confirm online restore</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve"><value>Backup file: {0}
+Target disk: {1}</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve"><value>This immediately overwrites the first 512-byte sector of the target physical disk. The online operation does not lock or dismount volumes. Selecting the wrong disk or using a mismatched backup can prevent Windows from starting.</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve"><value>Write and restore</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve"><value>Boot backup restored</value></data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve"><value>The boot backup was written to {0} and verified by reading it back.</value></data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve"><value>Operation failed</value></data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve"><value>The boot backup operation could not be completed. Error code: {0}
+Confirm that the app is running as administrator and that disk access is not blocked by other security software.</value></data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>No physical disks found</value></data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows did not return any available PhysicalDrive devices.</value></data>
 </root>

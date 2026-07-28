@@ -273,18 +273,26 @@
                l:Uids.Uid="SettingsPage_Protection_Boot"
                HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
                Margin="0,0,0,4">
-                    <ToggleSwitch Tag="Boot" IsEnabled="False" Toggled="RunProtection"/>
+                    <ToggleSwitch AutomationProperties.AutomationId="SettingsBootProtectionToggle"
+                                  Tag="Boot"
+                                  IsEnabled="False"
+                                  Toggled="RunProtection"/>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
                        l:Uids.Uid="SettingsPage_Protection_Boot_Save"
                        HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">
-                            <Button l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button" Click="Boot_Save_Button_Click"/>
+                            <Button x:Name="BootSaveButton"
+                                    AutomationProperties.AutomationId="SettingsBootBackupButton"
+                                    l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button"
+                                    Click="Boot_Save_Button_Click"/>
                         </controls:SettingsCard>
                         <controls:SettingsCard
                        l:Uids.Uid="SettingsPage_Protection_Boot_Open"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}"
-                       IsEnabled="False">
-                            <Button l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button" />
+                       HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
+                            <Button x:Name="BootRestoreButton"
+                                    AutomationProperties.AutomationId="SettingsBootRestoreButton"
+                                    l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
+                                    Click="Boot_Restore_Button_Click"/>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
