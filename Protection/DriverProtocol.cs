@@ -4,16 +4,18 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 7;
-    public const ulong DriverBuildId = 2026072802;
-    public const uint LegacyUpgradeProtocolVersion = 6;
-    public const ulong LegacyUpgradeDriverBuildId = 2026072801;
-    public const ulong OlderLegacyUpgradeDriverBuildId = 2026071802;
-    public const ulong OldestProtocolV6UpgradeDriverBuildId = 2026071801;
-    public const uint PreviousLegacyUpgradeProtocolVersion = 5;
-    public const ulong PreviousLegacyUpgradeDriverBuildId = 2026071704;
-    public const ulong OldestLegacyUpgradeDriverBuildId = 2026071703;
-    public const int EventTypeCount = 10;
+    public const uint ProtocolVersion = 8;
+    public const ulong DriverBuildId = 2026072901;
+    public const uint LegacyUpgradeProtocolVersion = 7;
+    public const ulong LegacyUpgradeDriverBuildId = 2026072802;
+    public const ulong OlderLegacyUpgradeDriverBuildId = 2026072801;
+    public const uint PreviousLegacyUpgradeProtocolVersion = 6;
+    public const ulong PreviousLegacyUpgradeDriverBuildId = 2026071802;
+    public const ulong OldestLegacyUpgradeDriverBuildId = 2026071801;
+    public const uint OldestLegacyUpgradeProtocolVersion = 5;
+    public const ulong OldestLegacyUpgradeBuildId = 2026071704;
+    public const ulong OldestLegacyUpgradeFallbackBuildId = 2026071703;
+    public const int EventTypeCount = 11;
     public const uint CapabilityPriorityQueue = 0x00000001;
     public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
     public const uint CapabilityBuildId = 0x00000004;
@@ -22,6 +24,7 @@ internal static class DriverProtocol
     public const uint CapabilityProcessManagement = 0x00000020;
     public const uint CapabilityEnhancedSelfProtect = 0x00000040;
     public const uint CapabilityR0BehaviorProtection = 0x00000080;
+    public const uint CapabilityR0BootProtection = 0x00000100;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
@@ -29,7 +32,8 @@ internal static class DriverProtocol
         CapabilityUserDecisionHold |
         CapabilityProcessManagement |
         CapabilityEnhancedSelfProtect |
-        CapabilityR0BehaviorProtection;
+        CapabilityR0BehaviorProtection |
+        CapabilityR0BootProtection;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
@@ -45,6 +49,8 @@ internal static class DriverProtocol
     public const int MaxLogMessageChars = 256;
     public const int MaxProcessNameChars = 260;
     public const int ProcessBatchSize = 64;
+    public const int MaxBootVolumeRoots = 4;
+    public const int MaxBootVolumeRootChars = 128;
     public const string DevicePath = @"\\.\XdowsSecurityDriver";
     public const string GlobalDevicePath = @"\\.\Global\XdowsSecurityDriver";
     public static readonly string[] DevicePaths = [DevicePath, GlobalDevicePath];
@@ -66,6 +72,7 @@ internal static class DriverProtocol
     public static readonly uint SetStartupProtection = CtlCode(FileDeviceXdowsSecurity, 0x80B, MethodBuffered, FileAnyAccess);
     public static readonly uint QueryProcesses = CtlCode(FileDeviceXdowsSecurity, 0x80C, MethodBuffered, FileAnyAccess);
     public static readonly uint OperateProcess = CtlCode(FileDeviceXdowsSecurity, 0x80D, MethodBuffered, FileAnyAccess);
+    public static readonly uint SetBootProtection = CtlCode(FileDeviceXdowsSecurity, 0x80E, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -93,7 +100,8 @@ internal enum XdowsSecurityEventType : uint
     ThreadHandle = 6,
     ImageLoad = 7,
     DriverLog = 8,
-    Behavior = 9
+    Behavior = 9,
+    BootWrite = 10
 }
 
 internal enum XdowsSecurityBehaviorType : uint
@@ -232,6 +240,7 @@ internal struct XdowsSecurityState
     public uint SelfProtectionEnabled;
     public uint ProtectedProcessId;
     public uint StartupProtectionEnabled;
+    public uint BootProtectionEnabled;
     public uint ActiveModules;
     public uint ProtocolVersion;
     public uint Capabilities;
@@ -284,6 +293,28 @@ internal struct XdowsStartupProtectionRequest
     public uint ProcessId;
     public uint Enabled;
     public uint Reserved;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsBootProtectionRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint Enabled;
+    public uint DiskNumber;
+    public uint VolumeRootCount;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxBootVolumeRootChars)]
+    public string VolumeRoot0;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxBootVolumeRootChars)]
+    public string VolumeRoot1;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxBootVolumeRootChars)]
+    public string VolumeRoot2;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxBootVolumeRootChars)]
+    public string VolumeRoot3;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

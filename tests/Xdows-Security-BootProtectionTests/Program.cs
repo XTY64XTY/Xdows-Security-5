@@ -2,6 +2,16 @@ using Helper;
 using Protection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Runtime.InteropServices;
+
+if (Marshal.SizeOf<BootFilterRegisterResponse>() != 32 ||
+    Marshal.SizeOf<BootFilterConfigureRequest>() != 144 ||
+    Marshal.SizeOf<BootFilterWriteEvent>() != 40 ||
+    Marshal.SizeOf<BootFilterDecision>() != 24 ||
+    Marshal.SizeOf<BootFilterState>() != 56)
+{
+    throw new InvalidOperationException("Boot filter managed protocol structure sizes do not match the native ABI.");
+}
 
 if (Crc32.Compute(Encoding.ASCII.GetBytes("123456789")) != 0xCBF43926u)
     throw new InvalidOperationException("GPT CRC32 implementation failed the standard test vector.");

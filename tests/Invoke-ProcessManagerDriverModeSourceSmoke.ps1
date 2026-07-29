@@ -19,7 +19,7 @@ function Assert-Match([string]$Text, [string]$Pattern, [string]$Name) {
     }
 }
 
-Assert-Match $protocol 'ProtocolVersion\s*=\s*7' 'protocol v7'
+Assert-Match $protocol 'ProtocolVersion\s*=\s*8' 'protocol v8'
 Assert-Match $protocol 'CapabilityProcessManagement\s*=\s*0x00000020' 'process management capability mirror'
 Assert-Match $protocol 'QueryProcesses\s*=\s*CtlCode\(FileDeviceXdowsSecurity,\s*0x80C' 'process query IOCTL mirror'
 Assert-Match $protocol 'OperateProcess\s*=\s*CtlCode\(FileDeviceXdowsSecurity,\s*0x80D' 'process operation IOCTL mirror'

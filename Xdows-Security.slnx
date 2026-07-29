@@ -38,6 +38,10 @@
       <Platform Solution="*|ARM64" Project="ARM64" />
       <Platform Solution="*|x64" Project="x64" />
     </Project>
+    <Project Path="../Xdows-Security-Driver/Xdows-Security-BootFilter/Xdows-Security-BootFilter.vcxproj" Id="a3e9f4af-12b7-4d8e-9155-bc93c02b2e11">
+      <Platform Solution="*|ARM64" Project="ARM64" />
+      <Platform Solution="*|x64" Project="x64" />
+    </Project>
   </Folder>
   <Project Path="Helper/Helper.csproj" />
   <Project Path="Protection/Protection.csproj" />

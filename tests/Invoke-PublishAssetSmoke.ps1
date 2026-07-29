@@ -58,7 +58,10 @@ $requiredFiles = @(
     "Xdows-Security-Driver.sys",
     "Driver\Xdows-Security-Driver.inf",
     "Driver\Xdows-Security-Driver.sys",
-    "Driver\xdows-security-driver.cat"
+    "Driver\xdows-security-driver.cat",
+    "Driver\BootFilter\Xdows-Security-BootFilter.inf",
+    "Driver\BootFilter\Xdows-Security-BootFilter.sys",
+    "Driver\BootFilter\xdows-security-bootfilter.cat"
 )
 
 $results = foreach ($relative in $requiredFiles) {
@@ -97,6 +100,16 @@ $driverHashes = @($driverSource, $driverRootCopy, $driverPackageCopy) |
     Select-Object -Unique
 if ($driverHashes.Count -ne 1) {
     throw "Driver hashes differ between source, output root, and packaged Driver directory: $($driverHashes -join ', ')"
+}
+
+$bootFilterSource = Join-Path (Split-Path -Parent $repoRoot) "Xdows-Security-Driver\Xdows-Security-BootFilter\$Platform\$Configuration\Xdows-Security-BootFilter\Xdows-Security-BootFilter.sys"
+$bootFilterPackageCopy = Join-Path $outputDir "Driver\BootFilter\Xdows-Security-BootFilter.sys"
+if (!(Test-Path -LiteralPath $bootFilterSource)) {
+    throw "Current boot filter build output was not found: $bootFilterSource"
+}
+if ((Get-FileHash -LiteralPath $bootFilterSource -Algorithm SHA256).Hash -ne
+    (Get-FileHash -LiteralPath $bootFilterPackageCopy -Algorithm SHA256).Hash) {
+    throw "Packaged boot filter hash does not match the current boot filter build output."
 }
 
 $results | Format-Table -AutoSize

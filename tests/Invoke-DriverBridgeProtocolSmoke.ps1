@@ -56,8 +56,8 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 7 },
-    @{ C = "XDOWS_SECURITY_EVENT_TYPE_COUNT"; Cs = "EventTypeCount"; Expected = 10 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 8 },
+    @{ C = "XDOWS_SECURITY_EVENT_TYPE_COUNT"; Cs = "EventTypeCount"; Expected = 11 },
     @{ C = "XDOWS_SECURITY_CAP_PRIORITY_QUEUE"; Cs = "CapabilityPriorityQueue"; Expected = 1 },
     @{ C = "XDOWS_SECURITY_CAP_DIRTY_WRITE_COALESCING"; Cs = "CapabilityDirtyWriteCoalescing"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_CAP_BUILD_ID"; Cs = "CapabilityBuildId"; Expected = 4 },
@@ -66,6 +66,7 @@ $constants = @(
     @{ C = "XDOWS_SECURITY_CAP_PROCESS_MANAGEMENT"; Cs = "CapabilityProcessManagement"; Expected = 32 },
     @{ C = "XDOWS_SECURITY_CAP_ENHANCED_SELF_PROTECT"; Cs = "CapabilityEnhancedSelfProtect"; Expected = 64 },
     @{ C = "XDOWS_SECURITY_CAP_R0_BEHAVIOR_PROTECTION"; Cs = "CapabilityR0BehaviorProtection"; Expected = 128 },
+    @{ C = "XDOWS_SECURITY_CAP_R0_BOOT_PROTECTION"; Cs = "CapabilityR0BootProtection"; Expected = 256 },
     @{ C = "XDOWS_SECURITY_MAX_PATH_CHARS"; Cs = "MaxPathChars"; Expected = 520 },
     @{ C = "XDOWS_SECURITY_MAX_COMMAND_CHARS"; Cs = "MaxCommandChars"; Expected = 1024 },
     @{ C = "XDOWS_SECURITY_MAX_REASON_CHARS"; Cs = "MaxReasonChars"; Expected = 128 },
@@ -89,13 +90,14 @@ Assert-Equal $cBuildId $csBuildId "Driver build ID"
 Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
 
 $runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
-Assert-Equal 7 $runtimeProtocolVersion "Runtime smoke protocol version"
+Assert-Equal 8 $runtimeProtocolVersion "Runtime smoke protocol version"
 
 foreach ($offsetCheck in @(
     @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
     @{ Pattern = 'SelfProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*28\)'; Name = "runtime self-protection offset" },
     @{ Pattern = 'StartupProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*36\)'; Name = "runtime startup protection offset" },
-    @{ Pattern = 'ProtocolVersion\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*44\)'; Name = "runtime protocol offset" },
+    @{ Pattern = 'BootProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*40\)'; Name = "runtime boot protection offset" },
+    @{ Pattern = 'ProtocolVersion\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*48\)'; Name = "runtime protocol offset" },
     @{ Pattern = 'DriverBuildId\s*=\s*\[BitConverter\]::ToUInt64\(\$buffer,\s*56\)'; Name = "runtime build ID offset" }
 )) {
     if ($runtimeSmokeText -notmatch $offsetCheck.Pattern) {
@@ -111,8 +113,8 @@ foreach ($constant in $constants) {
     Assert-Equal $cValue $csValue "$($constant.C) mirrors DriverProtocol.$($constant.Cs)"
 }
 
-if ($publicText -notmatch 'ULONG\s+ProcessProtectionEnabled;\s*ULONG\s+FileProtectionEnabled;\s*ULONG\s+SelfProtectionEnabled;\s*ULONG\s+ProtectedProcessId;\s*ULONG\s+StartupProtectionEnabled;\s*ULONG\s+ActiveModules;\s*ULONG\s+ProtocolVersion;' -or
-    $protocolText -notmatch 'uint\s+ProcessProtectionEnabled;\s*public\s+uint\s+FileProtectionEnabled;\s*public\s+uint\s+SelfProtectionEnabled;\s*public\s+uint\s+ProtectedProcessId;\s*public\s+uint\s+StartupProtectionEnabled;\s*public\s+uint\s+ActiveModules;\s*public\s+uint\s+ProtocolVersion;') {
+if ($publicText -notmatch 'ULONG\s+ProcessProtectionEnabled;\s*ULONG\s+FileProtectionEnabled;\s*ULONG\s+SelfProtectionEnabled;\s*ULONG\s+ProtectedProcessId;\s*ULONG\s+StartupProtectionEnabled;\s*ULONG\s+BootProtectionEnabled;\s*ULONG\s+ActiveModules;\s*ULONG\s+ProtocolVersion;' -or
+    $protocolText -notmatch 'uint\s+ProcessProtectionEnabled;\s*public\s+uint\s+FileProtectionEnabled;\s*public\s+uint\s+SelfProtectionEnabled;\s*public\s+uint\s+ProtectedProcessId;\s*public\s+uint\s+StartupProtectionEnabled;\s*public\s+uint\s+BootProtectionEnabled;\s*public\s+uint\s+ActiveModules;\s*public\s+uint\s+ProtocolVersion;') {
     throw "XdowsSecurityState module fields are not mirrored in protocol order."
 }
 $checks.Add("XdowsSecurityState module field order") | Out-Null
@@ -134,7 +136,8 @@ $ioctls = @(
     @{ C = "GET_NEXT_LOG"; Cs = "GetNextLog"; Function = 0x80A },
     @{ C = "SET_STARTUP_PROTECTION"; Cs = "SetStartupProtection"; Function = 0x80B },
     @{ C = "QUERY_PROCESSES"; Cs = "QueryProcesses"; Function = 0x80C },
-    @{ C = "OPERATE_PROCESS"; Cs = "OperateProcess"; Function = 0x80D }
+    @{ C = "OPERATE_PROCESS"; Cs = "OperateProcess"; Function = 0x80D },
+    @{ C = "SET_BOOT_PROTECTION"; Cs = "SetBootProtection"; Function = 0x80E }
 )
 
 foreach ($ioctl in $ioctls) {
@@ -161,6 +164,7 @@ $enums = @(
     @{ C = "XdowsSecurityEventImageLoad"; Cs = "ImageLoad"; Value = 7 },
     @{ C = "XdowsSecurityEventDriverLog"; Cs = "DriverLog"; Value = 8 },
     @{ C = "XdowsSecurityEventBehavior"; Cs = "Behavior"; Value = 9 },
+    @{ C = "XdowsSecurityEventBootWrite"; Cs = "BootWrite"; Value = 10 },
     @{ C = "XdowsSecurityBehaviorVssDeletion"; Cs = "VssDeletion"; Value = 1 },
     @{ C = "XdowsSecurityBehaviorHiddenPowerShell"; Cs = "HiddenPowerShell"; Value = 2 },
     @{ C = "XdowsSecurityBehaviorEncodedCommand"; Cs = "EncodedCommand"; Value = 3 },
@@ -194,7 +198,7 @@ foreach ($enum in $enums) {
     Assert-Equal $cValue $csValue "$($enum.C) mirrors C# enum $($enum.Cs)"
 }
 
-foreach ($eventName in @("ProcessCreate", "FileCreate", "FileWrite", "FileRename", "ProcessHandle", "ThreadHandle", "ImageLoad", "Behavior")) {
+foreach ($eventName in @("ProcessCreate", "FileCreate", "FileWrite", "FileRename", "ProcessHandle", "ThreadHandle", "ImageLoad", "Behavior", "BootWrite")) {
     if ($protectionText -notmatch "XdowsSecurityEventType\.$eventName\b") {
         throw "DriverProtection does not handle XdowsSecurityEventType.$eventName"
     }

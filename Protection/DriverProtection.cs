@@ -80,10 +80,12 @@ public sealed class DriverProtection : IProtectionModel
 
     private CancellationTokenSource? _cts;
     private Task? _pumpTask;
+    private Task? _bootPumpTask;
     private Task? _logTask;
     private Task? _quarantineTask;
     private Channel<PendingQuarantine>? _quarantineChannel;
     private DriverBridgeClient? _client;
+    private BootFilterClient? _bootClient;
     private NativeModelScanner? _scanner;
     private InterceptCallBack? _interceptCallBack;
 
@@ -167,6 +169,27 @@ public sealed class DriverProtection : IProtectionModel
                     return false;
                 }
 
+                DriverRepairResult bootFilterReady = DriverInstaller
+                    .EnsureBootFilterInstalledAndStartedAsync(_cts.Token)
+                    .GetAwaiter()
+                    .GetResult();
+                if (!bootFilterReady.Success)
+                {
+                    LogCallback?.Invoke(new DriverProtectionLogEntry(
+                        0,
+                        0,
+                        DriverProtectionLogSeverity.Error,
+                        0,
+                        DateTimeOffset.Now,
+                        "BootProtect",
+                        bootFilterReady.Message));
+                    CleanupLocked();
+                    return false;
+                }
+
+                BootDriverProtectionConfiguration bootConfiguration =
+                    BootProtectionSnapshotService.CreateDriverConfiguration();
+
                 _client = new DriverBridgeClient();
                 Log("Bridge", "Connecting DriverBridgeClient...");
                 _client.Connect();
@@ -183,6 +206,31 @@ public sealed class DriverProtection : IProtectionModel
                         $"capabilities=0x{state.Capabilities:X8}, requiredCapabilities=0x{DriverProtocol.RequiredCapabilities:X8}, " +
                         $"process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
                 }
+
+                _client.SetBootProtection(bootConfiguration);
+                state = _client.GetState();
+                if (state.BootProtectionEnabled == 0)
+                    throw new InvalidOperationException("The main minifilter did not activate EFI and BCD protection.");
+
+                _bootClient = new BootFilterClient();
+                _bootClient.Connect();
+                _bootClient.Configure(bootConfiguration);
+                BootFilterState bootState = _bootClient.GetState();
+                if (bootState.ClientConnected == 0 ||
+                    bootState.Configured == 0 ||
+                    bootState.Attached == 0 ||
+                    bootState.DiskNumber != (uint)bootConfiguration.DiskIndex)
+                {
+                    throw new InvalidOperationException(
+                        $"Boot filter state is incomplete " +
+                        $"(connected={bootState.ClientConnected}, configured={bootState.Configured}, " +
+                        $"attached={bootState.Attached}, disk={bootState.DiskNumber}, " +
+                        $"expectedDisk={bootConfiguration.DiskIndex}).");
+                }
+                Log(
+                    "BootProtect",
+                    $"R0 boot protection attached PhysicalDrive{bootConfiguration.DiskIndex} " +
+                    $"rawRanges={bootConfiguration.RawRegions.Count} volumes={bootConfiguration.NtVolumeRoots.Count}");
 
                 Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
                 _scanner = new NativeModelScanner(ModelMode);
@@ -226,6 +274,10 @@ public sealed class DriverProtection : IProtectionModel
                     HandleDriverEventAsync,
                     QueuePostDecisionWorkAsync,
                     _cts.Token));
+                BootFilterClient bootClient = _bootClient;
+                _bootPumpTask = Task.Run(() => bootClient.RunEventPumpAsync(
+                    HandleRawBootWriteAsync,
+                    _cts.Token));
                 _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));
                 Log("Bridge", "Event pump and log pump started");
                 return true;
@@ -258,7 +310,7 @@ public sealed class DriverProtection : IProtectionModel
     {
         lock (StateLock)
         {
-            if (!IsRun())
+            if (_cts is null)
                 return true;
 
             bool shutdownAuthorized = false;
@@ -272,27 +324,20 @@ public sealed class DriverProtection : IProtectionModel
                 }
 
                 _cts?.Cancel();
-                try
-                {
-                    _pumpTask?.Wait(2000);
-                    _logTask?.Wait(2000);
-                    _quarantineTask?.Wait(2000);
-                }
-                catch
-                {
-                }
-
                 CleanupLocked();
 
+                DriverServiceOperationResult bootStop = DriverServiceControl.Stop(
+                    DriverPackageLocator.BootFilterServiceName);
                 DriverServiceOperationResult stop = DriverServiceControl.Stop(DriverPackageLocator.ServiceName);
-                if (!stop.Success)
+                if (!stop.Success || !bootStop.Success)
                 {
-                    Log("Bridge", $"Authorized driver stop failed: {stop.Message}");
-                    RelockDriverUnloadAfterFailedStop();
+                    Log("Bridge", $"Authorized driver stop failed: main={stop.Message}; boot={bootStop.Message}");
+                    if (!stop.Success)
+                        RelockDriverUnloadAfterFailedStop();
                     return false;
                 }
 
-                Log("Bridge", $"Authorized driver stop accepted: {stop.Message}");
+                Log("Bridge", $"Authorized driver stop accepted: main={stop.Message}; boot={bootStop.Message}");
                 return true;
             }
             catch (Exception ex)
@@ -325,7 +370,8 @@ public sealed class DriverProtection : IProtectionModel
     public bool IsRun()
     {
         return _cts is { IsCancellationRequested: false } &&
-            _client is { IsConnected: true };
+            _client is { IsConnected: true } &&
+            _bootClient is { IsConnected: true };
     }
 
     public bool TrySetVoluntaryExit(bool isVoluntaryExit)
@@ -357,12 +403,23 @@ public sealed class DriverProtection : IProtectionModel
         _client?.Dispose();
         _client = null;
 
+        try
+        {
+            _bootClient?.Disconnect();
+        }
+        catch
+        {
+        }
+        _bootClient?.Dispose();
+        _bootClient = null;
+
         _scanner?.Dispose();
         _scanner = null;
 
         _cts?.Dispose();
         _cts = null;
         _pumpTask = null;
+        _bootPumpTask = null;
         _logTask = null;
         _quarantineTask = null;
         _quarantineChannel = null;
@@ -591,8 +648,99 @@ public sealed class DriverProtection : IProtectionModel
                 XdowsSecurityEventType.ThreadHandle or
                 XdowsSecurityEventType.ImageLoad => await HandleSensitiveOperationAsync(driverEvent, token).ConfigureAwait(false),
             XdowsSecurityEventType.Behavior => await HandleBehaviorEventAsync(driverEvent, token).ConfigureAwait(false),
+            XdowsSecurityEventType.BootWrite => await HandleBootFileWriteAsync(driverEvent, token).ConfigureAwait(false),
             _ => DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Allow, "unsupported-event")
         };
+    }
+
+    private async Task<XdowsSecurityDecision> HandleBootFileWriteAsync(
+        XdowsSecurityEvent driverEvent,
+        CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!TryEnterUserDecisionHold(driverEvent))
+        {
+            return DriverBridgeClient.CreateDecision(
+                driverEvent.EventId,
+                XdowsSecurityDecisionType.Block,
+                "boot-file-user-hold-failed-block");
+        }
+
+        string path = DriverPathNormalizer.Normalize(CleanDriverString(driverEvent.ImagePath));
+        string? actorPath = ResolveActorPath(driverEvent);
+        var request = new ProtectionDecisionRequest(
+            string.IsNullOrWhiteSpace(path) ? "EFI/BCD" : path,
+            "Boot",
+            "Xdows.R0.BootFileWrite",
+            100,
+            checked((int)driverEvent.ProcessId),
+            checked((int)driverEvent.ParentProcessId),
+            null,
+            actorPath,
+            EventId: driverEvent.EventId,
+            CorrelationId: driverEvent.CorrelationId,
+            Module: ProtectionModule.Boot,
+            Backend: ProtectionBackend.Driver,
+            DecisionDeadline: DateTimeOffset.UtcNow.Add(UserDecisionTimeout));
+        ProtectionUserDecision userDecision = await AskUserAfterHoldAsync(
+            request,
+            driverEvent,
+            token).ConfigureAwait(false);
+
+        return userDecision == ProtectionUserDecision.Allow
+            ? Allow(driverEvent.EventId, "user-release-boot-file")
+            : DriverBridgeClient.CreateDecision(
+                driverEvent.EventId,
+                XdowsSecurityDecisionType.Block,
+                userDecision == ProtectionUserDecision.Timeout
+                    ? "boot-file-user-timeout-block"
+                    : "user-block-boot-file");
+    }
+
+    private async Task<BootFilterDecisionType> HandleRawBootWriteAsync(
+        BootFilterWriteEvent writeEvent,
+        CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        DateTimeOffset deadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
+        string path = $"PhysicalDrive{writeEvent.DiskNumber} @ 0x{writeEvent.Offset:X} (+{writeEvent.Length} bytes)";
+        string? actorPath = writeEvent.ProcessId == 0
+            ? null
+            : DriverPathNormalizer.Normalize(SignerTrustService.TryResolveProcessPath(writeEvent.ProcessId));
+        var request = new ProtectionDecisionRequest(
+            path,
+            "Boot",
+            "Xdows.R0.RawBootWrite",
+            100,
+            checked((int)writeEvent.ProcessId),
+            0,
+            null,
+            actorPath,
+            EventId: writeEvent.EventId,
+            CorrelationId: writeEvent.EventId,
+            Module: ProtectionModule.Boot,
+            Backend: ProtectionBackend.Driver,
+            DecisionDeadline: deadline);
+
+        LogCallback?.Invoke(new DriverProtectionLogEntry(
+            writeEvent.EventId,
+            writeEvent.EventId,
+            DriverProtectionLogSeverity.Warning,
+            0,
+            DateTimeOffset.Now,
+            "BootProtect",
+            $"Raw boot write blocked pending user decision: {path}"));
+
+        if (DecisionCallback is null)
+            return BootFilterDecisionType.Block;
+
+        ProtectionUserDecision decision = await DriverDecisionService.AskUserAsync(
+            callbackToken => DecisionCallback(request, callbackToken),
+            deadline - DateTimeOffset.UtcNow,
+            token).ConfigureAwait(false);
+        return decision == ProtectionUserDecision.Allow
+            ? BootFilterDecisionType.Allow
+            : BootFilterDecisionType.Block;
     }
 
     private async Task<XdowsSecurityDecision> HandleBehaviorEventAsync(

@@ -7,6 +7,7 @@ namespace Helper
         File,
         Injection,
         Behavior,
+        Boot,
         SelfProtection
     }
 

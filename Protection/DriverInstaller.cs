@@ -37,6 +37,11 @@ public static class DriverInstaller
         return DriverLoadWorkflow.EnsureReadyAsync(token);
     }
 
+    public static Task<DriverRepairResult> EnsureBootFilterInstalledAndStartedAsync(CancellationToken token = default)
+    {
+        return BootFilterLoadWorkflow.EnsureReadyAsync(token);
+    }
+
     public static Task<DriverRepairResult> UninstallDriverAsync(CancellationToken token = default)
     {
         return DriverLoadWorkflow.UninstallAsync(token);
@@ -183,6 +188,56 @@ public static class DriverInstaller
         {
             return null;
         }
+    }
+}
+
+internal static class BootFilterLoadWorkflow
+{
+    public static async Task<DriverRepairResult> EnsureReadyAsync(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        DriverPackage? package = DriverPackageLocator.FindBootFilter();
+        if (package is null)
+            return new DriverRepairResult(false, DriverPackageLocator.CreateBootFilterNotFoundMessage());
+
+        DriverRepairResult trust = DriverCertificateTrustInstaller.TrustIfPresent(package);
+        if (!trust.Success)
+            return trust;
+
+        DriverServiceSnapshot service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
+        if (service.IsMissing)
+        {
+            DriverRepairResult install = await Task.Run(() =>
+            {
+                return DriverPackageInstaller.Install(package.InfPath, out string message)
+                    ? new DriverRepairResult(true, message)
+                    : new DriverRepairResult(false, message);
+            }, token).ConfigureAwait(false);
+            if (!install.Success)
+                return install;
+            service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
+        }
+
+        if (service.State == DriverServiceState.Unknown || service.IsMissing)
+            return new DriverRepairResult(false, $"Boot filter service is unavailable. {service.Detail}");
+        if (!service.IsRunning)
+        {
+            DriverServiceOperationResult start = DriverServiceControl.Start(DriverPackageLocator.BootFilterServiceName);
+            if (!start.Success)
+                return new DriverRepairResult(false, start.Message);
+
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                await Task.Delay(250, token).ConfigureAwait(false);
+                service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
+                if (service.IsRunning)
+                    break;
+            }
+        }
+
+        return service.IsRunning
+            ? new DriverRepairResult(true, "Boot filter service is installed and running without requiring a restart.")
+            : new DriverRepairResult(false, $"Boot filter service did not enter RUNNING state. {service.Detail}");
     }
 }
 

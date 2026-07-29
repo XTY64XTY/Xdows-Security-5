@@ -10,12 +10,12 @@ $public = Get-Content -LiteralPath $publicPath -Raw
 $protocol = Get-Content -LiteralPath $protocolPath -Raw
 $protection = Get-Content -LiteralPath $protectionPath -Raw
 
-if ($public -notmatch 'XDOWS_SECURITY_PROTOCOL_VERSION\s+4u' -or
-    $protocol -notmatch 'ProtocolVersion\s*=\s*4;') {
-    throw "Protocol v4 is not mirrored."
+if ($public -notmatch 'XDOWS_SECURITY_PROTOCOL_VERSION\s+8u' -or
+    $protocol -notmatch 'ProtocolVersion\s*=\s*8;') {
+    throw "Protocol v8 is not mirrored."
 }
-if ($public -notmatch 'ULONG\s+FileProtectionEnabled;\s*ULONG\s+SelfProtectionEnabled;\s*ULONG\s+ProtectedProcessId;\s*ULONG\s+StartupProtectionEnabled;\s*ULONG\s+ActiveModules;' -or
-    $protocol -notmatch 'uint\s+FileProtectionEnabled;\s*public\s+uint\s+SelfProtectionEnabled;\s*public\s+uint\s+ProtectedProcessId;\s*public\s+uint\s+StartupProtectionEnabled;\s*public\s+uint\s+ActiveModules;') {
+if ($public -notmatch 'ULONG\s+FileProtectionEnabled;\s*ULONG\s+SelfProtectionEnabled;\s*ULONG\s+ProtectedProcessId;\s*ULONG\s+StartupProtectionEnabled;\s*ULONG\s+BootProtectionEnabled;\s*ULONG\s+ActiveModules;' -or
+    $protocol -notmatch 'uint\s+FileProtectionEnabled;\s*public\s+uint\s+SelfProtectionEnabled;\s*public\s+uint\s+ProtectedProcessId;\s*public\s+uint\s+StartupProtectionEnabled;\s*public\s+uint\s+BootProtectionEnabled;\s*public\s+uint\s+ActiveModules;') {
     throw "Self-protection state field order is not mirrored."
 }
 if ($protection -notmatch 'SelfProtectionEnabled\s*==\s*0' -or

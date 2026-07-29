@@ -230,7 +230,7 @@ namespace Xdows_Security
             if (App.MainWindow?.DispatcherQueue is null)
                 return ProtectionUserDecision.Block;
 
-            if (request.Module != Helper.ProtectionModule.Behavior &&
+            if (request.Module is not Helper.ProtectionModule.Behavior and not Helper.ProtectionModule.Boot &&
                 await ThreatNotificationModeService.ShouldUseCompactAsync().ConfigureAwait(false))
             {
                 bool compactNotificationQueued = App.MainWindow.DispatcherQueue.TryEnqueue(() =>

@@ -307,7 +307,7 @@ public sealed class LegacyBootProtection : IProtectionModel
         LogCallback?.Invoke(message);
     }
 
-    private static PhysicalDiskInfo GetSystemBootDisk()
+    internal static PhysicalDiskInfo GetSystemBootDisk()
     {
         PhysicalDiskInfo[] disks = DiskOperator.GetPhysicalDisks()
             .OrderBy(disk => disk.Index)
@@ -372,6 +372,12 @@ internal sealed record BootRawRegion(
     Int64 Offset,
     Byte[] Data);
 
+internal sealed record BootDriverProtectionConfiguration(
+    Int32 DiskIndex,
+    String DiskModel,
+    IReadOnlyList<BootRawRegion> RawRegions,
+    IReadOnlyList<String> NtVolumeRoots);
+
 internal sealed record BootFileEntry(
     String VolumeRoot,
     String RelativePath,
@@ -399,6 +405,30 @@ internal static class BootProtectionSnapshotService
     private const Int64 MaxProtectedFileBytes = 64L * 1024 * 1024;
     private const Int64 MaxProtectedFilesTotalBytes = 256L * 1024 * 1024;
     private static readonly Byte[] GptSignature = "EFI PART"u8.ToArray();
+
+    public static BootDriverProtectionConfiguration CreateDriverConfiguration()
+    {
+        PhysicalDiskInfo disk = LegacyBootProtection.GetSystemBootDisk();
+        Int32 sectorSize = DiskOperator.GetLogicalSectorSize(disk.Index);
+        IReadOnlyList<BootRawRegion> rawRegions = CaptureInitialRawRegions(disk, sectorSize);
+        IReadOnlyList<String> protectedRoots = BootVolumeLocator.FindProtectedRoots(disk.Index);
+        String[] ntVolumeRoots = protectedRoots
+            .Select(root => root.Split('|', 2)[0])
+            .Select(BootVolumeLocator.GetNtVolumeRoot)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (ntVolumeRoots.Length == 0)
+            throw new IOException("No active EFI or BCD boot volume could be mapped to an NT device path.");
+        if (ntVolumeRoots.Length > 4)
+            throw new IOException("The active boot configuration spans more than four protected volumes.");
+
+        return new BootDriverProtectionConfiguration(
+            disk.Index,
+            disk.Model,
+            rawRegions,
+            ntVolumeRoots);
+    }
 
     public static BootProtectionSnapshot CaptureInitial(PhysicalDiskInfo disk)
     {
@@ -866,6 +896,7 @@ internal static class BootVolumeLocator
     private const UInt32 OpenExisting = 3;
     private const UInt32 IoctlVolumeGetVolumeDiskExtents = 0x00560000;
     private const Int32 ErrorNoMoreFiles = 18;
+    private const Int32 ErrorInsufficientBuffer = 122;
     private static readonly String[] CandidateRoots =
     [
         @"EFI\Microsoft\Boot",
@@ -891,6 +922,12 @@ internal static class BootVolumeLocator
         UInt32 creationDisposition,
         UInt32 flagsAndAttributes,
         IntPtr templateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern UInt32 QueryDosDeviceW(
+        String deviceName,
+        Char[] targetPath,
+        UInt32 maximumLength);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern Boolean DeviceIoControl(
@@ -970,6 +1007,46 @@ internal static class BootVolumeLocator
         {
             return null;
         }
+    }
+
+    public static String GetNtVolumeRoot(String volumeRoot)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(volumeRoot);
+        String normalized = volumeRoot.TrimEnd('\\');
+        if (normalized.StartsWith(@"\Device\", StringComparison.OrdinalIgnoreCase))
+            return normalized;
+
+        String dosDeviceName;
+        if (normalized.StartsWith(@"\\?\", StringComparison.OrdinalIgnoreCase))
+            dosDeviceName = normalized[4..];
+        else if (normalized.Length >= 2 && normalized[1] == ':')
+            dosDeviceName = normalized[..2];
+        else
+            throw new IOException($"Unsupported boot volume path: {volumeRoot}.");
+
+        Int32 bufferSize = 512;
+        while (bufferSize <= 64 * 1024)
+        {
+            Char[] buffer = new Char[bufferSize];
+            UInt32 length = QueryDosDeviceW(dosDeviceName, buffer, (UInt32)buffer.Length);
+            if (length != 0)
+            {
+                Int32 terminator = Array.IndexOf(buffer, '\0');
+                if (terminator < 0)
+                    terminator = checked((Int32)length);
+                String target = new(buffer, 0, terminator);
+                if (!target.StartsWith(@"\Device\", StringComparison.OrdinalIgnoreCase))
+                    throw new IOException($"Boot volume {volumeRoot} resolved to an invalid NT path.");
+                return target.TrimEnd('\\');
+            }
+
+            Int32 error = Marshal.GetLastWin32Error();
+            if (error != ErrorInsufficientBuffer)
+                throw new IOException($"Failed to resolve boot volume {volumeRoot}. Win32 error {error}.");
+            bufferSize *= 2;
+        }
+
+        throw new IOException($"The NT path for boot volume {volumeRoot} exceeded the supported size.");
     }
 
     private static IReadOnlyList<String> TryGetActiveBootVolumeRoots(Int32 diskIndex)

@@ -15,14 +15,19 @@ internal sealed class DriverBridgeClient : IDisposable
             DriverProtocol.LegacyUpgradeProtocolVersion,
             [
                 DriverProtocol.LegacyUpgradeDriverBuildId,
-                DriverProtocol.OlderLegacyUpgradeDriverBuildId,
-                DriverProtocol.OldestProtocolV6UpgradeDriverBuildId
+                DriverProtocol.OlderLegacyUpgradeDriverBuildId
             ]),
         new(
             DriverProtocol.PreviousLegacyUpgradeProtocolVersion,
             [
                 DriverProtocol.PreviousLegacyUpgradeDriverBuildId,
                 DriverProtocol.OldestLegacyUpgradeDriverBuildId
+            ]),
+        new(
+            DriverProtocol.OldestLegacyUpgradeProtocolVersion,
+            [
+                DriverProtocol.OldestLegacyUpgradeBuildId,
+                DriverProtocol.OldestLegacyUpgradeFallbackBuildId
             ])
     ];
 
@@ -410,6 +415,34 @@ internal sealed class DriverBridgeClient : IDisposable
 
         if (!DeviceIoControlNoOutput(request, DriverProtocol.SetStartupProtection))
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to set startup self-protection state.");
+    }
+
+    public void SetBootProtection(BootDriverProtectionConfiguration configuration)
+    {
+        EnsureConnected();
+        ArgumentNullException.ThrowIfNull(configuration);
+        if (configuration.NtVolumeRoots.Count is < 1 or > DriverProtocol.MaxBootVolumeRoots)
+            throw new InvalidDataException("Boot protection requires between one and four NT volume roots.");
+
+        string[] roots = configuration.NtVolumeRoots
+            .Select(root => Truncate(root, DriverProtocol.MaxBootVolumeRootChars - 1))
+            .Concat(Enumerable.Repeat(string.Empty, DriverProtocol.MaxBootVolumeRoots))
+            .Take(DriverProtocol.MaxBootVolumeRoots)
+            .ToArray();
+        var request = new XdowsBootProtectionRequest
+        {
+            Header = DriverProtocol.Header<XdowsBootProtectionRequest>(),
+            Enabled = 1,
+            DiskNumber = checked((uint)configuration.DiskIndex),
+            VolumeRootCount = checked((uint)configuration.NtVolumeRoots.Count),
+            VolumeRoot0 = roots[0],
+            VolumeRoot1 = roots[1],
+            VolumeRoot2 = roots[2],
+            VolumeRoot3 = roots[3]
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.SetBootProtection))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure EFI and BCD protection.");
     }
 
     public IReadOnlyList<XdowsDriverProcessEntry> QueryProcesses()

@@ -47,6 +47,6 @@ foreach ($detection in @(
     Assert-Match $files.Protection "Xdows\.Behavior\.$detection" "$detection detection mapping"
 }
 
-Assert-Match $files.App 'request\.Module\s*!=\s*Helper\.ProtectionModule\.Behavior(?s:.*?)ShouldUseCompactAsync' 'behavior decisions bypass compact auto-block mode'
+Assert-Match $files.App 'request\.Module\s+is\s+not\s+Helper\.ProtectionModule\.Behavior(?s:.*?)ShouldUseCompactAsync' 'behavior decisions bypass compact auto-block mode'
 
 Write-Host "R0 behavior protection managed source smoke passed."

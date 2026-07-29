@@ -9,10 +9,10 @@ $ErrorActionPreference = "Stop"
 $serviceName = "Xdows-Security-Driver"
 $devicePaths = @("\\.\XdowsSecurityDriver", "\\.\Global\XdowsSecurityDriver")
 $ioctlGetState = [Convert]::ToUInt32("80002014", 16)
-$expectedProtocolVersion = [uint32]7
-$expectedDriverBuildId = [uint64]2026072802
+$expectedProtocolVersion = [uint32]8
+$expectedDriverBuildId = [uint64]2026072901
 $expectedStateSize = [uint32]192
-$expectedCapabilities = [uint32]0x000000FF
+$expectedCapabilities = [uint32]0x000001FF
 
 function Test-IsAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -220,9 +220,10 @@ function Test-DriverBridge {
                 SelfProtectionEnabled = [BitConverter]::ToUInt32($buffer, 28)
                 ProtectedProcessId = [BitConverter]::ToUInt32($buffer, 32)
                 StartupProtectionEnabled = [BitConverter]::ToUInt32($buffer, 36)
-                ActiveModules = [BitConverter]::ToUInt32($buffer, 40)
-                ProtocolVersion = [BitConverter]::ToUInt32($buffer, 44)
-                Capabilities = [BitConverter]::ToUInt32($buffer, 48)
+                BootProtectionEnabled = [BitConverter]::ToUInt32($buffer, 40)
+                ActiveModules = [BitConverter]::ToUInt32($buffer, 44)
+                ProtocolVersion = [BitConverter]::ToUInt32($buffer, 48)
+                Capabilities = [BitConverter]::ToUInt32($buffer, 52)
                 DriverBuildId = [BitConverter]::ToUInt64($buffer, 56)
             }
         }

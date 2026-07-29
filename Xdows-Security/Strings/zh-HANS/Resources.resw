@@ -1351,6 +1351,7 @@
   <data name="InterceptWindow_Module_File" xml:space="preserve"><value>文件防护</value></data>
   <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>注入防护</value></data>
   <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>行为防护</value></data>
+  <data name="InterceptWindow_Module_Boot" xml:space="preserve"><value>引导防护</value></data>
   <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>自我防护</value></data>
   <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>实时防护</value></data>
   <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>驱动模式</value></data>

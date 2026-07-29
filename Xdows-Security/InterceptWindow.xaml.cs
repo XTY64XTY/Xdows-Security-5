@@ -183,6 +183,7 @@ namespace Xdows_Security
                 Helper.ProtectionModule.File => "InterceptWindow_Module_File",
                 Helper.ProtectionModule.Injection => "InterceptWindow_Module_Injection",
                 Helper.ProtectionModule.Behavior => "InterceptWindow_Module_Behavior",
+                Helper.ProtectionModule.Boot => "InterceptWindow_Module_Boot",
                 Helper.ProtectionModule.SelfProtection => "InterceptWindow_Module_SelfProtection",
                 _ => "InterceptWindow_Module_Unknown"
             };
