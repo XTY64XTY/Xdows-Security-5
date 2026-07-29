@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.Windows.Storage.Pickers;
+using Protection;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,6 +31,7 @@ namespace Xdows_Security.Views
         private const string DriverProtectionDisclaimerAcceptedSetting = "DriverProtectionDisclaimerAccepted";
         private bool _driverProtectionOperationInProgress;
         private bool _bootOperationInProgress;
+        private bool _bootProtectionOperationInProgress;
 
         private sealed record BootDiskChoice(PhysicalDiskInfo Disk, String Title);
 
@@ -58,6 +60,7 @@ namespace Xdows_Security.Views
             UpdateDriverProtectionState();
             UpdateProtectionToggleState(ProcessToggle, 0);
             UpdateProtectionToggleState(FilesToggle, 1);
+            UpdateBootProtectionToggleState();
             UpdateProtectionToggleState(RegistryToggle, 4);
             ApplyDriverProtectionControlState();
         }
@@ -68,6 +71,14 @@ namespace Xdows_Security.Views
             toggle.Toggled -= RunProtection;
             toggle.IsOn = ProtectionStatus.IsRun(runId);
             toggle.Toggled += RunProtection;
+        }
+
+        private void UpdateBootProtectionToggleState()
+        {
+            if (BootProtectionToggle == null) return;
+            BootProtectionToggle.Toggled -= BootProtectionToggle_Toggled;
+            BootProtectionToggle.IsOn = ProtectionStatus.IsRun(2);
+            BootProtectionToggle.Toggled += BootProtectionToggle_Toggled;
         }
 
         private async Task InitializeAsync()
@@ -83,6 +94,8 @@ namespace Xdows_Security.Views
 
                     if (!App.IsRunAsAdmin())
                     {
+                        BootProtectionToggle?.IsEnabled = false;
+                        BootProtectionToggle?.IsOn = false;
                         RegistryToggle?.IsEnabled = false;
                         RegistryToggle?.IsOn = false;
                     }
@@ -138,6 +151,7 @@ namespace Xdows_Security.Views
                 DriverProtectionToggle.IsEnabled = false;
                 ProcessToggle.IsEnabled = false;
                 FilesToggle.IsEnabled = false;
+                BootProtectionToggle.IsEnabled = false;
                 RegistryToggle.IsEnabled = false;
                 Process_CompatibilityMode.IsOn = true;
                 Files_CompatibilityMode.IsOn = true;
@@ -151,6 +165,9 @@ namespace Xdows_Security.Views
             DriverProtectionToggle.IsEnabled = true;
             ProcessToggle.IsEnabled = !driverRunning;
             FilesToggle.IsEnabled = !driverRunning;
+            BootProtectionToggle.IsEnabled = !driverRunning &&
+                !_bootProtectionOperationInProgress &&
+                App.IsRunAsAdmin();
             RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
             Process_CompatibilityMode.IsOn = true;
             Files_CompatibilityMode.IsOn = true;
@@ -285,6 +302,82 @@ namespace Xdows_Security.Views
                 _ => 0
             };
             RunProtectionWithToggle(toggle, runId);
+        }
+
+        private async void BootProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (sender is not ToggleSwitch toggle || IsInitialize) return;
+            await RunBootProtectionToggleAsync(toggle);
+        }
+
+        private async Task RunBootProtectionToggleAsync(ToggleSwitch toggle)
+        {
+            if (_bootProtectionOperationInProgress)
+            {
+                SetBootProtectionToggleSilently(ProtectionStatus.IsRun(2));
+                return;
+            }
+
+            Boolean requestedOn = toggle.IsOn;
+            _bootProtectionOperationInProgress = true;
+            ApplyDriverProtectionControlState();
+            Boolean operationSucceeded = false;
+            Boolean failureShown = false;
+
+            try
+            {
+                if (requestedOn)
+                {
+                    BootProtectionPreparation preparation = await Task.Run(
+                        ProtectionStatus.InspectBootProtectionPreparation);
+                    if (!preparation.HasTrustedBaseline)
+                    {
+                        Boolean accepted = await ConfirmBootProtectionBaselineAsync(preparation);
+                        if (!accepted)
+                            return;
+
+                        await Task.Run(ProtectionStatus.CreateBootProtectionBaseline);
+                    }
+                }
+
+                operationSucceeded = await Task.Run(() =>
+                {
+                    if (ProtectionStatus.IsRun(2) == requestedOn)
+                        return true;
+                    return ProtectionStatus.Run(2);
+                });
+            }
+            catch (Exception ex)
+            {
+                failureShown = true;
+                AddNewLog(LogLevel.ERROR, "R3BootProtection", ex.Message);
+                await ShowBootMessageAsync(
+                    BootText("SettingsPage_Protection_Boot_ProtectionFailed_Title"),
+                    BootFormat(
+                        "SettingsPage_Protection_Boot_ProtectionFailed_Message",
+                        $"0x{ex.HResult:X8}"));
+            }
+            finally
+            {
+                _bootProtectionOperationInProgress = false;
+                SetBootProtectionToggleSilently(ProtectionStatus.IsRun(2));
+                ApplyDriverProtectionControlState();
+            }
+
+            if (!operationSucceeded && requestedOn && !failureShown)
+            {
+                await ShowBootMessageAsync(
+                    BootText("SettingsPage_Protection_Boot_ProtectionFailed_Title"),
+                    BootText("SettingsPage_Protection_Boot_ProtectionStartFailed_Message"));
+            }
+        }
+
+        private void SetBootProtectionToggleSilently(Boolean isOn)
+        {
+            if (BootProtectionToggle == null) return;
+            BootProtectionToggle.Toggled -= BootProtectionToggle_Toggled;
+            BootProtectionToggle.IsOn = isOn;
+            BootProtectionToggle.Toggled += BootProtectionToggle_Toggled;
         }
 
         private async void DriverProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
@@ -575,6 +668,7 @@ namespace Xdows_Security.Views
 
             ProcessToggle.IsOn = ProtectionStatus.IsRun(0);
             FilesToggle.IsOn = ProtectionStatus.IsRun(1);
+            BootProtectionToggle.IsOn = ProtectionStatus.IsRun(2);
             RegistryToggle.IsOn = ProtectionStatus.IsRun(4);
             DriverProtectionToggle.IsOn = ProtectionStatus.IsRun(5);
             UpdateDriverProtectionState();
@@ -1430,6 +1524,59 @@ namespace Xdows_Security.Views
             return await dialog.ShowAsync() == ContentDialogResult.Primary
                 ? diskSelector.SelectedItem as BootDiskChoice
                 : null;
+        }
+
+        private async Task<Boolean> ConfirmBootProtectionBaselineAsync(
+            BootProtectionPreparation preparation)
+        {
+            StackPanel content = new()
+            {
+                Spacing = 12,
+                MinWidth = 440
+            };
+            content.Children.Add(new TextBlock
+            {
+                Text = BootText("SettingsPage_Protection_Boot_Baseline_Message"),
+                TextWrapping = TextWrapping.Wrap
+            });
+            content.Children.Add(new TextBlock
+            {
+                Text = FormatDiskDetails(preparation.Disk),
+                TextWrapping = TextWrapping.Wrap,
+                Style = Application.Current.Resources["CaptionTextBlockStyle"] as Style
+            });
+            content.Children.Add(new TextBlock
+            {
+                Text = BootText(
+                    preparation.Disk.PartitionStyle == PhysicalDiskPartitionStyle.Gpt
+                        ? "SettingsPage_Protection_Boot_Baseline_Scope_Gpt"
+                        : "SettingsPage_Protection_Boot_Baseline_Scope_Mbr"),
+                TextWrapping = TextWrapping.Wrap
+            });
+            content.Children.Add(new InfoBar
+            {
+                IsOpen = true,
+                IsClosable = false,
+                Severity = InfoBarSeverity.Warning,
+                Message = BootText("SettingsPage_Protection_Boot_Baseline_Warning")
+            });
+
+            ContentDialog dialog = new()
+            {
+                Title = BootText("SettingsPage_Protection_Boot_Baseline_Title"),
+                Content = content,
+                PrimaryButtonText = BootText("SettingsPage_Protection_Boot_Baseline_Primary"),
+                CloseButtonText = BootText("SettingsPage_Protection_Boot_Dialog_Cancel"),
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot,
+                RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
+            };
+            AutomationProperties.SetAutomationId(dialog, "BootProtectionBaselineDialog");
+            AutomationProperties.SetName(
+                dialog,
+                BootText("SettingsPage_Protection_Boot_Baseline_Title"));
+
+            return await dialog.ShowAsync() == ContentDialogResult.Primary;
         }
 
         private async Task<Boolean> ConfirmBootRestoreAsync(

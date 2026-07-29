@@ -32,7 +32,8 @@ Assert-Match $files.Disk 'IoctlStorageQueryProperty' 'disk model and serial quer
 Assert-Match $files.Disk 'IoctlDiskGetLengthInfo' 'disk capacity query'
 Assert-Match $files.Disk 'IoctlDiskGetDriveLayoutEx' 'partition style query'
 Assert-Match $files.Disk 'IoctlVolumeGetVolumeDiskExtents' 'system disk mapping'
-Assert-Match $files.Disk 'WriteBootSector(?s:.*?)IsValidBootSector(?s:.*?)GenericRead\s*\|\s*GenericWrite(?s:.*?)WriteFile(?s:.*?)FlushFileBuffers(?s:.*?)ReadBootSector(?s:.*?)SequenceEqual' 'validated online write and readback'
+Assert-Match $files.Disk 'WriteBootSector(?s:.*?)IsValidBootSector(?s:.*?)WriteDiskRegion' 'validated boot-sector write delegation'
+Assert-Match $files.Disk 'WriteDiskRegion(?s:.*?)GenericRead\s*\|\s*GenericWrite(?s:.*?)WriteFile(?s:.*?)FlushFileBuffers(?s:.*?)ReadDiskRegion(?s:.*?)SequenceEqual' 'validated online write and readback'
 Assert-Match $files.Disk 'data\[BootSectorSize\s*-\s*2\]\s*==\s*0x55(?s:.*?)data\[BootSectorSize\s*-\s*1\]\s*==\s*0xAA' '55 AA boot signature validation'
 Assert-NotMatch $files.Disk 'FSCTL_LOCK_VOLUME|FSCTL_DISMOUNT_VOLUME|IoctlVolumeOffline' 'volume lock or dismount path'
 
@@ -63,7 +64,9 @@ $requiredResourceKeys = @(
     'SettingsPage_Protection_Boot_OperationFailed_Message'
 )
 foreach ($resource in $resources) {
-    [xml](Get-Content -LiteralPath $resource -Raw) | Out-Null
+    [xml]([System.IO.File]::ReadAllText(
+        $resource,
+        [System.Text.Encoding]::UTF8)) | Out-Null
     foreach ($key in $requiredResourceKeys) {
         Assert-Match $resource ([regex]::Escape($key)) "$key localization"
     }

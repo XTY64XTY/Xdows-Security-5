@@ -273,10 +273,11 @@
                l:Uids.Uid="SettingsPage_Protection_Boot"
                HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
                Margin="0,0,0,4">
-                    <ToggleSwitch AutomationProperties.AutomationId="SettingsBootProtectionToggle"
+                    <ToggleSwitch x:Name="BootProtectionToggle"
+                                  AutomationProperties.AutomationId="SettingsBootProtectionToggle"
+                                  l:Uids.Uid="SettingsPage_Protection_Boot_Toggle"
                                   Tag="Boot"
-                                  IsEnabled="False"
-                                  Toggled="RunProtection"/>
+                                  Toggled="BootProtectionToggle_Toggled"/>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
                        l:Uids.Uid="SettingsPage_Protection_Boot_Save"

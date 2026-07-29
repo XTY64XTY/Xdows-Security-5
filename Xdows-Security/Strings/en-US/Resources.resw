@@ -1836,4 +1836,19 @@ Target disk: {1}</value></data>
 Confirm that the app is running as administrator and that disk access is not blocked by other security software.</value></data>
   <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>No physical disks found</value></data>
   <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows did not return any available PhysicalDrive devices.</value></data>
+  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve"><value>Boot protection switch</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve"><value>Create a trusted boot baseline</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve"><value>Before enabling protection, confirm that this is the physical disk used by the current Windows installation. Its current boot state will be saved as trusted.</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve"><value>Scope: protective MBR, primary and backup GPT, active EFI boot files, and BCD.</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve"><value>Scope: MBR, active boot files, and BCD.</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve"><value>Create this baseline only when the system currently boots correctly and is known to be clean. Later differences are repaired before you are asked whether to release them.</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve"><value>Trust current state and enable</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve"><value>Boot protection could not be enabled</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve"><value>The trusted boot baseline could not be created or read. Error code: {0}. Details were written to the log.</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve"><value>Boot protection did not start. Run the app as administrator and create the trusted baseline again.</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve"><value>Boot tampering detected</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve"><value>The trusted boot state of {0} was restored before notifying you. These changes were detected:&#x0A;{1}&#x0A;&#x0A;Keep the repair to retain the trusted baseline, or release the changes to apply them again and update the baseline.</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve"><value>Boot changes were detected on {0}, but automatic repair did not pass read-back verification and cannot be released:&#x0A;{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve"><value>Keep repair</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve"><value>Release and update baseline</value></data>
 </root>

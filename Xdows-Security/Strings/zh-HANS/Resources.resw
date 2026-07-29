@@ -1835,4 +1835,19 @@
 请确认应用以管理员身份运行，且磁盘访问未被其他安全软件阻止。</value></data>
   <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>未找到物理磁盘</value></data>
   <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows 未返回可用的 PhysicalDrive 设备。</value></data>
+  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve"><value>引导防护开关</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve"><value>建立可信引导基线</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve"><value>启用前，请确认下面是当前 Windows 使用的系统磁盘。程序会立即读取当前引导状态并将其作为可信基线。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve"><value>保护范围：保护性 MBR、主/备份 GPT、活动 EFI 启动文件和 BCD。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve"><value>保护范围：MBR、活动启动文件和 BCD。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve"><value>仅当你确认系统目前能正常启动且未被篡改时才创建基线。后续差异会先自动修复，再询问是否放行。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve"><value>信任当前状态并启用</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve"><value>无法启用引导防护</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve"><value>建立或读取可信引导基线失败。错误代码：{0}。详细信息已写入日志。</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve"><value>引导防护未能启动。请确认应用以管理员身份运行，并重新建立可信基线。</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve"><value>检测到引导篡改</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve"><value>已先自动恢复 {0} 的可信引导状态。检测到以下变化：&#x0A;{1}&#x0A;&#x0A;保留修复可继续使用可信基线；放行会重新应用这些变化并更新基线。</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve"><value>检测到 {0} 的引导变化，但自动修复未完整通过回读验证，因此不能放行：&#x0A;{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve"><value>保留修复</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve"><value>放行并更新基线</value></data>
 </root>

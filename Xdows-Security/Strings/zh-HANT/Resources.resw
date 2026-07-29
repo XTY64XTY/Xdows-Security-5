@@ -1835,4 +1835,19 @@
 請確認應用程式以系統管理員身分執行，且磁碟存取未被其他安全軟體阻止。</value></data>
   <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>找不到實體磁碟</value></data>
   <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows 未傳回可用的 PhysicalDrive 裝置。</value></data>
+  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve"><value>開機防護開關</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve"><value>建立可信開機基準</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve"><value>啟用前，請確認下方是目前 Windows 使用的系統磁碟。程式會立即讀取目前開機狀態並將其設為可信基準。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve"><value>保護範圍：保護性 MBR、主要/備份 GPT、作用中的 EFI 開機檔案和 BCD。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve"><value>保護範圍：MBR、作用中的開機檔案和 BCD。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve"><value>僅在你確認系統目前可正常啟動且未遭竄改時建立基準。後續差異會先自動修復，再詢問是否放行。</value></data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve"><value>信任目前狀態並啟用</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve"><value>無法啟用開機防護</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve"><value>建立或讀取可信開機基準失敗。錯誤代碼：{0}。詳細資訊已寫入記錄。</value></data>
+  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve"><value>開機防護未能啟動。請確認應用程式以系統管理員身分執行，並重新建立可信基準。</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve"><value>偵測到開機竄改</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve"><value>已先自動還原 {0} 的可信開機狀態。偵測到以下變更：&#x0A;{1}&#x0A;&#x0A;保留修復可繼續使用可信基準；放行會重新套用這些變更並更新基準。</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve"><value>偵測到 {0} 的開機變更，但自動修復未完整通過回讀驗證，因此無法放行：&#x0A;{1}</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve"><value>保留修復</value></data>
+  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve"><value>放行並更新基準</value></data>
 </root>

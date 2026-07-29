@@ -1,6 +1,8 @@
 using Microsoft.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Settings;
@@ -11,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Numerics;
@@ -116,7 +119,7 @@ namespace Xdows_Security
 
         public static bool IsOpen()
         {
-            return IsRun(0) || IsRun(1) || IsRun(4) || IsRun(5);
+            return IsRun(0) || IsRun(1) || IsRun(2) || IsRun(4) || IsRun(5);
         }
 
         private static readonly InterceptCallBack interceptCallBack = interceptEvent =>
@@ -137,8 +140,27 @@ namespace Xdows_Security
         };
         private static readonly IProtectionModel LegacyProcessProtection = new LegacyProcessProtection();
         private static readonly IProtectionModel LegacyFilesProtection = new LegacyFilesProtection();
+        private static readonly LegacyBootProtection LegacyBootProtection = CreateLegacyBootProtection();
+        private static readonly SemaphoreSlim BootDecisionDialogGate = new(1, 1);
 
         private static readonly DriverProtection DriverProtection = CreateDriverProtection();
+
+        private static LegacyBootProtection CreateLegacyBootProtection()
+        {
+            String baselineDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Xdows-Software",
+                "Xdows-Security",
+                "BootProtection");
+            return new LegacyBootProtection(baselineDirectory)
+            {
+                DecisionCallback = BootProtectionDecisionCallbackAsync,
+                LogCallback = message => LogText.AddNewLog(
+                    LogText.LogLevel.INFO,
+                    "R3BootProtection",
+                    message)
+            };
+        }
 
         private static DriverProtection CreateDriverProtection()
         {
@@ -301,6 +323,102 @@ namespace Xdows_Security
             return await tcs.Task;
         }
 
+        private static async Task<BootProtectionUserDecision> BootProtectionDecisionCallbackAsync(
+            BootProtectionDecisionRequest request,
+            CancellationToken token)
+        {
+            if (App.MainWindow?.DispatcherQueue is null)
+                return BootProtectionUserDecision.KeepRepair;
+
+            var completion = new TaskCompletionSource<BootProtectionUserDecision>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            using CancellationTokenRegistration registration = token.Register(
+                () => completion.TrySetResult(BootProtectionUserDecision.KeepRepair));
+
+            Boolean queued = App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                Boolean gateEntered = false;
+                try
+                {
+                    await BootDecisionDialogGate.WaitAsync(token);
+                    gateEntered = true;
+
+                    String title = Localizer.Get().GetLocalizedString(
+                        "SettingsPage_Protection_Boot_Detection_Title");
+                    String disk = String.IsNullOrWhiteSpace(request.DiskModel)
+                        ? $"PhysicalDrive{request.DiskIndex}"
+                        : $"PhysicalDrive{request.DiskIndex} - {request.DiskModel}";
+                    String changedItems = String.Join(
+                        Environment.NewLine,
+                        request.ChangedItems.Select(item => $"• {item}"));
+                    String messageKey = request.RepairSucceeded
+                        ? "SettingsPage_Protection_Boot_Detection_Repaired_Message"
+                        : "SettingsPage_Protection_Boot_Detection_RepairFailed_Message";
+                    String messageFormat = Localizer.Get().GetLocalizedString(messageKey);
+                    String message = String.Format(
+                        System.Globalization.CultureInfo.CurrentCulture,
+                        messageFormat,
+                        disk,
+                        changedItems);
+
+                    var content = new TextBlock
+                    {
+                        Text = message,
+                        TextWrapping = TextWrapping.Wrap,
+                        MaxWidth = 560
+                    };
+                    var dialog = new ContentDialog
+                    {
+                        XamlRoot = App.MainWindow.Content.XamlRoot,
+                        Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
+                        Title = title,
+                        Content = content,
+                        PrimaryButtonText = Localizer.Get().GetLocalizedString(
+                            "SettingsPage_Protection_Boot_Detection_KeepRepair"),
+                        CloseButtonText = Localizer.Get().GetLocalizedString(
+                            "SettingsPage_Protection_Boot_Dialog_Close"),
+                        DefaultButton = ContentDialogButton.Primary
+                    };
+                    AutomationProperties.SetAutomationId(dialog, "BootProtectionDecisionDialog");
+                    AutomationProperties.SetName(dialog, title);
+
+                    if (request.RepairSucceeded)
+                    {
+                        dialog.SecondaryButtonText = Localizer.Get().GetLocalizedString(
+                            "SettingsPage_Protection_Boot_Detection_AllowChange");
+                    }
+
+                    ContentDialogResult result = await dialog.ShowAsync();
+                    completion.TrySetResult(
+                        result == ContentDialogResult.Secondary && request.RepairSucceeded
+                            ? BootProtectionUserDecision.AllowChange
+                            : BootProtectionUserDecision.KeepRepair);
+                }
+                catch (OperationCanceledException)
+                {
+                    completion.TrySetResult(BootProtectionUserDecision.KeepRepair);
+                }
+                catch (Exception ex)
+                {
+                    LogText.AddNewLog(
+                        LogText.LogLevel.ERROR,
+                        "R3BootProtection",
+                        $"Failed to show the boot decision dialog: {ex.Message}");
+                    completion.TrySetResult(BootProtectionUserDecision.KeepRepair);
+                }
+                finally
+                {
+                    if (gateEntered)
+                        BootDecisionDialogGate.Release();
+                }
+            });
+
+            if (!queued)
+                return BootProtectionUserDecision.KeepRepair;
+
+            return await completion.Task.ConfigureAwait(false);
+        }
+
         private static async Task ShowProcessedThreatNotificationAsync(InterceptWindowHelper.InterceptWindowSetting setting)
         {
             try
@@ -373,7 +491,18 @@ namespace Xdows_Security
             {
                 RestoreProtection(0);
                 RestoreProtection(1);
+                RestoreProtection(2);
             }
+        }
+
+        public static BootProtectionPreparation InspectBootProtectionPreparation()
+        {
+            return LegacyBootProtection.InspectPreparation();
+        }
+
+        public static void CreateBootProtectionBaseline()
+        {
+            LegacyBootProtection.CreateTrustedBaseline();
         }
 
         private static void RestoreProtection(int runId)
@@ -454,6 +583,7 @@ namespace Xdows_Security
             {
                 0 => LegacyProcessProtection,
                 1 => LegacyFilesProtection,
+                2 => LegacyBootProtection,
                 5 => DriverProtection,
                 _ => null,
             };

@@ -39,9 +39,11 @@ namespace Helper
 
         private const UInt32 IoctlStorageQueryProperty = 0x002D1400;
         private const UInt32 IoctlDiskGetDriveLayoutEx = 0x00070050;
+        private const UInt32 IoctlDiskGetDriveGeometryEx = 0x000700A0;
         private const UInt32 IoctlDiskGetLengthInfo = 0x0007405C;
         private const UInt32 IoctlVolumeGetVolumeDiskExtents = 0x00560000;
         private const Int32 ErrorInsufficientBuffer = 122;
+        private const Int32 MaxRawRegionSize = 16 * 1024 * 1024;
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern SafeFileHandle CreateFileW(
@@ -136,7 +138,7 @@ namespace Helper
 
         public static Byte[] ReadBootSector(Int32 physicalDriveIndex)
         {
-            return ReadSector(GetPhysicalDrivePath(physicalDriveIndex));
+            return ReadDiskRegion(physicalDriveIndex, 0, BootSectorSize);
         }
 
         public static Byte[] ReadVolumeBootRecord(String driveLetter)
@@ -160,32 +162,84 @@ namespace Helper
                     $"A boot-sector backup must be exactly {BootSectorSize} bytes and end with the 55 AA signature.");
             }
 
+            WriteDiskRegion(physicalDriveIndex, 0, bootSector);
+        }
+
+        public static Int32 GetLogicalSectorSize(Int32 physicalDriveIndex)
+        {
+            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            using SafeFileHandle handle = OpenDevice(devicePath, 0);
+            ThrowIfInvalid(handle, devicePath);
+
+            Byte[] output = new Byte[256];
+            if (!DeviceIoControl(
+                    handle,
+                    IoctlDiskGetDriveGeometryEx,
+                    null,
+                    0,
+                    output,
+                    (UInt32)output.Length,
+                    out UInt32 bytesReturned,
+                    IntPtr.Zero) ||
+                bytesReturned < 24)
+            {
+                throw CreateWin32Exception($"Failed to query disk geometry for {devicePath}");
+            }
+
+            UInt32 bytesPerSector = BitConverter.ToUInt32(output, 20);
+            if (bytesPerSector is < BootSectorSize or > 64 * 1024 ||
+                (bytesPerSector & (bytesPerSector - 1)) != 0)
+            {
+                throw new IOException($"Disk {physicalDriveIndex} reported an invalid logical sector size: {bytesPerSector}.");
+            }
+
+            return checked((Int32)bytesPerSector);
+        }
+
+        public static Byte[] ReadDiskRegion(Int32 physicalDriveIndex, Int64 offset, Int32 length)
+        {
+            ValidateRegion(offset, length);
+            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
+            ThrowIfInvalid(handle, devicePath);
+            ValidateRegionWithinDevice(handle, offset, length, devicePath);
+            Seek(handle, devicePath, offset);
+
+            Byte[] buffer = new Byte[length];
+            if (!ReadFile(handle, buffer, (UInt32)length, out UInt32 bytesRead, IntPtr.Zero))
+                throw CreateWin32Exception($"Failed to read {devicePath} at offset {offset}");
+
+            if (bytesRead != length)
+                throw new IOException($"Only {bytesRead} of {length} bytes were read from {devicePath} at offset {offset}.");
+
+            return buffer;
+        }
+
+        public static void WriteDiskRegion(Int32 physicalDriveIndex, Int64 offset, Byte[] data)
+        {
+            ArgumentNullException.ThrowIfNull(data);
+            ValidateRegion(offset, data.Length);
+
             String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
             using (SafeFileHandle handle = OpenDevice(devicePath, GenericRead | GenericWrite))
             {
                 ThrowIfInvalid(handle, devicePath);
-                SeekToBeginning(handle, devicePath);
+                ValidateRegionWithinDevice(handle, offset, data.Length, devicePath);
+                Seek(handle, devicePath, offset);
 
-                if (!WriteFile(
-                        handle,
-                        bootSector,
-                        BootSectorSize,
-                        out UInt32 bytesWritten,
-                        IntPtr.Zero))
-                {
-                    throw CreateWin32Exception($"Failed to write {devicePath}");
-                }
+                if (!WriteFile(handle, data, (UInt32)data.Length, out UInt32 bytesWritten, IntPtr.Zero))
+                    throw CreateWin32Exception($"Failed to write {devicePath} at offset {offset}");
 
-                if (bytesWritten != BootSectorSize)
-                    throw new IOException($"Only {bytesWritten} of {BootSectorSize} bytes were written to {devicePath}.");
+                if (bytesWritten != data.Length)
+                    throw new IOException($"Only {bytesWritten} of {data.Length} bytes were written to {devicePath} at offset {offset}.");
 
                 if (!FlushFileBuffers(handle))
                     throw CreateWin32Exception($"Failed to flush {devicePath}");
             }
 
-            Byte[] verification = ReadBootSector(physicalDriveIndex);
-            if (!verification.AsSpan().SequenceEqual(bootSector))
-                throw new IOException($"The boot-sector write verification failed for {devicePath}.");
+            Byte[] verification = ReadDiskRegion(physicalDriveIndex, offset, data.Length);
+            if (!verification.AsSpan().SequenceEqual(data))
+                throw new IOException($"The disk-region write verification failed for {devicePath} at offset {offset}.");
         }
 
         public static Boolean IsValidBootSector(ReadOnlySpan<Byte> data)
@@ -211,6 +265,28 @@ namespace Helper
             return buffer;
         }
 
+        private static void ValidateRegion(Int64 offset, Int32 length)
+        {
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if (length <= 0 || length > MaxRawRegionSize)
+                throw new ArgumentOutOfRangeException(nameof(length), $"Raw disk regions must be between 1 and {MaxRawRegionSize} bytes.");
+            _ = checked(offset + length);
+        }
+
+        private static void ValidateRegionWithinDevice(
+            SafeFileHandle handle,
+            Int64 offset,
+            Int32 length,
+            String devicePath)
+        {
+            Int64 diskLength = QueryDiskLength(handle);
+            if (diskLength <= 0)
+                throw new IOException($"The size of {devicePath} could not be determined.");
+            if (checked(offset + length) > diskLength)
+                throw new ArgumentOutOfRangeException(nameof(length), "The raw disk region extends past the end of the device.");
+        }
+
         private static SafeFileHandle OpenDevice(String devicePath, UInt32 access)
         {
             return CreateFileW(
@@ -231,8 +307,13 @@ namespace Helper
 
         private static void SeekToBeginning(SafeFileHandle handle, String devicePath)
         {
-            if (!SetFilePointerEx(handle, 0, out _, FileBegin))
-                throw CreateWin32Exception($"Failed to seek {devicePath}");
+            Seek(handle, devicePath, 0);
+        }
+
+        private static void Seek(SafeFileHandle handle, String devicePath, Int64 offset)
+        {
+            if (!SetFilePointerEx(handle, offset, out Int64 newOffset, FileBegin) || newOffset != offset)
+                throw CreateWin32Exception($"Failed to seek {devicePath} to offset {offset}");
         }
 
         private static Win32Exception CreateWin32Exception(String operation)
