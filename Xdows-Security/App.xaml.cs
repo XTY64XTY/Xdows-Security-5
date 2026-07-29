@@ -141,6 +141,7 @@ namespace Xdows_Security
         private static readonly IProtectionModel LegacyProcessProtection = new LegacyProcessProtection();
         private static readonly IProtectionModel LegacyFilesProtection = new LegacyFilesProtection();
         private static readonly LegacyBootProtection LegacyBootProtection = CreateLegacyBootProtection();
+        private static readonly LegacyRegistryProtection LegacyRegistryProtection = CreateLegacyRegistryProtection();
         private static readonly SemaphoreSlim BootDecisionDialogGate = new(1, 1);
 
         private static readonly DriverProtection DriverProtection = CreateDriverProtection();
@@ -172,6 +173,31 @@ namespace Xdows_Security
             };
             ApplyDriverProtectionModelMode(protection);
             return protection;
+        }
+
+        private static LegacyRegistryProtection CreateLegacyRegistryProtection()
+        {
+            return new LegacyRegistryProtection
+            {
+                DecisionCallback = DriverDecisionCallbackAsync,
+                OptionsProvider = GetRegistryProtectionOptions,
+                LogCallback = message => LogText.AddNewLog(
+                    LogText.LogLevel.INFO,
+                    "R3RegistryProtection",
+                    message)
+            };
+        }
+
+        private static Xdows_Local.RegistryProtectionOptions GetRegistryProtectionOptions()
+        {
+            var settings = App.LocalSettings;
+            Boolean includeSecondary = !settings.Values.TryGetValue(
+                "RegistryProtectionSecondary",
+                out Object? secondaryRaw) || secondaryRaw is not Boolean secondary || secondary;
+            Boolean includeOther = settings.Values.TryGetValue(
+                "RegistryProtectionOther",
+                out Object? otherRaw) && otherRaw is Boolean other && other;
+            return new Xdows_Local.RegistryProtectionOptions(includeSecondary, includeOther);
         }
 
         /// <summary>
@@ -230,7 +256,9 @@ namespace Xdows_Security
             if (App.MainWindow?.DispatcherQueue is null)
                 return ProtectionUserDecision.Block;
 
-            if (request.Module is not Helper.ProtectionModule.Behavior and not Helper.ProtectionModule.Boot &&
+            if (request.Module is not Helper.ProtectionModule.Behavior and
+                not Helper.ProtectionModule.Boot and
+                not Helper.ProtectionModule.Registry &&
                 await ThreatNotificationModeService.ShouldUseCompactAsync().ConfigureAwait(false))
             {
                 bool compactNotificationQueued = App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -492,6 +520,7 @@ namespace Xdows_Security
                 RestoreProtection(0);
                 RestoreProtection(1);
                 RestoreProtection(2);
+                RestoreProtection(4);
             }
         }
 
@@ -584,6 +613,7 @@ namespace Xdows_Security
                 0 => LegacyProcessProtection,
                 1 => LegacyFilesProtection,
                 2 => LegacyBootProtection,
+                4 => LegacyRegistryProtection,
                 5 => DriverProtection,
                 _ => null,
             };

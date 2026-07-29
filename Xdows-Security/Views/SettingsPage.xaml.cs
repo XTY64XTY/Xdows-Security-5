@@ -63,6 +63,7 @@ namespace Xdows_Security.Views
             UpdateBootProtectionToggleState();
             UpdateProtectionToggleState(RegistryToggle, 4);
             ApplyDriverProtectionControlState();
+            UpdateRegistryCategoryControlState();
         }
 
         private void UpdateProtectionToggleState(ToggleSwitch toggle, Int32 runId)
@@ -157,6 +158,7 @@ namespace Xdows_Security.Views
                 Files_CompatibilityMode.IsOn = true;
                 Process_CompatibilityMode.IsEnabled = false;
                 Files_CompatibilityMode.IsEnabled = false;
+                UpdateRegistryCategoryControlState();
                 return;
             }
 
@@ -173,6 +175,17 @@ namespace Xdows_Security.Views
             Files_CompatibilityMode.IsOn = true;
             Process_CompatibilityMode.IsEnabled = false;
             Files_CompatibilityMode.IsEnabled = false;
+            UpdateRegistryCategoryControlState();
+        }
+
+        private void UpdateRegistryCategoryControlState()
+        {
+            if (RegistrySecondaryCard == null || RegistryOtherCard == null || RegistryToggle == null)
+                return;
+
+            Boolean enabled = RegistryToggle.IsEnabled && RegistryToggle.IsOn;
+            RegistrySecondaryCard.IsEnabled = enabled;
+            RegistryOtherCard.IsEnabled = enabled;
         }
 
         private async Task ShowDriverEnvironmentDialogAsync()
@@ -277,6 +290,8 @@ namespace Xdows_Security.Views
                 toggle.IsOn = !toggle.IsOn;
             toggle.IsOn = ProtectionStatus.IsRun(runId);
             toggle.Toggled += RunProtection;
+            if (runId == 4)
+                UpdateRegistryCategoryControlState();
             if (runId == 5)
             {
                 UpdateDriverProtectionState();
@@ -302,6 +317,11 @@ namespace Xdows_Security.Views
                 _ => 0
             };
             RunProtectionWithToggle(toggle, runId);
+        }
+
+        private void RegistryCategoryToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            Toggled_SaveToggleData(sender, e);
         }
 
         private async void BootProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
@@ -563,6 +583,14 @@ namespace Xdows_Security.Views
             {
                 settings.Values["UsbAutoScan"] = true;
             }
+            if (!settings.Values.ContainsKey("RegistryProtectionSecondary"))
+            {
+                settings.Values["RegistryProtectionSecondary"] = true;
+            }
+            if (!settings.Values.ContainsKey("RegistryProtectionOther"))
+            {
+                settings.Values["RegistryProtectionOther"] = false;
+            }
 
             List<ToggleSwitch> toggles =
             [
@@ -588,7 +616,9 @@ namespace Xdows_Security.Views
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
                 SpatialAudioToggle,
-                UsbAutoScanToggle
+                UsbAutoScanToggle,
+                RegistrySecondaryToggle,
+                RegistryOtherToggle
             ];
 
             foreach (ToggleSwitch toggle in toggles)

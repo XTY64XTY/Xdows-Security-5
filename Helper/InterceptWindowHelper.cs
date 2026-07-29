@@ -8,6 +8,7 @@ namespace Helper
         Injection,
         Behavior,
         Boot,
+        Registry,
         SelfProtection
     }
 

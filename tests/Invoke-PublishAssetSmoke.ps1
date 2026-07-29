@@ -55,6 +55,7 @@ $requiredFiles = @(
     "Xdows-Model-Native.dll",
     "onnxruntime.dll",
     "onnxruntime_providers_shared.dll",
+    "Microsoft.Diagnostics.Tracing.TraceEvent.dll",
     "Xdows-Security-Driver.sys",
     "Driver\Xdows-Security-Driver.inf",
     "Driver\Xdows-Security-Driver.sys",

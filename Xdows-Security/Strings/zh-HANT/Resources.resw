@@ -544,7 +544,7 @@
     <value>在文件運行前掃描此文件，以保證其安全性</value>
   </data>
   <data name="SettingsPage_Protection_Registry.Description" xml:space="preserve">
-    <value>當注冊表被惡意篡改後將會嘗試恢復注冊表</value>
+    <value>監控受保護登錄檔變更，並詢問如何處理不受信任的修改程式</value>
   </data>
   <data name="SettingsPage_Protection_Process_CompatibilityMode.Header" xml:space="preserve">
     <value>兼容模式</value>
@@ -1352,6 +1352,7 @@
   <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>注入防護</value></data>
   <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>行為防護</value></data>
   <data name="InterceptWindow_Module_Boot" xml:space="preserve"><value>開機防護</value></data>
+  <data name="InterceptWindow_Module_Registry" xml:space="preserve"><value>登錄檔防護</value></data>
   <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>自我防護</value></data>
   <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>即時防護</value></data>
   <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>驅動模式</value></data>

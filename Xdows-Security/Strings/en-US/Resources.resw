@@ -544,7 +544,7 @@
     <value>Scan files before execution to ensure they are safe.</value>
   </data>
   <data name="SettingsPage_Protection_Registry.Description" xml:space="preserve">
-    <value>Restore registry if maliciously altered</value>
+    <value>Monitor protected registry changes and ask how to handle untrusted modifiers.</value>
   </data>
   <data name="SettingsPage_Protection_Process_CompatibilityMode.Header" xml:space="preserve">
     <value>Compatibility Mode</value>
@@ -1353,6 +1353,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>Injection protection</value></data>
   <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>Behavior protection</value></data>
   <data name="InterceptWindow_Module_Boot" xml:space="preserve"><value>Boot protection</value></data>
+  <data name="InterceptWindow_Module_Registry" xml:space="preserve"><value>Registry protection</value></data>
   <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>Self protection</value></data>
   <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>Real-time protection</value></data>
   <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>Driver mode</value></data>

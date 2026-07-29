@@ -306,16 +306,22 @@
                     <ToggleSwitch x:Name="RegistryToggle" Tag="Registry" Toggled="RunProtection"/>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
+                        x:Name="RegistrySecondaryCard"
                         l:Uids.Uid="SettingsPage_Protection_Registry_Secondary"
-                        IsEnabled="False"
                         HeaderIcon="{ui:FontIcon Glyph=&#xED4D;}">
-                            <ToggleSwitch />
+                            <ToggleSwitch x:Name="RegistrySecondaryToggle"
+                                          Tag="RegistryProtectionSecondary"
+                                          AutomationProperties.AutomationId="SettingsRegistrySecondaryToggle"
+                                          Toggled="RegistryCategoryToggle_Toggled" />
                         </controls:SettingsCard>
                         <controls:SettingsCard
+                        x:Name="RegistryOtherCard"
                         l:Uids.Uid="SettingsPage_Protection_Registry_Others"
-                        IsEnabled="False"
                         HeaderIcon="{ui:FontIcon Glyph=&#xEA8F;}">
-                            <ToggleSwitch />
+                            <ToggleSwitch x:Name="RegistryOtherToggle"
+                                          Tag="RegistryProtectionOther"
+                                          AutomationProperties.AutomationId="SettingsRegistryOtherToggle"
+                                          Toggled="RegistryCategoryToggle_Toggled" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
