@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security.Principal;
 using System.Threading.Channels;
 using TrustQuarantine;
 using Helper;
+using Xdows_Local;
 using static Protection.CallBack;
 
 namespace Protection;
@@ -231,6 +233,12 @@ public sealed class DriverProtection : IProtectionModel
                     "BootProtect",
                     $"R0 boot protection attached PhysicalDrive{bootConfiguration.DiskIndex} " +
                     $"rawRanges={bootConfiguration.RawRegions.Count} volumes={bootConfiguration.NtVolumeRoots.Count}");
+
+                // Configure R0 registry protection
+                var registryOptions = RegistryProtectionOptions.Recommended;
+                var registryNativePaths = BuildNativeRegistryRulePaths(registryOptions);
+                _client.SetRegistryProtection(true, registryNativePaths);
+                Log("RegistryProtect", $"R0 registry protection configured rules={registryNativePaths.Count}");
 
                 Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
                 _scanner = new NativeModelScanner(ModelMode);
@@ -649,8 +657,73 @@ public sealed class DriverProtection : IProtectionModel
                 XdowsSecurityEventType.ImageLoad => await HandleSensitiveOperationAsync(driverEvent, token).ConfigureAwait(false),
             XdowsSecurityEventType.Behavior => await HandleBehaviorEventAsync(driverEvent, token).ConfigureAwait(false),
             XdowsSecurityEventType.BootWrite => await HandleBootFileWriteAsync(driverEvent, token).ConfigureAwait(false),
+            XdowsSecurityEventType.RegistryWrite => await HandleRegistryEventAsync(driverEvent, token).ConfigureAwait(false),
             _ => DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Allow, "unsupported-event")
         };
+    }
+
+    private async Task<XdowsSecurityDecision> HandleRegistryEventAsync(
+        XdowsSecurityEvent driverEvent,
+        CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!TryEnterUserDecisionHold(driverEvent))
+        {
+            return DriverBridgeClient.CreateDecision(
+                driverEvent.EventId,
+                XdowsSecurityDecisionType.Block,
+                "registry-user-hold-failed-block");
+        }
+
+        string registryPath = CleanDriverString(driverEvent.ImagePath);
+        string valueName = CleanDriverString(driverEvent.RegistryValueName);
+        string? actorPath = ResolveActorPath(driverEvent);
+        string operation = ((XdowsSecurityRegistryOperation)driverEvent.RegistryOperation) switch
+        {
+            XdowsSecurityRegistryOperation.CreateKey => "CreateKey",
+            XdowsSecurityRegistryOperation.SetValue => "SetValue",
+            XdowsSecurityRegistryOperation.DeleteValue => "DeleteValue",
+            XdowsSecurityRegistryOperation.DeleteKey => "DeleteKey",
+            XdowsSecurityRegistryOperation.RenameKey => "RenameKey",
+            XdowsSecurityRegistryOperation.RestoreKey => "RestoreKey",
+            XdowsSecurityRegistryOperation.ReplaceKey => "ReplaceKey",
+            XdowsSecurityRegistryOperation.UnloadKey => "UnloadKey",
+            _ => "Registry"
+        };
+
+        var request = new ProtectionDecisionRequest(
+            string.IsNullOrWhiteSpace(registryPath) ? "Registry" : registryPath,
+            $"Registry {operation}{(string.IsNullOrEmpty(valueName) ? string.Empty : $" -> {valueName}")}",
+            RegistryScan.DetectionName,
+            0,
+            checked((int)driverEvent.ProcessId),
+            checked((int)driverEvent.ParentProcessId),
+            null,
+            actorPath,
+            string.IsNullOrWhiteSpace(actorPath) ? "Unknown" : "Unverified",
+            EventId: driverEvent.EventId,
+            CorrelationId: driverEvent.CorrelationId,
+            ActorDetectionName: null,
+            ActorProbability: 0,
+            Module: ProtectionModule.Registry,
+            Backend: ProtectionBackend.Driver,
+            DecisionDeadline: DateTimeOffset.UtcNow.Add(UserDecisionTimeout));
+
+        ProtectionUserDecision userDecision = await AskUserAfterHoldAsync(
+            request,
+            driverEvent,
+            token).ConfigureAwait(false);
+
+        if (userDecision == ProtectionUserDecision.Allow)
+            return Allow(driverEvent.EventId, "user-release-registry");
+
+        string reason = userDecision == ProtectionUserDecision.Timeout
+            ? "registry-user-timeout-block"
+            : "user-block-registry";
+        return DriverBridgeClient.CreateDecision(
+            driverEvent.EventId,
+            XdowsSecurityDecisionType.Block,
+            reason);
     }
 
     private async Task<XdowsSecurityDecision> HandleBootFileWriteAsync(
@@ -1248,6 +1321,29 @@ public sealed class DriverProtection : IProtectionModel
             XdowsSecurityEventType.Behavior => ProtectionModule.Behavior,
             _ => ProtectionModule.Unknown
         };
+    }
+
+    private static List<string> BuildNativeRegistryRulePaths(RegistryProtectionOptions options)
+    {
+        string userSid = WindowsIdentity.GetCurrent().User?.Value ?? string.Empty;
+        var paths = new List<string>();
+
+        foreach (var rule in RegistryScan.Rules)
+        {
+            if (!options.Includes(rule.Category))
+                continue;
+
+            if (rule.Root == RegistryRuleRoot.LocalMachine)
+            {
+                paths.Add($@"\REGISTRY\MACHINE\{rule.KeyPath}");
+            }
+            else if (!string.IsNullOrEmpty(userSid))
+            {
+                paths.Add($@"\REGISTRY\USER\{userSid}\{rule.KeyPath}");
+            }
+        }
+
+        return paths;
     }
 
     private static string CleanDriverString(string? value)

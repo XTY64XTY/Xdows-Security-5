@@ -56,8 +56,8 @@ function Assert-Equal {
 }
 
 $constants = @(
-    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 8 },
-    @{ C = "XDOWS_SECURITY_EVENT_TYPE_COUNT"; Cs = "EventTypeCount"; Expected = 11 },
+    @{ C = "XDOWS_SECURITY_PROTOCOL_VERSION"; Cs = "ProtocolVersion"; Expected = 9 },
+    @{ C = "XDOWS_SECURITY_EVENT_TYPE_COUNT"; Cs = "EventTypeCount"; Expected = 12 },
     @{ C = "XDOWS_SECURITY_CAP_PRIORITY_QUEUE"; Cs = "CapabilityPriorityQueue"; Expected = 1 },
     @{ C = "XDOWS_SECURITY_CAP_DIRTY_WRITE_COALESCING"; Cs = "CapabilityDirtyWriteCoalescing"; Expected = 2 },
     @{ C = "XDOWS_SECURITY_CAP_BUILD_ID"; Cs = "CapabilityBuildId"; Expected = 4 },
@@ -90,7 +90,7 @@ Assert-Equal $cBuildId $csBuildId "Driver build ID"
 Assert-Equal $cBuildId $runtimeBuildId "Runtime smoke driver build ID"
 
 $runtimeProtocolVersion = Read-Number $runtimeSmokeText '\$expectedProtocolVersion\s*=\s*\[uint32\]([0-9]+)' "runtime smoke protocol version"
-Assert-Equal 8 $runtimeProtocolVersion "Runtime smoke protocol version"
+Assert-Equal 9 $runtimeProtocolVersion "Runtime smoke protocol version"
 
 foreach ($offsetCheck in @(
     @{ Pattern = 'FileProtectionEnabled\s*=\s*\[BitConverter\]::ToUInt32\(\$buffer,\s*24\)'; Name = "runtime file protection offset" },
@@ -137,7 +137,8 @@ $ioctls = @(
     @{ C = "SET_STARTUP_PROTECTION"; Cs = "SetStartupProtection"; Function = 0x80B },
     @{ C = "QUERY_PROCESSES"; Cs = "QueryProcesses"; Function = 0x80C },
     @{ C = "OPERATE_PROCESS"; Cs = "OperateProcess"; Function = 0x80D },
-    @{ C = "SET_BOOT_PROTECTION"; Cs = "SetBootProtection"; Function = 0x80E }
+    @{ C = "SET_BOOT_PROTECTION"; Cs = "SetBootProtection"; Function = 0x80E },
+    @{ C = "SET_REGISTRY_PROTECTION"; Cs = "SetRegistryProtection"; Function = 0x80F }
 )
 
 foreach ($ioctl in $ioctls) {
@@ -165,6 +166,7 @@ $enums = @(
     @{ C = "XdowsSecurityEventDriverLog"; Cs = "DriverLog"; Value = 8 },
     @{ C = "XdowsSecurityEventBehavior"; Cs = "Behavior"; Value = 9 },
     @{ C = "XdowsSecurityEventBootWrite"; Cs = "BootWrite"; Value = 10 },
+    @{ C = "XdowsSecurityEventRegistryWrite"; Cs = "RegistryWrite"; Value = 11 },
     @{ C = "XdowsSecurityBehaviorVssDeletion"; Cs = "VssDeletion"; Value = 1 },
     @{ C = "XdowsSecurityBehaviorHiddenPowerShell"; Cs = "HiddenPowerShell"; Value = 2 },
     @{ C = "XdowsSecurityBehaviorEncodedCommand"; Cs = "EncodedCommand"; Value = 3 },
@@ -198,7 +200,7 @@ foreach ($enum in $enums) {
     Assert-Equal $cValue $csValue "$($enum.C) mirrors C# enum $($enum.Cs)"
 }
 
-foreach ($eventName in @("ProcessCreate", "FileCreate", "FileWrite", "FileRename", "ProcessHandle", "ThreadHandle", "ImageLoad", "Behavior", "BootWrite")) {
+foreach ($eventName in @("ProcessCreate", "FileCreate", "FileWrite", "FileRename", "ProcessHandle", "ThreadHandle", "ImageLoad", "Behavior", "BootWrite", "RegistryWrite")) {
     if ($protectionText -notmatch "XdowsSecurityEventType\.$eventName\b") {
         throw "DriverProtection does not handle XdowsSecurityEventType.$eventName"
     }

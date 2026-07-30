@@ -445,6 +445,37 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure EFI and BCD protection.");
     }
 
+    public void SetRegistryProtection(bool enabled, IReadOnlyList<string> nativeRulePaths)
+    {
+        EnsureConnected();
+        ArgumentNullException.ThrowIfNull(nativeRulePaths);
+        if (nativeRulePaths.Count is < 1 or > DriverProtocol.MaxRegistryRules)
+            throw new InvalidDataException(
+                $"Registry protection requires between one and {DriverProtocol.MaxRegistryRules} rules.");
+
+        var rules = new XdowsRegistryRulePath[DriverProtocol.MaxRegistryRules];
+        for (int i = 0; i < DriverProtocol.MaxRegistryRules; i++)
+        {
+            rules[i] = new XdowsRegistryRulePath
+            {
+                Path = i < nativeRulePaths.Count
+                    ? Truncate(nativeRulePaths[i], DriverProtocol.MaxRegistryPathChars - 1)
+                    : string.Empty
+            };
+        }
+
+        var request = new XdowsRegistryProtectionRequest
+        {
+            Header = DriverProtocol.Header<XdowsRegistryProtectionRequest>(),
+            Enabled = enabled ? 1u : 0u,
+            RuleCount = checked((uint)nativeRulePaths.Count),
+            RulePaths = rules
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.SetRegistryProtection))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure R0 registry protection.");
+    }
+
     public IReadOnlyList<XdowsDriverProcessEntry> QueryProcesses()
     {
         EnsureConnected();

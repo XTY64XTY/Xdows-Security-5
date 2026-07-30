@@ -4,8 +4,8 @@ namespace Protection;
 
 internal static class DriverProtocol
 {
-    public const uint ProtocolVersion = 8;
-    public const ulong DriverBuildId = 2026072901;
+    public const uint ProtocolVersion = 9;
+    public const ulong DriverBuildId = 2026073001;
     public const uint LegacyUpgradeProtocolVersion = 7;
     public const ulong LegacyUpgradeDriverBuildId = 2026072802;
     public const ulong OlderLegacyUpgradeDriverBuildId = 2026072801;
@@ -15,7 +15,7 @@ internal static class DriverProtocol
     public const uint OldestLegacyUpgradeProtocolVersion = 5;
     public const ulong OldestLegacyUpgradeBuildId = 2026071704;
     public const ulong OldestLegacyUpgradeFallbackBuildId = 2026071703;
-    public const int EventTypeCount = 11;
+    public const int EventTypeCount = 12;
     public const uint CapabilityPriorityQueue = 0x00000001;
     public const uint CapabilityDirtyWriteCoalescing = 0x00000002;
     public const uint CapabilityBuildId = 0x00000004;
@@ -25,6 +25,7 @@ internal static class DriverProtocol
     public const uint CapabilityEnhancedSelfProtect = 0x00000040;
     public const uint CapabilityR0BehaviorProtection = 0x00000080;
     public const uint CapabilityR0BootProtection = 0x00000100;
+    public const uint CapabilityR0RegistryProtection = 0x00000200;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
@@ -33,14 +34,16 @@ internal static class DriverProtocol
         CapabilityProcessManagement |
         CapabilityEnhancedSelfProtect |
         CapabilityR0BehaviorProtection |
-        CapabilityR0BootProtection;
+        CapabilityR0BootProtection |
+        CapabilityR0RegistryProtection;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
     public const uint ModuleInjection = 0x00000008;
     public const uint ModuleSelfProtect = 0x00000010;
     public const uint ModuleBehavior = 0x00000020;
-    public const uint RequiredModules = ModuleTokenAuth | ModuleProcess | ModuleFile | ModuleInjection | ModuleSelfProtect | ModuleBehavior;
+    public const uint ModuleRegistry = 0x00000040;
+    public const uint RequiredModules = ModuleTokenAuth | ModuleProcess | ModuleFile | ModuleInjection | ModuleSelfProtect | ModuleBehavior | ModuleRegistry;
     public const int MaxPathChars = 520;
     public const int MaxCommandChars = 1024;
     public const int MaxReasonChars = 128;
@@ -51,6 +54,9 @@ internal static class DriverProtocol
     public const int ProcessBatchSize = 64;
     public const int MaxBootVolumeRoots = 4;
     public const int MaxBootVolumeRootChars = 128;
+    public const int MaxRegistryRules = 32;
+    public const int MaxRegistryPathChars = 260;
+    public const int MaxRegistryValueChars = 260;
     public const string DevicePath = @"\\.\XdowsSecurityDriver";
     public const string GlobalDevicePath = @"\\.\Global\XdowsSecurityDriver";
     public static readonly string[] DevicePaths = [DevicePath, GlobalDevicePath];
@@ -73,6 +79,7 @@ internal static class DriverProtocol
     public static readonly uint QueryProcesses = CtlCode(FileDeviceXdowsSecurity, 0x80C, MethodBuffered, FileAnyAccess);
     public static readonly uint OperateProcess = CtlCode(FileDeviceXdowsSecurity, 0x80D, MethodBuffered, FileAnyAccess);
     public static readonly uint SetBootProtection = CtlCode(FileDeviceXdowsSecurity, 0x80E, MethodBuffered, FileAnyAccess);
+    public static readonly uint SetRegistryProtection = CtlCode(FileDeviceXdowsSecurity, 0x80F, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -101,7 +108,21 @@ internal enum XdowsSecurityEventType : uint
     ImageLoad = 7,
     DriverLog = 8,
     Behavior = 9,
-    BootWrite = 10
+    BootWrite = 10,
+    RegistryWrite = 11
+}
+
+internal enum XdowsSecurityRegistryOperation : uint
+{
+    None = 0,
+    CreateKey = 1,
+    SetValue = 2,
+    DeleteValue = 3,
+    DeleteKey = 4,
+    RenameKey = 5,
+    RestoreKey = 6,
+    ReplaceKey = 7,
+    UnloadKey = 8
 }
 
 internal enum XdowsSecurityBehaviorType : uint
@@ -203,6 +224,11 @@ internal struct XdowsSecurityEvent
     public uint CreatingThreadId;
     public uint KernelWaitTimeoutMs;
     public uint BehaviorType;
+    public uint RegistryOperation;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxRegistryValueChars)]
+    public string RegistryValueName;
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxPathChars)]
     public string ImagePath;
@@ -315,6 +341,25 @@ internal struct XdowsBootProtectionRequest
 
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxBootVolumeRootChars)]
     public string VolumeRoot3;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsRegistryRulePath
+{
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxRegistryPathChars)]
+    public string Path;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsRegistryProtectionRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint Enabled;
+    public uint RuleCount;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxRegistryRules)]
+    public XdowsRegistryRulePath[] RulePaths;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

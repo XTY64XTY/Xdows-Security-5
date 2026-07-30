@@ -9,10 +9,10 @@ $ErrorActionPreference = "Stop"
 $serviceName = "Xdows-Security-Driver"
 $devicePaths = @("\\.\XdowsSecurityDriver", "\\.\Global\XdowsSecurityDriver")
 $ioctlGetState = [Convert]::ToUInt32("80002014", 16)
-$expectedProtocolVersion = [uint32]8
-$expectedDriverBuildId = [uint64]2026072901
-$expectedStateSize = [uint32]192
-$expectedCapabilities = [uint32]0x000001FF
+$expectedProtocolVersion = [uint32]9
+$expectedDriverBuildId = [uint64]2026073001
+$expectedStateSize = [uint32]204
+$expectedCapabilities = [uint32]0x000003FF
 
 function Test-IsAdministrator {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
