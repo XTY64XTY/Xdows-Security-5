@@ -1,5 +1,7 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
+using Microsoft.Win32.SafeHandles;
 
 namespace Protection;
 
@@ -19,14 +21,31 @@ public sealed record DriverEnvironmentCheckItem(
     string RepairAction)
 {
     public bool Passed => Status == DriverEnvironmentCheckStatus.Passed;
-    public string StatusText => Status.ToString();
+}
+
+public sealed record DriverEnvironmentCheckGroup(
+    string Id,
+    string Title,
+    IReadOnlyList<DriverEnvironmentCheckItem> Items)
+{
+    public DriverEnvironmentCheckStatus Status =>
+        Items.Any(i => i.Status == DriverEnvironmentCheckStatus.Failed)
+            ? DriverEnvironmentCheckStatus.Failed
+            : Items.Any(i => i.Status == DriverEnvironmentCheckStatus.Warning)
+                ? DriverEnvironmentCheckStatus.Warning
+                : DriverEnvironmentCheckStatus.Passed;
+
+    public bool CanRepair => Items.Any(i => i.CanRepair);
+
+    public string PrimaryRepairAction =>
+        Items.FirstOrDefault(i => i.CanRepair)?.RepairAction ?? string.Empty;
 }
 
 public sealed record DriverEnvironmentReport(
-    IReadOnlyList<DriverEnvironmentCheckItem> Items,
+    IReadOnlyList<DriverEnvironmentCheckGroup> Groups,
     DateTimeOffset CheckedAt)
 {
-    public bool IsHealthy => Items.All(i => i.Status == DriverEnvironmentCheckStatus.Passed);
+    public bool IsHealthy => Groups.All(g => g.Status == DriverEnvironmentCheckStatus.Passed);
 }
 
 public static class DriverEnvironmentChecker
@@ -36,17 +55,33 @@ public static class DriverEnvironmentChecker
     public static async Task<DriverEnvironmentReport> CheckAsync(CancellationToken token = default)
     {
         DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
-        var items = new List<DriverEnvironmentCheckItem>
+
+        var groups = new List<DriverEnvironmentCheckGroup>
         {
-            CheckAdministrator(),
-            await CheckTestSigningAsync(token).ConfigureAwait(false),
-            CheckDriverPackage(),
-            CheckDriverService(runtimeStatus),
-            CheckDriverCommunication(runtimeStatus),
-            CheckModelAssets()
+            new("privileges", "Privileges", new List<DriverEnvironmentCheckItem>
+            {
+                CheckAdministrator()
+            }),
+            new("signing", "Driver signing", new List<DriverEnvironmentCheckItem>
+            {
+                await CheckTestSigningAsync(token).ConfigureAwait(false)
+            }),
+            new("packages", "Driver packages and services", new List<DriverEnvironmentCheckItem>
+            {
+                CheckDriverPackage(),
+                CheckDriverService(runtimeStatus),
+                CheckBootFilterPackage(),
+                CheckBootFilterService()
+            }),
+            new("runtime", "Driver communication and model assets", new List<DriverEnvironmentCheckItem>
+            {
+                CheckDriverCommunication(runtimeStatus),
+                CheckBootFilterCommunication(),
+                CheckModelAssets()
+            })
         };
 
-        return new DriverEnvironmentReport(items, DateTimeOffset.Now);
+        return new DriverEnvironmentReport(groups, DateTimeOffset.Now);
     }
 
     public static string? FindDriverInf()
@@ -237,6 +272,139 @@ public static class DriverEnvironmentChecker
             true,
             "Copy model files");
     }
+
+    private static DriverEnvironmentCheckItem CheckBootFilterPackage()
+    {
+        DriverPackage? package = DriverPackageLocator.FindBootFilter();
+
+        string detail = package is not null
+            ? $"Boot filter package found: {package.DirectoryPath}"
+            : DriverPackageLocator.CreateBootFilterNotFoundMessage();
+
+        return new DriverEnvironmentCheckItem(
+            "bootfilter-package",
+            "Boot filter package",
+            detail,
+            package is not null ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
+            package is not null,
+            "Install boot filter");
+    }
+
+    private static DriverEnvironmentCheckItem CheckBootFilterService()
+    {
+        DriverServiceSnapshot service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
+        if (service.IsMissing)
+        {
+            return new DriverEnvironmentCheckItem(
+                "bootfilter-service",
+                "Boot filter service",
+                "Boot filter service is not installed.",
+                DriverEnvironmentCheckStatus.Failed,
+                DriverPackageLocator.FindBootFilter() is not null,
+                "Install boot filter");
+        }
+
+        if (service.State == DriverServiceState.Unknown)
+        {
+            return new DriverEnvironmentCheckItem(
+                "bootfilter-service",
+                "Boot filter service",
+                $"Unable to query boot filter service. {service.Detail}",
+                DriverEnvironmentCheckStatus.Failed,
+                false,
+                "Restart as administrator");
+        }
+
+        if (service.IsTransitioning)
+        {
+            return new DriverEnvironmentCheckItem(
+                "bootfilter-service",
+                "Boot filter service",
+                $"Boot filter service is changing state ({service.State}). Wait for it to finish or restart Windows.",
+                DriverEnvironmentCheckStatus.Failed,
+                false,
+                "Restart Windows");
+        }
+
+        return new DriverEnvironmentCheckItem(
+            "bootfilter-service",
+            "Boot filter service",
+            service.IsRunning ? "Boot filter service is running." : $"Boot filter service is installed but not running. {service.Detail}",
+            service.IsRunning ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Warning,
+            true,
+            "Start service");
+    }
+
+    private static DriverEnvironmentCheckItem CheckBootFilterCommunication()
+    {
+        bool reachable = TryOpenBootFilterDevice();
+        DriverServiceSnapshot service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
+
+        DriverEnvironmentCheckStatus status = reachable
+            ? DriverEnvironmentCheckStatus.Passed
+            : service.IsRunning ? DriverEnvironmentCheckStatus.Failed : DriverEnvironmentCheckStatus.Warning;
+
+        string detail = reachable
+            ? "Boot filter device is reachable."
+            : service.IsRunning
+                ? "Boot filter service is running but the device is not reachable. Restart Windows."
+                : "Boot filter device is not reachable. Start the boot filter service first.";
+
+        return new DriverEnvironmentCheckItem(
+            "bootfilter-communication",
+            "Boot filter communication",
+            detail,
+            status,
+            service.State != DriverServiceState.Unknown && !service.IsMissing,
+            "Restart bridge");
+    }
+
+    // Opens the boot filter device without registering as a client. This mirrors
+    // BootFilterClient.OpenDevice but is intentionally separate to avoid a full
+    // connect/register round-trip during environment checks.
+    private static bool TryOpenBootFilterDevice()
+    {
+        foreach (string path in BootFilterProtocol.DevicePaths)
+        {
+            try
+            {
+                using var handle = new SafeFileHandle(
+                    CreateFileW(
+                        path,
+                        GenericRead | GenericWrite,
+                        FileShareRead | FileShareWrite,
+                        nint.Zero,
+                        OpenExisting,
+                        FileAttributeNormal,
+                        nint.Zero),
+                    ownsHandle: true);
+
+                if (!handle.IsInvalid)
+                    return true;
+            }
+            catch
+            {
+            }
+        }
+        return false;
+    }
+
+    private const uint GenericRead = 0x80000000;
+    private const uint GenericWrite = 0x40000000;
+    private const uint FileShareRead = 0x00000001;
+    private const uint FileShareWrite = 0x00000002;
+    private const uint OpenExisting = 3;
+    private const uint FileAttributeNormal = 0x00000080;
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr CreateFileW(
+        string fileName,
+        uint desiredAccess,
+        uint shareMode,
+        nint securityAttributes,
+        uint creationDisposition,
+        uint flagsAndAttributes,
+        nint templateFile);
 
     internal static async Task<CommandResult> RunCommandAsync(string fileName, string arguments, CancellationToken token)
     {

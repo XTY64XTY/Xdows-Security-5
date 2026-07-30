@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1623,6 +1623,78 @@
   </data>
   <data name="SettingsPage_Protection_Driver_Status_Error" xml:space="preserve">
     <value>錯誤</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Title" xml:space="preserve">
+    <value>驅動環境檢測</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Close" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Refresh" xml:space="preserve">
+    <value>重新整理</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Checking" xml:space="preserve">
+    <value>正在檢查驅動防護環境...</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Repairing" xml:space="preserve">
+    <value>正在修復 {0}...</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Summary_Healthy" xml:space="preserve">
+    <value>驅動防護環境就緒。</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Summary_NeedsAttention" xml:space="preserve">
+    <value>驅動防護需要關注。請使用下方修復操作，或在驅動就緒前保持相容防護啟用。</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Summary_Error" xml:space="preserve">
+    <value>無法完成驅動環境檢測。請保持相容防護啟用並檢查日誌。</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Status_Passed" xml:space="preserve">
+    <value>通過</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Status_Warning" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Status_Failed" xml:space="preserve">
+    <value>失敗</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Privileges_Title" xml:space="preserve">
+    <value>執行權限</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Signing_Title" xml:space="preserve">
+    <value>驅動簽名與系統策略</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Packages_Title" xml:space="preserve">
+    <value>雙驅動包及服務</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Runtime_Title" xml:space="preserve">
+    <value>雙驅動通信與模型資源</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_admin_Title" xml:space="preserve">
+    <value>管理員權限</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_testsigning_Title" xml:space="preserve">
+    <value>驅動簽名</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_package_Title" xml:space="preserve">
+    <value>主驅動包</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_service_Title" xml:space="preserve">
+    <value>主驅動服務</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_bootfilter-package_Title" xml:space="preserve">
+    <value>引導過濾驅動包</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_bootfilter-service_Title" xml:space="preserve">
+    <value>引導過濾驅動服務</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_communication_Title" xml:space="preserve">
+    <value>主驅動通信</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_bootfilter-communication_Title" xml:space="preserve">
+    <value>引導過濾驅動通信</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_model_Title" xml:space="preserve">
+    <value>原生模型資源</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
     <value>需要檢測驅動環境</value>

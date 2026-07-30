@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1624,6 +1624,78 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="SettingsPage_Protection_Driver_Status_Error" xml:space="preserve">
     <value>Error</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Title" xml:space="preserve">
+    <value>Driver environment check</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Checking" xml:space="preserve">
+    <value>Checking driver protection environment...</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Repairing" xml:space="preserve">
+    <value>Repairing {0}...</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Summary_Healthy" xml:space="preserve">
+    <value>Driver protection environment is ready.</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Summary_NeedsAttention" xml:space="preserve">
+    <value>Driver protection needs attention. Use the repair actions below, or keep compatibility protection enabled until the driver is healthy.</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Summary_Error" xml:space="preserve">
+    <value>Unable to complete the driver environment check. Keep compatibility protection enabled and inspect the logs.</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Status_Passed" xml:space="preserve">
+    <value>Passed</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Status_Warning" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Status_Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Privileges_Title" xml:space="preserve">
+    <value>Privileges</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Signing_Title" xml:space="preserve">
+    <value>Driver signing and system policy</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Packages_Title" xml:space="preserve">
+    <value>Driver packages and services</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Group_Runtime_Title" xml:space="preserve">
+    <value>Driver communication and model assets</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_admin_Title" xml:space="preserve">
+    <value>Administrator rights</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_testsigning_Title" xml:space="preserve">
+    <value>Driver signing</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_package_Title" xml:space="preserve">
+    <value>Main driver package</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_service_Title" xml:space="preserve">
+    <value>Main driver service</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_bootfilter-package_Title" xml:space="preserve">
+    <value>Boot filter package</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_bootfilter-service_Title" xml:space="preserve">
+    <value>Boot filter service</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_communication_Title" xml:space="preserve">
+    <value>Main driver communication</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_bootfilter-communication_Title" xml:space="preserve">
+    <value>Boot filter communication</value>
+  </data>
+  <data name="DriverEnvironmentDialog_Item_model_Title" xml:space="preserve">
+    <value>Native model assets</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
     <value>Driver environment check required</value>

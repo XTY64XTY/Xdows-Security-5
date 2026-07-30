@@ -15,6 +15,10 @@ public static class DriverInstaller
         return item.Id switch
         {
             "package" or "service" => InstallAndStartDriverAsync(token),
+            "bootfilter-package" or "bootfilter-service" => BootFilterLoadWorkflow.EnsureReadyAsync(token),
+            "bootfilter-communication" => DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName).IsRunning
+                ? Task.FromResult(new DriverRepairResult(false, "Boot filter service is running but the device is not reachable. Restart Windows to recover."))
+                : BootFilterLoadWorkflow.EnsureReadyAsync(token),
             "communication" => DriverProtection.QueryRuntimeStatus() == DriverProtectionRuntimeStatus.NeedsRepair
                 ? InstallAndStartDriverAsync(token)
                 : RestartBridgeAsync(token),
