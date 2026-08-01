@@ -2,16 +2,20 @@
                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                xmlns:l="using:WinUI3Localizer"
-               DefaultButton="Primary"
                CornerRadius="{ThemeResource ControlCornerRadius}"
                l:Uids.Uid="TrustDialog_Dialog"
-               PrimaryButtonClick="OnPrimaryButtonClick"
-               SecondaryButtonClick="OnSecondaryButtonClick"
                xmlns:local="using:TrustQuarantine">
 
     <Grid>
-        <ListView x:Name="TrustListView" 
-                  SelectionMode="Multiple">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ListView x:Name="TrustListView"
+                  AutomationProperties.AutomationId="TrustListView"
+                  SelectionMode="Multiple"
+                  SelectionChanged="TrustListView_SelectionChanged">
             <ListView.ContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem l:Uids.Uid="TrustDialog_DeleteMenuItem" Click="DeleteMenuItem_Click"/>
@@ -36,6 +40,7 @@
         </ListView>
 
         <StackPanel x:Name="EmptyStatePanel"
+                    Grid.Row="0"
                     Visibility="Collapsed"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -50,5 +55,27 @@
                        TextWrapping="Wrap"
                        TextAlignment="Center"/>
         </StackPanel>
+
+        <CommandBar Grid.Row="1"
+                    Background="Transparent"
+                    DefaultLabelPosition="Right">
+            <AppBarButton x:Name="AddTrustButton"
+                          AutomationProperties.AutomationId="AddTrustButton"
+                          Icon="Add"
+                          l:Uids.Uid="TrustDialog_AddButton"
+                          Click="AddMenuItem_Click" />
+            <AppBarButton x:Name="DeleteTrustButton"
+                          AutomationProperties.AutomationId="DeleteTrustButton"
+                          Icon="Delete"
+                          IsEnabled="False"
+                          l:Uids.Uid="TrustDialog_DeleteButton"
+                          Click="DeleteMenuItem_Click" />
+            <AppBarButton x:Name="ClearTrustButton"
+                          AutomationProperties.AutomationId="ClearTrustButton"
+                          Icon="Clear"
+                          IsEnabled="False"
+                          l:Uids.Uid="TrustDialog_ClearButton"
+                          Click="ClearMenuItem_Click" />
+        </CommandBar>
     </Grid>
 </ContentDialog>

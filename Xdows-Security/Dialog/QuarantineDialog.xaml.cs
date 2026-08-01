@@ -15,8 +15,6 @@ namespace Xdows_Security
         public QuarantineDialog()
         {
             InitializeComponent();
-            PrimaryButtonText = Localizer.Get().GetLocalizedString("QuarantineDialog_RestoreButton.Content");
-            SecondaryButtonText = Localizer.Get().GetLocalizedString("QuarantineDialog_DeleteButton.Content");
             CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
             _ = ReloadAsync();
         }
@@ -34,7 +32,20 @@ namespace Xdows_Security
             EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
             QuarantineListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
             EmptyStateText.Text = Localizer.Get().GetLocalizedString("QuarantineDialog_EmptyState");
+            ClearQuarantineButton.IsEnabled = !isEmpty;
+            UpdateSelectionActions();
         }
+
+        private void QuarantineListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => UpdateSelectionActions();
+
+        private void UpdateSelectionActions()
+        {
+            bool hasSelection = QuarantineListView.SelectedItems.Count > 0;
+            RestoreQuarantineButton.IsEnabled = hasSelection;
+            DeleteQuarantineButton.IsEnabled = hasSelection;
+        }
+
         private async void RestoreMenuItem_Click(object sender, RoutedEventArgs e)
             => await RestoreSelectedAsync();
 
@@ -67,20 +78,5 @@ namespace Xdows_Security
             await ReloadAsync();
         }
 
-        private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-        {
-            args.Cancel = true;
-            await RestoreSelectedAsync();
-        }
-
-        private async void OnSecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-        {
-            args.Cancel = true;
-            var selected = QuarantineListView.SelectedItems.Cast<QuarantineItemModel>().ToList();
-            if (selected.Count == 0) return;
-            await QuarantineManager.DeleteItems(selected.Select(x => x.FileHash));
-            foreach (var item in selected) _items.Remove(item);
-            await ReloadAsync();
-        }
     }
 }

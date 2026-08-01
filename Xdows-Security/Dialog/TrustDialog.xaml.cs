@@ -17,8 +17,6 @@ namespace Xdows_Security
         public TrustDialog()
         {
             this.InitializeComponent();
-            PrimaryButtonText = Localizer.Get().GetLocalizedString("TrustDialog_AddButton.Content");
-            SecondaryButtonText = Localizer.Get().GetLocalizedString("TrustDialog_DeleteButton.Content");
             CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
             _ = ReloadAsync();
         }
@@ -47,7 +45,12 @@ namespace Xdows_Security
             EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
             TrustListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
             EmptyStateText.Text = Localizer.Get().GetLocalizedString("TrustDialog_EmptyState");
+            ClearTrustButton.IsEnabled = !isEmpty;
+            DeleteTrustButton.IsEnabled = TrustListView.SelectedItems.Count > 0;
         }
+
+        private void TrustListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => DeleteTrustButton.IsEnabled = TrustListView.SelectedItems.Count > 0;
 
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -77,26 +80,5 @@ namespace Xdows_Security
             _ = ReloadAsync();
         }
 
-        private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-        {
-            args.Cancel = true;
-            PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
-            if (file is null) return;
-            await TrustManager.AddToTrust(file.Path);
-            _ = ReloadAsync();
-        }
-
-        private async void OnSecondaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-        {
-            args.Cancel = true;
-            var selectedItems = TrustListView.SelectedItems.Cast<TrustItemModel>().ToList();
-            if (selectedItems.Count == 0) return;
-            foreach (var item in selectedItems)
-            {
-                await TrustManager.RemoveFromTrust(item.SourcePath);
-                _items.Remove(item);
-            }
-            await ReloadAsync();
-        }
     }
 }

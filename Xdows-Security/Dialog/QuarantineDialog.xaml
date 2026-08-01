@@ -5,14 +5,18 @@
     xmlns:local="using:TrustQuarantine"
     xmlns:l="using:WinUI3Localizer"
     l:Uids.Uid="QuarantineDialog_Dialog"
-    DefaultButton="Primary"
-    CornerRadius="{ThemeResource ControlCornerRadius}"
-    PrimaryButtonClick="OnPrimaryButtonClick"
-    SecondaryButtonClick="OnSecondaryButtonClick">
+    CornerRadius="{ThemeResource ControlCornerRadius}">
 
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <ListView x:Name="QuarantineListView"
-                  SelectionMode="Multiple">
+                  AutomationProperties.AutomationId="QuarantineListView"
+                  SelectionMode="Multiple"
+                  SelectionChanged="QuarantineListView_SelectionChanged">
             <ListView.ContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreMenuItem" Click="RestoreMenuItem_Click"/>
@@ -41,6 +45,7 @@
         </ListView>
 
         <StackPanel x:Name="EmptyStatePanel"
+                    Grid.Row="0"
                     Visibility="Collapsed"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
@@ -55,5 +60,28 @@
                        TextWrapping="Wrap"
                        TextAlignment="Center"/>
         </StackPanel>
+
+        <CommandBar Grid.Row="1"
+                    Background="Transparent"
+                    DefaultLabelPosition="Right">
+            <AppBarButton x:Name="RestoreQuarantineButton"
+                          AutomationProperties.AutomationId="RestoreQuarantineButton"
+                          Icon="Undo"
+                          IsEnabled="False"
+                          l:Uids.Uid="QuarantineDialog_RestoreButton"
+                          Click="RestoreMenuItem_Click" />
+            <AppBarButton x:Name="DeleteQuarantineButton"
+                          AutomationProperties.AutomationId="DeleteQuarantineButton"
+                          Icon="Delete"
+                          IsEnabled="False"
+                          l:Uids.Uid="QuarantineDialog_DeleteButton"
+                          Click="DeleteMenuItem_Click" />
+            <AppBarButton x:Name="ClearQuarantineButton"
+                          AutomationProperties.AutomationId="ClearQuarantineButton"
+                          Icon="Clear"
+                          IsEnabled="False"
+                          l:Uids.Uid="QuarantineDialog_ClearButton"
+                          Click="ClearMenuItem_Click" />
+        </CommandBar>
     </Grid>
 </ContentDialog>

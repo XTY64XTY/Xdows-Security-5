@@ -1166,10 +1166,10 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="QuarantineDialog_Dialog.Title" xml:space="preserve">
     <value>Quarantine</value>
   </data>
-  <data name="TrustDialog_AddButton.Content" xml:space="preserve">
+  <data name="TrustDialog_AddButton.Label" xml:space="preserve">
     <value>Add</value>
   </data>
-  <data name="QuarantineDialog_RestoreButton.Content" xml:space="preserve">
+  <data name="QuarantineDialog_RestoreButton.Label" xml:space="preserve">
     <value>Restore</value>
   </data>
   <data name="TrustDialog_AddMenuItem.Text" xml:space="preserve">
@@ -1178,10 +1178,10 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="QuarantineDialog_RestoreMenuItem.Text" xml:space="preserve">
     <value>Restore</value>
   </data>
-  <data name="TrustDialog_DeleteButton.Content" xml:space="preserve">
+  <data name="TrustDialog_DeleteButton.Label" xml:space="preserve">
     <value>Delete</value>
   </data>
-  <data name="QuarantineDialog_DeleteButton.Content" xml:space="preserve">
+  <data name="QuarantineDialog_DeleteButton.Label" xml:space="preserve">
     <value>Delete</value>
   </data>
   <data name="TrustDialog_DeleteMenuItem.Text" xml:space="preserve">
@@ -1190,10 +1190,10 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="QuarantineDialog_DeleteMenuItem.Text" xml:space="preserve">
     <value>Delete</value>
   </data>
-  <data name="TrustDialog_ClearButton.Content" xml:space="preserve">
+  <data name="TrustDialog_ClearButton.Label" xml:space="preserve">
     <value>Clear</value>
   </data>
-  <data name="QuarantineDialog_ClearButton.Content" xml:space="preserve">
+  <data name="QuarantineDialog_ClearButton.Label" xml:space="preserve">
     <value>Clear</value>
   </data>
   <data name="TrustDialog_ClearMenuItem.Text" xml:space="preserve">
