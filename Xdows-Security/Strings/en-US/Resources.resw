@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1849,13 +1849,19 @@ This action may cause you to accidentally run a threat file.</value>
     <value>Use compact notifications only while gaming</value>
   </data>
   <data name="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming.Description" xml:space="preserve">
-    <value>Automatically use compact notifications while a game in the Windows game list is running</value>
+    <value>Automatically use compact notifications while a game specified below is running</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Header" xml:space="preserve">
-    <value>Game list</value>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Header" xml:space="preserve">
+    <value>Game file paths</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Description" xml:space="preserve">
-    <value>Open Windows Game Mode settings</value>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Description" xml:space="preserve">
+    <value>Add game executables that trigger compact notifications while running</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Add.Content" xml:space="preserve">
+    <value>Add game file</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Empty.Text" xml:space="preserve">
+    <value>No game files added yet</value>
   </data>
   <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
     <value>Threat handled automatically</value>

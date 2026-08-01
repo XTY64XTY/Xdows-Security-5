@@ -10,6 +10,7 @@ using Microsoft.Windows.Storage.Pickers;
 using Protection;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -32,6 +33,7 @@ namespace Xdows_Security.Views
         private bool _driverProtectionOperationInProgress;
         private bool _bootOperationInProgress;
         private bool _bootProtectionOperationInProgress;
+        private ObservableCollection<string> _gamePaths = new();
 
         private sealed record BootDiskChoice(PhysicalDiskInfo Disk, String Title);
 
@@ -1833,6 +1835,64 @@ namespace Xdows_Security.Views
 
             CompactNotificationWhenGamingToggle.IsOn = onlyWhenGaming;
             ThreatNotificationModeComboBox.IsEnabled = !onlyWhenGaming;
+
+            _gamePaths = new ObservableCollection<string>(ThreatNotificationModeService.GetGameExecutablePaths());
+            GamePathsListView.ItemsSource = _gamePaths;
+            UpdateGamePathsEmptyState();
+        }
+
+        private void UpdateGamePathsEmptyState()
+        {
+            bool empty = _gamePaths.Count == 0;
+            GamePathsEmptyText.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+            GamePathsListView.Visibility = empty ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private async void AddGamePathButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                FileOpenPicker picker = new(XamlRoot.ContentIslandEnvironment.AppWindowId)
+                {
+                    SuggestedStartLocation = PickerLocationId.ComputerFolder
+                };
+                picker.FileTypeFilter.Add(".exe");
+
+                PickFileResult? file = await picker.PickSingleFileAsync();
+                if (file is null)
+                    return;
+
+                foreach (string existing in _gamePaths)
+                {
+                    if (string.Equals(existing, file.Path, StringComparison.OrdinalIgnoreCase))
+                        return;
+                }
+
+                _gamePaths.Add(file.Path);
+                ThreatNotificationModeService.SaveGameExecutablePaths(_gamePaths);
+                UpdateGamePathsEmptyState();
+            }
+            catch (Exception ex)
+            {
+                AddNewLog(LogLevel.ERROR, "Settings", $"Failed to add game path: {ex.Message}");
+            }
+        }
+
+        private void RemoveGamePathButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not string path)
+                return;
+
+            for (int i = 0; i < _gamePaths.Count; i++)
+            {
+                if (string.Equals(_gamePaths[i], path, StringComparison.OrdinalIgnoreCase))
+                {
+                    _gamePaths.RemoveAt(i);
+                    ThreatNotificationModeService.SaveGameExecutablePaths(_gamePaths);
+                    UpdateGamePathsEmptyState();
+                    return;
+                }
+            }
         }
 
         private void ThreatNotificationModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1851,18 +1911,6 @@ namespace Xdows_Security.Views
             ThreatNotificationModeComboBox.IsEnabled = !toggle.IsOn;
             if (!IsInitialize)
                 App.LocalSettings.Values[ThreatNotificationModeService.UseCompactWhenGamingSetting] = toggle.IsOn;
-        }
-
-        private async void OpenGameListButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                await Windows.System.Launcher.LaunchUriAsync(new Uri(ThreatNotificationModeService.GameListSettingsUri));
-            }
-            catch (Exception ex)
-            {
-                AddNewLog(LogLevel.ERROR, "Settings", $"Failed to open Windows gaming settings: {ex.Message}");
-            }
         }
 
         private static void ApplySoundSettings()

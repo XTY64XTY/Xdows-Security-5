@@ -1,8 +1,7 @@
-using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,14 +14,10 @@ internal static class ThreatNotificationModeService
     internal const string CompactMode = "Compact";
     internal const string NormalMode = "Normal";
     internal const string UseCompactWhenGamingSetting = "UseCompactThreatNotificationsWhenGaming";
-    internal const string GameListSettingsUri = "ms-settings:gaming-gamemode";
+    internal const string GamePathsSetting = "CompactThreatNotificationGamePaths";
 
-    private static readonly object GameListLock = new();
     private static readonly SemaphoreSlim GameDetectionLock = new(1, 1);
-    private static readonly TimeSpan GameListCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan GameStateCacheDuration = TimeSpan.FromSeconds(2);
-    private static HashSet<string> _gameDirectoryNames = new(StringComparer.OrdinalIgnoreCase);
-    private static DateTimeOffset _gameListUpdatedAt = DateTimeOffset.MinValue;
     private static DateTimeOffset _gameStateUpdatedAt = DateTimeOffset.MinValue;
     private static bool _isGameRunning;
 
@@ -39,6 +34,36 @@ internal static class ThreatNotificationModeService
             ? savedMode
             : NormalMode;
         return string.Equals(mode, CompactMode, StringComparison.Ordinal);
+    }
+
+    // 读取用户配置的游戏可执行文件路径列表（换行分隔存储于本地设置）
+    internal static List<string> GetGameExecutablePaths()
+    {
+        var settings = App.LocalSettings;
+        if (!settings.Values.TryGetValue(GamePathsSetting, out object? raw) ||
+            raw is not string serialized ||
+            string.IsNullOrWhiteSpace(serialized))
+        {
+            return new List<string>();
+        }
+
+        var result = new List<string>();
+        foreach (string part in serialized.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string path = part.Trim();
+            if (path.Length > 0)
+                result.Add(path);
+        }
+        return result;
+    }
+
+    // 保存用户配置的游戏可执行文件路径列表
+    internal static void SaveGameExecutablePaths(IEnumerable<string> paths)
+    {
+        var settings = App.LocalSettings;
+        settings.Values[GamePathsSetting] = string.Join(
+            '\n',
+            paths.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()));
     }
 
     private static async Task<bool> IsGameRunningCachedAsync()
@@ -64,6 +89,7 @@ internal static class ThreatNotificationModeService
 
     private static bool IsGameRunning()
     {
+        // 优先：系统级全屏 Direct3D 检测，对全屏游戏最可靠
         try
         {
             if (SHQueryUserNotificationState(out QueryUserNotificationState state) == 0 &&
@@ -76,8 +102,9 @@ internal static class ThreatNotificationModeService
         {
         }
 
-        HashSet<string> gameDirectoryNames = GetRegisteredGameDirectoryNames();
-        if (gameDirectoryNames.Count == 0)
+        // 补充：与用户配置的游戏可执行文件路径精确比对（忽略大小写）
+        HashSet<string> gamePaths = new(GetGameExecutablePaths(), StringComparer.OrdinalIgnoreCase);
+        if (gamePaths.Count == 0)
             return false;
 
         foreach (Process process in Process.GetProcesses())
@@ -87,8 +114,7 @@ internal static class ThreatNotificationModeService
                 try
                 {
                     string? executablePath = process.MainModule?.FileName;
-                    string? directoryName = Path.GetFileName(Path.GetDirectoryName(executablePath));
-                    if (!string.IsNullOrWhiteSpace(directoryName) && gameDirectoryNames.Contains(directoryName))
+                    if (!string.IsNullOrWhiteSpace(executablePath) && gamePaths.Contains(executablePath))
                         return true;
                 }
                 catch
@@ -98,40 +124,6 @@ internal static class ThreatNotificationModeService
         }
 
         return false;
-    }
-
-    private static HashSet<string> GetRegisteredGameDirectoryNames()
-    {
-        lock (GameListLock)
-        {
-            if (DateTimeOffset.UtcNow - _gameListUpdatedAt < GameListCacheDuration)
-                return _gameDirectoryNames;
-
-            HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
-            try
-            {
-                using RegistryKey? children = Registry.CurrentUser.OpenSubKey(@"System\GameConfigStore\Children");
-                if (children is not null)
-                {
-                    foreach (string childName in children.GetSubKeyNames())
-                    {
-                        using RegistryKey? child = children.OpenSubKey(childName);
-                        if (child?.GetValue("ExeParentDirectory") is string directoryName &&
-                            !string.IsNullOrWhiteSpace(directoryName))
-                        {
-                            names.Add(directoryName.Trim());
-                        }
-                    }
-                }
-            }
-            catch
-            {
-            }
-
-            _gameDirectoryNames = names;
-            _gameListUpdatedAt = DateTimeOffset.UtcNow;
-            return _gameDirectoryNames;
-        }
     }
 
     [DllImport("shell32.dll")]

@@ -20,18 +20,17 @@ function Assert-Match([string]$Path, [string]$Pattern, [string]$Name) {
 }
 
 Assert-Match $files.SettingsXaml 'SettingsPage_Feature_ThreatNotificationMode(?s:.*?)Tag="Normal"(?s:.*?)Tag="Compact"' 'normal and compact notification choices'
-Assert-Match $files.SettingsXaml 'CompactNotificationWhenGamingToggle(?s:.*?)SettingsPage_Feature_ThreatNotificationMode_GameList(?s:.*?)l:Uids\.Uid="AllPage_OpenLink"' 'conditional gaming option and reused open-link localization'
+Assert-Match $files.SettingsXaml 'SettingsPage_Feature_ThreatNotificationMode_GamePaths(?s:.*?)AddGamePathButton(?s:.*?)GamePathsListView(?s:.*?)RemoveGamePathButton_Click' 'user-configured game paths UI'
 Assert-Match $files.SettingsCode 'ThreatNotificationModeService\.NormalMode' 'normal notification default'
 Assert-Match $files.SettingsCode 'ThreatNotificationModeComboBox\.IsEnabled\s*=\s*!toggle\.IsOn' 'notification combo disabled by gaming condition'
-Assert-Match $files.SettingsCode 'GameListSettingsUri' 'game-list settings link'
+Assert-Match $files.SettingsCode 'GetGameExecutablePaths' 'game path loader in settings page'
 
 Assert-Match $files.ModeService 'ShouldUseCompactAsync' 'notification mode decision service'
 Assert-Match $files.ModeService 'Task\.Run\(IsGameRunning\)' 'off-UI-thread game detection'
 Assert-Match $files.ModeService 'SemaphoreSlim\s+GameDetectionLock\s*=\s*new\(1,\s*1\)' 'single-flight game detection'
 Assert-Match $files.ModeService 'GameStateCacheDuration\s*=\s*TimeSpan\.FromSeconds\(2\)' 'short game-state cache'
 Assert-Match $files.ModeService 'SHQueryUserNotificationState' 'full-screen Direct3D game detection'
-Assert-Match $files.ModeService 'GameConfigStore\\Children' 'Windows registered game list detection'
-Assert-Match $files.ModeService 'GameListCacheDuration\s*=\s*TimeSpan\.FromMinutes\(5\)' 'bounded game-list cache refresh'
+Assert-Match $files.ModeService 'GetGameExecutablePaths' 'user-configured game path detection'
 
 Assert-Match $files.CompactCode 'NoActivateStyle\s*=\s*0x08000000' 'non-activating window style'
 Assert-Match $files.CompactCode 'manager\.IsAlwaysOnTop\s*=\s*true' 'always-on-top window'

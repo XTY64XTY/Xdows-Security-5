@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1848,13 +1848,19 @@
     <value>僅在開啟遊戲時使用較小的通知</value>
   </data>
   <data name="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming.Description" xml:space="preserve">
-    <value>執行 Windows 遊戲清單中的遊戲時自動使用較小的通知</value>
+    <value>執行下方指定的遊戲程式時自動使用較小的通知</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Header" xml:space="preserve">
-    <value>遊戲清單</value>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Header" xml:space="preserve">
+    <value>遊戲檔案路徑</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GameList.Description" xml:space="preserve">
-    <value>開啟 Windows 遊戲模式設定</value>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Description" xml:space="preserve">
+    <value>新增在執行時觸發較小通知的遊戲程式</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Add.Content" xml:space="preserve">
+    <value>新增遊戲檔案</value>
+  </data>
+  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Empty.Text" xml:space="preserve">
+    <value>尚未新增遊戲檔案</value>
   </data>
   <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
     <value>已自動處理威脅</value>
