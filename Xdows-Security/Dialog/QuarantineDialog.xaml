@@ -20,6 +20,7 @@
             <ListView.ContextFlyout>
                 <MenuFlyout>
                     <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreMenuItem" Click="RestoreMenuItem_Click"/>
+                    <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_RestoreToMenuItem" Click="RestoreToMenuItem_Click"/>
                     <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_DeleteMenuItem"  Click="DeleteMenuItem_Click"/>
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem l:Uids.Uid="QuarantineDialog_ClearMenuItem"   Click="ClearMenuItem_Click"/>
@@ -70,6 +71,12 @@
                           IsEnabled="False"
                           l:Uids.Uid="QuarantineDialog_RestoreButton"
                           Click="RestoreMenuItem_Click" />
+            <AppBarButton x:Name="RestoreQuarantineToButton"
+                          AutomationProperties.AutomationId="RestoreQuarantineToButton"
+                          Icon="OpenFile"
+                          IsEnabled="False"
+                          l:Uids.Uid="QuarantineDialog_RestoreToButton"
+                          Click="RestoreToMenuItem_Click" />
             <AppBarButton x:Name="DeleteQuarantineButton"
                           AutomationProperties.AutomationId="DeleteQuarantineButton"
                           Icon="Delete"

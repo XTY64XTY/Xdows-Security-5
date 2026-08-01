@@ -1177,6 +1177,12 @@
   <data name="QuarantineDialog_RestoreMenuItem.Text" xml:space="preserve">
     <value>恢复</value>
   </data>
+  <data name="QuarantineDialog_RestoreToButton.Label" xml:space="preserve">
+    <value>恢复到...</value>
+  </data>
+  <data name="QuarantineDialog_RestoreToMenuItem.Text" xml:space="preserve">
+    <value>恢复到...</value>
+  </data>
   <data name="TrustDialog_DeleteButton.Label" xml:space="preserve">
     <value>删除</value>
   </data>

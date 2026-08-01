@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -43,11 +44,15 @@ namespace Xdows_Security
         {
             bool hasSelection = QuarantineListView.SelectedItems.Count > 0;
             RestoreQuarantineButton.IsEnabled = hasSelection;
+            RestoreQuarantineToButton.IsEnabled = hasSelection;
             DeleteQuarantineButton.IsEnabled = hasSelection;
         }
 
         private async void RestoreMenuItem_Click(object sender, RoutedEventArgs e)
             => await RestoreSelectedAsync();
+
+        private async void RestoreToMenuItem_Click(object sender, RoutedEventArgs e)
+            => await RestoreSelectedToDirectoryAsync();
 
         private async Task RestoreSelectedAsync()
         {
@@ -58,6 +63,36 @@ namespace Xdows_Security
             {
                 bool ok = await QuarantineManager.RestoreFile(item.FileHash);
                 if (ok) _items.Remove(item);
+            }
+
+            await ReloadAsync();
+        }
+
+        private async Task RestoreSelectedToDirectoryAsync()
+        {
+            var selected = QuarantineListView.SelectedItems.Cast<QuarantineItemModel>().ToList();
+            if (selected.Count == 0)
+                return;
+
+            PickFolderResult? folder;
+            try
+            {
+                folder = await new FolderPicker(
+                    XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFolderAsync();
+            }
+            catch
+            {
+                return;
+            }
+
+            if (folder is null)
+                return;
+
+            foreach (var item in selected)
+            {
+                bool restored = await QuarantineManager.RestoreFileToDirectory(item.FileHash, folder.Path);
+                if (restored)
+                    _items.Remove(item);
             }
 
             await ReloadAsync();

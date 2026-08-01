@@ -1178,6 +1178,12 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="QuarantineDialog_RestoreMenuItem.Text" xml:space="preserve">
     <value>Restore</value>
   </data>
+  <data name="QuarantineDialog_RestoreToButton.Label" xml:space="preserve">
+    <value>Restore to...</value>
+  </data>
+  <data name="QuarantineDialog_RestoreToMenuItem.Text" xml:space="preserve">
+    <value>Restore to...</value>
+  </data>
   <data name="TrustDialog_DeleteButton.Label" xml:space="preserve">
     <value>Delete</value>
   </data>

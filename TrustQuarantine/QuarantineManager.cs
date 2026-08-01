@@ -131,18 +131,45 @@ namespace TrustQuarantine
 
         public static async Task<bool> RestoreFile(string fileHash)
         {
-            if (string.IsNullOrWhiteSpace(fileHash))
+            QuarantineItemModel? item = FindQuarantineItem(fileHash);
+            if (item == null)
                 return false;
 
-            var current = GetQuarantineItems();
-            var item = current.FirstOrDefault(x => string.Equals(x.FileHash, fileHash, StringComparison.OrdinalIgnoreCase));
+            return await RestoreFileToPath(item, item.SourcePath);
+        }
+
+        public static async Task<bool> RestoreFileToDirectory(string fileHash, string targetDirectory)
+        {
+            if (string.IsNullOrWhiteSpace(targetDirectory) || !Directory.Exists(targetDirectory))
+                return false;
+
+            QuarantineItemModel? item = FindQuarantineItem(fileHash);
             if (item == null)
+                return false;
+
+            string fileName = Path.GetFileName(item.SourcePath);
+            if (string.IsNullOrWhiteSpace(fileName))
+                fileName = item.FileHash;
+
+            return await RestoreFileToPath(item, Path.Combine(targetDirectory, fileName));
+        }
+
+        private static QuarantineItemModel? FindQuarantineItem(string fileHash)
+        {
+            if (string.IsNullOrWhiteSpace(fileHash))
+                return null;
+
+            return GetQuarantineItems().FirstOrDefault(
+                x => string.Equals(x.FileHash, fileHash, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static async Task<bool> RestoreFileToPath(QuarantineItemModel item, string targetPath)
+        {
+            if (string.IsNullOrWhiteSpace(targetPath))
                 return false;
 
             try
             {
-                string targetPath = item.SourcePath;
-
                 if (File.Exists(targetPath))
                 {
                     File.Delete(targetPath);
@@ -154,7 +181,7 @@ namespace TrustQuarantine
                 byte[] plain = DecryptData(item.FileData, key, iv);
                 await File.WriteAllBytesAsync(targetPath, plain);
 
-                string quarantineItemFilePath = Path.Combine(QuarantineFolderPath, $"{fileHash}.json");
+                string quarantineItemFilePath = Path.Combine(QuarantineFolderPath, $"{item.FileHash}.json");
                 if (File.Exists(quarantineItemFilePath))
                 {
                     File.Delete(quarantineItemFilePath);
