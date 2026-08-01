@@ -393,47 +393,11 @@
                                           Toggled="CompactNotificationWhenGamingToggle_Toggled" />
                         </controls:SettingsCard>
                         <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths"
-                                               HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}"
-                                               HorizontalContentAlignment="Stretch">
-                            <StackPanel Spacing="8">
-                                <Button x:Name="AddGamePathButton"
-                                        AutomationProperties.AutomationId="AddGamePathButton"
-                                        l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Add"
-                                        Click="AddGamePathButton_Click" />
-                                <ListView x:Name="GamePathsListView"
-                                          AutomationProperties.AutomationId="GamePathsListView"
-                                          SelectionMode="None"
-                                          IsItemClickEnabled="False"
-                                          MaxHeight="240">
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid ColumnSpacing="8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0"
-                                                           Text="{Binding}"
-                                                           VerticalAlignment="Center"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           ToolTipService.ToolTip="{Binding}" />
-                                                <Button Grid.Column="1"
-                                                        Click="RemoveGamePathButton_Click"
-                                                        Tag="{Binding}"
-                                                        Padding="6"
-                                                        MinWidth="0">
-                                                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
-                                                </Button>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                                <TextBlock x:Name="GamePathsEmptyText"
-                                           l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Empty"
-                                           Visibility="Collapsed"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           FontSize="12" />
-                            </StackPanel>
+                                               HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}">
+                            <Button x:Name="GamePathsViewButton"
+                                    AutomationProperties.AutomationId="GamePathsViewButton"
+                                    l:Uids.Uid="AllPage_OpenLink"
+                                    Click="GamePathsViewButton_Click" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

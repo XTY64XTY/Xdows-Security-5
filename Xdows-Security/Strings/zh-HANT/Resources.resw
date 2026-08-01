@@ -1856,11 +1856,29 @@
   <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Description" xml:space="preserve">
     <value>新增在執行時觸發較小通知的遊戲程式</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Add.Content" xml:space="preserve">
+  <data name="GamePathsDialog_Dialog.Title" xml:space="preserve">
+    <value>遊戲檔案路徑</value>
+  </data>
+  <data name="GamePathsDialog_AddButton.Label" xml:space="preserve">
+    <value>新增</value>
+  </data>
+  <data name="GamePathsDialog_DeleteButton.Label" xml:space="preserve">
+    <value>刪除</value>
+  </data>
+  <data name="GamePathsDialog_ClearButton.Label" xml:space="preserve">
+    <value>全部清除</value>
+  </data>
+  <data name="GamePathsDialog_AddMenuItem.Text" xml:space="preserve">
     <value>新增遊戲檔案</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Empty.Text" xml:space="preserve">
-    <value>尚未新增遊戲檔案</value>
+  <data name="GamePathsDialog_DeleteMenuItem.Text" xml:space="preserve">
+    <value>刪除所選</value>
+  </data>
+  <data name="GamePathsDialog_ClearMenuItem.Text" xml:space="preserve">
+    <value>全部清除</value>
+  </data>
+  <data name="GamePathsDialog_EmptyState" xml:space="preserve">
+    <value>尚無遊戲檔案，點擊「新增」將遊戲程式加入清單</value>
   </data>
   <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
     <value>已自動處理威脅</value>

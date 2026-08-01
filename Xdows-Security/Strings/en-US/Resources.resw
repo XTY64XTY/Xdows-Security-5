@@ -1857,11 +1857,29 @@ This action may cause you to accidentally run a threat file.</value>
   <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Description" xml:space="preserve">
     <value>Add game executables that trigger compact notifications while running</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Add.Content" xml:space="preserve">
+  <data name="GamePathsDialog_Dialog.Title" xml:space="preserve">
+    <value>Game file paths</value>
+  </data>
+  <data name="GamePathsDialog_AddButton.Label" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="GamePathsDialog_DeleteButton.Label" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="GamePathsDialog_ClearButton.Label" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="GamePathsDialog_AddMenuItem.Text" xml:space="preserve">
     <value>Add game file</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Empty.Text" xml:space="preserve">
-    <value>No game files added yet</value>
+  <data name="GamePathsDialog_DeleteMenuItem.Text" xml:space="preserve">
+    <value>Delete selected</value>
+  </data>
+  <data name="GamePathsDialog_ClearMenuItem.Text" xml:space="preserve">
+    <value>Clear all</value>
+  </data>
+  <data name="GamePathsDialog_EmptyState" xml:space="preserve">
+    <value>No game files yet. Click "Add" to add a game executable</value>
   </data>
   <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
     <value>Threat handled automatically</value>

@@ -1856,11 +1856,29 @@
   <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths.Description" xml:space="preserve">
     <value>添加在运行时触发较小通知的游戏程序</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Add.Content" xml:space="preserve">
+  <data name="GamePathsDialog_Dialog.Title" xml:space="preserve">
+    <value>游戏文件路径</value>
+  </data>
+  <data name="GamePathsDialog_AddButton.Label" xml:space="preserve">
+    <value>添加</value>
+  </data>
+  <data name="GamePathsDialog_DeleteButton.Label" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="GamePathsDialog_ClearButton.Label" xml:space="preserve">
+    <value>全部清除</value>
+  </data>
+  <data name="GamePathsDialog_AddMenuItem.Text" xml:space="preserve">
     <value>添加游戏文件</value>
   </data>
-  <data name="SettingsPage_Feature_ThreatNotificationMode_GamePaths_Empty.Text" xml:space="preserve">
-    <value>尚未添加游戏文件</value>
+  <data name="GamePathsDialog_DeleteMenuItem.Text" xml:space="preserve">
+    <value>删除所选</value>
+  </data>
+  <data name="GamePathsDialog_ClearMenuItem.Text" xml:space="preserve">
+    <value>全部清除</value>
+  </data>
+  <data name="GamePathsDialog_EmptyState" xml:space="preserve">
+    <value>暂无游戏文件，点击"添加"将游戏程序加入列表</value>
   </data>
   <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
     <value>已自动处理威胁</value>

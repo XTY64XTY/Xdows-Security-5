@@ -1,0 +1,76 @@
+<ContentDialog
+    x:Class="Xdows_Security.GamePathsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="using:WinUI3Localizer"
+    CornerRadius="{ThemeResource ControlCornerRadius}"
+    l:Uids.Uid="GamePathsDialog_Dialog">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ListView x:Name="GamePathsListView"
+                  AutomationProperties.AutomationId="GamePathsListView"
+                  SelectionMode="Multiple"
+                  SelectionChanged="GamePathsListView_SelectionChanged">
+            <ListView.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem l:Uids.Uid="GamePathsDialog_AddMenuItem" Click="AddMenuItem_Click"/>
+                    <MenuFlyoutItem l:Uids.Uid="GamePathsDialog_DeleteMenuItem" Click="DeleteMenuItem_Click"/>
+                    <MenuFlyoutSeparator />
+                    <MenuFlyoutItem l:Uids.Uid="GamePathsDialog_ClearMenuItem" Click="ClearMenuItem_Click"/>
+                </MenuFlyout>
+            </ListView.ContextFlyout>
+
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Spacing="2" Padding="8,6">
+                        <TextBlock Text="{Binding}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" IsTextSelectionEnabled="True"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <StackPanel x:Name="EmptyStatePanel"
+                    Grid.Row="0"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="8"
+                    Margin="0,32,0,32">
+            <FontIcon Glyph="&#xE7FC;" FontSize="36"
+                      Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                      HorizontalAlignment="Center"/>
+            <TextBlock x:Name="EmptyStateText"
+                       HorizontalAlignment="Center"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+        </StackPanel>
+
+        <CommandBar Grid.Row="1"
+                    Background="Transparent"
+                    DefaultLabelPosition="Right">
+            <AppBarButton x:Name="AddGamePathButton"
+                          AutomationProperties.AutomationId="AddGamePathButton"
+                          Icon="Add"
+                          l:Uids.Uid="GamePathsDialog_AddButton"
+                          Click="AddMenuItem_Click" />
+            <AppBarButton x:Name="DeleteGamePathButton"
+                          AutomationProperties.AutomationId="DeleteGamePathButton"
+                          Icon="Delete"
+                          IsEnabled="False"
+                          l:Uids.Uid="GamePathsDialog_DeleteButton"
+                          Click="DeleteMenuItem_Click" />
+            <AppBarButton x:Name="ClearGamePathsButton"
+                          AutomationProperties.AutomationId="ClearGamePathsButton"
+                          Icon="Clear"
+                          IsEnabled="False"
+                          l:Uids.Uid="GamePathsDialog_ClearButton"
+                          Click="ClearMenuItem_Click" />
+        </CommandBar>
+    </Grid>
+</ContentDialog>
