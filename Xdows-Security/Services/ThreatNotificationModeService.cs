@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Xdows_Security.Services;
@@ -16,11 +17,6 @@ internal static class ThreatNotificationModeService
     internal const string UseCompactWhenGamingSetting = "UseCompactThreatNotificationsWhenGaming";
     internal const string GamePathsSetting = "CompactThreatNotificationGamePaths";
 
-    private static readonly SemaphoreSlim GameDetectionLock = new(1, 1);
-    private static readonly TimeSpan GameStateCacheDuration = TimeSpan.FromSeconds(2);
-    private static DateTimeOffset _gameStateUpdatedAt = DateTimeOffset.MinValue;
-    private static bool _isGameRunning;
-
     internal static async Task<bool> ShouldUseCompactAsync()
     {
         var settings = App.LocalSettings;
@@ -28,7 +24,7 @@ internal static class ThreatNotificationModeService
                               gamingRaw is bool gaming && gaming;
 
         if (onlyWhenGaming)
-            return await IsGameRunningCachedAsync().ConfigureAwait(false);
+            return await Task.Run(IsGameRunning).ConfigureAwait(false);
 
         string mode = settings.Values.TryGetValue(NotificationModeSetting, out object? modeRaw) && modeRaw is string savedMode
             ? savedMode
@@ -39,22 +35,29 @@ internal static class ThreatNotificationModeService
     // 读取用户配置的游戏可执行文件路径列表（换行分隔存储于本地设置）
     internal static List<string> GetGameExecutablePaths()
     {
-        var settings = App.LocalSettings;
-        if (!settings.Values.TryGetValue(GamePathsSetting, out object? raw) ||
-            raw is not string serialized ||
-            string.IsNullOrWhiteSpace(serialized))
+        try
+        {
+            var settings = App.LocalSettings;
+            if (!settings.Values.TryGetValue(GamePathsSetting, out object? raw) ||
+                raw is not string serialized ||
+                string.IsNullOrWhiteSpace(serialized))
+            {
+                return new List<string>();
+            }
+
+            var result = new List<string>();
+            foreach (string part in serialized.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+            {
+                string path = part.Trim();
+                if (path.Length > 0)
+                    result.Add(path);
+            }
+            return result;
+        }
+        catch
         {
             return new List<string>();
         }
-
-        var result = new List<string>();
-        foreach (string part in serialized.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-        {
-            string path = part.Trim();
-            if (path.Length > 0)
-                result.Add(path);
-        }
-        return result;
     }
 
     // 保存用户配置的游戏可执行文件路径列表
@@ -66,77 +69,90 @@ internal static class ThreatNotificationModeService
             paths.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim()));
     }
 
-    private static async Task<bool> IsGameRunningCachedAsync()
-    {
-        if (DateTimeOffset.UtcNow - _gameStateUpdatedAt < GameStateCacheDuration)
-            return _isGameRunning;
-
-        await GameDetectionLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            if (DateTimeOffset.UtcNow - _gameStateUpdatedAt < GameStateCacheDuration)
-                return _isGameRunning;
-
-            _isGameRunning = await Task.Run(IsGameRunning).ConfigureAwait(false);
-            _gameStateUpdatedAt = DateTimeOffset.UtcNow;
-            return _isGameRunning;
-        }
-        finally
-        {
-            GameDetectionLock.Release();
-        }
-    }
-
+    // 每次弹窗前实时检测：遍历进程并与用户配置路径逐一对比（忽略大小写）
     private static bool IsGameRunning()
     {
-        // 优先：系统级全屏 Direct3D 检测，对全屏游戏最可靠
-        try
+        HashSet<string> gamePaths = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string path in GetGameExecutablePaths())
         {
-            if (SHQueryUserNotificationState(out QueryUserNotificationState state) == 0 &&
-                state == QueryUserNotificationState.RunningDirect3DFullScreen)
+            try
             {
-                return true;
+                gamePaths.Add(Path.GetFullPath(path.Trim()));
+            }
+            catch
+            {
+                gamePaths.Add(path.Trim());
             }
         }
-        catch
-        {
-        }
-
-        // 补充：与用户配置的游戏可执行文件路径精确比对（忽略大小写）
-        HashSet<string> gamePaths = new(GetGameExecutablePaths(), StringComparer.OrdinalIgnoreCase);
         if (gamePaths.Count == 0)
             return false;
 
-        foreach (Process process in Process.GetProcesses())
+        Process[] processes;
+        try
         {
-            using (process)
+            processes = Process.GetProcesses();
+        }
+        catch
+        {
+            return false;
+        }
+
+        foreach (Process process in processes)
+        {
+            try
             {
-                try
+                using (process)
                 {
-                    string? executablePath = process.MainModule?.FileName;
-                    if (!string.IsNullOrWhiteSpace(executablePath) && gamePaths.Contains(executablePath))
+                    string? executablePath = GetProcessExecutablePath(process);
+                    if (string.IsNullOrWhiteSpace(executablePath))
+                        continue;
+
+                    try
+                    {
+                        executablePath = Path.GetFullPath(executablePath);
+                    }
+                    catch
+                    {
+                    }
+
+                    if (gamePaths.Contains(executablePath))
                         return true;
                 }
-                catch
-                {
-                }
+            }
+            catch
+            {
             }
         }
 
         return false;
     }
 
-    [DllImport("shell32.dll")]
-    private static extern int SHQueryUserNotificationState(out QueryUserNotificationState state);
-
-    private enum QueryUserNotificationState
+    // 获取进程可执行文件完整路径，优先使用 QueryFullProcessImageName（对高权限进程更友好），
+    // 回退到 Process.MainModule.FileName。
+    private static string? GetProcessExecutablePath(Process process)
     {
-        NotPresent = 1,
-        Busy = 2,
-        RunningDirect3DFullScreen = 3,
-        PresentationMode = 4,
-        AcceptsNotifications = 5,
-        QuietTime = 6,
-        App = 7
+        try
+        {
+            StringBuilder buffer = new(1024);
+            uint size = (uint)buffer.Capacity;
+            if (QueryFullProcessImageName(process.Handle, 0, buffer, ref size))
+                return buffer.ToString();
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            return process.MainModule?.FileName;
+        }
+        catch
+        {
+        }
+
+        return null;
     }
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageName(IntPtr hProcess, uint flags, [Out] StringBuilder buffer, ref uint size);
 }
