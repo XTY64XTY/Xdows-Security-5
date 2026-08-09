@@ -104,6 +104,9 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
 		<Optimize>true</Optimize>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+		<XdowsBuildDriver>false</XdowsBuildDriver>
+	</PropertyGroup>
 	<ItemGroup>
 		<PRIResource Remove="Resources\**" />
 	</ItemGroup>

@@ -1,4 +1,3 @@
-using Microsoft.Windows.Storage;
 using Helper;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
@@ -6,9 +5,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Settings;
+using Microsoft.Win32.SafeHandles;
 using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.Globalization;
-using Microsoft.Win32.SafeHandles;
+using Microsoft.Windows.Storage;
 using Protection;
 using System;
 using System.Collections.Generic;
@@ -39,11 +39,6 @@ namespace Xdows_Security
 
     public static class Updater
     {
-        // GitHub API 走 HTTPS，更新检查频率低（每次启动一次），连接可保持较久生命周期
-        // - PooledConnectionLifetime: 5 分钟，平衡 DNS 缓存与连接复用
-        // - MaxConnectionsPerServer: 4 足够单次更新检查
-        // - AutomaticDecompression: GitHub API 默认 gzip 压缩响应，开启自动解压
-        // - DefaultRequestVersion: HTTP/2，TLS ALPN 自动协商升级，GitHub API 已支持
         private static readonly HttpClient _httpClient = BuildUpdaterHttpClient();
 
         private static HttpClient BuildUpdaterHttpClient()

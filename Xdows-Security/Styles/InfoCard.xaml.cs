@@ -50,4 +50,17 @@ public sealed partial class InfoCard : UserControl
             typeof(object),
             typeof(InfoCard),
             new PropertyMetadata(null));
+
+    public object HeaderActions
+    {
+        get => GetValue(HeaderActionsProperty);
+        set => SetValue(HeaderActionsProperty, value);
+    }
+
+    public static readonly DependencyProperty HeaderActionsProperty =
+        DependencyProperty.Register(
+            nameof(HeaderActions),
+            typeof(object),
+            typeof(InfoCard),
+            new PropertyMetadata(null));
 }
