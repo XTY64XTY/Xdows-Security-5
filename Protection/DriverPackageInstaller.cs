@@ -5,9 +5,10 @@ namespace Protection;
 
 internal static class DriverPackageInstaller
 {
-    public static bool Install(string infPath, out string message)
+    public static bool Install(string infPath, out bool rebootRequired, out string message)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(infPath);
+        rebootRequired = false;
 
         try
         {
@@ -15,7 +16,7 @@ internal static class DriverPackageInstaller
                 0,
                 infPath,
                 0,
-                out bool rebootRequired))
+                out rebootRequired))
             {
                 message = FormatLastError("Driver package install failed.");
                 return false;

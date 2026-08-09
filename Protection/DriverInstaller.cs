@@ -213,9 +213,18 @@ internal static class BootFilterLoadWorkflow
         {
             DriverRepairResult install = await Task.Run(() =>
             {
-                return DriverPackageInstaller.Install(package.InfPath, out string message)
-                    ? new DriverRepairResult(true, message)
-                    : new DriverRepairResult(false, message);
+                if (!DriverPackageInstaller.Install(package.InfPath, out bool rebootRequired, out string message))
+                    return new DriverRepairResult(false, message);
+
+                if (rebootRequired)
+                {
+                    return new DriverRepairResult(
+                        false,
+                        "Boot filter package was installed, but a restart is required before the new driver can be loaded. " +
+                        "Restart Windows, then start driver protection.");
+                }
+
+                return new DriverRepairResult(true, message);
             }, token).ConfigureAwait(false);
             if (!install.Success)
                 return install;
@@ -435,9 +444,18 @@ internal static class DriverLoadWorkflow
     {
         return Task.Run(() =>
         {
-            return DriverPackageInstaller.Install(package.InfPath, out string message)
-                ? new DriverRepairResult(true, message)
-                : new DriverRepairResult(false, message);
+            if (!DriverPackageInstaller.Install(package.InfPath, out bool rebootRequired, out string message))
+                return new DriverRepairResult(false, message);
+
+            if (rebootRequired)
+            {
+                return new DriverRepairResult(
+                    false,
+                    "Driver package was installed, but a restart is required before the new driver can be loaded. " +
+                    "Restart Windows, then start driver protection.");
+            }
+
+            return new DriverRepairResult(true, message);
         }, token);
     }
 
@@ -472,6 +490,8 @@ internal static class DriverLoadWorkflow
     private static async Task<DriverLoadSnapshot> WaitForBridgeAsync(CancellationToken token)
     {
         DriverLoadSnapshot snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        bool checkedVersionMismatch = false;
+
         for (int attempt = 0; attempt < BridgeProbeAttempts; attempt++)
         {
             if (snapshot.BridgeReady)
@@ -480,11 +500,70 @@ internal static class DriverLoadWorkflow
             if (!snapshot.Service.IsRunning && attempt > 0)
                 return snapshot;
 
+            // A driver protocol/build version mismatch cannot self-resolve by
+            // waiting. If the first NeedsRepair probe reveals a mismatch, exit
+            // immediately instead of consuming the full 12-second probe window
+            // only to report the same failure.
+            if (!checkedVersionMismatch &&
+                snapshot.RuntimeStatus == DriverProtectionRuntimeStatus.NeedsRepair)
+            {
+                checkedVersionMismatch = true;
+                if (IsDriverVersionMismatch())
+                    return snapshot;
+            }
+
             await Task.Delay(BridgeProbeDelay, token).ConfigureAwait(false);
             snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
         }
 
         return snapshot;
+    }
+
+    /// <summary>
+    /// Checks whether the loaded driver's protocol version or build ID differs
+    /// from what the client expects. This indicates an outdated driver binary
+    /// in the driver store or a stale driver still resident in kernel memory.
+    /// </summary>
+    private static bool IsDriverVersionMismatch()
+    {
+        if (!DriverBridgeClient.TryQueryRawDriverState(out var rawState, out _))
+            return false;
+
+        return rawState.ProtocolVersion != DriverProtocol.ProtocolVersion ||
+            rawState.DriverBuildId != DriverProtocol.DriverBuildId;
+    }
+
+    /// <summary>
+    /// Builds a human-readable diagnostic string explaining why the bridge is
+    /// not reachable. Distinguishes version mismatch (outdated binary) from
+    /// stale client registration (previous instance still connected).
+    /// </summary>
+    private static string? GetBridgeDiagnosticDetail()
+    {
+        if (DriverBridgeClient.TryQueryRawDriverState(out var rawState, out int rawError))
+        {
+            if (rawState.ProtocolVersion != DriverProtocol.ProtocolVersion ||
+                rawState.DriverBuildId != DriverProtocol.DriverBuildId)
+            {
+                return $"Loaded driver reports protocol v{rawState.ProtocolVersion}/build {rawState.DriverBuildId}, " +
+                    $"but the client expects protocol v{DriverProtocol.ProtocolVersion}/build {DriverProtocol.DriverBuildId}. " +
+                    $"The installed driver binary is outdated — rebuild and redeploy the driver package.";
+            }
+
+            if (rawState.ClientConnected != 0)
+            {
+                return $"A previous client (PID {rawState.ProtectedProcessId}) is still registered with the driver. " +
+                    "Wait for the heartbeat to expire or restart Windows.";
+            }
+
+            return null;
+        }
+
+        return rawError switch
+        {
+            2 or 3 => "Driver device is not accessible (not installed).",
+            _ => $"Driver state query failed with Win32 error {rawError}."
+        };
     }
 
     private static async Task<DriverServiceSnapshot> WaitForServiceStateAsync(
@@ -514,9 +593,12 @@ internal static class DriverLoadWorkflow
 
     private static DriverRepairResult CreateLoadedWithoutBridgeResult(DriverLoadSnapshot snapshot)
     {
+        string? detail = GetBridgeDiagnosticDetail();
+        string suffix = string.IsNullOrWhiteSpace(detail) ? string.Empty : $" {detail}";
+
         return new DriverRepairResult(
             false,
-            $"Driver service is loaded, but the Xdows Security bridge is not reachable ({snapshot.RuntimeStatus}). Restart Windows before repairing, reinstalling, or starting driver protection.");
+            $"Driver service is loaded, but the Xdows Security bridge is not reachable ({snapshot.RuntimeStatus}).{suffix} Restart Windows before repairing, reinstalling, or starting driver protection.");
     }
 
     private static async Task<CommandResult> RunCommandAsync(

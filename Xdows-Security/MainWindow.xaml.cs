@@ -37,6 +37,9 @@ namespace Xdows_Security
         private MenuFlyoutItem? _traySettingsItem;
         private MenuFlyoutItem? _trayQuitItem;
 
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr windowHandle);
+
         public MainWindow()
         {
             InitializeComponent();
@@ -61,7 +64,7 @@ namespace Xdows_Security
             Localizer.Get().LanguageChanged += OnLangChanged;
             Manager.TrayIconSelected += (w, e) =>
             {
-                this.Activate();
+                RestoreAndActivate();
             };
             Manager.TrayIconContextMenu += (w, e) =>
             {
@@ -82,6 +85,22 @@ namespace Xdows_Security
                 });
             }
             LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "MainWindow loaded successfully");
+        }
+
+        public void RestoreAndActivate()
+        {
+            if (AppWindow.Presenter is OverlappedPresenter presenter &&
+                presenter.State == OverlappedPresenterState.Minimized)
+            {
+                presenter.Restore();
+            }
+
+            AppWindow.Show(true);
+            Activate();
+
+            IntPtr windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            if (windowHandle != IntPtr.Zero)
+                _ = SetForegroundWindow(windowHandle);
         }
 
         private async void MainWindow_Activated_FirstTime(object sender, WindowActivatedEventArgs args)
@@ -294,7 +313,7 @@ namespace Xdows_Security
                 Text = Localizer.Get().GetLocalizedString("TrayMenu_Open"),
                 Icon = new FontIcon() { Glyph = "\uE8A7" }
             };
-            _trayOpenItem.Click += (s, e) => this.Activate();
+            _trayOpenItem.Click += (s, e) => RestoreAndActivate();
 
             _traySettingsItem = new MenuFlyoutItem
             {
@@ -303,7 +322,7 @@ namespace Xdows_Security
             };
             _traySettingsItem.Click += (s, e) =>
             {
-                this.Activate();
+                RestoreAndActivate();
                 this.GoToPage("Settings");
             };
 

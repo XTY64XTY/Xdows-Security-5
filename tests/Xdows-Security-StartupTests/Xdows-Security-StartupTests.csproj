@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Xdows-Security\Services\SingleInstanceProtocol.cs" Link="SingleInstanceProtocol.cs" />
+    <ProjectReference Include="..\..\Protection\Protection.csproj" />
+    <None Include="..\..\Protection\DriverProtection.cs"
+          Link="DriverProtection.cs"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Xdows-Security\App.xaml.cs"
+          Link="App.xaml.cs.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Xdows-Security\MainWindow.xaml.cs"
+          Link="MainWindow.xaml.cs.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Protection\DriverProtocol.cs"
+          Link="DriverProtocol.cs.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Protection\DriverBridgeClient.cs"
+          Link="DriverBridgeClient.cs.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\Xdows-Security-Driver\Xdows-Security-Driver\Public.h"
+          Link="DriverPublic.h.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.inf"
+          Link="Xdows-Security-Driver.inf.source"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

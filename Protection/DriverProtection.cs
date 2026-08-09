@@ -137,7 +137,7 @@ public sealed class DriverProtection : IProtectionModel
         return error switch
         {
             2 or 3 => DriverProtectionRuntimeStatus.NotInstalled,
-            5 or DriverBridgeClient.ErrorRevisionMismatch => DriverProtectionRuntimeStatus.NeedsRepair,
+            DriverBridgeClient.ErrorRevisionMismatch => DriverProtectionRuntimeStatus.NeedsRepair,
             _ => DriverProtectionRuntimeStatus.Error
         };
     }
@@ -153,6 +153,29 @@ public sealed class DriverProtection : IProtectionModel
             {
                 _interceptCallBack = interceptCallBack;
                 _cts = new CancellationTokenSource();
+
+                // Create the native model scanner BEFORE connecting to the
+                // driver and BEFORE registering self-protection. Once
+                // self-protection is active, our ObRegisterCallbacks strip
+                // THREAD_IMPERSONATE / THREAD_SET_THREAD_TOKEN from handles
+                // that external processes (e.g. antivirus daemons such as
+                // Huorong's HipsDaemon) open to our threads. An AV daemon
+                // that impersonates the requesting thread to scan a DLL
+                // being image-mapped then fails with
+                // STATUS_BAD_IMPERSONATION_LEVEL (Win32 1346), and the AV's
+                // minifilter propagates that failure to the SEC_IMAGE
+                // section creation — breaking LoadLibrary for any new DLL.
+                // Loading the native model here, in the pre-registration
+                // state, avoids that interaction entirely.
+                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
+                _scanner = new NativeModelScanner(ModelMode);
+                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}, Engine={NativeModelLibraryLoader.LoadedFrom ?? "unloaded"}");
+                if (!_scanner.NativeReady)
+                {
+                    throw new InvalidOperationException(
+                        $"Native model initialization failed: {_scanner.InitializationError ?? "unknown"}.");
+                }
+
                 DriverRepairResult driverReady = DriverInstaller
                     .EnsureInstalledAndStartedAsync(_cts.Token)
                     .GetAwaiter()
@@ -209,6 +232,16 @@ public sealed class DriverProtection : IProtectionModel
                         $"process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
                 }
 
+                _client.RegisterProtectedProcess();
+                state = _client.GetState();
+                Log("Bridge", $"Self-protection registered active={state.SelfProtectionEnabled} protectedPid={state.ProtectedProcessId} expectedPid={Environment.ProcessId}");
+                if (state.SelfProtectionEnabled == 0 ||
+                    state.ProtectedProcessId != (uint)Environment.ProcessId)
+                {
+                    throw new InvalidOperationException(
+                        $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
+                }
+
                 _client.SetBootProtection(bootConfiguration);
                 state = _client.GetState();
                 if (state.BootProtectionEnabled == 0)
@@ -239,25 +272,6 @@ public sealed class DriverProtection : IProtectionModel
                 var registryNativePaths = BuildNativeRegistryRulePaths(registryOptions);
                 _client.SetRegistryProtection(true, registryNativePaths);
                 Log("RegistryProtect", $"R0 registry protection configured rules={registryNativePaths.Count}");
-
-                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
-                _scanner = new NativeModelScanner(ModelMode);
-                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}");
-                if (!_scanner.NativeReady)
-                {
-                    throw new InvalidOperationException(
-                        $"Native model initialization failed: {_scanner.InitializationError ?? "unknown"}.");
-                }
-
-                _client.RegisterProtectedProcess();
-                state = _client.GetState();
-                Log("Bridge", $"Self-protection registered active={state.SelfProtectionEnabled} protectedPid={state.ProtectedProcessId} expectedPid={Environment.ProcessId}");
-                if (state.SelfProtectionEnabled == 0 ||
-                    state.ProtectedProcessId != (uint)Environment.ProcessId)
-                {
-                    throw new InvalidOperationException(
-                        $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
-                }
 
                 bool startupProtectionEnabled = StartupProtectionStateProvider?.Invoke() == true;
                 _client.SetStartupProtection(startupProtectionEnabled);
@@ -842,6 +856,28 @@ public sealed class DriverProtection : IProtectionModel
             imagePath = !string.IsNullOrWhiteSpace(actorPath)
                 ? actorPath
                 : $"PID {driverEvent.ProcessId}";
+        }
+
+        // Trust gate for handle-based behavior detections. Cross-process
+        // handle / injection heuristics routinely fire on legitimate,
+        // Authenticode-signed system components (smartscreen.exe,
+        // ShellHost.exe) and third-party security daemons performing normal
+        // monitoring — previously every such event became a "confirmed
+        // threat" prompt (Probability=100) that timeout-blocked the
+        // operation. Command-line behaviors (HiddenPowerShell,
+        // EncodedCommand, LolbinAbuse, ...) stay on the prompt path: they
+        // remain high-fidelity even for signed binaries.
+        if ((behaviorType is XdowsSecurityBehaviorType.ProcessInjection
+                or XdowsSecurityBehaviorType.ThreadInjection) &&
+            !string.IsNullOrWhiteSpace(imagePath) &&
+            !imagePath.StartsWith("PID ", StringComparison.Ordinal))
+        {
+            if (TrustManager.IsPathTrusted(imagePath))
+                return Allow(driverEvent.EventId, "behavior-handle-trusted-list", TimeSpan.FromMinutes(10));
+
+            SignerTrustResult actorTrust = SignerTrustService.Evaluate(imagePath);
+            if (actorTrust.IsTrusted)
+                return Allow(driverEvent.EventId, $"behavior-handle-signer-trusted:{actorTrust.Reason}", TimeSpan.FromMinutes(10));
         }
 
         DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);

@@ -1,6 +1,5 @@
 using Helper;
 using Microsoft.Win32.SafeHandles;
-using System.Management;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -313,19 +312,11 @@ public sealed class LegacyBootProtection : IProtectionModel
             .OrderBy(disk => disk.Index)
             .ToArray();
 
-        Int32? activeBootDisk = BootVolumeLocator.TryGetActiveBootDiskIndex();
-        if (activeBootDisk.HasValue)
-        {
-            PhysicalDiskInfo? detected = disks.SingleOrDefault(disk => disk.Index == activeBootDisk.Value);
-            if (detected is not null)
-                return detected;
-        }
-
         PhysicalDiskInfo[] bootCandidates = disks
             .Where(disk => BootVolumeLocator.FindProtectedRoots(disk.Index).Count != 0)
             .ToArray();
         if (bootCandidates.Length == 1)
-            return bootCandidates[0];
+            return WithResolvedDiskSize(bootCandidates[0]);
 
         PhysicalDiskInfo[] systemDisks = bootCandidates
             .Where(disk => disk.IsSystemDisk)
@@ -333,10 +324,20 @@ public sealed class LegacyBootProtection : IProtectionModel
 
         return systemDisks.Length switch
         {
-            1 => systemDisks[0],
+            1 => WithResolvedDiskSize(systemDisks[0]),
             0 => throw new IOException("The physical disk containing the active Windows boot partition could not be identified."),
             _ => throw new IOException("Multiple physical disks contain possible Windows boot partitions; automatic boot protection requires one unambiguous active boot disk.")
         };
+    }
+
+    internal static PhysicalDiskInfo WithResolvedDiskSize(PhysicalDiskInfo disk)
+    {
+        // GetPhysicalDisks may fail to query the disk length (size 0) depending on
+        // the storage stack. Resolve the authoritative size with read access so GPT
+        // bounds validation never runs against a bogus zero-length disk.
+        return disk.SizeBytes > 0
+            ? disk
+            : disk with { SizeBytes = DiskOperator.GetDiskLength(disk.Index) };
     }
 
     private static Boolean SnapshotMatchesDisk(BootProtectionSnapshot snapshot, PhysicalDiskInfo disk)
@@ -456,8 +457,9 @@ internal static class BootProtectionSnapshotService
 
     public static BootProtectionSnapshot CaptureCurrent(BootProtectionSnapshot layout)
     {
-        PhysicalDiskInfo disk = DiskOperator.GetPhysicalDisks()
-            .Single(current => current.Index == layout.DiskIndex);
+        PhysicalDiskInfo disk = LegacyBootProtection.WithResolvedDiskSize(
+            DiskOperator.GetPhysicalDisks()
+                .Single(current => current.Index == layout.DiskIndex));
 
         if (disk.SizeBytes != layout.DiskSizeBytes ||
             disk.PartitionStyle != layout.PartitionStyle ||
@@ -646,9 +648,15 @@ internal static class BootProtectionSnapshotService
         if (entryCount == 0 || entrySize is < 128 or > 4096 || entrySize % 8 != 0)
             throw new InvalidDataException($"The {label} partition-entry layout is invalid.");
 
+        if (diskSize <= 0)
+            throw new InvalidDataException($"The disk size reported for the {label} validation is invalid: {diskSize}.");
+
         UInt64 sectorCount = checked((UInt64)(diskSize / sectorSize));
         if (currentLba >= sectorCount || backupLba >= sectorCount || entryLba >= sectorCount)
-            throw new InvalidDataException($"The {label} references a sector outside the disk.");
+            throw new InvalidDataException(
+                $"The {label} references a sector outside the disk " +
+                $"(currentLba={currentLba}, backupLba={backupLba}, entryLba={entryLba}, " +
+                $"sectorCount={sectorCount}, diskSize={diskSize}, sectorSize={sectorSize}).");
 
         UInt64 entryBytes = checked((UInt64)entryCount * entrySize);
         if (entryBytes == 0 || entryBytes > MaxGptEntryBytes)
@@ -943,13 +951,6 @@ internal static class BootVolumeLocator
     public static IReadOnlyList<String> FindProtectedRoots(Int32 diskIndex)
     {
         var protectedRoots = new SortedSet<String>(StringComparer.OrdinalIgnoreCase);
-        IReadOnlyList<String> activeVolumeRoots = TryGetActiveBootVolumeRoots(diskIndex);
-        if (activeVolumeRoots.Count != 0)
-        {
-            foreach (String volumeRoot in activeVolumeRoots)
-                AddCandidateRoots(protectedRoots, volumeRoot);
-            return protectedRoots.ToArray();
-        }
 
         const UInt32 capacity = 1024;
         var volumeName = new StringBuilder((Int32)capacity);
@@ -982,31 +983,6 @@ internal static class BootVolumeLocator
         }
 
         return protectedRoots.ToArray();
-    }
-
-    public static Int32? TryGetActiveBootDiskIndex()
-    {
-        try
-        {
-            using var searcher = new ManagementObjectSearcher(
-                @"root\Microsoft\Windows\Storage",
-                "SELECT DiskNumber FROM MSFT_Partition WHERE IsSystem = TRUE");
-            using ManagementObjectCollection results = searcher.Get();
-            Int32[] diskNumbers = results
-                .Cast<ManagementObject>()
-                .Select(item => Convert.ToInt32(item["DiskNumber"], System.Globalization.CultureInfo.InvariantCulture))
-                .Distinct()
-                .ToArray();
-            return diskNumbers.Length == 1 ? diskNumbers[0] : null;
-        }
-        catch (ManagementException)
-        {
-            return null;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return null;
-        }
     }
 
     public static String GetNtVolumeRoot(String volumeRoot)
@@ -1047,36 +1023,6 @@ internal static class BootVolumeLocator
         }
 
         throw new IOException($"The NT path for boot volume {volumeRoot} exceeded the supported size.");
-    }
-
-    private static IReadOnlyList<String> TryGetActiveBootVolumeRoots(Int32 diskIndex)
-    {
-        try
-        {
-            using var searcher = new ManagementObjectSearcher(
-                @"root\Microsoft\Windows\Storage",
-                $"SELECT DiskNumber, AccessPaths FROM MSFT_Partition WHERE IsSystem = TRUE AND DiskNumber = {diskIndex}");
-            using ManagementObjectCollection results = searcher.Get();
-            String[] accessPaths = results
-                .Cast<ManagementObject>()
-                .SelectMany(item => item["AccessPaths"] as String[] ?? [])
-                .Where(path => !String.IsNullOrWhiteSpace(path))
-                .Select(EnsureTrailingSeparator)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-            String[] volumeGuids = accessPaths
-                .Where(path => path.StartsWith(@"\\?\Volume{", StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-            return volumeGuids.Length != 0 ? volumeGuids : accessPaths;
-        }
-        catch (ManagementException)
-        {
-            return [];
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return [];
-        }
     }
 
     private static void AddCandidateRoots(ISet<String> protectedRoots, String volumeRoot)

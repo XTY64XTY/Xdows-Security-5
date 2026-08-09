@@ -12,6 +12,11 @@ internal sealed class DriverBridgeClient : IDisposable
     private static readonly LegacyUpgradeSource[] LegacyUpgradeSources =
     [
         new(
+            DriverProtocol.ProtocolVersion,
+            [
+                DriverProtocol.PreviousDriverBuildId
+            ]),
+        new(
             DriverProtocol.LegacyUpgradeProtocolVersion,
             [
                 DriverProtocol.LegacyUpgradeDriverBuildId,
@@ -276,6 +281,46 @@ internal sealed class DriverBridgeClient : IDisposable
         }
     }
 
+    /// <summary>
+    /// Queries the raw driver state without version validation. Returns true
+    /// when the driver device is reachable and responds to GetState, even if
+    /// the protocol/build ID does not match. Use <see cref="TryQueryStateWithoutRegister"/>
+    /// for the strict version-checked query; use this overload for diagnostics
+    /// when the strict query fails with ErrorRevisionMismatch.
+    /// </summary>
+    public static bool TryQueryRawDriverState(out XdowsSecurityState state, out int win32Error)
+    {
+        state = default;
+        win32Error = 0;
+
+        using SafeFileHandle? handle = OpenDriverDevice(out int openError);
+        if (handle is null)
+        {
+            win32Error = openError;
+            return false;
+        }
+
+        int outSize = Marshal.SizeOf<XdowsSecurityState>();
+        IntPtr outPtr = Marshal.AllocHGlobal(outSize);
+        try
+        {
+            ZeroMemory(outPtr, outSize);
+            bool ok = DeviceIoControl(handle, DriverProtocol.GetState, IntPtr.Zero, 0, outPtr, (uint)outSize, out _, IntPtr.Zero);
+            if (ok)
+            {
+                state = Marshal.PtrToStructure<XdowsSecurityState>(outPtr);
+                return true;
+            }
+
+            win32Error = Marshal.GetLastWin32Error();
+            return false;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(outPtr);
+        }
+    }
+
     public static bool TryAuthorizeLegacyUpgradeShutdown(out string message)
     {
         var attemptMessages = new List<string>();
@@ -346,6 +391,31 @@ internal sealed class DriverBridgeClient : IDisposable
                 $"v{source.ProtocolVersion}/[{string.Join(", ", source.BuildIds)}]; " +
                 $"received v{response.ProtocolVersion}/{response.DriverBuildId}.";
             return false;
+        }
+
+        if (source.ProtocolVersion == DriverProtocol.ProtocolVersion)
+        {
+            var protectedProcessRequest = new XdowsProtectedProcessRequest
+            {
+                Header = new XdowsProtocolHeader
+                {
+                    Size = (uint)Marshal.SizeOf<XdowsProtectedProcessRequest>(),
+                    Version = source.ProtocolVersion
+                },
+                ProcessId = processId
+            };
+            if (!DeviceIoControlNoOutput(
+                    handle,
+                    protectedProcessRequest,
+                    DriverProtocol.RegisterProtectedProcess))
+            {
+                int protectionError = Marshal.GetLastWin32Error();
+                _ = DeviceIoControlNoBuffers(handle, DriverProtocol.DisconnectClient);
+                message =
+                    $"Previous same-protocol driver self-protection registration failed " +
+                    $"(Win32 {protectionError}).";
+                return false;
+            }
         }
 
         var shutdownRequest = new XdowsShutdownRequest

@@ -123,6 +123,14 @@ namespace Helper
                     partitionStyle = QueryPartitionStyle(handle);
                 }
 
+                if (sizeBytes <= 0)
+                {
+                    // Some storage stacks refuse IOCTL_DISK_GET_LENGTH_INFO on a
+                    // zero-access handle. Retry with read access before giving up,
+                    // otherwise callers see a bogus disk size of 0.
+                    sizeBytes = QueryDiskLengthWithReadAccess(devicePath);
+                }
+
                 disks.Add(new PhysicalDiskInfo(
                     diskNumber,
                     model,
@@ -163,6 +171,19 @@ namespace Helper
             }
 
             WriteDiskRegion(physicalDriveIndex, 0, bootSector);
+        }
+
+        public static Int64 GetDiskLength(Int32 physicalDriveIndex)
+        {
+            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
+            ThrowIfInvalid(handle, devicePath);
+
+            Int64 diskLength = QueryDiskLength(handle);
+            if (diskLength <= 0)
+                throw new IOException($"The size of {devicePath} could not be determined.");
+
+            return diskLength;
         }
 
         public static Int32 GetLogicalSectorSize(Int32 physicalDriveIndex)
@@ -462,6 +483,12 @@ namespace Helper
                 bytesReturned >= output.Length
                 ? BitConverter.ToInt64(output, 0)
                 : 0;
+        }
+
+        private static Int64 QueryDiskLengthWithReadAccess(String devicePath)
+        {
+            using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
+            return handle.IsInvalid ? 0 : QueryDiskLength(handle);
         }
 
         private static PhysicalDiskPartitionStyle QueryPartitionStyle(SafeFileHandle handle)

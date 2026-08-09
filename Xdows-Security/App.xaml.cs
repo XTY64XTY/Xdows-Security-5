@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Settings;
 using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.Globalization;
+using Microsoft.Win32.SafeHandles;
 using Protection;
 using System;
 using System.Collections.Generic;
@@ -669,7 +670,6 @@ namespace Xdows_Security
 
         private static List<string> _scanTargetPaths = [];
         private static readonly Lock _scanPathLock = new();
-        private const string PathSeparator = "\t";
 
         public static IReadOnlyList<string> ScanTargetPaths
         {
@@ -707,6 +707,14 @@ namespace Xdows_Security
         private const string PipeName = "Xdows_Security_IPC";
 
         private static CancellationTokenSource? _pipeListenerCts;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetNamedPipeServerProcessId(
+            SafePipeHandle pipe,
+            out uint serverProcessId);
+
+        [DllImport("user32.dll")]
+        private static extern bool AllowSetForegroundWindow(uint processId);
 
         public static void ReleaseResources()
         {
@@ -775,8 +783,8 @@ namespace Xdows_Security
 
                 if (!TryAcquireSingleInstance())
                 {
-                    // 即使主进程还没完全启动监听，SendScanPathsToExistingInstanceAsync 内部的重试机制也会等待。
-                    if (await SendScanPathsToExistingInstanceAsync())
+                    // 即使主进程还没完全启动监听，SendRequestToExistingInstanceAsync 内部的重试机制也会等待。
+                    if (await SendRequestToExistingInstanceAsync())
                     {
                         System.Diagnostics.Process.GetCurrentProcess().Kill();
                         return;
@@ -847,15 +855,14 @@ namespace Xdows_Security
             }
         }
 
-        private static async Task<bool> SendScanPathsToExistingInstanceAsync()
+        private static async Task<bool> SendRequestToExistingInstanceAsync()
         {
             List<string> pathsToSend;
             lock (_scanPathLock)
             {
                 pathsToSend = [.. _scanTargetPaths];
             }
-
-            if (pathsToSend.Count == 0) return false;
+            SingleInstanceRequest request = SingleInstanceProtocol.Create(pathsToSend);
 
             int retryCount = 0;
             const int maxRetries = 20;
@@ -867,9 +874,10 @@ namespace Xdows_Security
                 {
                     using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
                     await client.ConnectAsync(500);
+                    if (GetNamedPipeServerProcessId(client.SafePipeHandle, out uint serverProcessId))
+                        _ = AllowSetForegroundWindow(serverProcessId);
                     using var writer = new StreamWriter(client) { AutoFlush = true };
-                    string pathsLine = string.Join(PathSeparator, pathsToSend);
-                    await writer.WriteLineAsync(pathsLine);
+                    await SingleInstanceProtocol.WriteAsync(writer, request);
                     return true;
                 }
                 catch (Exception)
@@ -906,22 +914,10 @@ namespace Xdows_Security
                                 using (server)
                                 using (var reader = new StreamReader(server))
                                 {
-                                    string? pathsLine = await reader.ReadLineAsync();
-                                    if (!string.IsNullOrEmpty(pathsLine))
+                                    SingleInstanceRequest? request = await SingleInstanceProtocol.ReadAsync(reader, token);
+                                    if (request is not null)
                                     {
-                                        string[] paths = pathsLine.Split(PathSeparator, StringSplitOptions.RemoveEmptyEntries);
-                                        if (paths.Length > 0)
-                                        {
-                                            MainWindow?.DispatcherQueue?.TryEnqueue(() =>
-                                            {
-                                                try
-                                                {
-                                                    MainWindow?.Activate();
-                                                    MainWindow?.TriggerScanForPaths(paths);
-                                                }
-                                                catch { }
-                                            });
-                                        }
+                                        await DispatchSingleInstanceRequestAsync(request, token);
                                     }
                                 }
                             }
@@ -936,6 +932,34 @@ namespace Xdows_Security
                     }
                 }
             }, token);
+        }
+
+        private static async Task DispatchSingleInstanceRequestAsync(
+            SingleInstanceRequest request,
+            CancellationToken token)
+        {
+            MainWindow? window = MainWindow;
+            while (window is null)
+            {
+                await Task.Delay(50, token);
+                window = MainWindow;
+            }
+
+            bool enqueued = window.DispatcherQueue.TryEnqueue(() =>
+            {
+                try
+                {
+                    window.RestoreAndActivate();
+                    if (request.Kind == SingleInstanceRequestKind.Scan && request.Paths.Count != 0)
+                        window.TriggerScanForPaths(request.Paths);
+                }
+                catch (Exception ex)
+                {
+                    LogText.AddNewLog(LogText.LogLevel.ERROR, "App", $"Single-instance request failed: {ex.Message}");
+                }
+            });
+            if (!enqueued)
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "App", "Failed to dispatch single-instance request to the main window.");
         }
 
         private static void ParseCommandLineArgs()

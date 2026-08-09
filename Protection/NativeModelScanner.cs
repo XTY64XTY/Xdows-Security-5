@@ -19,7 +19,7 @@ public sealed record NativeModelScannerResult(
 
 public sealed class NativeModelScanner : IDisposable
 {
-    private const string NativeDllName = "Xdows-Model-Native.dll";
+    private const string NativeDllName = NativeModelLibraryLoader.NativeDllName;
 
     private IntPtr _session;
     private bool _nativeReady;
@@ -36,6 +36,11 @@ public sealed class NativeModelScanner : IDisposable
 
         try
         {
+            // Pre-load the native library through the resilient loader first. This
+            // works around Win32 1346 (ERROR_BAD_IMPERSONATION_LEVEL) failures that
+            // the default P/Invoke resolution hits when the calling thread carries a
+            // degraded impersonation token or the binaries live on a network path.
+            NativeModelLibraryLoader.EnsureLoaded();
             int status = XdowsModelNativeInitialize(modelDirectory, (int)mode, out _session);
             _nativeReady = status == 0 && _session != IntPtr.Zero;
             if (!_nativeReady)
