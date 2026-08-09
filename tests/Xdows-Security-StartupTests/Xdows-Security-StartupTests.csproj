@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\Xdows-Security\Services\SingleInstanceProtocol.cs" Link="SingleInstanceProtocol.cs" />
+    <Compile Include="..\..\Xdows-Security\Services\UpdateMarkdownHtmlRenderer.cs" Link="UpdateMarkdownHtmlRenderer.cs" />
     <ProjectReference Include="..\..\Protection\Protection.csproj" />
     <None Include="..\..\Protection\DriverProtection.cs"
           Link="DriverProtection.cs"
@@ -16,6 +17,15 @@
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Xdows-Security\MainWindow.xaml.cs"
           Link="MainWindow.xaml.cs.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Xdows-Security\Views\SettingsPage.xaml.cs"
+          Link="SettingsPage.xaml.cs.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Xdows-Security\Views\SettingsPage.xaml"
+          Link="SettingsPage.xaml.source"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Xdows-Security\Xdows-Security.csproj"
+          Link="Xdows-Security.csproj.source"
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Protection\DriverProtocol.cs"
           Link="DriverProtocol.cs.source"
@@ -29,5 +39,8 @@
     <None Include="..\..\..\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.inf"
           Link="Xdows-Security-Driver.inf.source"
           CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Markdig" Version="1.3.2" />
   </ItemGroup>
 </Project>

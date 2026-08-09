@@ -70,6 +70,47 @@ if (requiredRestoreOperations.Any(operation =>
         "Restoring the existing instance must restore, show, activate, and foreground its main window.");
 }
 
+string settingsPageSource = await File.ReadAllTextAsync(
+    Path.Combine(AppContext.BaseDirectory, "SettingsPage.xaml.cs.source"));
+string settingsPageXaml = await File.ReadAllTextAsync(
+    Path.Combine(AppContext.BaseDirectory, "SettingsPage.xaml.source"));
+string applicationProjectSource = await File.ReadAllTextAsync(
+    Path.Combine(AppContext.BaseDirectory, "Xdows-Security.csproj.source"));
+if (settingsPageSource.Contains("MarkdownTextBlock", StringComparison.Ordinal) ||
+    settingsPageSource.Contains("MarkdownView", StringComparison.Ordinal) ||
+    settingsPageXaml.Contains("MarkdownView", StringComparison.Ordinal) ||
+    applicationProjectSource.Contains("WinUI.Markdown", StringComparison.Ordinal) ||
+    applicationProjectSource.Contains(
+        "CommunityToolkit.WinUI.UI.Controls.Markdown",
+        StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "The NativeAOT update flow must not activate an external WinUI Markdown control.");
+}
+if (!settingsPageSource.Contains("UpdateMarkdownHtmlRenderer.RenderDocument", StringComparison.Ordinal) ||
+    !settingsPageSource.Contains("WebView2 webView = new()", StringComparison.Ordinal) ||
+    !settingsPageSource.Contains("webView.NavigateToString(markdownDocument)", StringComparison.Ordinal) ||
+    !applicationProjectSource.Contains(
+        "PackageReference Include=\"Markdig\"",
+        StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "The update flow must render release notes with the Markdig NuGet renderer inside the built-in WebView2 control.");
+}
+
+string renderedMarkdown = UpdateMarkdownHtmlRenderer.RenderDocument(
+    "# Release notes\n\n**Fixed** update checks.\n\n| Area | State |\n| --- | --- |\n| UI | Done |\n\n<script>alert('no')</script>",
+    useDarkTheme: true);
+if (!renderedMarkdown.Contains(">Release notes</h1>", StringComparison.Ordinal) ||
+    !renderedMarkdown.Contains("<strong>Fixed</strong>", StringComparison.Ordinal) ||
+    !renderedMarkdown.Contains("<table>", StringComparison.Ordinal) ||
+    !renderedMarkdown.Contains("color-scheme: dark", StringComparison.Ordinal) ||
+    renderedMarkdown.Contains("<script>", StringComparison.OrdinalIgnoreCase))
+{
+    throw new InvalidOperationException(
+        "The Markdig update renderer must produce styled Markdown HTML while disabling embedded raw HTML.");
+}
+
 string managedProtocolSource = await File.ReadAllTextAsync(
     Path.Combine(AppContext.BaseDirectory, "DriverProtocol.cs.source"));
 string bridgeClientSource = await File.ReadAllTextAsync(
@@ -169,6 +210,7 @@ if (decodedOpen.Kind != SingleInstanceRequestKind.Open || decodedOpen.Paths.Coun
 
 Console.WriteLine("PASS: parameterless launches and scan-path launches have distinct IPC requests.");
 Console.WriteLine("PASS: every second launch restores and foregrounds the existing window.");
+Console.WriteLine("PASS: the NativeAOT update flow uses Markdig and the built-in WebView2 control without an external WinUI Markdown control.");
 Console.WriteLine("PASS: Protection no longer depends on System.Management.");
 Console.WriteLine("PASS: self-protection registration precedes EFI and BCD configuration.");
 Console.WriteLine("PASS: driver build identity forces stale same-protocol packages through the upgrade path.");

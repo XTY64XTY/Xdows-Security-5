@@ -35,6 +35,7 @@ namespace Xdows_Security
         public required string Title { get; set; }
         public required string Content { get; set; }
         public required string DownloadUrl { get; set; }
+        public required string Version { get; set; }
     }
 
     public static class Updater
@@ -61,7 +62,7 @@ namespace Xdows_Security
         {
             try
             {
-                const string url = "https://api.github.com/repositories/1032964256/releases/latest";
+                const string url = "https://api.github.com/repositories/1202135567/releases/latest";
                 string json = await _httpClient.GetStringAsync(url);
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
@@ -70,7 +71,7 @@ namespace Xdows_Security
                                ?? root.GetProperty("tag_name").GetString();
 
                 string? content = root.GetProperty("body").GetString();
-
+                string? version = root.GetProperty("tag_name").GetString();
                 string? downloadUrl = null;
                 if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
                 {
@@ -90,7 +91,8 @@ namespace Xdows_Security
                 {
                     Title = title ?? string.Empty,
                     Content = content ?? string.Empty,
-                    DownloadUrl = downloadUrl ?? string.Empty
+                    DownloadUrl = downloadUrl ?? string.Empty,
+                    Version = version ?? string.Empty
                 };
             }
             catch (Exception ex)

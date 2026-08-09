@@ -1,5 +1,4 @@
 using CommunityToolkit.WinUI.Controls;
-using CommunityToolkit.WinUI.UI.Controls;
 using Helper;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
@@ -10,7 +9,6 @@ using Microsoft.Windows.Storage.Pickers;
 using Protection;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -875,7 +873,7 @@ namespace Xdows_Security.Views
                 UpdateProgressRing.Visibility = Visibility.Visible;
 
                 UpdateInfo? update = await Updater.CheckUpdateAsync();
-                if (update == null)
+                if (update == null || update.Version == AppInfo.AppVersion)
                 {
                     UpdateButton.IsEnabled = true;
                     UpdateProgressRing.IsActive = false;
@@ -884,40 +882,16 @@ namespace Xdows_Security.Views
                     UpdateTeachingTip.IsOpen = !UpdateTeachingTip.IsOpen;
                     return;
                 }
-                MarkdownTextBlock box = new()
-                {
-                    Text = update.Content,
-                    IsTextSelectionEnabled = true,
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(12),
-                };
-                ScrollViewer scrollViewer = new()
-                {
-                    Content = box,
-                    MaxHeight = 320,
-                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto
-                };
 
-                ContentDialog dialog = new()
-                {
-                    Title = update.Title,
-                    Content = scrollViewer,
-                    PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Download"),
-                    SecondaryButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
-                    XamlRoot = this.XamlRoot,
-                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                    DefaultButton = ContentDialogButton.Primary
-                };
-
-                ContentDialogResult result = await dialog.ShowAsync();
+                ContentDialogResult result = await ShowUpdateDialogAsync(update);
                 if (result == ContentDialogResult.Primary)
                 {
                     await Windows.System.Launcher.LaunchUriAsync(new Uri(update.DownloadUrl));
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                LogText.AddNewLog(LogText.LogLevel.ERROR, "Updater", $"Failed to show update dialog: {ex}");
                 try
                 {
                     UpdateTeachingTip.ActionButtonContent = Localizer.Get().GetLocalizedString("Button_Confirm");
@@ -931,6 +905,81 @@ namespace Xdows_Security.Views
                 UpdateProgressRing.IsActive = false;
                 UpdateProgressRing.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private async Task<ContentDialogResult> ShowUpdateDialogAsync(UpdateInfo update)
+        {
+            ElementTheme requestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
+            bool useDarkTheme = (XamlRoot.Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark;
+            string markdownDocument = UpdateMarkdownHtmlRenderer.RenderDocument(update.Content, useDarkTheme);
+            LogText.AddNewLog(LogText.LogLevel.DEBUG, "Updater", "[DEBUG-md-host] Markdig returned an HTML document.");
+
+            WebView2 webView = new()
+            {
+                MinWidth = 520,
+                Height = 320,
+                Margin = new Thickness(0, 12, 0, 0)
+            };
+            ContentDialog dialog = new()
+            {
+                Title = update.Title,
+                Content = webView,
+                PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Download"),
+                SecondaryButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
+                XamlRoot = this.XamlRoot,
+                RequestedTheme = requestedTheme,
+                DefaultButton = ContentDialogButton.Primary
+            };
+
+            Exception? webViewFailure = null;
+            bool navigationStarted = false;
+            webView.Loaded += async (_, _) =>
+            {
+                if (navigationStarted)
+                    return;
+
+                navigationStarted = true;
+                try
+                {
+                    LogText.AddNewLog(LogText.LogLevel.DEBUG, "Updater", "[DEBUG-md-host] Initializing the built-in WebView2 control.");
+                    await webView.EnsureCoreWebView2Async();
+                    LogText.AddNewLog(LogText.LogLevel.DEBUG, "Updater", "[DEBUG-md-host] WebView2 initialization returned; navigating to the rendered document.");
+                    webView.NavigateToString(markdownDocument);
+                    LogText.AddNewLog(LogText.LogLevel.DEBUG, "Updater", "[DEBUG-md-host] NavigateToString returned.");
+                }
+                catch (Exception ex)
+                {
+                    webViewFailure = ex;
+                    dialog.Hide();
+                }
+            };
+            webView.NavigationStarting += (sender, args) =>
+            {
+                if (!Uri.TryCreate(args.Uri, UriKind.Absolute, out Uri? uri) ||
+                    (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                {
+                    return;
+                }
+
+                args.Cancel = true;
+                _ = Windows.System.Launcher.LaunchUriAsync(uri);
+            };
+
+            ContentDialogResult result;
+            try
+            {
+                LogText.AddNewLog(LogText.LogLevel.DEBUG, "Updater", "[DEBUG-md-host] Showing the update dialog.");
+                result = await dialog.ShowAsync();
+            }
+            finally
+            {
+                webView.Close();
+            }
+
+            if (webViewFailure != null)
+                throw new InvalidOperationException("The update Markdown view could not be initialized.", webViewFailure);
+
+            return result;
         }
 
         private void UpdateTeachingTipClose(TeachingTip sender, Object args)
