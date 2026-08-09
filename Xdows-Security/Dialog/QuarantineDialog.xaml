@@ -5,7 +5,8 @@
     xmlns:local="using:TrustQuarantine"
     xmlns:l="using:WinUI3Localizer"
     l:Uids.Uid="QuarantineDialog_Dialog"
-    CornerRadius="{ThemeResource ControlCornerRadius}">
+    DefaultButton="Close"
+    Style="{ThemeResource DefaultContentDialogStyle}">
 
     <Grid>
         <Grid.RowDefinitions>

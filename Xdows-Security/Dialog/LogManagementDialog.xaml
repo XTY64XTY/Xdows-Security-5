@@ -6,7 +6,7 @@
     xmlns:svc="using:Xdows_Security.Services"
     l:Uids.Uid="LogManagementDialog_Dialog"
     DefaultButton="Close"
-    CornerRadius="{ThemeResource ControlCornerRadius}">
+    Style="{ThemeResource DefaultContentDialogStyle}">
 
     <StackPanel Spacing="12" MinWidth="400">
         <ListView x:Name="DateStatsListView"

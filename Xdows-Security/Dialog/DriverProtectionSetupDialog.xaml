@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     DefaultButton="None"
-    CornerRadius="{ThemeResource ControlCornerRadius}">
+    Style="{ThemeResource DefaultContentDialogStyle}">
 
     <Grid MinWidth="480" MaxWidth="680" RowSpacing="16">
         <Grid.RowDefinitions>

@@ -7,7 +7,7 @@
     PrimaryButtonText="Export"
     CloseButtonText="Cancel"
     DefaultButton="Primary"
-    CornerRadius="{ThemeResource ControlCornerRadius}">
+    Style="{ThemeResource DefaultContentDialogStyle}">
 
     <StackPanel Spacing="12" MinWidth="360">
         <StackPanel Spacing="4">
