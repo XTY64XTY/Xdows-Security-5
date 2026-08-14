@@ -40,6 +40,7 @@
     <type fullname="Microsoft.UI.Xaml.Controls.ProgressRing" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ToolTip" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ToolTipService" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.TeachingTip" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.Pivot" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.PivotItem" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Documents.Run" preserve="all" />

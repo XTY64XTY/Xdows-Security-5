@@ -48,11 +48,31 @@ public static class NtfsFileTableIndexer
         public uint FileIndexLow;
     }
 
-    private sealed record FileRecord(
+    internal sealed record FileRecord(
         ulong ReferenceNumber,
         ulong ParentReferenceNumber,
         string Name,
         bool IsDirectory);
+
+    internal sealed record VolumeIndex(
+        Dictionary<ulong, List<FileRecord>>? ChildrenByParent,
+        string? ErrorMessage);
+
+    /// <summary>
+    /// Reuses one master file table read per volume across several enumeration calls.
+    /// Reading the table costs the same whether one folder or the whole volume is requested,
+    /// so multi-path scans must share the result instead of paying for it repeatedly.
+    /// </summary>
+    public sealed class VolumeIndexCache
+    {
+        private readonly Dictionary<string, VolumeIndex> _volumes = new(StringComparer.OrdinalIgnoreCase);
+
+        internal bool TryGet(string volumeRoot, out VolumeIndex index) =>
+            _volumes.TryGetValue(volumeRoot, out index!);
+
+        internal void Set(string volumeRoot, VolumeIndex index) =>
+            _volumes[volumeRoot] = index;
+    }
 
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern SafeFileHandle CreateFileW(
@@ -85,7 +105,8 @@ public static class NtfsFileTableIndexer
     public static bool TryEnumerateFiles(
         string rootPath,
         out IReadOnlyList<string> files,
-        out string? errorMessage)
+        out string? errorMessage,
+        VolumeIndexCache? cache = null)
     {
         files = [];
         errorMessage = null;
@@ -100,55 +121,20 @@ public static class NtfsFileTableIndexer
                 return false;
             }
 
-            DriveInfo drive = new(volumeRoot);
-            if (!drive.IsReady)
+            VolumeIndex volumeIndex = GetVolumeIndex(volumeRoot, cache);
+            if (volumeIndex.ChildrenByParent is null)
             {
-                errorMessage = $"Volume '{volumeRoot}' is not ready.";
-                return false;
-            }
-            if (!string.Equals(drive.DriveFormat, "NTFS", StringComparison.OrdinalIgnoreCase))
-            {
-                errorMessage = $"Volume '{volumeRoot}' uses the unsupported '{drive.DriveFormat}' file system.";
+                errorMessage = volumeIndex.ErrorMessage;
                 return false;
             }
 
-            string volumeDevice = $@"\\.\{volumeRoot.TrimEnd(Path.DirectorySeparatorChar)}";
-            using SafeFileHandle handle = CreateFileW(
-                volumeDevice,
-                GenericRead,
-                FileShareRead | FileShareWrite | FileShareDelete,
-                IntPtr.Zero,
-                OpenExisting,
-                0,
-                IntPtr.Zero);
-
-            if (handle.IsInvalid)
-            {
-                int errorCode = Marshal.GetLastWin32Error();
-                errorMessage = $"Unable to open volume '{volumeRoot}'. Win32 error {errorCode}: {new Win32Exception(errorCode).Message}";
-                return false;
-            }
-
-            if (!TryReadFileRecords(handle, out Dictionary<ulong, FileRecord> records, out errorMessage))
-                return false;
+            Dictionary<ulong, List<FileRecord>> childrenByParent = volumeIndex.ChildrenByParent;
 
             string normalizedRoot = Path.TrimEndingDirectorySeparator(fullRoot);
             if (!TryGetFileReferenceNumber(normalizedRoot, out ulong rootReferenceNumber, out errorMessage))
                 return false;
 
-            Dictionary<ulong, List<FileRecord>> childrenByParent = new();
-            foreach (FileRecord record in records.Values)
-            {
-                ulong parentRecordNumber = GetRecordNumber(record.ParentReferenceNumber);
-                if (!childrenByParent.TryGetValue(parentRecordNumber, out List<FileRecord>? children))
-                {
-                    children = [];
-                    childrenByParent[parentRecordNumber] = children;
-                }
-                children.Add(record);
-            }
-
-            List<string> result = new(records.Count);
+            List<string> result = [];
             Queue<(ulong ReferenceNumber, string Path)> directories = new();
             HashSet<ulong> visitedDirectories = [];
             ulong rootRecordNumber = GetRecordNumber(rootReferenceNumber);
@@ -191,6 +177,60 @@ public static class NtfsFileTableIndexer
             errorMessage = $"{ex.GetType().Name}: {ex.Message}";
             return false;
         }
+    }
+
+    private static VolumeIndex GetVolumeIndex(string volumeRoot, VolumeIndexCache? cache)
+    {
+        if (cache is not null && cache.TryGet(volumeRoot, out VolumeIndex cached))
+            return cached;
+
+        VolumeIndex index = BuildVolumeIndex(volumeRoot);
+        cache?.Set(volumeRoot, index);
+        return index;
+    }
+
+    private static VolumeIndex BuildVolumeIndex(string volumeRoot)
+    {
+        DriveInfo drive = new(volumeRoot);
+        if (!drive.IsReady)
+            return new VolumeIndex(null, $"Volume '{volumeRoot}' is not ready.");
+        if (!string.Equals(drive.DriveFormat, "NTFS", StringComparison.OrdinalIgnoreCase))
+            return new VolumeIndex(null, $"Volume '{volumeRoot}' uses the unsupported '{drive.DriveFormat}' file system.");
+
+        string volumeDevice = $@"\\.\{volumeRoot.TrimEnd(Path.DirectorySeparatorChar)}";
+        using SafeFileHandle handle = CreateFileW(
+            volumeDevice,
+            GenericRead,
+            FileShareRead | FileShareWrite | FileShareDelete,
+            IntPtr.Zero,
+            OpenExisting,
+            0,
+            IntPtr.Zero);
+
+        if (handle.IsInvalid)
+        {
+            int errorCode = Marshal.GetLastWin32Error();
+            return new VolumeIndex(
+                null,
+                $"Unable to open volume '{volumeRoot}'. Win32 error {errorCode}: {new Win32Exception(errorCode).Message}");
+        }
+
+        if (!TryReadFileRecords(handle, out Dictionary<ulong, FileRecord> records, out string? readError))
+            return new VolumeIndex(null, readError);
+
+        Dictionary<ulong, List<FileRecord>> childrenByParent = new(records.Count);
+        foreach (FileRecord record in records.Values)
+        {
+            ulong parentRecordNumber = GetRecordNumber(record.ParentReferenceNumber);
+            if (!childrenByParent.TryGetValue(parentRecordNumber, out List<FileRecord>? children))
+            {
+                children = [];
+                childrenByParent[parentRecordNumber] = children;
+            }
+            children.Add(record);
+        }
+
+        return new VolumeIndex(childrenByParent, null);
     }
 
     private static bool TryReadFileRecords(

@@ -2778,13 +2778,34 @@ namespace Xdows_Security.Views
                 return false;
 
             HashSet<String> indexedFiles = new(StringComparer.OrdinalIgnoreCase);
-            bool usedNtfsTable = false;
+            bool indexComplete = false;
+            NtfsFileTableIndexer.VolumeIndexCache volumeCache = new();
+            HashSet<String> volumesReadFromTable = new(StringComparer.OrdinalIgnoreCase);
 
             void AddDirectory(String directory)
             {
-                if (NtfsFileTableIndexer.TryEnumerateFiles(directory, out IReadOnlyList<String> ntfsFiles, out String? errorMessage))
+                String volumeRoot = Path.GetPathRoot(Path.GetFullPath(directory)) ?? String.Empty;
+                bool volumeTableReady = volumesReadFromTable.Contains(volumeRoot);
+
+                // 读取整卷 MFT 的成本与目标目录大小无关，因此小目录直接使用普通遍历。
+                // 只按文件数量判定规模，不按耗时判定，避免慢盘上的小目录重复付出两种索引成本。
+                if (mode != ScanMode.Full &&
+                    !volumeTableReady &&
+                    TryEnumerateSmallFolder(directory, out IReadOnlyList<String> budgetedFiles))
                 {
-                    usedNtfsTable = true;
+                    indexComplete = true;
+                    indexedFiles.UnionWith(budgetedFiles);
+                    LogText.AddNewLog(
+                        LogText.LogLevel.INFO,
+                        "Security - FastIndex",
+                        $"Directory enumeration finished within the probe budget for '{directory}'. Indexed {budgetedFiles.Count} files without reading the NTFS file table.");
+                    return;
+                }
+
+                if (NtfsFileTableIndexer.TryEnumerateFiles(directory, out IReadOnlyList<String> ntfsFiles, out String? errorMessage, volumeCache))
+                {
+                    indexComplete = true;
+                    volumesReadFromTable.Add(volumeRoot);
                     indexedFiles.UnionWith(ntfsFiles);
                     LogText.AddNewLog(
                         LogText.LogLevel.INFO,
@@ -2825,10 +2846,50 @@ namespace Xdows_Security.Views
                     return false;
             }
 
-            if (!usedNtfsTable)
+            if (!indexComplete)
                 return false;
 
             files = indexedFiles.ToArray();
+            return true;
+        }
+
+        // 超过此数量才读取整卷 MFT；阈值应低于典型整卷文件数，但足够覆盖小目录。
+        private const Int32 FastIndexProbeFileLimit = 4_096;
+
+        private static bool TryEnumerateSmallFolder(
+            String directory,
+            out IReadOnlyList<String> files)
+        {
+            files = [];
+            List<String> collected = [];
+            Stack<String> stack = new();
+            stack.Push(directory);
+
+            while (stack.Count > 0)
+            {
+                String dir = stack.Pop();
+
+                IEnumerable<String> entries;
+                try { entries = Directory.EnumerateFileSystemEntries(dir); }
+                catch { continue; }
+
+                foreach (String entry in entries)
+                {
+                    System.IO.FileAttributes attr;
+                    try { attr = System.IO.File.GetAttributes(entry); }
+                    catch { continue; }
+
+                    if ((attr & System.IO.FileAttributes.Directory) != 0)
+                        stack.Push(entry);
+                    else
+                        collected.Add(entry);
+
+                    if (collected.Count > FastIndexProbeFileLimit)
+                        return false;
+                }
+            }
+
+            files = collected;
             return true;
         }
 

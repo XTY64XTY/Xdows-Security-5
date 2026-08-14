@@ -90,6 +90,8 @@
 	<PropertyGroup Label="Globals">
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<AssemblyVersion>5.0.1.0</AssemblyVersion>
+		<FileVersion>5.0.1.0</FileVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
@@ -176,8 +178,7 @@
 		<Copy SourceFiles="@(XdowsBootFilterFiles)" DestinationFiles="@(XdowsBootFilterFiles->'$(OutDir)Driver\BootFilter\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 	</Target>
 
-	<Target Name="VerifyPackagedXdowsDriver" AfterTargets="CollectXdowsDriverAndModelAssets"
-		Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys') AND Exists('$(OutDir)Driver\Xdows-Security-Driver.sys')">
+	<Target Name="VerifyPackagedXdowsDriver" AfterTargets="CollectXdowsDriverAndModelAssets" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys') AND Exists('$(OutDir)Driver\Xdows-Security-Driver.sys')">
 		<GetFileHash Files="$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys">
 			<Output TaskParameter="Items" ItemName="XdowsSourceDriverHash" />
 		</GetFileHash>
@@ -188,12 +189,10 @@
 			<XdowsSourceDriverHashValue>%(XdowsSourceDriverHash.FileHash)</XdowsSourceDriverHashValue>
 			<XdowsPackagedDriverHashValue>%(XdowsPackagedDriverHash.FileHash)</XdowsPackagedDriverHashValue>
 		</PropertyGroup>
-		<Error Condition="'$(XdowsSourceDriverHashValue)' != '$(XdowsPackagedDriverHashValue)'"
-			Text="Packaged Xdows Security driver hash does not match the current driver build output." />
+		<Error Condition="'$(XdowsSourceDriverHashValue)' != '$(XdowsPackagedDriverHashValue)'" Text="Packaged Xdows Security driver hash does not match the current driver build output." />
 	</Target>
 
-	<Target Name="VerifyPackagedXdowsNativeModel" AfterTargets="CollectXdowsDriverAndModelAssets"
-		Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll') AND Exists('$(OutDir)Xdows-Model-Native.dll')">
+	<Target Name="VerifyPackagedXdowsNativeModel" AfterTargets="CollectXdowsDriverAndModelAssets" Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll') AND Exists('$(OutDir)Xdows-Model-Native.dll')">
 		<GetFileHash Files="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll">
 			<Output TaskParameter="Items" ItemName="XdowsSourceNativeHash" />
 		</GetFileHash>
@@ -204,8 +203,7 @@
 			<XdowsSourceNativeHashValue>%(XdowsSourceNativeHash.FileHash)</XdowsSourceNativeHashValue>
 			<XdowsPackagedNativeHashValue>%(XdowsPackagedNativeHash.FileHash)</XdowsPackagedNativeHashValue>
 		</PropertyGroup>
-		<Error Condition="'$(XdowsSourceNativeHashValue)' != '$(XdowsPackagedNativeHashValue)'"
-			Text="Packaged Xdows native model hash does not match the current native build output." />
+		<Error Condition="'$(XdowsSourceNativeHashValue)' != '$(XdowsPackagedNativeHashValue)'" Text="Packaged Xdows native model hash does not match the current native build output." />
 	</Target>
 
 	<Target Name="AddXdowsDriverAndModelAssetsToPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">

@@ -878,8 +878,7 @@ namespace Xdows_Security.Views
                     UpdateButton.IsEnabled = true;
                     UpdateProgressRing.IsActive = false;
                     UpdateProgressRing.Visibility = Visibility.Collapsed;
-                    UpdateTeachingTip.ActionButtonContent = Localizer.Get().GetLocalizedString("Button_Confirm");
-                    UpdateTeachingTip.IsOpen = !UpdateTeachingTip.IsOpen;
+                    ShowUpdateTeachingTip();
                     return;
                 }
 
@@ -894,8 +893,7 @@ namespace Xdows_Security.Views
                 LogText.AddNewLog(LogText.LogLevel.ERROR, "Updater", $"Failed to show update dialog: {ex}");
                 try
                 {
-                    UpdateTeachingTip.ActionButtonContent = Localizer.Get().GetLocalizedString("Button_Confirm");
-                    UpdateTeachingTip.IsOpen = !UpdateTeachingTip.IsOpen;
+                    ShowUpdateTeachingTip();
                 }
                 catch { }
             }
@@ -905,6 +903,15 @@ namespace Xdows_Security.Views
                 UpdateProgressRing.IsActive = false;
                 UpdateProgressRing.Visibility = Visibility.Collapsed;
             }
+        }
+
+        private void ShowUpdateTeachingTip()
+        {
+            // Re-apply the UID so WinUI3Localizer resolves Title/Subtitle after AOT XAML loading.
+            UpdateTeachingTip.ClearValue(WinUI3Localizer.Uids.UidProperty);
+            WinUI3Localizer.Uids.SetUid(UpdateTeachingTip, "SettingsPage_Other_CheckUpdate_UpdateTeachingTip");
+            UpdateTeachingTip.ActionButtonContent = Localizer.Get().GetLocalizedString("Button_Confirm");
+            UpdateTeachingTip.IsOpen = !UpdateTeachingTip.IsOpen;
         }
 
         private async Task<ContentDialogResult> ShowUpdateDialogAsync(UpdateInfo update)
