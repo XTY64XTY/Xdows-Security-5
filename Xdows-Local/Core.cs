@@ -39,8 +39,6 @@ namespace Xdows_Local
             catch (Exception) { return String.Empty; }
         }
 
-        public static String ScanAsync(String path, Boolean deep, Boolean extraData) => Scan(path, deep, extraData);
-
         public static String ScanFromBytes(String path, Byte[] fileBytes, Boolean deep, Boolean extraData)
         {
             if (fileBytes.Length == 0) return String.Empty;

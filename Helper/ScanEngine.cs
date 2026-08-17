@@ -13,7 +13,7 @@ namespace Helper
 
         public static async Task<string> LocalScanAsync(string path, bool deep, bool ExtraData)
         {
-            return await Task.Run(() => Xdows_Local.Core.ScanAsync(path, deep, ExtraData));
+            return await Task.Run(() => Xdows_Local.Core.Scan(path, deep, ExtraData));
         }
 
         public static async Task<string> LocalScanFromBytesAsync(byte[] fileBytes, string path, bool deep, bool ExtraData)
