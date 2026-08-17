@@ -5,8 +5,8 @@ namespace Protection;
 internal static class DriverProtocol
 {
     public const uint ProtocolVersion = 9;
-    public const ulong DriverBuildId = 2026080701;
-    public const ulong PreviousDriverBuildId = 2026073001;
+    public const ulong DriverBuildId = 2026081603;
+    public const ulong PreviousDriverBuildId = 2026081602;
     public const uint LegacyUpgradeProtocolVersion = 7;
     public const ulong LegacyUpgradeDriverBuildId = 2026072802;
     public const ulong OlderLegacyUpgradeDriverBuildId = 2026072801;

@@ -27,7 +27,20 @@ public static class SignerTrustService
         {
             using X509Certificate2? cert2 = TryReadAuthenticodeSignerCertificate(path);
             if (cert2 is null)
-                return new SignerTrustResult(false, false, false, string.Empty, "authenticode-signer-not-found");
+            {
+                //
+                // Most Windows OS binaries (svchost.exe, dwm.exe, ShellHost.exe,
+                // TiWorker.exe, ...) are catalog-signed: the PE security
+                // directory holds only a small hash stub, not a signer
+                // certificate. CryptQueryObject therefore finds no embedded
+                // PKCS#7 signer. Fall back to WinVerifyTrust, which validates
+                // catalog signatures through the OS trust providers.
+                //
+                int wintrustStatus = WinVerifyTrustFile(path);
+                return wintrustStatus == 0
+                    ? new SignerTrustResult(true, true, true, string.Empty, "wintrust-catalog-valid")
+                    : new SignerTrustResult(false, false, false, string.Empty, $"wintrust-error-0x{wintrustStatus:X8}");
+            }
 
             using var chain = new X509Chain
             {
@@ -39,12 +52,24 @@ public static class SignerTrustService
             };
 
             bool chainValid = chain.Build(cert2);
-            return new SignerTrustResult(
-                chainValid,
-                true,
-                chainValid,
-                cert2.Subject,
-                chainValid ? "signature-chain-valid" : "signature-chain-invalid");
+            if (chainValid)
+            {
+                return new SignerTrustResult(true, true, true, cert2.Subject, "signature-chain-valid");
+            }
+
+            //
+            // The embedded-signer chain did not validate locally (missing
+            // intermediate CA, partial PKCS#7 stub, ...). Windows OS binaries
+            // such as svchost.exe / services.exe / csrss.exe DO expose an
+            // embedded signer certificate through CryptQueryObject, yet their
+            // chain does not build in this context; the authoritative OS
+            // verdict is WinVerifyTrust, which also covers catalog signing.
+            // Fall through to it before declaring the file untrusted.
+            //
+            int fallbackStatus = WinVerifyTrustFile(path);
+            return fallbackStatus == 0
+                ? new SignerTrustResult(true, true, true, cert2.Subject, "wintrust-after-chain-failure")
+                : new SignerTrustResult(false, true, false, cert2.Subject, $"chain-and-wintrust-invalid-0x{fallbackStatus:X8}");
         }
         catch (Exception ex) when (ex is CryptographicException or IOException or UnauthorizedAccessException)
         {
@@ -161,6 +186,99 @@ public static class SignerTrustService
         }
     }
 
+    //
+    // WinVerifyTrust interop (wintrust.dll). Used as the fallback for
+    // catalog-signed binaries whose PE contains no embedded signer
+    // certificate. Layouts below are the documented x64/ARM64 layouts;
+    // all pointer-sized fields use nint so the struct is pointer-size
+    // agnostic.
+    //
+    private const uint WtdUiNone = 2;
+    private const uint WtdRevokeNone = 0;
+    private const uint WtdChoiceFile = 1;
+    private const uint WtdCacheOnlyUrlRetrieval = 0x00001000;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WintrustFileInfo
+    {
+        public uint cbStruct;
+        public nint pcwszFilePath;
+        public nint hFile;
+        public nint pgKnownSubject;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct WintrustData
+    {
+        public uint cbStruct;
+        public nint pPolicyCallbackData;
+        public nint pSIPClientData;
+        public uint dwUIChoice;
+        public uint fdwRevocationChecks;
+        public uint dwUnionChoice;
+        public nint pFile;
+        public uint dwStateAction;
+        public nint hWVTStateData;
+        public nint pwszURLReference;
+        public uint dwProvFlags;
+        public uint dwUIContext;
+    }
+
+    private static int WinVerifyTrustFile(string path)
+    {
+        nint actionGuid = 0;
+        nint filePath = 0;
+        nint fileInfo = 0;
+        nint data = 0;
+
+        try
+        {
+            actionGuid = Marshal.AllocHGlobal(Marshal.SizeOf<Guid>());
+            Marshal.StructureToPtr(
+                new Guid(0x00AAC56B, 0xCD44, 0x11D0, 0x8C, 0xC2, 0x00, 0xC0, 0x4F, 0xC2, 0x95, 0xEE),
+                actionGuid,
+                false);
+
+            filePath = Marshal.StringToHGlobalUni(path);
+            fileInfo = Marshal.AllocHGlobal(Marshal.SizeOf<WintrustFileInfo>());
+            Marshal.StructureToPtr(
+                new WintrustFileInfo
+                {
+                    cbStruct = (uint)Marshal.SizeOf<WintrustFileInfo>(),
+                    pcwszFilePath = filePath
+                },
+                fileInfo,
+                false);
+
+            data = Marshal.AllocHGlobal(Marshal.SizeOf<WintrustData>());
+            Marshal.StructureToPtr(
+                new WintrustData
+                {
+                    cbStruct = (uint)Marshal.SizeOf<WintrustData>(),
+                    dwUIChoice = WtdUiNone,
+                    fdwRevocationChecks = WtdRevokeNone,
+                    dwUnionChoice = WtdChoiceFile,
+                    pFile = fileInfo,
+                    dwProvFlags = WtdCacheOnlyUrlRetrieval
+                },
+                data,
+                false);
+
+            return NativeMethods.WinVerifyTrust(0, actionGuid, data);
+        }
+        finally
+        {
+            if (data != 0)
+                Marshal.FreeHGlobal(data);
+            if (fileInfo != 0)
+                Marshal.FreeHGlobal(fileInfo);
+            if (filePath != 0)
+                Marshal.FreeHGlobal(filePath);
+            if (actionGuid != 0)
+                Marshal.FreeHGlobal(actionGuid);
+        }
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct CryptoApiBlob
     {
@@ -268,5 +386,8 @@ public static class SignerTrustService
         [DllImport("crypt32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CertCloseStore(nint certStore, int flags);
+
+        [DllImport("wintrust.dll", SetLastError = false)]
+        public static extern int WinVerifyTrust(nint hwnd, nint pgActionId, nint pWvtData);
     }
 }

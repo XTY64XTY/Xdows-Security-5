@@ -100,6 +100,11 @@ public sealed class DriverProtection : IProtectionModel
     public Action<DriverProtectionLogEntry>? LogCallback { get; set; }
     public Func<bool>? StartupProtectionStateProvider { get; set; }
 
+    // Injection protection (Beta) toggle from the app settings. When the
+    // provider returns false, every driver injection consultation is allowed
+    // without prompting. Null or true keeps injection protection active.
+    public Func<bool>? InjectionProtectionEnabledProvider { get; set; }
+
     private void Log(string module, string message)
     {
         LogCallback?.Invoke(new DriverProtectionLogEntry(
@@ -681,6 +686,77 @@ public sealed class DriverProtection : IProtectionModel
         CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+
+        string registryPath = CleanDriverString(driverEvent.ImagePath);
+        string valueName = CleanDriverString(driverEvent.RegistryValueName);
+        string? actorPath = ResolveActorPath(driverEvent);
+
+        // False-positive gate. The kernel already skips PID<=4, the registered
+        // client, and CI-trusted actors, but its CI cache only covers processes
+        // it observed being created and it cannot consult the trust list or the
+        // model. Evaluate the acting image here before taking the kernel wait
+        // and prompting the user: legitimate installers, Windows servicing
+        // components, and signed third-party updaters write these keys
+        // constantly.
+        if (!string.IsNullOrWhiteSpace(actorPath))
+        {
+            if (TrustManager.IsPathTrusted(actorPath))
+                return Allow(driverEvent.EventId, "registry-actor-trusted-list", TimeSpan.FromMinutes(10));
+
+            SignerTrustResult actorTrust = SignerTrustService.Evaluate(actorPath);
+            if (actorTrust.IsTrusted)
+                return Allow(driverEvent.EventId, $"registry-actor-signer-trusted:{actorTrust.Reason}", TimeSpan.FromMinutes(10));
+
+            // Unsigned does not mean malicious. Only an actor the model calls a
+            // threat justifies interrupting the user for a registry write.
+            if (File.Exists(actorPath))
+            {
+                string actorCacheKey = BuildDecisionCacheKey("RegistryActor", actorPath);
+                CleanupDecisionCache();
+                if (DecisionCache.TryGetValue(actorCacheKey, out var cachedActor) &&
+                    cachedActor.ExpiresAt > DateTimeOffset.UtcNow)
+                {
+                    if (cachedActor.Decision == XdowsSecurityDecisionType.Allow)
+                        return Allow(driverEvent.EventId, cachedActor.Reason);
+                }
+                else
+                {
+                    await ScanLimiter.WaitAsync(token).ConfigureAwait(false);
+                    NativeModelScannerResult actorScan;
+                    try
+                    {
+                        actorScan = await ScanSingleFlightAsync(actorPath, token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        ScanLimiter.Release();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(actorScan.ErrorMessage))
+                    {
+                        // Model infrastructure failure is not evidence. Allow
+                        // briefly and keep the reason in the diagnostic log.
+                        Cache(
+                            actorCacheKey,
+                            XdowsSecurityDecisionType.Allow,
+                            "registry-actor-model-error",
+                            TimeSpan.FromSeconds(30));
+                        return Allow(driverEvent.EventId, "registry-actor-model-error");
+                    }
+
+                    if (!actorScan.IsThreat)
+                    {
+                        Cache(
+                            actorCacheKey,
+                            XdowsSecurityDecisionType.Allow,
+                            "registry-actor-model-safe",
+                            TimeSpan.FromMinutes(10));
+                        return Allow(driverEvent.EventId, "registry-actor-model-safe", TimeSpan.FromMinutes(1));
+                    }
+                }
+            }
+        }
+
         if (!TryEnterUserDecisionHold(driverEvent))
         {
             return DriverBridgeClient.CreateDecision(
@@ -689,9 +765,6 @@ public sealed class DriverProtection : IProtectionModel
                 "registry-user-hold-failed-block");
         }
 
-        string registryPath = CleanDriverString(driverEvent.ImagePath);
-        string valueName = CleanDriverString(driverEvent.RegistryValueName);
-        string? actorPath = ResolveActorPath(driverEvent);
         string operation = ((XdowsSecurityRegistryOperation)driverEvent.RegistryOperation) switch
         {
             XdowsSecurityRegistryOperation.CreateKey => "CreateKey",
@@ -835,6 +908,18 @@ public sealed class DriverProtection : IProtectionModel
         CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+
+        // Injection protection master switch (Beta). Disabled means every
+        // injection/thread-injection consultation is allowed immediately;
+        // checked before the user-decision hold so no kernel wait is spent.
+        if (((XdowsSecurityBehaviorType)driverEvent.BehaviorType is
+                XdowsSecurityBehaviorType.ProcessInjection
+                or XdowsSecurityBehaviorType.ThreadInjection) &&
+            InjectionProtectionEnabledProvider?.Invoke() == false)
+        {
+            return Allow(driverEvent.EventId, "injection-protection-disabled", TimeSpan.Zero);
+        }
+
         if (!TryEnterUserDecisionHold(driverEvent))
         {
             return DriverBridgeClient.CreateDecision(
@@ -858,6 +943,37 @@ public sealed class DriverProtection : IProtectionModel
                 : $"PID {driverEvent.ProcessId}";
         }
 
+        // Self fast-allow: our own scanning activity must never prompt. The
+        // kernel-side ClientProcessId exemption covers the registered client
+        // only; heartbeat disconnect windows and helper binaries deployed
+        // beside the main executable would otherwise reach the prompt path,
+        // and unsigned dev/publish builds cannot pass any signer gate.
+        if ((behaviorType is XdowsSecurityBehaviorType.ProcessInjection
+                or XdowsSecurityBehaviorType.ThreadInjection) &&
+            IsOwnDeploymentImage(actorPath))
+        {
+            return Allow(driverEvent.EventId, "behavior-handle-self", TimeSpan.FromMinutes(10));
+        }
+
+        // Self-as-target: our own image is guarded by the SelfProtect module
+        // with its own policy, so an injection consultation about our own
+        // executable is only actionable when the actor itself is untrusted.
+        // Signed system actors (WMI hosts, shell, telemetry) routinely open
+        // handles to every user-mode process, including ours; our unsigned
+        // image can never pass the target-side signer gate below.
+        if ((behaviorType is XdowsSecurityBehaviorType.ProcessInjection
+                or XdowsSecurityBehaviorType.ThreadInjection) &&
+            !imagePath.StartsWith("PID ", StringComparison.Ordinal) &&
+            IsOwnDeploymentImage(imagePath) &&
+            !string.IsNullOrWhiteSpace(actorPath) &&
+            !actorPath.StartsWith("PID ", StringComparison.Ordinal) &&
+            !IsOwnDeploymentImage(actorPath) &&
+            (TrustManager.IsPathTrusted(actorPath) ||
+             SignerTrustService.Evaluate(actorPath).IsTrusted))
+        {
+            return Allow(driverEvent.EventId, "behavior-handle-self-target", TimeSpan.FromMinutes(10));
+        }
+
         // Trust gate for handle-based behavior detections. Cross-process
         // handle / injection heuristics routinely fire on legitimate,
         // Authenticode-signed system components (smartscreen.exe,
@@ -867,17 +983,97 @@ public sealed class DriverProtection : IProtectionModel
         // operation. Command-line behaviors (HiddenPowerShell,
         // EncodedCommand, LolbinAbuse, ...) stay on the prompt path: they
         // remain high-fidelity even for signed binaries.
-        if ((behaviorType is XdowsSecurityBehaviorType.ProcessInjection
-                or XdowsSecurityBehaviorType.ThreadInjection) &&
-            !string.IsNullOrWhiteSpace(imagePath) &&
-            !imagePath.StartsWith("PID ", StringComparison.Ordinal))
+        //
+        // When the target image path could not be resolved (protected or
+        // already-exited process, shown as "PID nnnn"), decide on the actor
+        // image instead: the actor is what determines whether the handle
+        // request is benign monitoring.
+        if (behaviorType is XdowsSecurityBehaviorType.ProcessInjection
+            or XdowsSecurityBehaviorType.ThreadInjection)
         {
-            if (TrustManager.IsPathTrusted(imagePath))
-                return Allow(driverEvent.EventId, "behavior-handle-trusted-list", TimeSpan.FromMinutes(10));
+            // The trust question is always about the acting image: it is what
+            // requested the dangerous handle. Falling back to the target image
+            // (as this gate previously did whenever the actor was unresolved)
+            // let an untrusted actor inherit the trust of a signed victim, and
+            // conversely reported signed system actors as threats whenever the
+            // target happened to be unsigned.
+string gatePath = actorPath;
 
-            SignerTrustResult actorTrust = SignerTrustService.Evaluate(imagePath);
-            if (actorTrust.IsTrusted)
-                return Allow(driverEvent.EventId, $"behavior-handle-signer-trusted:{actorTrust.Reason}", TimeSpan.FromMinutes(10));
+            if (!string.IsNullOrWhiteSpace(gatePath) &&
+                !gatePath.StartsWith("PID ", StringComparison.Ordinal))
+            {
+                // System-root actors (Windows\System32, Windows\SysWOW64, ...)
+                // are signed OS components performing routine monitoring.
+                // Allow them before signature evaluation so system services
+                // do not block on disk I/O or model scans for every handle
+                // request during startup.
+                if (IsUnderSystemRoot(gatePath))
+                    return Allow(driverEvent.EventId, "behavior-handle-system-actor", TimeSpan.FromMinutes(10));
+
+                if (TrustManager.IsPathTrusted(gatePath))
+                    return Allow(driverEvent.EventId, "behavior-handle-trusted-list", TimeSpan.FromMinutes(10));
+
+                SignerTrustResult actorTrust = SignerTrustService.Evaluate(gatePath);
+                if (actorTrust.IsTrusted)
+                    return Allow(driverEvent.EventId, $"behavior-handle-signer-trusted:{actorTrust.Reason}", TimeSpan.FromMinutes(10));
+
+                // Unsigned is not malicious. Debuggers, launchers, overlays and
+                // in-house tools legitimately open dangerous handles, and the
+                // kernel CI cache cannot help when ci.dll exports are missing
+                // or the actor predates the driver. Ask the model before
+                // interrupting the user.
+                if (File.Exists(gatePath))
+                {
+                    string gateCacheKey = BuildDecisionCacheKey("BehaviorActor", gatePath);
+                    CleanupDecisionCache();
+                    if (DecisionCache.TryGetValue(gateCacheKey, out var cachedGate) &&
+                        cachedGate.ExpiresAt > DateTimeOffset.UtcNow)
+                    {
+                        if (cachedGate.Decision == XdowsSecurityDecisionType.Allow)
+                            return Allow(driverEvent.EventId, cachedGate.Reason);
+                    }
+                    else
+                    {
+                        await ScanLimiter.WaitAsync(token).ConfigureAwait(false);
+                        NativeModelScannerResult gateScan;
+                        try
+                        {
+                            gateScan = await ScanSingleFlightAsync(gatePath, token).ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            ScanLimiter.Release();
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(gateScan.ErrorMessage))
+                        {
+                            Cache(
+                                gateCacheKey,
+                                XdowsSecurityDecisionType.Allow,
+                                "behavior-handle-model-error",
+                                TimeSpan.FromSeconds(30));
+                            return Allow(driverEvent.EventId, "behavior-handle-model-error");
+                        }
+
+                        if (!gateScan.IsThreat)
+                        {
+                            Cache(
+                                gateCacheKey,
+                                XdowsSecurityDecisionType.Allow,
+                                "behavior-handle-model-safe",
+                                TimeSpan.FromMinutes(10));
+                            return Allow(driverEvent.EventId, "behavior-handle-model-safe", TimeSpan.FromMinutes(1));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // No acting image to judge. Per the driver's fail-open bridge
+                // policy, absence of evidence must not become a confirmed
+                // threat prompt for a Beta detection.
+                return Allow(driverEvent.EventId, "behavior-handle-actor-unknown", TimeSpan.FromMinutes(1));
+            }
         }
 
         DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
@@ -1309,6 +1505,64 @@ public sealed class DriverProtection : IProtectionModel
             return SignerTrustService.TryResolveProcessPath(driverEvent.ProcessId);
 
         return null;
+    }
+
+    private static readonly Lazy<string?> OwnDeploymentDirectory = new(
+        () =>
+        {
+            string? processPath = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(processPath))
+                return null;
+            try
+            {
+                string? directory = Path.GetDirectoryName(processPath);
+                return string.IsNullOrWhiteSpace(directory) ? null : directory;
+            }
+            catch
+            {
+                return null;
+            }
+        },
+        LazyThreadSafetyMode.ExecutionAndPublication);
+
+    private static bool IsOwnDeploymentImage(string? actorPath)
+    {
+        string? ownDirectory = OwnDeploymentDirectory.Value;
+        if (string.IsNullOrWhiteSpace(actorPath) || ownDirectory is null)
+            return false;
+
+        try
+        {
+            string? directory = Path.GetDirectoryName(actorPath);
+            return string.Equals(directory, ownDirectory, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsUnderSystemRoot(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        try
+        {
+            string systemRoot = Environment.GetFolderPath(
+                Environment.SpecialFolder.Windows).TrimEnd('\\');
+            if (string.IsNullOrWhiteSpace(systemRoot))
+                return false;
+
+            string full = Path.GetFullPath(path);
+            return full.StartsWith(
+                systemRoot + Path.DirectorySeparatorChar,
+                StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string DriverEventTypeToProtectionType(XdowsSecurityEventType type)
