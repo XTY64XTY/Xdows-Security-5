@@ -158,24 +158,13 @@ public static class DriverInstaller
 
     private static string? FindAsset(string fileName)
     {
-        string[] roots =
-        [
-            AppContext.BaseDirectory,
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..")),
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "win-x64")),
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish")),
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish", "win-x64"))
-        ];
+        // 模型与驱动资产随解决方案构建复制到应用输出目录（AppContext.BaseDirectory），
+        // 无需猜测其它目录布局。开发机可经 LocalSettings 的 ModelSourceRoot 键显式
+        // 指定源码根目录用于递归搜索（未设置则跳过）。
+        string candidate = Path.Combine(AppContext.BaseDirectory, fileName);
+        if (File.Exists(candidate))
+            return candidate;
 
-        foreach (string root in roots)
-        {
-            string candidate = Path.Combine(root, fileName);
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        // 开发机可经 LocalSettings 的 ModelSourceRoot 键指定模型源码根目录，
-        // 用于递归搜索尚未复制到发布输出的模型资产。默认未设置则跳过递归搜索。
         try
         {
             var localSettings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
