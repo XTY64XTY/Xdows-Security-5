@@ -7,9 +7,36 @@ namespace Helper
 {
     public static class ScanEngine
     {
-        private const string CloudScanBaseUrl = "http://103.118.245.82:5000";
-        private const string CloudScanApiKey = "my_virus_key_2024";
-        private const string ExactRuleBaseUrl = "http://103.118.245.82:7050";
+        // 缓存 LocalSettings，避免每次读取配置都调用 ApplicationData.GetForUnpackaged
+        // PublicationOnly 模式：失败不缓存异常，避免单次失败导致整个类永久不可用
+        private static readonly Lazy<ApplicationDataContainer> s_settingsLazy = new(
+            () => ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings,
+            LazyThreadSafetyMode.PublicationOnly);
+        private static ApplicationDataContainer Settings => s_settingsLazy.Value;
+
+        private const string DefaultCloudScanBaseUrl = "http://103.118.245.82:5000";
+        private const string DefaultCloudScanApiKey = "my_virus_key_2024";
+        private const string DefaultExactRuleBaseUrl = "http://103.118.245.82:7050";
+
+        // 云端端点可经 LocalSettings 覆盖（键名 CloudScanBaseUrl / CloudScanApiKey / ExactRuleBaseUrl），
+        // 未设置时回退到默认值。默认值与迁移前的硬编码值完全一致。
+        private static string CloudScanBaseUrl => ReadSetting("CloudScanBaseUrl", DefaultCloudScanBaseUrl);
+        private static string CloudScanApiKey => ReadSetting("CloudScanApiKey", DefaultCloudScanApiKey);
+        private static string ExactRuleBaseUrl => ReadSetting("ExactRuleBaseUrl", DefaultExactRuleBaseUrl);
+
+        private static string ReadSetting(string key, string fallback)
+        {
+            try
+            {
+                var settings = Settings;
+                if (settings.Values.TryGetValue(key, out var raw) && raw is string value && !string.IsNullOrEmpty(value))
+                {
+                    return value;
+                }
+            }
+            catch (Exception) { }
+            return fallback;
+        }
 
         public static async Task<string> LocalScanAsync(string path, bool deep, bool ExtraData)
         {
