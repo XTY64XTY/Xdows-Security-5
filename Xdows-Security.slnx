@@ -22,7 +22,6 @@
     <File Path="README.zh-HANT.md" />
   </Folder>
   <Folder Name="/Xdows-Local/">
-    <Project Path="Xdows-Local-Caller/Xdows-Local-Caller.csproj" />
     <Project Path="Xdows-Local/Xdows-Local.csproj" />
   </Folder>
   <Folder Name="/Xdows-Model/">
