@@ -566,11 +566,10 @@ namespace Xdows_Security.Views
 
                     String? zipPath = null;
                     String? entryPath = null;
-                    Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
-                    if (zipIndex > 0)
+                    if (TryParseArchiveEntry(displayPath, out var resolvedArchivePath, out var resolvedEntryPath))
                     {
-                        zipPath = displayPath[..(zipIndex + 4)];
-                        entryPath = displayPath[(zipIndex + 5)..];
+                        zipPath = resolvedArchivePath;
+                        entryPath = resolvedEntryPath;
                     }
 
                     if (handled && zipPath != null && entryPath != null)
@@ -645,11 +644,10 @@ namespace Xdows_Security.Views
             String? zipPath = null;
             String? entryPath = null;
 
-            Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
-            if (zipIndex > 0)
+            if (TryParseArchiveEntry(displayPath, out var resolvedArchivePath, out var resolvedEntryPath))
             {
-                zipPath = displayPath[..(zipIndex + 4)];
-                entryPath = displayPath[(zipIndex + 5)..];
+                zipPath = resolvedArchivePath;
+                entryPath = resolvedEntryPath;
             }
 
             try
@@ -884,12 +882,8 @@ namespace Xdows_Security.Views
                         successCount++;
 
                         String displayPath = row.FilePath;
-                        Int32 zipIndex = displayPath.IndexOf(".zip\\", StringComparison.OrdinalIgnoreCase);
-                        if (zipIndex > 0)
+                        if (TryParseArchiveEntry(displayPath, out String zipPath, out String entryPath))
                         {
-                            String zipPath = displayPath[..(zipIndex + 4)];
-                            String entryPath = displayPath[(zipIndex + 5)..];
-
                             if (_zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                             {
                                 var entriesToDelete = new List<String>();
