@@ -248,14 +248,6 @@ namespace TrustQuarantine
             return true;
         }
 
-        private static async Task<string> CalculateFileHashAsync(string filePath)
-        {
-            using var sha256 = SHA256.Create();
-            using var stream = File.OpenRead(filePath);
-            var hashBytes = await sha256.ComputeHashAsync(stream);
-            return Convert.ToHexStringLower(hashBytes);
-        }
-
         private static byte[] EncryptData(byte[] data, byte[] key, byte[] iv)
         {
             using var aes = Aes.Create();

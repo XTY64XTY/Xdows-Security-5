@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 
 namespace TrustQuarantine
 {
@@ -59,26 +58,6 @@ namespace TrustQuarantine
             catch (Exception)
             {
                 return false;
-            }
-        }
-
-        public static string? CreateTrustItemJson(string filePath, string hash)
-        {
-            if (string.IsNullOrWhiteSpace(filePath) || string.IsNullOrWhiteSpace(hash))
-                return null;
-
-            try
-            {
-                var item = new
-                {
-                    SourcePath = filePath,
-                    Hash = hash
-                };
-                return JsonSerializer.Serialize(item);
-            }
-            catch (Exception)
-            {
-                return null;
             }
         }
     }
