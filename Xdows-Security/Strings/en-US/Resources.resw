@@ -523,7 +523,10 @@
     <value>Protection</value>
   </data>
   <data name="SettingsPage_Protection_CompatGroup.Header" xml:space="preserve">
-    <value>Protection Modules</value>
+    <value>Compat Protection</value>
+  </data>
+  <data name="SettingsPage_Protection_CompatGroup.Description" xml:space="preserve">
+    <value>Protection for most systems, but with limited protection capability</value>
   </data>
   <data name="SettingsPage_Protection_Process.Header" xml:space="preserve">
     <value>Process Scan</value>
@@ -578,18 +581,6 @@
   </data>
   <data name="SettingsPage_Protection_Boot_Open_Button.Content" xml:space="preserve">
     <value>Select and restore</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Others.Header" xml:space="preserve">
-    <value>Protect miscellaneous items</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Others.Description" xml:space="preserve">
-    <value>Some registry changes may not affect functionality but can cause UI display issues.</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Secondary.Header" xml:space="preserve">
-    <value>Protect auxiliary features</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Secondary.Description" xml:space="preserve">
-    <value>Protects registry entries used by auxiliary features.</value>
   </data>
   <data name="SettingsPage_Other.Text" xml:space="preserve">
     <value>Other</value>

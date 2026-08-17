@@ -4,7 +4,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-      xmlns:ui="using:CommunityToolkit.WinUI"
+xmlns:ui="using:CommunityToolkit.WinUI"
       xmlns:controls="using:CommunityToolkit.WinUI.Controls"
       xmlns:l="using:WinUI3Localizer"
       mc:Ignorable="d">
@@ -258,77 +258,35 @@
                     HeaderIcon="{ui:FontIcon Glyph=&#xE7B8;}"
                     Margin="0,0,0,4">
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsExpander
+                        <controls:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Process"
-                            HeaderIcon="{ui:FontIcon Glyph=&#xE9D5;}"
-                            Margin="0,0,0,4">
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE9D5;}">
                             <ToggleSwitch x:Name="ProcessToggle" Tag="Process" Toggled="RunProtection" />
-                        </controls:SettingsExpander>
-                        <controls:SettingsExpander
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Files"
-                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}"
-                            Margin="0,0,0,4">
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
                             <ToggleSwitch x:Name="FilesToggle" Tag="Files" Toggled="RunProtection"/>
-                        </controls:SettingsExpander>
-                        <controls:SettingsExpander
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Boot"
-                            HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
-                            Margin="0,0,0,4">
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}">
                             <ToggleSwitch x:Name="BootProtectionToggle"
                                           AutomationProperties.AutomationId="SettingsBootProtectionToggle"
                                           l:Uids.Uid="SettingsPage_Protection_Boot_Toggle"
                                           Tag="Boot"
                                           Toggled="BootProtectionToggle_Toggled"/>
-                            <controls:SettingsExpander.Items>
-                                <controls:SettingsCard
-                                    l:Uids.Uid="SettingsPage_Protection_Boot_Save"
-                                    HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">
-                                    <Button x:Name="BootSaveButton"
-                                            AutomationProperties.AutomationId="SettingsBootBackupButton"
-                                            l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button"
-                                            Click="Boot_Save_Button_Click"/>
-                                </controls:SettingsCard>
-                                <controls:SettingsCard
-                                    l:Uids.Uid="SettingsPage_Protection_Boot_Open"
-                                    HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
-                                    <Button x:Name="BootRestoreButton"
-                                            AutomationProperties.AutomationId="SettingsBootRestoreButton"
-                                            l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
-                                            Click="Boot_Restore_Button_Click"/>
-                                </controls:SettingsCard>
-                            </controls:SettingsExpander.Items>
-                        </controls:SettingsExpander>
-                        <controls:SettingsExpander
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Registry"
                             x:Name="SettingsPage_Protection_Registry"
-                            HeaderIcon="{ui:FontIcon Glyph=&#xEA37;}"
-                            Margin="0,0,0,4">
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEA37;}">
                             <ToggleSwitch x:Name="RegistryToggle" Tag="Registry" Toggled="RunProtection"/>
-                            <controls:SettingsExpander.Items>
-                                <controls:SettingsCard
-                                    x:Name="RegistrySecondaryCard"
-                                    l:Uids.Uid="SettingsPage_Protection_Registry_Secondary"
-                                    HeaderIcon="{ui:FontIcon Glyph=&#xED4D;}">
-                                    <ToggleSwitch x:Name="RegistrySecondaryToggle"
-                                                  Tag="RegistryProtectionSecondary"
-                                                  AutomationProperties.AutomationId="SettingsRegistrySecondaryToggle"
-                                                  Toggled="RegistryCategoryToggle_Toggled" />
-                                </controls:SettingsCard>
-                                <controls:SettingsCard
-                                    x:Name="RegistryOtherCard"
-                                    l:Uids.Uid="SettingsPage_Protection_Registry_Others"
-                                    HeaderIcon="{ui:FontIcon Glyph=&#xEA8F;}">
-                                    <ToggleSwitch x:Name="RegistryOtherToggle"
-                                                  Tag="RegistryProtectionOther"
-                                                  AutomationProperties.AutomationId="SettingsRegistryOtherToggle"
-                                                  Toggled="RegistryCategoryToggle_Toggled" />
-                                </controls:SettingsCard>
-                            </controls:SettingsExpander.Items>
-                        </controls:SettingsExpander>
+                        </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsCard
@@ -338,7 +296,55 @@
                     Margin="0,0,0,4">
                     <ToggleSwitch x:Name="UsbAutoScanToggle" Toggled="Toggled_SaveToggleData" Tag="UsbAutoScan"/>
                 </controls:SettingsCard>
-                <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
+                <TextBlock x:Name="Feature_Header"
+                           Margin="0,4,0,8"
+                           l:Uids.Uid="SettingsPage_Feature" />
+                <controls:SettingsExpander x:Name="Feature_ThreatNotificationMode"
+                                           l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode"
+                                           HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
+                                           Margin="0,0,0,4">
+                    <ComboBox x:Name="ThreatNotificationModeComboBox"
+                              AutomationProperties.AutomationId="ThreatNotificationModeComboBox"
+                              SelectionChanged="ThreatNotificationModeComboBox_SelectionChanged">
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Normal"
+                                      Tag="Normal" />
+                        <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Compact"
+                                      Tag="Compact" />
+                    </ComboBox>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming"
+                                               HeaderIcon="{ui:FontIcon Glyph=&#xE7FC;}">
+                            <ToggleSwitch x:Name="CompactNotificationWhenGamingToggle"
+                                          AutomationProperties.AutomationId="CompactNotificationWhenGamingToggle"
+                                          Tag="UseCompactThreatNotificationsWhenGaming"
+                                          Toggled="CompactNotificationWhenGamingToggle_Toggled" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths"
+                                               HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}">
+                            <Button x:Name="GamePathsViewButton"
+                                    AutomationProperties.AutomationId="GamePathsViewButton"
+                                    l:Uids.Uid="AllPage_OpenLink"
+                                    Click="GamePathsViewButton_Click" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+                <controls:SettingsCard
+                                    l:Uids.Uid="SettingsPage_Protection_Boot_Save"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">
+                    <Button x:Name="BootSaveButton"
+                                            AutomationProperties.AutomationId="SettingsBootBackupButton"
+                                            l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button"
+                                            Click="Boot_Save_Button_Click"/>
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                                    l:Uids.Uid="SettingsPage_Protection_Boot_Open"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
+                    <Button x:Name="BootRestoreButton"
+                                            AutomationProperties.AutomationId="SettingsBootRestoreButton"
+                                            l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
+                                            Click="Boot_Restore_Button_Click"/>
+                </controls:SettingsCard>
+                <TextBlock Margin="0,8,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
                 <controls:SettingsExpander
                VerticalAlignment="Top"
                l:Uids.Uid="SettingsPage_Quarantine"
@@ -372,38 +378,6 @@
                        l:Uids.Uid="SettingsPage_Trust_AddItem"
                        HeaderIcon="{ui:FontIcon Glyph=&#xE710;}">
                             <Button x:Name="Trust_AddButton" l:Uids.Uid="SettingsPage_Trust_AddButton" Click="Trust_AddButton_Click"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <TextBlock x:Name="Feature_Header"
-                           Margin="0,4,0,8"
-                           l:Uids.Uid="SettingsPage_Feature" />
-                <controls:SettingsExpander x:Name="Feature_ThreatNotificationMode"
-                                           l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode"
-                                           HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
-                                           Margin="0,0,0,4">
-                    <ComboBox x:Name="ThreatNotificationModeComboBox"
-                              AutomationProperties.AutomationId="ThreatNotificationModeComboBox"
-                              SelectionChanged="ThreatNotificationModeComboBox_SelectionChanged">
-                        <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Normal"
-                                      Tag="Normal" />
-                        <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Compact"
-                                      Tag="Compact" />
-                    </ComboBox>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming"
-                                               HeaderIcon="{ui:FontIcon Glyph=&#xE7FC;}">
-                            <ToggleSwitch x:Name="CompactNotificationWhenGamingToggle"
-                                          AutomationProperties.AutomationId="CompactNotificationWhenGamingToggle"
-                                          Tag="UseCompactThreatNotificationsWhenGaming"
-                                          Toggled="CompactNotificationWhenGamingToggle_Toggled" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths"
-                                               HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}">
-                            <Button x:Name="GamePathsViewButton"
-                                    AutomationProperties.AutomationId="GamePathsViewButton"
-                                    l:Uids.Uid="AllPage_OpenLink"
-                                    Click="GamePathsViewButton_Click" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>

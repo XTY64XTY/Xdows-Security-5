@@ -523,7 +523,10 @@
     <value>防护</value>
   </data>
   <data name="SettingsPage_Protection_CompatGroup.Header" xml:space="preserve">
-    <value>防护模块</value>
+    <value>兼容防护</value>
+  </data>
+  <data name="SettingsPage_Protection_CompatGroup.Description" xml:space="preserve">
+    <value>适用于大部分系统的防护，但防护能力较弱</value>
   </data>
   <data name="SettingsPage_Protection_Process.Header" xml:space="preserve">
     <value>进程扫描</value>
@@ -578,18 +581,6 @@
   </data>
   <data name="SettingsPage_Protection_Boot_Open_Button.Content" xml:space="preserve">
     <value>选择并还原</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Others.Header" xml:space="preserve">
-    <value>保护其它项目</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Others.Description" xml:space="preserve">
-    <value>部分注册表修改不会影响使用，但会导致界面显示问题</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Secondary.Header" xml:space="preserve">
-    <value>部分辅助功能</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Secondary.Description" xml:space="preserve">
-    <value>部分辅助功能也可能被利用，开启后将保护这些注册表</value>
   </data>
   <data name="SettingsPage_Other.Text" xml:space="preserve">
     <value>其它</value>

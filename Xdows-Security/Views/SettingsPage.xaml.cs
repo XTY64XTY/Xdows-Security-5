@@ -213,12 +213,7 @@ private void UpdateInjectionProtectionText()
 
         private void UpdateRegistryCategoryControlState()
         {
-            if (RegistrySecondaryCard == null || RegistryOtherCard == null || RegistryToggle == null)
-                return;
-
-            Boolean enabled = RegistryToggle.IsEnabled && RegistryToggle.IsOn;
-            RegistrySecondaryCard.IsEnabled = enabled;
-            RegistryOtherCard.IsEnabled = enabled;
+            // Registry secondary/other sub-cards removed; nothing to update.
         }
 
         private async Task ShowDriverEnvironmentDialogAsync()
@@ -641,9 +636,7 @@ private void UpdateInjectionProtectionText()
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
                 SpatialAudioToggle,
-                UsbAutoScanToggle,
-                RegistrySecondaryToggle,
-                RegistryOtherToggle
+                UsbAutoScanToggle
             ];
 
             foreach (ToggleSwitch toggle in toggles)

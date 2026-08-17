@@ -523,7 +523,10 @@
     <value>防護</value>
   </data>
   <data name="SettingsPage_Protection_CompatGroup.Header" xml:space="preserve">
-    <value>防護模組</value>
+    <value>相容防護</value>
+  </data>
+  <data name="SettingsPage_Protection_CompatGroup.Description" xml:space="preserve">
+    <value>適用於大部分系統的防護，但防護能力較弱</value>
   </data>
   <data name="SettingsPage_Protection_Process.Header" xml:space="preserve">
     <value>程序掃描</value>
@@ -578,18 +581,6 @@
   </data>
   <data name="SettingsPage_Protection_Boot_Open_Button.Content" xml:space="preserve">
     <value>選擇並還原</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Others.Header" xml:space="preserve">
-    <value>保護其它項目</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Others.Description" xml:space="preserve">
-    <value>部分注冊表修改不會影響使用，但會導致界面顯示問題</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Secondary.Header" xml:space="preserve">
-    <value>部分輔助功能</value>
-  </data>
-  <data name="SettingsPage_Protection_Registry_Secondary.Description" xml:space="preserve">
-    <value>部分輔助功能也可能被利用，開啓後將保護這些注冊表</value>
   </data>
   <data name="SettingsPage_Other.Text" xml:space="preserve">
     <value>其它</value>
