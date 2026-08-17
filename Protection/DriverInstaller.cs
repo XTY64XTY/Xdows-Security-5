@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Windows.Storage;
 
 namespace Protection;
 
@@ -163,16 +164,7 @@ public static class DriverInstaller
             Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..")),
             Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "win-x64")),
             Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish")),
-            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish", "win-x64")),
-            @"D:\Code\Xdows-Model\Xdows-Model-Invoker",
-            @"D:\Code\Xdows-Model\x64\Debug",
-            @"D:\Code\Xdows-Model\x64\Release",
-            @"D:\Code\Xdows-Model\ARM64\Debug",
-            @"D:\Code\Xdows-Model\ARM64\Release",
-            @"D:\Code\Xdows-Model\Xdows-Model-Invoker\bin\x64\Debug\net10.0-windows10.0.26100.0",
-            @"D:\Code\Xdows-Model\Xdows-Model-Caller\bin\x64\Debug\net10.0-windows10.0.26100.0",
-            @"D:\Code\Xdows-Model\Xdows-Model-Invoker\bin\Debug\net10.0-windows10.0.26100.0",
-            @"D:\Code\Xdows-Model\Xdows-Model-Caller\bin\Debug\net10.0-windows10.0.26100.0"
+            Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "Xdows-Security-Publish", "win-x64"))
         ];
 
         foreach (string root in roots)
@@ -182,16 +174,27 @@ public static class DriverInstaller
                 return candidate;
         }
 
+        // 开发机可经 LocalSettings 的 ModelSourceRoot 键指定模型源码根目录，
+        // 用于递归搜索尚未复制到发布输出的模型资产。默认未设置则跳过递归搜索。
         try
         {
-            return Directory
-                .EnumerateFiles(@"D:\Code\Xdows-Model", fileName, SearchOption.AllDirectories)
-                .FirstOrDefault();
+            var localSettings = ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings;
+            if (localSettings.Values.TryGetValue("ModelSourceRoot", out var raw) &&
+                raw is string modelRoot &&
+                !string.IsNullOrWhiteSpace(modelRoot) &&
+                Directory.Exists(modelRoot))
+            {
+                return Directory
+                    .EnumerateFiles(modelRoot, fileName, SearchOption.AllDirectories)
+                    .FirstOrDefault();
+            }
         }
         catch
         {
-            return null;
+            // 设置读取失败时静默回退：不阻塞驱动安装流程
         }
+
+        return null;
     }
 }
 
