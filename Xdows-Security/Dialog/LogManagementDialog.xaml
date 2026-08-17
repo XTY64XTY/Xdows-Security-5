@@ -9,37 +9,53 @@
     Style="{ThemeResource DefaultContentDialogStyle}">
 
     <StackPanel Spacing="12" MinWidth="400">
-        <ListView x:Name="DateStatsListView"
-                  SelectionMode="Multiple"
-                  Height="300">
-            <ListView.ItemTemplate>
-                <DataTemplate x:DataType="svc:LogDateStats">
-                    <Grid Padding="4,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{x:Bind Date}" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="{x:Bind Count}" VerticalAlignment="Center"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        <!-- Loading state -->
+        <StackPanel x:Name="LoadingPanel" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Center"
+                    Spacing="12"
+                    Padding="0,40">
+            <ProgressRing IsActive="True" 
+                         HorizontalAlignment="Center"
+                         Width="48" Height="48" Margin="0,0,0,8"/>
+            <TextBlock l:Uids.Uid="LogManagementDialog_Loading"
+                       HorizontalAlignment="Center" FontSize="18"/>
+        </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button x:Name="DeleteSelectedButton" Click="DeleteSelected_Click">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <FontIcon Glyph="&#xE74D;" FontSize="14"/>
-                    <TextBlock l:Uids.Uid="LogManagementDialog_DeleteSelected"/>
-                </StackPanel>
-            </Button>
-            <Button x:Name="DeleteAllButton" Click="DeleteAll_Click">
-                <StackPanel Orientation="Horizontal" Spacing="4">
-                    <FontIcon Glyph="&#xE74D;" FontSize="14"/>
-                    <TextBlock l:Uids.Uid="LogManagementDialog_DeleteAll"/>
-                </StackPanel>
-            </Button>
+        <!-- Content state (hidden while loading) -->
+        <StackPanel x:Name="ContentPanel" Visibility="Collapsed">
+            <ListView x:Name="DateStatsListView"
+                      SelectionMode="Multiple"
+                      Height="300" Margin="0,0,0,8">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="svc:LogDateStats">
+                        <Grid Padding="4,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{x:Bind Date}" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{x:Bind Count}" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button x:Name="DeleteSelectedButton" Click="DeleteSelected_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                        <TextBlock l:Uids.Uid="LogManagementDialog_DeleteSelected"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="DeleteAllButton" Click="DeleteAll_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <FontIcon Glyph="&#xE74D;" FontSize="14"/>
+                        <TextBlock l:Uids.Uid="LogManagementDialog_DeleteAll"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </StackPanel>
     </StackPanel>
 </ContentDialog>

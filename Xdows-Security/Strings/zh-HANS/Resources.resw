@@ -1345,18 +1345,42 @@
   <data name="InterceptWindow_SecurityAdviceText.Text" xml:space="preserve">
     <value>建议立即隔离该文件，防止恶意程序继续运行</value>
   </data>
-  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve"><value>防护模块</value></data>
-  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve"><value>{0} - {1}</value></data>
-  <data name="InterceptWindow_Module_Process" xml:space="preserve"><value>进程防护</value></data>
-  <data name="InterceptWindow_Module_File" xml:space="preserve"><value>文件防护</value></data>
-  <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>注入防护</value></data>
-  <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>行为防护</value></data>
-  <data name="InterceptWindow_Module_Boot" xml:space="preserve"><value>引导防护</value></data>
-  <data name="InterceptWindow_Module_Registry" xml:space="preserve"><value>注册表防护</value></data>
-  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>自我防护</value></data>
-  <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>实时防护</value></data>
-  <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>驱动模式</value></data>
-  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve"><value>兼容模式</value></data>
+  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve">
+    <value>防护模块</value>
+  </data>
+  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="InterceptWindow_Module_Process" xml:space="preserve">
+    <value>进程防护</value>
+  </data>
+  <data name="InterceptWindow_Module_File" xml:space="preserve">
+    <value>文件防护</value>
+  </data>
+  <data name="InterceptWindow_Module_Injection" xml:space="preserve">
+    <value>注入防护</value>
+  </data>
+  <data name="InterceptWindow_Module_Behavior" xml:space="preserve">
+    <value>行为防护</value>
+  </data>
+  <data name="InterceptWindow_Module_Boot" xml:space="preserve">
+    <value>引导防护</value>
+  </data>
+  <data name="InterceptWindow_Module_Registry" xml:space="preserve">
+    <value>注册表防护</value>
+  </data>
+  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve">
+    <value>自我防护</value>
+  </data>
+  <data name="InterceptWindow_Module_Unknown" xml:space="preserve">
+    <value>实时防护</value>
+  </data>
+  <data name="InterceptWindow_Backend_Driver" xml:space="preserve">
+    <value>驱动模式</value>
+  </data>
+  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve">
+    <value>兼容模式</value>
+  </data>
   <data name="InterceptWindow_TrustButton.Content" xml:space="preserve">
     <value>恢复并信任</value>
   </data>
@@ -1485,6 +1509,9 @@
   </data>
   <data name="LogManagementDialog_DeleteAll.Text" xml:space="preserve">
     <value>删除全部</value>
+  </data>
+  <data name="LogManagementDialog_Loading.Text" xml:space="preserve">
+    <value>加载中</value>
   </data>
   <data name="LogExportDialog_Dialog.Title" xml:space="preserve">
     <value>导出日志</value>
@@ -1898,60 +1925,162 @@
   <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
     <value>威胁通知，单击查看详细信息</value>
   </data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve"><value>选择物理磁盘</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve"><value>选择要创建引导备份的物理磁盘。请根据型号、序列号和容量确认磁盘身份。</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve"><value>选择要写入引导备份的物理磁盘。选错磁盘可能导致系统无法启动。</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve"><value>目标磁盘</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve"><value>继续</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve"><value>取消</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve"><value>关闭</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve"><value>未知磁盘</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve"><value>未知</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve"><value>（系统盘）</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve"><value>磁盘 {0} - {1}{2}</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve"><value>设备：{0}
+  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve">
+    <value>选择物理磁盘</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve">
+    <value>选择要创建引导备份的物理磁盘。请根据型号、序列号和容量确认磁盘身份。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve">
+    <value>选择要写入引导备份的物理磁盘。选错磁盘可能导致系统无法启动。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve">
+    <value>目标磁盘</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve">
+    <value>继续</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve">
+    <value>未知磁盘</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve">
+    <value>（系统盘）</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve">
+    <value>磁盘 {0} - {1}{2}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve">
+    <value>设备：{0}
 序列号：{1}
 容量：{2}
 分区样式：{3}
-总线：{4}</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve"><value>{0:N1} GiB</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve"><value>MBR</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve"><value>GPT</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve"><value>RAW</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve"><value>未知</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve"><value>引导备份</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve"><value>无法创建备份</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve"><value>当前磁盘的第一个扇区不是带有 55 AA 签名的有效 512 字节引导扇区。</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve"><value>无效的引导备份</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve"><value>选择的 .bin 文件必须正好为 512 字节，并以 55 AA 引导签名结尾。</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve"><value>备份已创建</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve"><value>已将 {0} 的引导扇区保存到：
-{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve"><value>确认在线还原</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve"><value>备份文件：{0}
-目标磁盘：{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve"><value>将立即覆盖目标物理磁盘的第一个 512 字节扇区。此在线操作不会锁定或卸载卷；选错磁盘或使用不匹配的备份可能导致系统无法启动。</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve"><value>写入并还原</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve"><value>引导备份已还原</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve"><value>已将引导备份写入 {0}，并通过重新读取验证。</value></data>
-  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve"><value>操作失败</value></data>
-  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve"><value>无法完成引导备份操作。错误代码：{0}
-请确认应用以管理员身份运行，且磁盘访问未被其他安全软件阻止。</value></data>
-  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>未找到物理磁盘</value></data>
-  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows 未返回可用的 PhysicalDrive 设备。</value></data>
-  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve"><value>引导防护开关</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve"><value>建立可信引导基线</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve"><value>启用前，请确认下面是当前 Windows 使用的系统磁盘。程序会立即读取当前引导状态并将其作为可信基线。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve"><value>保护范围：保护性 MBR、主/备份 GPT、活动 EFI 启动文件和 BCD。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve"><value>保护范围：MBR、活动启动文件和 BCD。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve"><value>仅当你确认系统目前能正常启动且未被篡改时才创建基线。后续差异会先自动修复，再询问是否放行。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve"><value>信任当前状态并启用</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve"><value>无法启用引导防护</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve"><value>建立或读取可信引导基线失败。错误代码：{0}。详细信息已写入日志。</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve"><value>引导防护未能启动。请确认应用以管理员身份运行，并重新建立可信基线。</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve"><value>检测到引导篡改</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve"><value>已先自动恢复 {0} 的可信引导状态。检测到以下变化：&#x0A;{1}&#x0A;&#x0A;保留修复可继续使用可信基线；放行会重新应用这些变化并更新基线。</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve"><value>检测到 {0} 的引导变化，但自动修复未完整通过回读验证，因此不能放行：&#x0A;{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve"><value>保留修复</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve"><value>放行并更新基线</value></data>
+总线：{4}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve">
+    <value>{0:N1} GiB</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve">
+    <value>MBR</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve">
+    <value>GPT</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve">
+    <value>RAW</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve">
+    <value>引导备份</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve">
+    <value>无法创建备份</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve">
+    <value>当前磁盘的第一个扇区不是带有 55 AA 签名的有效 512 字节引导扇区。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve">
+    <value>无效的引导备份</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve">
+    <value>选择的 .bin 文件必须正好为 512 字节，并以 55 AA 引导签名结尾。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve">
+    <value>备份已创建</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve">
+    <value>已将 {0} 的引导扇区保存到：
+{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve">
+    <value>确认在线还原</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve">
+    <value>备份文件：{0}
+目标磁盘：{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve">
+    <value>将立即覆盖目标物理磁盘的第一个 512 字节扇区。此在线操作不会锁定或卸载卷；选错磁盘或使用不匹配的备份可能导致系统无法启动。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve">
+    <value>写入并还原</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve">
+    <value>引导备份已还原</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve">
+    <value>已将引导备份写入 {0}，并通过重新读取验证。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve">
+    <value>操作失败</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve">
+    <value>无法完成引导备份操作。错误代码：{0}
+请确认应用以管理员身份运行，且磁盘访问未被其他安全软件阻止。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve">
+    <value>未找到物理磁盘</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve">
+    <value>Windows 未返回可用的 PhysicalDrive 设备。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve">
+    <value>引导防护开关</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve">
+    <value>建立可信引导基线</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve">
+    <value>启用前，请确认下面是当前 Windows 使用的系统磁盘。程序会立即读取当前引导状态并将其作为可信基线。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve">
+    <value>保护范围：保护性 MBR、主/备份 GPT、活动 EFI 启动文件和 BCD。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve">
+    <value>保护范围：MBR、活动启动文件和 BCD。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve">
+    <value>仅当你确认系统目前能正常启动且未被篡改时才创建基线。后续差异会先自动修复，再询问是否放行。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve">
+    <value>信任当前状态并启用</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve">
+    <value>无法启用引导防护</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve">
+    <value>建立或读取可信引导基线失败。错误代码：{0}。详细信息已写入日志。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve">
+    <value>引导防护未能启动。请确认应用以管理员身份运行，并重新建立可信基线。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve">
+    <value>检测到引导篡改</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve">
+    <value>已先自动恢复 {0} 的可信引导状态。检测到以下变化：
+{1}
+
+保留修复可继续使用可信基线；放行会重新应用这些变化并更新基线。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve">
+    <value>检测到 {0} 的引导变化，但自动修复未完整通过回读验证，因此不能放行：
+{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve">
+    <value>保留修复</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve">
+    <value>放行并更新基线</value>
+  </data>
 </root>

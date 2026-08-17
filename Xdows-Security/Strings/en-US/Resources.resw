@@ -1346,18 +1346,42 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="InterceptWindow_SecurityAdviceText.Text" xml:space="preserve">
     <value>It is recommended to quarantine this file immediately.</value>
   </data>
-  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve"><value>Protection module</value></data>
-  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve"><value>{0} - {1}</value></data>
-  <data name="InterceptWindow_Module_Process" xml:space="preserve"><value>Process protection</value></data>
-  <data name="InterceptWindow_Module_File" xml:space="preserve"><value>File protection</value></data>
-  <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>Injection protection</value></data>
-  <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>Behavior protection</value></data>
-  <data name="InterceptWindow_Module_Boot" xml:space="preserve"><value>Boot protection</value></data>
-  <data name="InterceptWindow_Module_Registry" xml:space="preserve"><value>Registry protection</value></data>
-  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>Self protection</value></data>
-  <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>Real-time protection</value></data>
-  <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>Driver mode</value></data>
-  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve"><value>Compatibility mode</value></data>
+  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve">
+    <value>Protection module</value>
+  </data>
+  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="InterceptWindow_Module_Process" xml:space="preserve">
+    <value>Process protection</value>
+  </data>
+  <data name="InterceptWindow_Module_File" xml:space="preserve">
+    <value>File protection</value>
+  </data>
+  <data name="InterceptWindow_Module_Injection" xml:space="preserve">
+    <value>Injection protection</value>
+  </data>
+  <data name="InterceptWindow_Module_Behavior" xml:space="preserve">
+    <value>Behavior protection</value>
+  </data>
+  <data name="InterceptWindow_Module_Boot" xml:space="preserve">
+    <value>Boot protection</value>
+  </data>
+  <data name="InterceptWindow_Module_Registry" xml:space="preserve">
+    <value>Registry protection</value>
+  </data>
+  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve">
+    <value>Self protection</value>
+  </data>
+  <data name="InterceptWindow_Module_Unknown" xml:space="preserve">
+    <value>Real-time protection</value>
+  </data>
+  <data name="InterceptWindow_Backend_Driver" xml:space="preserve">
+    <value>Driver mode</value>
+  </data>
+  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve">
+    <value>Compatibility mode</value>
+  </data>
   <data name="InterceptWindow_TrustButton.Content" xml:space="preserve">
     <value>Restore &amp; Trust</value>
   </data>
@@ -1486,6 +1510,9 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="LogManagementDialog_DeleteAll.Text" xml:space="preserve">
     <value>Delete all</value>
+  </data>
+  <data name="LogManagementDialog_Loading.Text" xml:space="preserve">
+    <value>Loading</value>
   </data>
   <data name="LogExportDialog_Dialog.Title" xml:space="preserve">
     <value>Export Logs</value>
@@ -1899,60 +1926,162 @@ This action may cause you to accidentally run a threat file.</value>
   <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
     <value>Threat notification. Click to view details</value>
   </data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve"><value>Select a physical disk</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve"><value>Select the physical disk to back up. Confirm its identity using the model, serial number, and capacity.</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve"><value>Select the physical disk that will receive the boot backup. Selecting the wrong disk can prevent Windows from starting.</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve"><value>Target disk</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve"><value>Continue</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve"><value>Close</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve"><value>Unknown disk</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve"><value>Unknown</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve"><value> (system disk)</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve"><value>Disk {0} - {1}{2}</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve"><value>Device: {0}
+  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve">
+    <value>Select a physical disk</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve">
+    <value>Select the physical disk to back up. Confirm its identity using the model, serial number, and capacity.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve">
+    <value>Select the physical disk that will receive the boot backup. Selecting the wrong disk can prevent Windows from starting.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve">
+    <value>Target disk</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve">
+    <value>Unknown disk</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve">
+    <value> (system disk)</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve">
+    <value>Disk {0} - {1}{2}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve">
+    <value>Device: {0}
 Serial number: {1}
 Capacity: {2}
 Partition style: {3}
-Bus: {4}</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve"><value>{0:N1} GiB</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve"><value>MBR</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve"><value>GPT</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve"><value>RAW</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve"><value>Unknown</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve"><value>Boot backup</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve"><value>Backup cannot be created</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve"><value>The disk's first sector is not a valid 512-byte boot sector ending in the 55 AA signature.</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve"><value>Invalid boot backup</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve"><value>The selected .bin file must be exactly 512 bytes and end with the 55 AA boot signature.</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve"><value>Backup created</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve"><value>The boot sector for {0} was saved to:
-{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve"><value>Confirm online restore</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve"><value>Backup file: {0}
-Target disk: {1}</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve"><value>This immediately overwrites the first 512-byte sector of the target physical disk. The online operation does not lock or dismount volumes. Selecting the wrong disk or using a mismatched backup can prevent Windows from starting.</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve"><value>Write and restore</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve"><value>Boot backup restored</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve"><value>The boot backup was written to {0} and verified by reading it back.</value></data>
-  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve"><value>Operation failed</value></data>
-  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve"><value>The boot backup operation could not be completed. Error code: {0}
-Confirm that the app is running as administrator and that disk access is not blocked by other security software.</value></data>
-  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>No physical disks found</value></data>
-  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows did not return any available PhysicalDrive devices.</value></data>
-  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve"><value>Boot protection switch</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve"><value>Create a trusted boot baseline</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve"><value>Before enabling protection, confirm that this is the physical disk used by the current Windows installation. Its current boot state will be saved as trusted.</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve"><value>Scope: protective MBR, primary and backup GPT, active EFI boot files, and BCD.</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve"><value>Scope: MBR, active boot files, and BCD.</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve"><value>Create this baseline only when the system currently boots correctly and is known to be clean. Later differences are repaired before you are asked whether to release them.</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve"><value>Trust current state and enable</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve"><value>Boot protection could not be enabled</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve"><value>The trusted boot baseline could not be created or read. Error code: {0}. Details were written to the log.</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve"><value>Boot protection did not start. Run the app as administrator and create the trusted baseline again.</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve"><value>Boot tampering detected</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve"><value>The trusted boot state of {0} was restored before notifying you. These changes were detected:&#x0A;{1}&#x0A;&#x0A;Keep the repair to retain the trusted baseline, or release the changes to apply them again and update the baseline.</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve"><value>Boot changes were detected on {0}, but automatic repair did not pass read-back verification and cannot be released:&#x0A;{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve"><value>Keep repair</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve"><value>Release and update baseline</value></data>
+Bus: {4}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve">
+    <value>{0:N1} GiB</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve">
+    <value>MBR</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve">
+    <value>GPT</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve">
+    <value>RAW</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve">
+    <value>Boot backup</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve">
+    <value>Backup cannot be created</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve">
+    <value>The disk's first sector is not a valid 512-byte boot sector ending in the 55 AA signature.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve">
+    <value>Invalid boot backup</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve">
+    <value>The selected .bin file must be exactly 512 bytes and end with the 55 AA boot signature.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve">
+    <value>Backup created</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve">
+    <value>The boot sector for {0} was saved to:
+{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve">
+    <value>Confirm online restore</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve">
+    <value>Backup file: {0}
+Target disk: {1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve">
+    <value>This immediately overwrites the first 512-byte sector of the target physical disk. The online operation does not lock or dismount volumes. Selecting the wrong disk or using a mismatched backup can prevent Windows from starting.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve">
+    <value>Write and restore</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve">
+    <value>Boot backup restored</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve">
+    <value>The boot backup was written to {0} and verified by reading it back.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve">
+    <value>Operation failed</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve">
+    <value>The boot backup operation could not be completed. Error code: {0}
+Confirm that the app is running as administrator and that disk access is not blocked by other security software.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve">
+    <value>No physical disks found</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve">
+    <value>Windows did not return any available PhysicalDrive devices.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve">
+    <value>Boot protection switch</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve">
+    <value>Create a trusted boot baseline</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve">
+    <value>Before enabling protection, confirm that this is the physical disk used by the current Windows installation. Its current boot state will be saved as trusted.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve">
+    <value>Scope: protective MBR, primary and backup GPT, active EFI boot files, and BCD.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve">
+    <value>Scope: MBR, active boot files, and BCD.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve">
+    <value>Create this baseline only when the system currently boots correctly and is known to be clean. Later differences are repaired before you are asked whether to release them.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve">
+    <value>Trust current state and enable</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve">
+    <value>Boot protection could not be enabled</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve">
+    <value>The trusted boot baseline could not be created or read. Error code: {0}. Details were written to the log.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve">
+    <value>Boot protection did not start. Run the app as administrator and create the trusted baseline again.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve">
+    <value>Boot tampering detected</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve">
+    <value>The trusted boot state of {0} was restored before notifying you. These changes were detected:
+{1}
+
+Keep the repair to retain the trusted baseline, or release the changes to apply them again and update the baseline.</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve">
+    <value>Boot changes were detected on {0}, but automatic repair did not pass read-back verification and cannot be released:
+{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve">
+    <value>Keep repair</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve">
+    <value>Release and update baseline</value>
+  </data>
 </root>

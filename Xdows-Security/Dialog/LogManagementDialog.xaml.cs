@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using Xdows_Security.Services;
 using WinUI3Localizer;
 
@@ -15,13 +16,26 @@ namespace Xdows_Security
         {
             InitializeComponent();
             CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
-            ReloadStats();
+            Loaded += OnLoaded;
         }
 
-        private void ReloadStats()
+        private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-            _stats = new ObservableCollection<LogDateStats>(LogService.GetDateStats());
+            await LoadStatsAsync();
+        }
+
+        private async Task LoadStatsAsync()
+        {
+            LoadingPanel.Visibility = Visibility.Visible;
+            ContentPanel.Visibility = Visibility.Collapsed;
+
+            var stats = await Task.Run(() => LogService.GetDateStats());
+
+            _stats = new ObservableCollection<LogDateStats>(stats);
             DateStatsListView.ItemsSource = _stats;
+
+            LoadingPanel.Visibility = Visibility.Collapsed;
+            ContentPanel.Visibility = Visibility.Visible;
         }
 
         private void DeleteSelected_Click(object sender, RoutedEventArgs e)

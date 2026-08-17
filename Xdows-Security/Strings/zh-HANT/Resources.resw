@@ -1345,18 +1345,42 @@
   <data name="InterceptWindow_SecurityAdviceText.Text" xml:space="preserve">
     <value>建議立即隔離該文件，防止惡意程序繼續運行</value>
   </data>
-  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve"><value>防護模組</value></data>
-  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve"><value>{0} - {1}</value></data>
-  <data name="InterceptWindow_Module_Process" xml:space="preserve"><value>程序防護</value></data>
-  <data name="InterceptWindow_Module_File" xml:space="preserve"><value>文件防護</value></data>
-  <data name="InterceptWindow_Module_Injection" xml:space="preserve"><value>注入防護</value></data>
-  <data name="InterceptWindow_Module_Behavior" xml:space="preserve"><value>行為防護</value></data>
-  <data name="InterceptWindow_Module_Boot" xml:space="preserve"><value>開機防護</value></data>
-  <data name="InterceptWindow_Module_Registry" xml:space="preserve"><value>登錄檔防護</value></data>
-  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve"><value>自我防護</value></data>
-  <data name="InterceptWindow_Module_Unknown" xml:space="preserve"><value>即時防護</value></data>
-  <data name="InterceptWindow_Backend_Driver" xml:space="preserve"><value>驅動模式</value></data>
-  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve"><value>兼容模式</value></data>
+  <data name="InterceptWindow_ProtectionModuleLabel.Text" xml:space="preserve">
+    <value>防護模組</value>
+  </data>
+  <data name="InterceptWindow_ProtectionModule_Format" xml:space="preserve">
+    <value>{0} - {1}</value>
+  </data>
+  <data name="InterceptWindow_Module_Process" xml:space="preserve">
+    <value>程序防護</value>
+  </data>
+  <data name="InterceptWindow_Module_File" xml:space="preserve">
+    <value>文件防護</value>
+  </data>
+  <data name="InterceptWindow_Module_Injection" xml:space="preserve">
+    <value>注入防護</value>
+  </data>
+  <data name="InterceptWindow_Module_Behavior" xml:space="preserve">
+    <value>行為防護</value>
+  </data>
+  <data name="InterceptWindow_Module_Boot" xml:space="preserve">
+    <value>開機防護</value>
+  </data>
+  <data name="InterceptWindow_Module_Registry" xml:space="preserve">
+    <value>登錄檔防護</value>
+  </data>
+  <data name="InterceptWindow_Module_SelfProtection" xml:space="preserve">
+    <value>自我防護</value>
+  </data>
+  <data name="InterceptWindow_Module_Unknown" xml:space="preserve">
+    <value>即時防護</value>
+  </data>
+  <data name="InterceptWindow_Backend_Driver" xml:space="preserve">
+    <value>驅動模式</value>
+  </data>
+  <data name="InterceptWindow_Backend_Compatibility" xml:space="preserve">
+    <value>兼容模式</value>
+  </data>
   <data name="InterceptWindow_TrustButton.Content" xml:space="preserve">
     <value>恢復並信任</value>
   </data>
@@ -1485,6 +1509,9 @@
   </data>
   <data name="LogManagementDialog_DeleteAll.Text" xml:space="preserve">
     <value>刪除全部</value>
+  </data>
+  <data name="LogManagementDialog_Loading.Text" xml:space="preserve">
+    <value>載入中</value>
   </data>
   <data name="LogExportDialog_Dialog.Title" xml:space="preserve">
     <value>匯出日誌</value>
@@ -1898,60 +1925,162 @@
   <data name="SmallThreatNotification_AutomationName" xml:space="preserve">
     <value>威脅通知，按一下以檢視詳細資料</value>
   </data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve"><value>選擇實體磁碟</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve"><value>選擇要建立開機備份的實體磁碟。請根據型號、序號和容量確認磁碟身分。</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve"><value>選擇要寫入開機備份的實體磁碟。選錯磁碟可能導致系統無法啟動。</value></data>
-  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve"><value>目標磁碟</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve"><value>繼續</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve"><value>取消</value></data>
-  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve"><value>關閉</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve"><value>未知磁碟</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve"><value>未知</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve"><value>（系統磁碟）</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve"><value>磁碟 {0} - {1}{2}</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve"><value>裝置：{0}
+  <data name="SettingsPage_Protection_Boot_DiskDialog_Title" xml:space="preserve">
+    <value>選擇實體磁碟</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_BackupInstruction" xml:space="preserve">
+    <value>選擇要建立開機備份的實體磁碟。請根據型號、序號和容量確認磁碟身分。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_RestoreInstruction" xml:space="preserve">
+    <value>選擇要寫入開機備份的實體磁碟。選錯磁碟可能導致系統無法啟動。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_DiskDialog_ComboHeader" xml:space="preserve">
+    <value>目標磁碟</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Continue" xml:space="preserve">
+    <value>繼續</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Dialog_Close" xml:space="preserve">
+    <value>關閉</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownModel" xml:space="preserve">
+    <value>未知磁碟</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_UnknownValue" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_SystemSuffix" xml:space="preserve">
+    <value>（系統磁碟）</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_TitleFormat" xml:space="preserve">
+    <value>磁碟 {0} - {1}{2}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_DetailsFormat" xml:space="preserve">
+    <value>裝置：{0}
 序號：{1}
 容量：{2}
 分割樣式：{3}
-匯流排：{4}</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve"><value>{0:N1} GiB</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve"><value>MBR</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve"><value>GPT</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve"><value>RAW</value></data>
-  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve"><value>未知</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve"><value>開機備份</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve"><value>無法建立備份</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve"><value>目前磁碟的第一個磁區不是具有 55 AA 簽章的有效 512 位元組開機磁區。</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve"><value>無效的開機備份</value></data>
-  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve"><value>選取的 .bin 檔案必須正好為 512 位元組，並以 55 AA 開機簽章結尾。</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve"><value>備份已建立</value></data>
-  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve"><value>已將 {0} 的開機磁區儲存至：
-{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve"><value>確認線上還原</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve"><value>備份檔案：{0}
-目標磁碟：{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve"><value>將立即覆寫目標實體磁碟的第一個 512 位元組磁區。此線上操作不會鎖定或卸載磁碟區；選錯磁碟或使用不相符的備份可能導致系統無法啟動。</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve"><value>寫入並還原</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve"><value>開機備份已還原</value></data>
-  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve"><value>已將開機備份寫入 {0}，並通過重新讀取驗證。</value></data>
-  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve"><value>操作失敗</value></data>
-  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve"><value>無法完成開機備份操作。錯誤代碼：{0}
-請確認應用程式以系統管理員身分執行，且磁碟存取未被其他安全軟體阻止。</value></data>
-  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve"><value>找不到實體磁碟</value></data>
-  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve"><value>Windows 未傳回可用的 PhysicalDrive 裝置。</value></data>
-  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve"><value>開機防護開關</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve"><value>建立可信開機基準</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve"><value>啟用前，請確認下方是目前 Windows 使用的系統磁碟。程式會立即讀取目前開機狀態並將其設為可信基準。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve"><value>保護範圍：保護性 MBR、主要/備份 GPT、作用中的 EFI 開機檔案和 BCD。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve"><value>保護範圍：MBR、作用中的開機檔案和 BCD。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve"><value>僅在你確認系統目前可正常啟動且未遭竄改時建立基準。後續差異會先自動修復，再詢問是否放行。</value></data>
-  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve"><value>信任目前狀態並啟用</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve"><value>無法啟用開機防護</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve"><value>建立或讀取可信開機基準失敗。錯誤代碼：{0}。詳細資訊已寫入記錄。</value></data>
-  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve"><value>開機防護未能啟動。請確認應用程式以系統管理員身分執行，並重新建立可信基準。</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve"><value>偵測到開機竄改</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve"><value>已先自動還原 {0} 的可信開機狀態。偵測到以下變更：&#x0A;{1}&#x0A;&#x0A;保留修復可繼續使用可信基準；放行會重新套用這些變更並更新基準。</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve"><value>偵測到 {0} 的開機變更，但自動修復未完整通過回讀驗證，因此無法放行：&#x0A;{1}</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve"><value>保留修復</value></data>
-  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve"><value>放行並更新基準</value></data>
+匯流排：{4}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_SizeFormat" xml:space="preserve">
+    <value>{0:N1} GiB</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Mbr" xml:space="preserve">
+    <value>MBR</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Gpt" xml:space="preserve">
+    <value>GPT</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Raw" xml:space="preserve">
+    <value>RAW</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Disk_Partition_Unknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupFileType" xml:space="preserve">
+    <value>開機備份</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Title" xml:space="preserve">
+    <value>無法建立備份</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidSource_Message" xml:space="preserve">
+    <value>目前磁碟的第一個磁區不是具有 55 AA 簽章的有效 512 位元組開機磁區。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Title" xml:space="preserve">
+    <value>無效的開機備份</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_InvalidBackup_Message" xml:space="preserve">
+    <value>選取的 .bin 檔案必須正好為 512 位元組，並以 55 AA 開機簽章結尾。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Title" xml:space="preserve">
+    <value>備份已建立</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_BackupSuccess_Message" xml:space="preserve">
+    <value>已將 {0} 的開機磁區儲存至：
+{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Title" xml:space="preserve">
+    <value>確認線上還原</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Summary" xml:space="preserve">
+    <value>備份檔案：{0}
+目標磁碟：{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Warning" xml:space="preserve">
+    <value>將立即覆寫目標實體磁碟的第一個 512 位元組磁區。此線上操作不會鎖定或卸載磁碟區；選錯磁碟或使用不相符的備份可能導致系統無法啟動。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreConfirm_Primary" xml:space="preserve">
+    <value>寫入並還原</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Title" xml:space="preserve">
+    <value>開機備份已還原</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_RestoreSuccess_Message" xml:space="preserve">
+    <value>已將開機備份寫入 {0}，並通過重新讀取驗證。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Title" xml:space="preserve">
+    <value>操作失敗</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_OperationFailed_Message" xml:space="preserve">
+    <value>無法完成開機備份操作。錯誤代碼：{0}
+請確認應用程式以系統管理員身分執行，且磁碟存取未被其他安全軟體阻止。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Title" xml:space="preserve">
+    <value>找不到實體磁碟</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_NoDisks_Message" xml:space="preserve">
+    <value>Windows 未傳回可用的 PhysicalDrive 裝置。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Toggle.AutomationProperties.Name" xml:space="preserve">
+    <value>開機防護開關</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Title" xml:space="preserve">
+    <value>建立可信開機基準</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Message" xml:space="preserve">
+    <value>啟用前，請確認下方是目前 Windows 使用的系統磁碟。程式會立即讀取目前開機狀態並將其設為可信基準。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Gpt" xml:space="preserve">
+    <value>保護範圍：保護性 MBR、主要/備份 GPT、作用中的 EFI 開機檔案和 BCD。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Scope_Mbr" xml:space="preserve">
+    <value>保護範圍：MBR、作用中的開機檔案和 BCD。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Warning" xml:space="preserve">
+    <value>僅在你確認系統目前可正常啟動且未遭竄改時建立基準。後續差異會先自動修復，再詢問是否放行。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Baseline_Primary" xml:space="preserve">
+    <value>信任目前狀態並啟用</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Title" xml:space="preserve">
+    <value>無法啟用開機防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionFailed_Message" xml:space="preserve">
+    <value>建立或讀取可信開機基準失敗。錯誤代碼：{0}。詳細資訊已寫入記錄。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_ProtectionStartFailed_Message" xml:space="preserve">
+    <value>開機防護未能啟動。請確認應用程式以系統管理員身分執行，並重新建立可信基準。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_Title" xml:space="preserve">
+    <value>偵測到開機竄改</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_Repaired_Message" xml:space="preserve">
+    <value>已先自動還原 {0} 的可信開機狀態。偵測到以下變更：
+{1}
+
+保留修復可繼續使用可信基準；放行會重新套用這些變更並更新基準。</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_RepairFailed_Message" xml:space="preserve">
+    <value>偵測到 {0} 的開機變更，但自動修復未完整通過回讀驗證，因此無法放行：
+{1}</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_KeepRepair" xml:space="preserve">
+    <value>保留修復</value>
+  </data>
+  <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve">
+    <value>放行並更新基準</value>
+  </data>
 </root>
