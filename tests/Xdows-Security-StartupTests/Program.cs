@@ -98,6 +98,56 @@ if (!settingsPageSource.Contains("UpdateMarkdownHtmlRenderer.RenderDocument", St
         "The update flow must render release notes with the Markdig NuGet renderer inside the built-in WebView2 control.");
 }
 
+Match driverExpanderMatch = Regex.Match(
+    settingsPageXaml,
+    @"<controls:SettingsExpander(?=[^>]*x:Name=""DriverProtectionCard"")[\s\S]*?<controls:SettingsExpander\.Items>([\s\S]*?)</controls:SettingsExpander\.Items>[\s\S]*?</controls:SettingsExpander>");
+if (!driverExpanderMatch.Success ||
+    !driverExpanderMatch.Groups[1].Value.Contains(
+        "x:Name=\"InjectionProtectionCard\"",
+        StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "Injection protection must be a child SettingsCard of driver protection.");
+}
+if (!Regex.IsMatch(
+        settingsPageSource,
+        @"InjectionProtectionCard\.Header\s*=\s*header\s*\+\s*"" \(Beta\)"";"))
+{
+    throw new InvalidOperationException(
+        "Injection protection must append a plain ' (Beta)' suffix to its localized card header.");
+}
+if (Regex.IsMatch(
+        settingsPageSource,
+        @"InjectionProtectionCard\.Header\s*\+=") ||
+    settingsPageXaml.Contains("InjectionProtectionBetaText", StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "The injection Beta suffix must not be appended in place or rendered by a separately styled TextBlock.");
+}
+if (driverExpanderMatch.Groups[1].Value.Contains("AccentTextFillColor", StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "The injection Beta suffix must not use an accent-blue foreground.");
+}
+
+if (!driverProtectionSource.Contains(
+        "SignerTrustService.Evaluate(actorPath)",
+        StringComparison.Ordinal) ||
+    !driverProtectionSource.Contains(
+        "registry-actor-model-safe",
+        StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "Driver registry protection must fast-allow trusted or model-safe actors before prompting.");
+}
+if (!driverProtectionSource.Contains(
+        "string gatePath = actorPath;",
+        StringComparison.Ordinal))
+{
+    throw new InvalidOperationException(
+        "Injection trust policy must validate the acting image, never the target image.");
+}
+
 string renderedMarkdown = UpdateMarkdownHtmlRenderer.RenderDocument(
     "# Release notes\n\n**Fixed** update checks.\n\n| Area | State |\n| --- | --- |\n| UI | Done |\n\n<script>alert('no')</script>",
     useDarkTheme: true);
@@ -214,3 +264,5 @@ Console.WriteLine("PASS: the NativeAOT update flow uses Markdig and the built-in
 Console.WriteLine("PASS: Protection no longer depends on System.Management.");
 Console.WriteLine("PASS: self-protection registration precedes EFI and BCD configuration.");
 Console.WriteLine("PASS: driver build identity forces stale same-protocol packages through the upgrade path.");
+Console.WriteLine("PASS: injection and registry false-positive gates validate the acting image.");
+Console.WriteLine("PASS: injection protection is nested under driver protection with a plain Beta suffix.");

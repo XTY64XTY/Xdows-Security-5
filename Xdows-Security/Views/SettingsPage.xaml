@@ -224,11 +224,11 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Protection" />
-                <controls:SettingsCard
+                <controls:SettingsExpander
+                    x:Name="DriverProtectionCard"
                     VerticalAlignment="Top"
                     l:Uids.Uid="SettingsPage_Protection_Driver"
                     HeaderIcon="{ui:FontIcon Glyph=&#xE83D;}"
-                    x:Name="DriverProtectionCard"
                     Margin="0,0,0,4">
                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <TextBlock x:Name="DriverProtectionStatusText"
@@ -239,90 +239,96 @@
                                       Tag="Driver"
                                       Toggled="DriverProtectionToggle_Toggled"/>
                     </StackPanel>
-                </controls:SettingsCard>
-                <controls:SettingsExpander
-               VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Protection_Process"
-               HeaderIcon="{ui:FontIcon Glyph=&#xE9D5;}"
-               Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="ProcessToggle" Tag="Process" Toggled="RunProtection" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Protection_Process_CompatibilityMode" 
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE74C;}">
-                            <ToggleSwitch x:Name="Process_CompatibilityMode" Toggled="Toggled_SaveToggleData" Tag="Process_CompatibilityMode"/>
+                            x:Name="InjectionProtectionCard"
+                            l:Uids.Uid="SettingsPage_Protection_Injection"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}">
+                            <ToggleSwitch x:Name="InjectionProtectionToggle"
+                                          AutomationProperties.AutomationId="SettingsInjectionProtectionToggle"
+                                          Tag="InjectionProtection"
+                                          Toggled="InjectionProtectionToggle_Toggled"/>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
-               VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Protection_Files"
-               HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}"
-               Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="FilesToggle" Tag="Files" Toggled="RunProtection"/>
+                    x:Name="CompatProtectionCard"
+                    VerticalAlignment="Top"
+                    l:Uids.Uid="SettingsPage_Protection_CompatGroup"
+                    HeaderIcon="{ui:FontIcon Glyph=&#xE7B8;}"
+                    Margin="0,0,0,4">
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Protection_Files_CompatibilityMode"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE74C;}">
-                            <ToggleSwitch x:Name="Files_CompatibilityMode" Toggled="Toggled_SaveToggleData" Tag="Files_CompatibilityMode"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
-               VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Protection_Boot"
-               HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
-               Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="BootProtectionToggle"
-                                  AutomationProperties.AutomationId="SettingsBootProtectionToggle"
-                                  l:Uids.Uid="SettingsPage_Protection_Boot_Toggle"
-                                  Tag="Boot"
-                                  Toggled="BootProtectionToggle_Toggled"/>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Protection_Boot_Save"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">
-                            <Button x:Name="BootSaveButton"
-                                    AutomationProperties.AutomationId="SettingsBootBackupButton"
-                                    l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button"
-                                    Click="Boot_Save_Button_Click"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Protection_Boot_Open"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
-                            <Button x:Name="BootRestoreButton"
-                                    AutomationProperties.AutomationId="SettingsBootRestoreButton"
-                                    l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
-                                    Click="Boot_Restore_Button_Click"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
-               VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Protection_Registry"
-               x:Name="SettingsPage_Protection_Registry"
-               HeaderIcon="{ui:FontIcon Glyph=&#xEA37;}"
-               Margin="0,0,0,4">
-                    <ToggleSwitch x:Name="RegistryToggle" Tag="Registry" Toggled="RunProtection"/>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                        x:Name="RegistrySecondaryCard"
-                        l:Uids.Uid="SettingsPage_Protection_Registry_Secondary"
-                        HeaderIcon="{ui:FontIcon Glyph=&#xED4D;}">
-                            <ToggleSwitch x:Name="RegistrySecondaryToggle"
-                                          Tag="RegistryProtectionSecondary"
-                                          AutomationProperties.AutomationId="SettingsRegistrySecondaryToggle"
-                                          Toggled="RegistryCategoryToggle_Toggled" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
-                        x:Name="RegistryOtherCard"
-                        l:Uids.Uid="SettingsPage_Protection_Registry_Others"
-                        HeaderIcon="{ui:FontIcon Glyph=&#xEA8F;}">
-                            <ToggleSwitch x:Name="RegistryOtherToggle"
-                                          Tag="RegistryProtectionOther"
-                                          AutomationProperties.AutomationId="SettingsRegistryOtherToggle"
-                                          Toggled="RegistryCategoryToggle_Toggled" />
-                        </controls:SettingsCard>
+                        <controls:SettingsExpander
+                            VerticalAlignment="Top"
+                            l:Uids.Uid="SettingsPage_Protection_Process"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE9D5;}"
+                            Margin="0,0,0,4">
+                            <ToggleSwitch x:Name="ProcessToggle" Tag="Process" Toggled="RunProtection" />
+                        </controls:SettingsExpander>
+                        <controls:SettingsExpander
+                            VerticalAlignment="Top"
+                            l:Uids.Uid="SettingsPage_Protection_Files"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}"
+                            Margin="0,0,0,4">
+                            <ToggleSwitch x:Name="FilesToggle" Tag="Files" Toggled="RunProtection"/>
+                        </controls:SettingsExpander>
+                        <controls:SettingsExpander
+                            VerticalAlignment="Top"
+                            l:Uids.Uid="SettingsPage_Protection_Boot"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
+                            Margin="0,0,0,4">
+                            <ToggleSwitch x:Name="BootProtectionToggle"
+                                          AutomationProperties.AutomationId="SettingsBootProtectionToggle"
+                                          l:Uids.Uid="SettingsPage_Protection_Boot_Toggle"
+                                          Tag="Boot"
+                                          Toggled="BootProtectionToggle_Toggled"/>
+                            <controls:SettingsExpander.Items>
+                                <controls:SettingsCard
+                                    l:Uids.Uid="SettingsPage_Protection_Boot_Save"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">
+                                    <Button x:Name="BootSaveButton"
+                                            AutomationProperties.AutomationId="SettingsBootBackupButton"
+                                            l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button"
+                                            Click="Boot_Save_Button_Click"/>
+                                </controls:SettingsCard>
+                                <controls:SettingsCard
+                                    l:Uids.Uid="SettingsPage_Protection_Boot_Open"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
+                                    <Button x:Name="BootRestoreButton"
+                                            AutomationProperties.AutomationId="SettingsBootRestoreButton"
+                                            l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
+                                            Click="Boot_Restore_Button_Click"/>
+                                </controls:SettingsCard>
+                            </controls:SettingsExpander.Items>
+                        </controls:SettingsExpander>
+                        <controls:SettingsExpander
+                            VerticalAlignment="Top"
+                            l:Uids.Uid="SettingsPage_Protection_Registry"
+                            x:Name="SettingsPage_Protection_Registry"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEA37;}"
+                            Margin="0,0,0,4">
+                            <ToggleSwitch x:Name="RegistryToggle" Tag="Registry" Toggled="RunProtection"/>
+                            <controls:SettingsExpander.Items>
+                                <controls:SettingsCard
+                                    x:Name="RegistrySecondaryCard"
+                                    l:Uids.Uid="SettingsPage_Protection_Registry_Secondary"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xED4D;}">
+                                    <ToggleSwitch x:Name="RegistrySecondaryToggle"
+                                                  Tag="RegistryProtectionSecondary"
+                                                  AutomationProperties.AutomationId="SettingsRegistrySecondaryToggle"
+                                                  Toggled="RegistryCategoryToggle_Toggled" />
+                                </controls:SettingsCard>
+                                <controls:SettingsCard
+                                    x:Name="RegistryOtherCard"
+                                    l:Uids.Uid="SettingsPage_Protection_Registry_Others"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xEA8F;}">
+                                    <ToggleSwitch x:Name="RegistryOtherToggle"
+                                                  Tag="RegistryProtectionOther"
+                                                  AutomationProperties.AutomationId="SettingsRegistryOtherToggle"
+                                                  Toggled="RegistryCategoryToggle_Toggled" />
+                                </controls:SettingsCard>
+                            </controls:SettingsExpander.Items>
+                        </controls:SettingsExpander>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsCard

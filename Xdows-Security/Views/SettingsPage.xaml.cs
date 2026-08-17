@@ -109,6 +109,7 @@ namespace Xdows_Security.Views
                         LoadTransitionSettingAsync,
                         LoadThreatNotificationSettingAsync
                     );
+                    LoadInjectionProtectionSetting();
                     WinUI3Localizer.Localizer.Get().LanguageChanged += (s, e) => UpdateAppText();
                     UpdateAppText();
                 }
@@ -123,7 +124,44 @@ namespace Xdows_Security.Views
         {
             SettingsPage_Protection_Registry.Header += " (Beta)";
             SettingsPage_Scan_Xdows_Model.Header += " (Beta)";
+            UpdateInjectionProtectionText();
             UpdateDriverProtectionState();
+        }
+
+private void UpdateInjectionProtectionText()
+        {
+            if (InjectionProtectionCard == null) return;
+
+            // Assigned from the localized value rather than appended, so a
+            // language change cannot accumulate repeated " (Beta)" suffixes.
+            // The header is read from the control: WinUI3Localizer splits
+            // "xxx.Header" resource keys at the '.', so GetLocalizedString()
+            // with the ".Header" suffix always returns empty.
+            String? header = InjectionProtectionCard.Header as String;
+            if (String.IsNullOrWhiteSpace(header)) return;
+
+            InjectionProtectionCard.Header = header + " (Beta)";
+        }
+
+        private void LoadInjectionProtectionSetting()
+        {
+            if (InjectionProtectionToggle == null) return;
+            InjectionProtectionToggle.Toggled -= InjectionProtectionToggle_Toggled;
+            try
+            {
+                InjectionProtectionToggle.IsOn = App.LocalSettings.Values["InjectionProtection"] is not false;
+            }
+            catch
+            {
+                InjectionProtectionToggle.IsOn = true;
+            }
+            InjectionProtectionToggle.Toggled += InjectionProtectionToggle_Toggled;
+        }
+
+        private void InjectionProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (sender is not ToggleSwitch toggle || IsInitialize) return;
+            App.LocalSettings.Values["InjectionProtection"] = toggle.IsOn;
         }
 
         private void UpdateDriverProtectionState()
@@ -153,10 +191,7 @@ namespace Xdows_Security.Views
                 FilesToggle.IsEnabled = false;
                 BootProtectionToggle.IsEnabled = false;
                 RegistryToggle.IsEnabled = false;
-                Process_CompatibilityMode.IsOn = true;
-                Files_CompatibilityMode.IsOn = true;
-                Process_CompatibilityMode.IsEnabled = false;
-                Files_CompatibilityMode.IsEnabled = false;
+                InjectionProtectionCard.IsEnabled = false;
                 UpdateRegistryCategoryControlState();
                 return;
             }
@@ -164,16 +199,15 @@ namespace Xdows_Security.Views
             bool driverRunning = ProtectionStatus.IsRun(5);
 
             DriverProtectionToggle.IsEnabled = true;
+            // 注入防护是驱动防护的子项，但用户态开关独立可配置：
+            // 即使驱动当前未运行，也允许用户先调整设置，方便后续启用。
+            InjectionProtectionCard.IsEnabled = true;
             ProcessToggle.IsEnabled = !driverRunning;
             FilesToggle.IsEnabled = !driverRunning;
             BootProtectionToggle.IsEnabled = !driverRunning &&
                 !_bootProtectionOperationInProgress &&
                 App.IsRunAsAdmin();
             RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
-            Process_CompatibilityMode.IsOn = true;
-            Files_CompatibilityMode.IsOn = true;
-            Process_CompatibilityMode.IsEnabled = false;
-            Files_CompatibilityMode.IsEnabled = false;
             UpdateRegistryCategoryControlState();
         }
 
@@ -514,12 +548,6 @@ namespace Xdows_Security.Views
 
             String key = toggle.Tag as String ?? toggle.Name;
             if (String.IsNullOrWhiteSpace(key)) return;
-            if (key is "Process_CompatibilityMode" or "Files_CompatibilityMode")
-            {
-                toggle.IsOn = true;
-                App.LocalSettings.Values[key] = true;
-                return;
-            }
             if (toggle.IsOn && (key == "CloudScan" || key == "ExactRuleScan"))
             {
                 _ = new ContentDialog
@@ -608,8 +636,6 @@ namespace Xdows_Security.Views
                 TrayVisibleToggle,
                 ContextMenuScanToggle,
                 DisabledVerifyToggle,
-                Process_CompatibilityMode,
-                Files_CompatibilityMode,
                 DriverProtectionToggle,
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
@@ -663,20 +689,6 @@ namespace Xdows_Security.Views
             {
                 ModelModeForProtectionToggle.IsOn = mfpOn;
             }
-
-            if (!settings.Values.ContainsKey("Process_CompatibilityMode"))
-            {
-                settings.Values["Process_CompatibilityMode"] = true;
-            }
-            Process_CompatibilityMode.IsOn = true;
-            Process_CompatibilityMode.IsEnabled = false;
-
-            if (!settings.Values.ContainsKey("Files_CompatibilityMode"))
-            {
-                settings.Values["Files_CompatibilityMode"] = true;
-            }
-            Files_CompatibilityMode.IsOn = true;
-            Files_CompatibilityMode.IsEnabled = false;
 
             if (!settings.Values.ContainsKey("IsBackButtonVisible"))
             {

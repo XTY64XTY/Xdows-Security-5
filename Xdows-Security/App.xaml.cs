@@ -167,10 +167,24 @@ namespace Xdows_Security
             {
                 DecisionCallback = DriverDecisionCallbackAsync,
                 LogCallback = DriverLogCallback,
-                StartupProtectionStateProvider = StartupService.IsStartupEnabled
+                StartupProtectionStateProvider = StartupService.IsStartupEnabled,
+                InjectionProtectionEnabledProvider = IsInjectionProtectionEnabled
             };
             ApplyDriverProtectionModelMode(protection);
             return protection;
+        }
+
+        private static bool IsInjectionProtectionEnabled()
+        {
+            try
+            {
+                Object? value = App.LocalSettings.Values["InjectionProtection"];
+                return value is not false;
+            }
+            catch
+            {
+                return true;
+            }
         }
 
         private static LegacyRegistryProtection CreateLegacyRegistryProtection()

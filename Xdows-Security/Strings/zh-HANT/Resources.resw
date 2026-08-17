@@ -522,8 +522,11 @@
   <data name="SettingsPage_Protection.Text" xml:space="preserve">
     <value>防護</value>
   </data>
+  <data name="SettingsPage_Protection_CompatGroup.Header" xml:space="preserve">
+    <value>防護模組</value>
+  </data>
   <data name="SettingsPage_Protection_Process.Header" xml:space="preserve">
-    <value>進程掃描</value>
+    <value>程序掃描</value>
   </data>
   <data name="SettingsPage_Protection_Files.Header" xml:space="preserve">
     <value>文件掃描</value>
@@ -1611,6 +1614,12 @@
   </data>
   <data name="SettingsPage_Protection_Driver.Description" xml:space="preserve">
     <value>使用 Xdows Security 內核驅動接管進程、文件、注入和自保護</value>
+  </data>
+  <data name="SettingsPage_Protection_Injection.Header" xml:space="preserve">
+    <value>注入防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Injection.Description" xml:space="preserve">
+    <value>攔截跨進程注入行為；關閉後注入類行為將直接放行</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Status_NotInstalled" xml:space="preserve">
     <value>未安裝</value>
