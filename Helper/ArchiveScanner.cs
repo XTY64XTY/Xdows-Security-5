@@ -1,6 +1,7 @@
 using SharpCompress.Archives;
 using SharpCompress.Readers;
 using System.Buffers;
+using System.IO.Compression;
 using System.Text;
 
 namespace Helper
@@ -451,6 +452,275 @@ namespace Helper
                 finally { ArrayPool<byte>.Shared.Return(buffer); }
             }
             catch { return null; }
+        }
+
+        // ==================== ZIP 专属方法（自 ZipScanner 合并） ====================
+
+        private static readonly Encoding[] _fallbackEncodings;
+
+        static ArchiveScanner()
+        {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            _fallbackEncodings =
+            [
+                Encoding.UTF8,
+                Encoding.GetEncoding("gb2312"),
+                Encoding.GetEncoding("gbk"),
+                Encoding.GetEncoding("big5")
+            ];
+        }
+
+        private static String DecodeEntryName(ZipArchiveEntry entry)
+        {
+            try
+            {
+                var nameField = typeof(ZipArchiveEntry).GetField("_storedEntryNameBytes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (nameField == null) return entry.FullName;
+
+                var nameBytes = nameField.GetValue(entry) as Byte[];
+                if (nameBytes == null || nameBytes.Length == 0) return entry.FullName;
+
+                String utf8Result = Encoding.UTF8.GetString(nameBytes);
+                if (!utf8Result.Contains('\uFFFD') && !utf8Result.Contains('?'))
+                    return utf8Result;
+
+                foreach (var enc in _fallbackEncodings)
+                {
+                    if (enc.CodePage == Encoding.UTF8.CodePage) continue;
+                    try
+                    {
+                        String decoded = enc.GetString(nameBytes);
+                        if (!decoded.Contains('\uFFFD') && !decoded.Contains('?'))
+                            return decoded;
+                    }
+                    catch { }
+                }
+
+                return utf8Result;
+            }
+            catch
+            {
+                return entry.FullName;
+            }
+        }
+
+        private static Byte[]? ReadEntryData(ZipArchiveEntry entry)
+        {
+            try
+            {
+                if (entry.Length > MaxEntrySize) return null;
+
+                using var stream = entry.Open();
+                var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
+                try
+                {
+                    using var ms = new MemoryStream();
+                    Int32 bytesRead;
+                    while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
+                    {
+                        ms.Write(buffer, 0, bytesRead);
+                        // Prevent memory explosion
+                        if (ms.Length > MaxEntrySize) return null;
+                    }
+                    return ms.ToArray();
+                }
+                finally
+                {
+                    ArrayPool<Byte>.Shared.Return(buffer);
+                }
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public static async Task<Boolean> DeleteEntryFromZipAsync(String zipPath, String entryPath)
+        {
+            return await Task.Run(() =>
+            {
+                String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                try
+                {
+                    using (var readArchive = ZipFile.OpenRead(zipPath))
+                    using (var createArchive = ZipFile.Open(tempPath, ZipArchiveMode.Create))
+                    {
+                        foreach (var entry in readArchive.Entries)
+                        {
+                            String decodedName = DecodeEntryName(entry);
+                            if (String.Equals(decodedName, entryPath, StringComparison.OrdinalIgnoreCase))
+                                continue;
+
+                            var newEntry = createArchive.CreateEntry(decodedName);
+                            using var entryStream = entry.Open();
+                            using var newEntryStream = newEntry.Open();
+                            entryStream.CopyTo(newEntryStream);
+                        }
+                    }
+
+                    File.Delete(zipPath);
+                    File.Move(tempPath, zipPath);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+                    return false;
+                }
+            });
+        }
+
+        public static async Task<Int32> DeleteMultipleEntriesFromZipAsync(String zipPath, List<String> entryPaths)
+        {
+            return await Task.Run(() =>
+            {
+                String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                try
+                {
+                    var entriesToDelete = new HashSet<String>(
+                        entryPaths.Select(p => p.Replace('\\', '/')),
+                        StringComparer.OrdinalIgnoreCase);
+                    Int32 deletedCount = 0;
+
+                    using (var readArchive = ZipFile.OpenRead(zipPath))
+                    using (var createArchive = ZipFile.Open(tempPath, ZipArchiveMode.Create))
+                    {
+                        foreach (var entry in readArchive.Entries)
+                        {
+                            String decodedName = DecodeEntryName(entry);
+                            if (entriesToDelete.Contains(decodedName))
+                            {
+                                deletedCount++;
+                                continue;
+                            }
+
+                            var newEntry = createArchive.CreateEntry(decodedName);
+                            using var entryStream = entry.Open();
+                            using var newEntryStream = newEntry.Open();
+                            entryStream.CopyTo(newEntryStream);
+                        }
+                    }
+
+                    File.Delete(zipPath);
+                    File.Move(tempPath, zipPath);
+                    return deletedCount;
+                }
+                catch (Exception)
+                {
+                    try { if (File.Exists(tempPath)) File.Delete(tempPath); } catch { }
+                    return 0;
+                }
+            });
+        }
+
+        public static async Task<Byte[]?> ExtractEntryAsync(String zipPath, String entryPath)
+        {
+            return await Task.Run(() =>
+            {
+                try
+                {
+                    String normalizedEntryPath = entryPath.Replace('\\', '/');
+                    using var archive = ZipFile.OpenRead(zipPath);
+
+                    foreach (var entry in archive.Entries)
+                    {
+                        if (String.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            return ReadEntryData(entry);
+                        }
+                    }
+                    return null;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            });
+        }
+
+        public static async Task<(Int64 Size, DateTime CreationTime, DateTime LastWriteTime)?> GetEntryInfoAsync(String zipPath, String entryPath)
+        {
+            return await Task.Run<(Int64 Size, DateTime CreationTime, DateTime LastWriteTime)?>(() =>
+            {
+                try
+                {
+                    String normalizedEntryPath = entryPath.Replace('\\', '/');
+                    Int32 innerZipIndex = normalizedEntryPath.IndexOf(".zip/", StringComparison.OrdinalIgnoreCase);
+
+                    if (innerZipIndex > 0)
+                    {
+                        String outerEntryPath = normalizedEntryPath.Substring(0, innerZipIndex + 4);
+                        String remainingPath = normalizedEntryPath.Substring(innerZipIndex + 5);
+
+                        using var outerArchive = ZipFile.OpenRead(zipPath);
+                        var outerEntry = outerArchive.Entries.FirstOrDefault(e =>
+                            String.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase));
+
+                        if (outerEntry == null)
+                        {
+                            outerEntryPath = normalizedEntryPath.Substring(0, innerZipIndex + 4).Replace(".zip/", "/");
+                            outerEntry = outerArchive.Entries.FirstOrDefault(e =>
+                                String.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase) ||
+                                String.Equals(DecodeEntryName(e), outerEntryPath.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+                        }
+
+                        if (outerEntry != null)
+                        {
+                            try
+                            {
+                                // Check size before loading into memory
+                                if (outerEntry.Length > MaxEntrySize) return null;
+
+                                var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
+                                try
+                                {
+                                    using var innerMs = new MemoryStream();
+                                    using var outerStream = outerEntry.Open();
+                                    Int32 bytesRead;
+                                    while ((bytesRead = outerStream.Read(buffer, 0, BufferSize)) > 0)
+                                    {
+                                        innerMs.Write(buffer, 0, bytesRead);
+                                        if (innerMs.Length > MaxEntrySize) return null;
+                                    }
+                                    innerMs.Position = 0;
+
+                                    using var innerArchive = new ZipArchive(innerMs, ZipArchiveMode.Read);
+                                    var innerEntry = innerArchive.Entries.FirstOrDefault(e =>
+                                        String.Equals(DecodeEntryName(e), remainingPath, StringComparison.OrdinalIgnoreCase));
+
+                                    if (innerEntry != null)
+                                    {
+                                        return (innerEntry.Length, innerEntry.LastWriteTime.DateTime, innerEntry.LastWriteTime.DateTime);
+                                    }
+                                }
+                                finally
+                                {
+                                    ArrayPool<Byte>.Shared.Return(buffer);
+                                }
+                            }
+                            catch (Exception) { }
+                        }
+                        return null;
+                    }
+                    else
+                    {
+                        using var archive = ZipFile.OpenRead(zipPath);
+
+                        foreach (var entry in archive.Entries)
+                        {
+                            if (String.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
+                            {
+                                return (entry.Length, entry.LastWriteTime.DateTime, entry.LastWriteTime.DateTime);
+                            }
+                        }
+                        return null;
+                    }
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            });
         }
     }
 }

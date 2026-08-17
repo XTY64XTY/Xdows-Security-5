@@ -676,7 +676,7 @@ namespace Xdows_Security.Views
                             {
                                 try
                                 {
-                                    var fileData = await ZipScanner.ExtractEntryAsync(zipPath, entry);
+                                    var fileData = await ArchiveScanner.ExtractEntryAsync(zipPath, entry);
                                     if (fileData != null && fileData.Length > 0)
                                     {
                                         var (_, threatVirusName) = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
@@ -709,7 +709,7 @@ namespace Xdows_Security.Views
                             Int32 deletedCount = 0;
                             if (quarantinedCount > 0)
                             {
-                                deletedCount = await ZipScanner.DeleteMultipleEntriesFromZipAsync(zipPath, entriesToDelete);
+                                deletedCount = await ArchiveScanner.DeleteMultipleEntriesFromZipAsync(zipPath, entriesToDelete);
                                 LogText.AddNewLog(LogText.LogLevel.INFO, "Security - DeleteZipEntries", $"Deleted {deletedCount} entries from {zipPath}");
                             }
 
@@ -2496,7 +2496,7 @@ namespace Xdows_Security.Views
                 {
                     try
                     {
-                        var entryInfo = await ZipScanner.GetEntryInfoAsync(archivePath, entryPath);
+                        var entryInfo = await ArchiveScanner.GetEntryInfoAsync(archivePath, entryPath);
                         if (entryInfo.HasValue)
                         {
                             fileSizeText = String.Format(CultureInfo.CurrentCulture, "{0:F2} KB", entryInfo.Value.Size / 1024.0);
