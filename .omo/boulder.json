@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "active_work_id": null,
+  "works": {
+    "fix-zip-path-parsing": {
+      "work_id": "fix-zip-path-parsing",
+      "active_plan": ".omo/plans/fix-zip-path-parsing.md",
+      "plan_name": "fix-zip-path-parsing",
+      "session_ids": ["codex:fix-zip-path-parsing-exec"],
+      "status": "completed",
+      "worktree_path": null
+    }
+  }
+}
