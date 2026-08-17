@@ -53,44 +53,6 @@
 
       Or use the Publish feature to enable AOT compilation
 
-#### Driver Protection Development
-
-The driver-backed protection path spans three sibling repositories under `D:\Code`:
-
-- `Xdows-Security`: WinUI app, protection bridge, environment repair UI, logging, and user decisions.
-- `Xdows-Security-Driver`: KMDF driver, shared protocol, VS/WDK-generated driver package, and VM validation matrix.
-- `Xdows-Model`: ONNX models and `Xdows-Model-Native.dll`.
-
-Build local development output from the main solution:
-
-```powershell
-& 'D:\Visual-Studio\MSBuild\Current\Bin\amd64\MSBuild.exe' `
-  'D:\Code\Xdows-Security\Xdows-Security.slnx' `
-  /p:Configuration=Debug `
-  /p:Platform=x64 `
-  /p:WindowsTargetPlatformVersion=10.0.28000.0 `
-  /p:SignMode=Off `
-  /m
-```
-
-The app output should contain:
-
-- `Xdows-Model.onnx`, `Xdows-Model-Flash.onnx`, `Xdows-Model-Pro.onnx`
-- `Xdows-Model-Native.dll`
-- `onnxruntime.dll`, `onnxruntime_providers_shared.dll`
-- `Driver\Xdows-Security-Driver.inf`
-- `Driver\Xdows-Security-Driver.sys`
-- `Driver\xdows-security-driver.cat`
-
-Local verification:
-
-```powershell
-& 'D:\Code\Xdows-Security\tests\Invoke-DriverBridgeProtocolSmoke.ps1'
-& 'D:\Code\Xdows-Security\tests\Invoke-PublishAssetSmoke.ps1'
-```
-
-Driver install, repair, and unload require an elevated test machine. When Driver Protection is enabled, Xdows Security creates the `Root\XdowsSecurityDriver` device when needed, installs the package from its output `Driver` folder, and starts the driver automatically. Enable Windows test-signing on the VM if the development driver signature is not trusted.
-
 ### License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE.txt) for details.
