@@ -11,13 +11,13 @@ namespace Helper
     {
         public static class CallBack
         {
-            public delegate Task<string> InterceptCallBack(InterceptWindowHelper.InterceptWindowSetting interceptWindowSetting);
+            public delegate Task<string> TcpInterceptCallBack(InterceptWindowHelper.InterceptWindowSetting interceptWindowSetting);
         }
 
         private static TcpListener? s_listener;
         private static CancellationTokenSource? s_cts;
 
-        public static async Task Start(InterceptCallBack interceptCallBack)
+        public static async Task Start(TcpInterceptCallBack interceptCallBack)
         {
             s_cts = new CancellationTokenSource();
             s_listener = new TcpListener(IPAddress.Any, 20000);
@@ -39,7 +39,7 @@ namespace Helper
             s_listener?.Stop();
         }
 
-        private static async Task HandleClientAsync(TcpClient client, InterceptCallBack interceptCallBack)
+        private static async Task HandleClientAsync(TcpClient client, TcpInterceptCallBack interceptCallBack)
         {
             using (client)
             using (var stream = client.GetStream())
