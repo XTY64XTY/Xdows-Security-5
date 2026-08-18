@@ -300,7 +300,10 @@ namespace Xdows_Security
         }
         public void UpdateNavTheme(int index)
         {
-            nav.PaneDisplayMode = index == 0 ? NavigationViewPaneDisplayMode.LeftCompact : NavigationViewPaneDisplayMode.Top;
+            bool isWiderNavBar = App.LocalSettings.Values.TryGetValue("IsWiderNavBar", out var widerRaw) && widerRaw is bool wider && wider;
+            nav.PaneDisplayMode = index == 0
+                ? (isWiderNavBar ? NavigationViewPaneDisplayMode.Left : NavigationViewPaneDisplayMode.LeftCompact)
+                : NavigationViewPaneDisplayMode.Top;
         }
         private void OnLangChanged(object? sender, LanguageChangedEventArgs e) => LoadLocalizerData();
 

@@ -633,6 +633,7 @@ private void UpdateInjectionProtectionText()
                 DisabledVerifyToggle,
                 DriverProtectionToggle,
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
+                SettingsPage_Appearance_Nav_WiderNavBar,
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
                 SpatialAudioToggle,
@@ -849,8 +850,11 @@ private void UpdateInjectionProtectionText()
             int navIndex = settings.Values.TryGetValue("AppNavTheme", out object? raw) && raw is double d ? (int)d : 0;
             NavComboBox.SelectedIndex = navIndex;
 
-            // 当导航栏在顶部时，禁用紧凑导航栏选项
-            SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.IsEnabled = navIndex == 0;
+            SettingsPage_Appearance_Nav_WiderNavBar.IsOn = settings.Values.TryGetValue("IsWiderNavBar", out var widerRaw) && widerRaw is bool isWider && isWider;
+
+            // 当导航栏在顶部时，禁用紧凑导航栏选项和更宽导航栏选项（保留数据，仅禁用整张卡片）；在左侧时启用
+            SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card.IsEnabled = navIndex == 0;
+            SettingsPage_Appearance_Nav_WiderNavBar_Card.IsEnabled = navIndex == 0;
         }
 
         private async void LanguageComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
@@ -1091,17 +1095,11 @@ private void UpdateInjectionProtectionText()
                 ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["AppNavTheme"] = index;
                 App.MainWindow?.UpdateNavTheme(index);
+                App.MainWindow?.UpdatePaneToggleButtonPosition();
 
-                // 当导航栏在顶部时，禁用紧凑导航栏选项；在左侧时启用
-                SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.IsEnabled = index == 0;
-
-                // 如果切换到顶部导航栏，重置紧凑导航栏设置为 false
-                if (index == 1)
-                {
-                    SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.IsOn = false;
-                    settings.Values["IsPaneToggleButtonInTitleBar"] = false;
-                    App.MainWindow?.UpdatePaneToggleButtonPosition();
-                }
+                // 当导航栏在顶部时，禁用紧凑导航栏选项和更宽导航栏选项（保留数据，仅禁用整张卡片）；在左侧时启用
+                SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card.IsEnabled = index == 0;
+                SettingsPage_Appearance_Nav_WiderNavBar_Card.IsEnabled = index == 0;
             }
             catch { }
         }
@@ -1800,6 +1798,19 @@ private void UpdateInjectionProtectionText()
         {
             Toggled_SaveToggleData(sender, e);
             App.MainWindow?.UpdatePaneToggleButtonPosition();
+        }
+
+        private void SettingsPage_Appearance_Nav_WiderNavBar_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize) return;
+            Toggled_SaveToggleData(sender, e);
+
+            // 仅在左侧导航栏时生效（顶部导航栏时该开关被禁用）
+            int navIndex = Math.Max(0, NavComboBox.SelectedIndex);
+            if (navIndex == 0)
+            {
+                App.MainWindow?.UpdateNavTheme(navIndex);
+            }
         }
 
         private void SettingsPage_Appearance_Nav_IsBackButtonVisible_Toggled(object sender, RoutedEventArgs e)

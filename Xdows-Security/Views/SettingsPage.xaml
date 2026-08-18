@@ -44,8 +44,15 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xF165;}">
+                           HeaderIcon="{ui:FontIcon Glyph=&#xF165;}"
+                           x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card">
                             <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar" Tag="IsPaneToggleButtonInTitleBar" Toggled="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Appearance_Nav_WiderNavBar"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE740;}"
+                           x:Name="SettingsPage_Appearance_Nav_WiderNavBar_Card">
+                            <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_WiderNavBar" Tag="IsWiderNavBar" Toggled="SettingsPage_Appearance_Nav_WiderNavBar_Toggled" />
                         </controls:SettingsCard>
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Nav_IsBackButtonVisible"

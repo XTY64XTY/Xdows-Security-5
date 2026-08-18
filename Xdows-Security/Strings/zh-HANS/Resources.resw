@@ -1429,6 +1429,12 @@
   <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
     <value>将导航按钮置于标题栏</value>
   </data>
+  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Header" xml:space="preserve">
+    <value>更宽的导航栏</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Description" xml:space="preserve">
+    <value>使用更宽的导航栏，导航栏占用空间将会更大</value>
+  </data>
   <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Header" xml:space="preserve">
     <value>返回按钮</value>
   </data>

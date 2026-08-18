@@ -1430,6 +1430,12 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
     <value>Place the PaneToggleButton in the TitleBar</value>
   </data>
+  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Header" xml:space="preserve">
+    <value>Wider Navigation Bar</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Description" xml:space="preserve">
+    <value>Use a wider navigation bar that takes up more space</value>
+  </data>
   <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Header" xml:space="preserve">
     <value>Back Button</value>
   </data>
