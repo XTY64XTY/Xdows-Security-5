@@ -49,10 +49,14 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                             <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar" Tag="IsPaneToggleButtonInTitleBar" Toggled="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled" />
                         </controls:SettingsCard>
                         <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Appearance_Nav_WiderNavBar"
+                           l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE740;}"
-                           x:Name="SettingsPage_Appearance_Nav_WiderNavBar_Card">
-                            <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_WiderNavBar" Tag="IsWiderNavBar" Toggled="SettingsPage_Appearance_Nav_WiderNavBar_Toggled" />
+                           x:Name="SettingsPage_Appearance_Nav_LeftStyle_Card">
+                            <ComboBox x:Name="SettingsPage_Appearance_Nav_LeftStyleCombo" SelectionChanged="SettingsPage_Appearance_Nav_LeftStyleCombo_SelectionChanged">
+                                <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle_Tight" />
+                                <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle_Default" />
+                                <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle_Wide" />
+                            </ComboBox>
                         </controls:SettingsCard>
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Nav_IsBackButtonVisible"

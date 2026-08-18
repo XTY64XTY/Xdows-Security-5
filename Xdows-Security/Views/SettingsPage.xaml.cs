@@ -633,7 +633,6 @@ private void UpdateInjectionProtectionText()
                 DisabledVerifyToggle,
                 DriverProtectionToggle,
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar,
-                SettingsPage_Appearance_Nav_WiderNavBar,
                 SettingsPage_Appearance_Nav_IsBackButtonVisible,
                 SoundEffectsToggle,
                 SpatialAudioToggle,
@@ -850,11 +849,22 @@ private void UpdateInjectionProtectionText()
             int navIndex = settings.Values.TryGetValue("AppNavTheme", out object? raw) && raw is double d ? (int)d : 0;
             NavComboBox.SelectedIndex = navIndex;
 
-            SettingsPage_Appearance_Nav_WiderNavBar.IsOn = settings.Values.TryGetValue("IsWiderNavBar", out var widerRaw) && widerRaw is bool isWider && isWider;
+            // 加载左侧导航栏样式（0=更小 LeftMinimal，1=默认 LeftCompact，2=更宽 Left）；
+            // 兼容旧版 IsWiderNavBar 布尔设置
+            int navLeftMode = 1;
+            if (settings.Values.TryGetValue("NavLeftMode", out var leftRaw) && leftRaw is double ld)
+            {
+                navLeftMode = (int)ld;
+            }
+            else if (settings.Values.TryGetValue("IsWiderNavBar", out var widerRaw) && widerRaw is bool isWider && isWider)
+            {
+                navLeftMode = 2;
+            }
+            SettingsPage_Appearance_Nav_LeftStyleCombo.SelectedIndex = navLeftMode;
 
-            // 当导航栏在顶部时，禁用紧凑导航栏选项和更宽导航栏选项（保留数据，仅禁用整张卡片）；在左侧时启用
+            // 当导航栏在顶部时，禁用紧凑导航栏选项和左侧导航栏样式（保留数据，仅禁用整张卡片）；在左侧时启用
             SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card.IsEnabled = navIndex == 0;
-            SettingsPage_Appearance_Nav_WiderNavBar_Card.IsEnabled = navIndex == 0;
+            SettingsPage_Appearance_Nav_LeftStyle_Card.IsEnabled = navIndex == 0;
         }
 
         private async void LanguageComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
@@ -1097,9 +1107,9 @@ private void UpdateInjectionProtectionText()
                 App.MainWindow?.UpdateNavTheme(index);
                 App.MainWindow?.UpdatePaneToggleButtonPosition();
 
-                // 当导航栏在顶部时，禁用紧凑导航栏选项和更宽导航栏选项（保留数据，仅禁用整张卡片）；在左侧时启用
+                // 当导航栏在顶部时，禁用紧凑导航栏选项和左侧导航栏样式（保留数据，仅禁用整张卡片）；在左侧时启用
                 SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card.IsEnabled = index == 0;
-                SettingsPage_Appearance_Nav_WiderNavBar_Card.IsEnabled = index == 0;
+                SettingsPage_Appearance_Nav_LeftStyle_Card.IsEnabled = index == 0;
             }
             catch { }
         }
@@ -1800,12 +1810,14 @@ private void UpdateInjectionProtectionText()
             App.MainWindow?.UpdatePaneToggleButtonPosition();
         }
 
-        private void SettingsPage_Appearance_Nav_WiderNavBar_Toggled(object sender, RoutedEventArgs e)
+        private void SettingsPage_Appearance_Nav_LeftStyleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (IsInitialize) return;
-            Toggled_SaveToggleData(sender, e);
+            if (IsInitialize || SettingsPage_Appearance_Nav_LeftStyleCombo.SelectedIndex == -1) return;
 
-            // 仅在左侧导航栏时生效（顶部导航栏时该开关被禁用）
+            ApplicationDataContainer settings = App.LocalSettings;
+            settings.Values["NavLeftMode"] = (double)SettingsPage_Appearance_Nav_LeftStyleCombo.SelectedIndex;
+
+            // 仅在左侧导航栏时生效（顶部导航栏时该控件被禁用）
             int navIndex = Math.Max(0, NavComboBox.SelectedIndex);
             if (navIndex == 0)
             {

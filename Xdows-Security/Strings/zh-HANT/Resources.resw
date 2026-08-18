@@ -1429,11 +1429,20 @@
   <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
     <value>將導航按鈕置於標題欄</value>
   </data>
-  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Header" xml:space="preserve">
-    <value>更寬的導航欄</value>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle.Header" xml:space="preserve">
+    <value>左側導航欄樣式</value>
   </data>
-  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Description" xml:space="preserve">
-    <value>使用更寬的導航欄，導航欄佔用空間將會更大</value>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle.Description" xml:space="preserve">
+    <value>選擇左側導航欄的顯示樣式</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle_Tight.Content" xml:space="preserve">
+    <value>更小</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle_Default.Content" xml:space="preserve">
+    <value>默認</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle_Wide.Content" xml:space="preserve">
+    <value>更寬</value>
   </data>
   <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Header" xml:space="preserve">
     <value>返回按鈕</value>

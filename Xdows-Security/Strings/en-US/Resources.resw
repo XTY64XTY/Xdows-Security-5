@@ -1430,11 +1430,20 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar.Description" xml:space="preserve">
     <value>Place the PaneToggleButton in the TitleBar</value>
   </data>
-  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Header" xml:space="preserve">
-    <value>Wider Navigation Bar</value>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle.Header" xml:space="preserve">
+    <value>Left Navigation Bar Style</value>
   </data>
-  <data name="SettingsPage_Appearance_Nav_WiderNavBar.Description" xml:space="preserve">
-    <value>Use a wider navigation bar that takes up more space</value>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle.Description" xml:space="preserve">
+    <value>Select the display style of the left navigation bar</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle_Tight.Content" xml:space="preserve">
+    <value>Smaller</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle_Default.Content" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="SettingsPage_Appearance_Nav_LeftStyle_Wide.Content" xml:space="preserve">
+    <value>Wider</value>
   </data>
   <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Header" xml:space="preserve">
     <value>Back Button</value>
