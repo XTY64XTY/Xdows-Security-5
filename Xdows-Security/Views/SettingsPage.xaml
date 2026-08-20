@@ -339,6 +339,20 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+                <controls:SettingsExpander x:Name="Feature_BrowserProtection"
+                                           l:Uids.Uid="SettingsPage_Feature_BrowserProtection"
+                                           HeaderIcon="{ui:FontIcon Glyph=&#xE774;}"
+                                           Margin="0,0,0,4">
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_BrowserProtection_OpenFolder"
+                                               HeaderIcon="{ui:FontIcon Glyph=&#xE8DA;}">
+                            <Button x:Name="OpenBrowserProtectionFolderButton"
+                                    AutomationProperties.AutomationId="OpenBrowserProtectionFolderButton"
+                                    l:Uids.Uid="AllPage_OpenLink"
+                                    Click="OpenBrowserProtectionFolderButton_Click" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
                 <controls:SettingsCard
                                     l:Uids.Uid="SettingsPage_Protection_Boot_Save"
                                     HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">

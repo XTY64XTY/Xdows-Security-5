@@ -1880,6 +1880,24 @@
   <data name="SettingsPage_Feature.Text" xml:space="preserve">
     <value>功能</value>
   </data>
+  <data name="SettingsPage_Feature_BrowserProtection.Header" xml:space="preserve">
+    <value>瀏覽器防護</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection.Description" xml:space="preserve">
+    <value>攔截已知的銀狐病毒釣魚網站和惡意網域</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFolder.Header" xml:space="preserve">
+    <value>擴充功能目錄</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFolder.Description" xml:space="preserve">
+    <value>開啟瀏覽器防護擴充功能所在目錄</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFailed_Title" xml:space="preserve">
+    <value>開啟擴充功能目錄失敗</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFailed_Content" xml:space="preserve">
+    <value>無法開啟擴充功能目錄: {0}</value>
+  </data>
   <data name="SettingsPage_Feature_ThreatNotificationMode.Header" xml:space="preserve">
     <value>通知模式</value>
   </data>

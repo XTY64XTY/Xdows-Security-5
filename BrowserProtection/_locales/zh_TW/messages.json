@@ -1,0 +1,75 @@
+{
+  "extName": {
+    "message": "Xdows Security 網路防護",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "攔截已知的銀狐病毒釣魚網站和惡意網域",
+    "description": "Extension description"
+  },
+  "blockTitle": {
+    "message": "存取已封鎖",
+    "description": "Block page title"
+  },
+  "blockTitleFull": {
+    "message": "存取已封鎖 - Xdows Security 網路防護",
+    "description": "Block page document title"
+  },
+  "threatTitle": {
+    "message": "偵測到釣魚網站, 已阻斷連線",
+    "description": "InfoBar title"
+  },
+  "threatMsg": {
+    "message": "該網站被 Xdows Security 網路防護 識別為高風險釣魚網域(疑似銀狐病毒仿冒站點), 為防止帳號與財產損失, 本次連線已被阻斷。",
+    "description": "InfoBar message"
+  },
+  "urlLabel": {
+    "message": "已封鎖的網址",
+    "description": "Blocked URL label"
+  },
+  "statusProtecting": {
+    "message": "防護中",
+    "description": "Status indicator"
+  },
+  "btnBack": {
+    "message": "返回上一頁",
+    "description": "Back button"
+  },
+  "popupSubtitle": {
+    "message": "銀狐病毒釣魚網站攔截",
+    "description": "Popup subtitle"
+  },
+  "statBlocked": {
+    "message": "已攔截",
+    "description": "Popup stat label"
+  },
+  "statRules": {
+    "message": "防護規則",
+    "description": "Popup stat label"
+  },
+  "recentTitle": {
+    "message": "最近攔截",
+    "description": "Popup recent section title"
+  },
+  "noRecent": {
+    "message": "暫無攔截記錄",
+    "description": "Popup empty state"
+  },
+  "statusLabel": {
+    "message": "狀態",
+    "description": "Popup status label"
+  },
+  "timeJustNow": {
+    "message": "剛剛",
+    "description": "Time format: just now"
+  },
+  "timeMinutesAgo": {
+    "message": "$1 分鐘前",
+    "description": "Time format: N minutes ago",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  }
+}

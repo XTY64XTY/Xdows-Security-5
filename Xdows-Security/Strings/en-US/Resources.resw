@@ -1881,6 +1881,24 @@ This action may cause you to accidentally run a threat file.</value>
   <data name="SettingsPage_Feature.Text" xml:space="preserve">
     <value>Features</value>
   </data>
+  <data name="SettingsPage_Feature_BrowserProtection.Header" xml:space="preserve">
+    <value>Browser protection</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection.Description" xml:space="preserve">
+    <value>Blocks known SilverFox virus phishing sites and malicious domains</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFolder.Header" xml:space="preserve">
+    <value>Extension folder</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFolder.Description" xml:space="preserve">
+    <value>Open the folder containing the browser protection extension</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFailed_Title" xml:space="preserve">
+    <value>Failed to open extension folder</value>
+  </data>
+  <data name="SettingsPage_Feature_BrowserProtection_OpenFailed_Content" xml:space="preserve">
+    <value>Unable to open the extension folder: {0}</value>
+  </data>
   <data name="SettingsPage_Feature_ThreatNotificationMode.Header" xml:space="preserve">
     <value>Notification mode</value>
   </data>

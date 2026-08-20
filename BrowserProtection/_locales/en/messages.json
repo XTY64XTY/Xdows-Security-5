@@ -1,0 +1,75 @@
+{
+  "extName": {
+    "message": "Xdows Security Network Protection",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "Blocks known SilverFox phishing websites and malicious domains",
+    "description": "Extension description"
+  },
+  "blockTitle": {
+    "message": "Access blocked",
+    "description": "Block page title"
+  },
+  "blockTitleFull": {
+    "message": "Access blocked - Xdows Security Network Protection",
+    "description": "Block page document title"
+  },
+  "threatTitle": {
+    "message": "Phishing website detected, connection blocked",
+    "description": "InfoBar title"
+  },
+  "threatMsg": {
+    "message": "This website has been identified by Xdows Security Network Protection as a high-risk phishing domain (suspected SilverFox impersonation site). The connection has been blocked to protect your account and property.",
+    "description": "InfoBar message"
+  },
+  "urlLabel": {
+    "message": "Blocked URL",
+    "description": "Blocked URL label"
+  },
+  "statusProtecting": {
+    "message": "Protecting",
+    "description": "Status indicator"
+  },
+  "btnBack": {
+    "message": "Go back",
+    "description": "Back button"
+  },
+  "popupSubtitle": {
+    "message": "SilverFox phishing protection",
+    "description": "Popup subtitle"
+  },
+  "statBlocked": {
+    "message": "Blocked",
+    "description": "Popup stat label"
+  },
+  "statRules": {
+    "message": "Rules",
+    "description": "Popup stat label"
+  },
+  "recentTitle": {
+    "message": "Recent blocks",
+    "description": "Popup recent section title"
+  },
+  "noRecent": {
+    "message": "No recent blocks",
+    "description": "Popup empty state"
+  },
+  "statusLabel": {
+    "message": "Status",
+    "description": "Popup status label"
+  },
+  "timeJustNow": {
+    "message": "Just now",
+    "description": "Time format: just now"
+  },
+  "timeMinutesAgo": {
+    "message": "$1 min ago",
+    "description": "Time format: N minutes ago",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  }
+}

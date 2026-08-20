@@ -1,0 +1,75 @@
+{
+  "extName": {
+    "message": "Xdows Security 网络防护",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "拦截已知的银狐病毒钓鱼网站和恶意域名",
+    "description": "Extension description"
+  },
+  "blockTitle": {
+    "message": "访问已阻止",
+    "description": "Block page title"
+  },
+  "blockTitleFull": {
+    "message": "访问已阻止 - Xdows Security 网络防护",
+    "description": "Block page document title"
+  },
+  "threatTitle": {
+    "message": "检测到钓鱼网站, 已阻断连接",
+    "description": "InfoBar title"
+  },
+  "threatMsg": {
+    "message": "该网站被 Xdows Security 网络防护 识别为高风险钓鱼域名(疑似银狐病毒仿冒站点), 为防止账号与财产损失, 本次连接已被阻断。",
+    "description": "InfoBar message"
+  },
+  "urlLabel": {
+    "message": "已阻止的网址",
+    "description": "Blocked URL label"
+  },
+  "statusProtecting": {
+    "message": "防护中",
+    "description": "Status indicator"
+  },
+  "btnBack": {
+    "message": "返回上一页",
+    "description": "Back button"
+  },
+  "popupSubtitle": {
+    "message": "银狐病毒钓鱼网站拦截",
+    "description": "Popup subtitle"
+  },
+  "statBlocked": {
+    "message": "已拦截",
+    "description": "Popup stat label"
+  },
+  "statRules": {
+    "message": "防护规则",
+    "description": "Popup stat label"
+  },
+  "recentTitle": {
+    "message": "最近拦截",
+    "description": "Popup recent section title"
+  },
+  "noRecent": {
+    "message": "暂无拦截记录",
+    "description": "Popup empty state"
+  },
+  "statusLabel": {
+    "message": "状态",
+    "description": "Popup status label"
+  },
+  "timeJustNow": {
+    "message": "刚刚",
+    "description": "Time format: just now"
+  },
+  "timeMinutesAgo": {
+    "message": "$1 分钟前",
+    "description": "Time format: N minutes ago",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  }
+}

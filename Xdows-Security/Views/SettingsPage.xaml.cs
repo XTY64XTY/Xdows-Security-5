@@ -1395,6 +1395,27 @@ private void UpdateInjectionProtectionText()
             }
         }
 
+        private async void OpenBrowserProtectionFolderButton_Click(Object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                String path = Path.Combine(AppContext.BaseDirectory, "BrowserProtection");
+                Directory.CreateDirectory(path);
+                await Windows.System.Launcher.LaunchFolderPathAsync(path);
+            }
+            catch (Exception ex)
+            {
+                ContentDialog errorDialog = new()
+                {
+                    Title = Localizer.Get().GetLocalizedString("SettingsPage_Feature_BrowserProtection_OpenFailed_Title"),
+                    Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_Feature_BrowserProtection_OpenFailed_Content"), ex.Message),
+                    CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
+                    XamlRoot = this.XamlRoot
+                };
+                await errorDialog.ShowAsync();
+            }
+        }
+
         private async void ResetConfigButton_Click(Object sender, RoutedEventArgs e)
         {
             ContentDialog confirmDialog = new()

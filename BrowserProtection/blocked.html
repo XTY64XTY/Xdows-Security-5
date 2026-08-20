@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>{{MSG_blockTitleFull}}</title>
+<style>
+  /* ============ WinUI 3 Fluent 设计令牌 ============ */
+  :root {
+    /* Mica 背景(浅色) */
+    --mica: #F3F3F3;
+    /* ContentDialog 层: 亚克力填充 */
+    --dialog-bg: rgba(255, 255, 255, 0.72);
+    /* 文字层级 */
+    --text-primary: #1B1B1B;
+    --text-secondary: #6E6E6E;
+    --text-tertiary: #8D8D8D;
+    /* 描边 */
+    --control-stroke: rgba(0, 0, 0, 0.058);
+    --divider: rgba(0, 0, 0, 0.06);
+    /* 语义色: 关键(威胁) */
+    --critical: #C42B1C;
+    --critical-bg: rgba(196, 43, 28, 0.10);
+    --critical-border: rgba(196, 43, 28, 0.28);
+    /* InfoBar 圆形图标容器背景(保持深红, 白色图标对比度) */
+    --critical-icon-bg: #C42B1C;
+    /* 语义色: 成功 */
+    --success: #0F7B0F;
+    /* 主按钮: AccentFillColorDefault */
+    --accent: #0067C0;
+    --accent-hover: #005FB8;
+    --accent-pressed: #004E93;
+    --accent-text: #FFFFFF;
+    /* 阴影(ContentDialog 层级) */
+    --shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.04),
+      0 4px 8px rgba(0, 0, 0, 0.10),
+      0 16px 48px rgba(0, 0, 0, 0.16);
+    /* 背景顶部光晕, 模拟 Mica 反射 */
+    --mica-glow: radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,0.85), transparent 70%);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --mica: #202020;
+      --dialog-bg: rgba(43, 43, 43, 0.72);
+      --text-primary: #FFFFFF;
+      --text-secondary: #D0D0D0;
+      --text-tertiary: #9C9C9C;
+      --control-stroke: rgba(255, 255, 255, 0.08);
+      --divider: rgba(255, 255, 255, 0.08);
+      --critical: #FF99A4;
+      --critical-bg: rgba(255, 153, 164, 0.10);
+      --critical-border: rgba(255, 153, 164, 0.32);
+      --success: #6CCB5F;
+      --accent: #99EBFF;
+      --accent-hover: #BFF2FF;
+      --accent-pressed: #C7F0FF;
+      --accent-text: #003D66;
+      --shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.06),
+        0 4px 8px rgba(0, 0, 0, 0.40),
+        0 16px 48px rgba(0, 0, 0, 0.55);
+      --mica-glow: radial-gradient(120% 60% at 50% 0%, rgba(255,255,255,0.05), transparent 70%);
+    }
+  }
+
+  /* 高对比度 */
+  @media (forced-colors: active) {
+    :root {
+      --dialog-bg: Canvas;
+      --mica: Canvas;
+      --text-primary: CanvasText;
+      --text-secondary: CanvasText;
+      --text-tertiary: CanvasText;
+      --control-stroke: CanvasText;
+      --divider: CanvasText;
+      --critical: Mark;
+      --critical-bg: transparent;
+      --critical-border: Mark;
+      --success: CanvasText;
+      --accent: Highlight;
+      --accent-hover: Highlight;
+      --accent-pressed: Highlight;
+      --accent-text: HighlightText;
+      --shadow: none;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
+    background: var(--mica);
+    background-image: var(--mica-glow);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ============ ContentDialog 容器 ============ */
+  .dialog {
+    width: 100%;
+    max-width: 560px;
+    background: var(--dialog-bg);
+    -webkit-backdrop-filter: blur(30px) saturate(1.4);
+    backdrop-filter: blur(30px) saturate(1.4);
+    border: 1px solid var(--control-stroke);
+    border-radius: 8px;                     /* OverlayCornerRadius */
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: dialog-in 220ms cubic-bezier(0.0, 0.0, 0.2, 1) both;  /* WinUI 标准缓动 */
+  }
+  @keyframes dialog-in {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* 对话框标题区 */
+  .dialog-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 24px 16px;
+  }
+  .dialog-title img {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .dialog-title-text { min-width: 0; }
+  .dialog-title h1 {
+    font-family: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: 0.2px;
+  }
+  .dialog-title .app-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  .dialog-body { padding: 0 24px 20px; }
+
+  /* ============ InfoBar(关键严重级别, WinUI 3 组件结构) ============ */
+  .infobar {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--critical-bg);          /* SystemFillColorCriticalBackground */
+    border: 1px solid var(--control-stroke);  /* ControlStrokeColorDefault */
+    border-radius: 4px;                       /* ControlCornerRadius */
+    padding: 8px 8px 8px 12px;
+    margin-bottom: 16px;
+  }
+  /* 圆形图标容器: 20px, 关键色填充, 白色 12px 图标 */
+  .infobar-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--critical-icon-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .infobar-icon svg { width: 12px; height: 12px; display: block; }
+  .infobar-content { flex: 1; min-width: 0; }
+  .infobar-title {
+    font-size: 14px;                         /* Body Strong */
+    font-weight: 600;
+    color: var(--text-primary);              /* 标题用主色, 不是红色 */
+    line-height: 1.4;
+  }
+  .infobar-msg {
+    font-size: 12px;                         /* Caption */
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-top: 4px;
+  }
+  .infobar-msg b { color: var(--text-primary); font-weight: 600; }
+
+  /* ============ 明细行(标签 + 等宽值) ============ */
+  .url-block { margin-bottom: 16px; }
+  .url-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+    letter-spacing: 0.3px;
+  }
+  .url-value {
+    font-family: "Cascadia Mono", "Consolas", "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid var(--control-stroke);
+    border-radius: 4px;
+    padding: 10px 12px;
+    word-break: break-all;
+    user-select: all;
+  }
+
+  .dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 24px 20px;
+  }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--success);
+  }
+  .status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  /* ============ WinUI 3 标准按钮 ============ */
+  .btn-primary {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    border-radius: 4px;                     /* ControlCornerRadius */
+    background: var(--accent);
+    color: var(--accent-text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    height: 32px;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: background 150ms cubic-bezier(0.0, 0.0, 0.2, 1), box-shadow 150ms;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:active { background: var(--accent-pressed); }
+  .btn-primary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+  <div class="dialog" role="alertdialog" aria-labelledby="dialogTitle" aria-describedby="dialogDesc">
+    <!-- 对话框标题 -->
+    <div class="dialog-title">
+      <img src="{{ICON_URL}}" alt="Xdows Security">
+      <div class="dialog-title-text">
+        <h1 id="dialogTitle">{{MSG_blockTitle}}</h1>
+        <div class="app-name">{{MSG_extName}}</div>
+      </div>
+    </div>
+
+    <div class="dialog-body">
+      <!-- InfoBar: 关键严重级别(WinUI 3 组件) -->
+      <div class="infobar" role="alert">
+        <span class="infobar-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" fill="none">
+            <path d="M8 3.2a1 1 0 0 1 1 1v5.4a1 1 0 1 1-2 0V4.2a1 1 0 0 1 1-1z" fill="#FFFFFF"/>
+            <circle cx="8" cy="12.4" r="1.2" fill="#FFFFFF"/>
+          </svg>
+        </span>
+        <div class="infobar-content">
+          <div class="infobar-title">{{MSG_threatTitle}}</div>
+          <div class="infobar-msg" id="dialogDesc">{{MSG_threatMsg}}</div>
+        </div>
+      </div>
+
+      <!-- 明细: 被拦截网址 -->
+      <div class="url-block">
+        <div class="url-label">{{MSG_urlLabel}}</div>
+        <div class="url-value" id="blockedUrl">{{BLOCKED_URL}}</div>
+      </div>
+    </div>
+
+    <!-- 对话框底栏: 状态 + 主操作按钮 -->
+    <div class="dialog-footer">
+      <span class="status"><span class="dot"></span>{{MSG_statusProtecting}}</span>
+      <button class="btn-primary" id="backBtn" type="button">{{MSG_btnBack}}</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('backBtn').addEventListener('click', function () {
+      if (window.history.length > 1) {
+        window.history.back();
+      }
+    });
+  </script>
+</body>
+</html>
