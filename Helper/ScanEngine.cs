@@ -1,7 +1,7 @@
 using Microsoft.Windows.Storage;
-using System.Buffers;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Xdows_Model_Invoker;
 
 namespace Helper
 {
@@ -183,8 +183,8 @@ namespace Helper
             {
                 try
                 {
-                    var (isVirus, probability) = Xdows_Model_Invoker.ModelInvoker.ScanFile(path);
-                    if (isVirus)
+                    var (scanVerdict, probability) = Xdows_Model_Invoker.ModelInvoker.ScanFile(path);
+                    if (scanVerdict == ScanVerdict.Malware)
                     {
                         string modeTag = _mode switch
                         {
