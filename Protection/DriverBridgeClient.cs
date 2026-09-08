@@ -44,11 +44,17 @@ internal sealed class DriverBridgeClient : IDisposable
     private const uint FileAttributeNormal = 0x00000080;
     private const int ErrorNoMoreItems = 259;
     internal const int ErrorRevisionMismatch = 1306;
+    private const int ErrorNotFound = 1168;
 
     private SafeFileHandle? _handle;
     private SafeFileHandle? _eventHandle;
     private uint _clientProcessId;
+    private IntPtr _eventBatchPtr;
     private readonly DriverShutdownToken _shutdownToken = new();
+
+    private static readonly int EventBatchBytes = Marshal.SizeOf<XdowsSecurityEventBatch>();
+    private static readonly int EventBytes = Marshal.SizeOf<XdowsSecurityEvent>();
+    private const int EventBatchEventsOffset = 16; // Header + Count + Reserved
 
     public bool IsConnected => IsHandleOpen(_handle) && IsHandleOpen(_eventHandle);
     public bool HasShutdownToken => _shutdownToken.HasToken;
@@ -69,6 +75,7 @@ internal sealed class DriverBridgeClient : IDisposable
         {
             Header = DriverProtocol.Header<XdowsRegisterRequest>(),
             ClientProcessId = _clientProcessId,
+            Flags = DriverProtocol.RegisterFlagAsyncReview,
             HeartbeatTimeoutMs = 10_000
         };
 
@@ -136,14 +143,25 @@ internal sealed class DriverBridgeClient : IDisposable
 
         try
         {
+            var batchEvents = new XdowsSecurityEvent[DriverProtocol.EventBatchSize];
             while (!token.IsCancellationRequested)
             {
-                XdowsSecurityEvent? nextEvent = TryGetNextEvent();
-                if (nextEvent is null)
+                int count = TryGetNextEvents(batchEvents);
+                if (count == 0)
                 {
+                    //
+                    // The batch drain never blocks in the driver, so the
+                    // pump paces itself when the queue is empty instead of
+                    // busy-polling the IOCTL path.
+                    //
+                    await Task.Delay(50, token).ConfigureAwait(false);
                     continue;
                 }
-                await channel.Writer.WriteAsync(nextEvent.Value, token).ConfigureAwait(false);
+
+                for (int i = 0; i < count; i++)
+                {
+                    await channel.Writer.WriteAsync(batchEvents[i], token).ConfigureAwait(false);
+                }
             }
         }
         finally
@@ -640,6 +658,13 @@ internal sealed class DriverBridgeClient : IDisposable
 
         _handle?.Dispose();
         _handle = null;
+
+        if (_eventBatchPtr != IntPtr.Zero)
+        {
+            Marshal.FreeHGlobal(_eventBatchPtr);
+            _eventBatchPtr = IntPtr.Zero;
+        }
+
         _shutdownToken.Clear();
     }
 
@@ -703,19 +728,46 @@ internal sealed class DriverBridgeClient : IDisposable
         _ = DeviceIoControlNoOutput(request, DriverProtocol.Heartbeat);
     }
 
-    private XdowsSecurityEvent? TryGetNextEvent()
+    private int TryGetNextEvents(XdowsSecurityEvent[] destination)
     {
         EnsureConnected();
 
-        bool ok = DeviceIoControlNoInput(_eventHandle!, DriverProtocol.GetNextEvent, out XdowsSecurityEvent securityEvent);
-        if (ok)
-            return securityEvent;
+        if (_eventBatchPtr == IntPtr.Zero)
+        {
+            _eventBatchPtr = Marshal.AllocHGlobal(EventBatchBytes);
+            ZeroMemory(_eventBatchPtr, EventBatchBytes);
+        }
 
-        int error = Marshal.GetLastWin32Error();
-        if (error == ErrorNoMoreItems)
-            return null;
+        bool ok = DeviceIoControl(
+            _eventHandle!,
+            DriverProtocol.GetNextEvents,
+            IntPtr.Zero,
+            0,
+            _eventBatchPtr,
+            (uint)EventBatchBytes,
+            out _,
+            IntPtr.Zero);
+        if (!ok)
+        {
+            int error = Marshal.GetLastWin32Error();
+            if (error == ErrorNoMoreItems)
+                return 0;
 
-        throw new Win32Exception(error, "Failed to get next Xdows Security driver event.");
+            throw new Win32Exception(error, "Failed to get next Xdows Security driver event batch.");
+        }
+
+        uint count = unchecked((uint)Marshal.ReadInt32(_eventBatchPtr, 8));
+        if (count > DriverProtocol.EventBatchSize)
+            throw new InvalidDataException("The driver returned an invalid event batch count.");
+
+        IntPtr eventsPtr = IntPtr.Add(_eventBatchPtr, EventBatchEventsOffset);
+        for (int i = 0; i < count; i++)
+        {
+            destination[i] = Marshal.PtrToStructure<XdowsSecurityEvent>(
+                IntPtr.Add(eventsPtr, i * EventBytes));
+        }
+
+        return checked((int)count);
     }
 
     private void SubmitDecision(XdowsSecurityDecision decision)
@@ -723,7 +775,20 @@ internal sealed class DriverBridgeClient : IDisposable
         EnsureConnected();
 
         if (!DeviceIoControlNoOutput(decision, DriverProtocol.SubmitDecision))
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to submit driver decision.");
+        {
+            int error = Marshal.GetLastWin32Error();
+            if (error == ErrorNotFound)
+            {
+                //
+                // Async-review events are removed from the kernel queue when
+                // the pump drains them, so a later decision submission finds
+                // nothing to attach to. That is expected, not a failure.
+                //
+                return;
+            }
+
+            throw new Win32Exception(error, "Failed to submit driver decision.");
+        }
     }
 
     private void EnsureConnected()

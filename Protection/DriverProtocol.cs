@@ -27,6 +27,8 @@ internal static class DriverProtocol
     public const uint CapabilityR0BehaviorProtection = 0x00000080;
     public const uint CapabilityR0BootProtection = 0x00000100;
     public const uint CapabilityR0RegistryProtection = 0x00000200;
+    public const uint CapabilityAsyncReview = 0x00000400;
+    public const uint CapabilityEventBatch = 0x00000800;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
@@ -36,7 +38,10 @@ internal static class DriverProtocol
         CapabilityEnhancedSelfProtect |
         CapabilityR0BehaviorProtection |
         CapabilityR0BootProtection |
-        CapabilityR0RegistryProtection;
+        CapabilityR0RegistryProtection |
+        CapabilityAsyncReview |
+        CapabilityEventBatch;
+    public const uint RegisterFlagAsyncReview = 0x00000001;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
@@ -53,6 +58,7 @@ internal static class DriverProtocol
     public const int MaxLogMessageChars = 256;
     public const int MaxProcessNameChars = 260;
     public const int ProcessBatchSize = 64;
+    public const int EventBatchSize = 16;
     public const int MaxBootVolumeRoots = 4;
     public const int MaxBootVolumeRootChars = 128;
     public const int MaxRegistryRules = 32;
@@ -81,6 +87,7 @@ internal static class DriverProtocol
     public static readonly uint OperateProcess = CtlCode(FileDeviceXdowsSecurity, 0x80D, MethodBuffered, FileAnyAccess);
     public static readonly uint SetBootProtection = CtlCode(FileDeviceXdowsSecurity, 0x80E, MethodBuffered, FileAnyAccess);
     public static readonly uint SetRegistryProtection = CtlCode(FileDeviceXdowsSecurity, 0x80F, MethodBuffered, FileAnyAccess);
+    public static readonly uint GetNextEvents = CtlCode(FileDeviceXdowsSecurity, 0x810, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -177,6 +184,26 @@ internal struct XdowsProtocolHeader
 {
     public uint Size;
     public uint Version;
+}
+
+//
+// Batch event drain for IOCTL_XDOWS_SECURITY_GET_NEXT_EVENTS.
+//
+// The driver fills Count entries and writes IoStatus.Information as
+// header size + Count * sizeof(XdowsSecurityEvent). Entries beyond Count
+// are untouched and must not be read. The whole structure stays under the
+// 85 KB .NET Large Object Heap threshold (75,408 bytes), so the bridge can
+// allocate one buffer and reuse it across drains.
+//
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsSecurityEventBatch
+{
+    public XdowsProtocolHeader Header;
+    public uint Count;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.EventBatchSize)]
+    public XdowsSecurityEvent[] Events;
 }
 
 [StructLayout(LayoutKind.Sequential)]
