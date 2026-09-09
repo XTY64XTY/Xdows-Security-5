@@ -831,12 +831,6 @@
   <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
     <value>在測試階段中，這個選項爲必選項</value>
   </data>
-  <data name="SettingsPage_Other_Feedback.Header" xml:space="preserve">
-    <value>反饋頻道</value>
-  </data>
-  <data name="SettingsPage_Other_Feedback.Description" xml:space="preserve">
-    <value>反饋相關問題或提出建議</value>
-  </data>
   <data name="MainWindow_Nav_Settings" xml:space="preserve">
     <value>設置</value>
   </data>
@@ -926,38 +920,8 @@
 因不可抗力因素如服務器故障等問題而引發的數據丟失等文件或損失，此軟件開發者同樣不承擔任何責任。
 本聲明或雲服務提供協議、條約或聲明會因軟件更新等多種因素進行修改、刪除、補充其內容，當發生糾紛時，請以最新版本爲準，
 本軟件開發者具有對此聲明進行修改、刪除、補充而不經用戶同意的權力，該聲明最終解釋權歸本軟件開發者所有。
-對於此軟件的分支產生的問題，此軟件的源開發者（Xdows Software、零度楓鑄）不承擔任何責任。
+對於此軟件的分支產生的問題，此軟件的源開發者（Xdows Software）不承擔任何責任。
 當您通過任何方式使用該引擎時則表示同意並接受該聲明，如果您不接受請自行關閉此引擎或停止使用並刪除該軟件。</value>
-  </data>
-  <data name="BugReportPage_Connected" xml:space="preserve">
-    <value>已連接</value>
-  </data>
-  <data name="BugReportPage_ConnectionFailed" xml:space="preserve">
-    <value>連接失敗</value>
-  </data>
-  <data name="BugReportPage_DownloadAndLocate" xml:space="preserve">
-    <value>下載並定位</value>
-  </data>
-  <data name="BugReportPage_Input.PlaceholderText" xml:space="preserve">
-    <value>輸入消息…</value>
-  </data>
-  <data name="BugReportPage_NotConnected" xml:space="preserve">
-    <value>未連接</value>
-  </data>
-  <data name="BugReportPage_SendButton.Content" xml:space="preserve">
-    <value>發送</value>
-  </data>
-  <data name="BugReportPage_SendButtonText.Text" xml:space="preserve">
-    <value>發送</value>
-  </data>
-  <data name="BugReportPage_ReconnectButton.Content" xml:space="preserve">
-    <value>重新連接</value>
-  </data>
-  <data name="BugReportPage_ReconnectButtonText.Text" xml:space="preserve">
-    <value>重新連接</value>
-  </data>
-  <data name="BugReportPage_ConnectionFailedMessage" xml:space="preserve">
-    <value>連接失敗: </value>
   </data>
   <data name="SecurityPage_MenuItem_Trust.Text" xml:space="preserve">
     <value>信任文件</value>
@@ -1224,93 +1188,6 @@
   </data>
   <data name="SettingsPage_Scan_IndexMode_FastIndex.Description" xml:space="preserve">
     <value>在支援的分割區格式上嘗試使用更快的索引方式</value>
-  </data>
-  <data name="BugReportPage_FailedInit" xml:space="preserve">
-    <value>初始化TCP客戶端失敗: {0}</value>
-  </data>
-  <data name="BugReportPage_SetUsernameFailed" xml:space="preserve">
-    <value>設置用戶名失敗: {0}</value>
-  </data>
-  <data name="BugReportPage_Reconnecting" xml:space="preserve">
-    <value>連接已斷開，正在嘗試重新連接...</value>
-  </data>
-  <data name="BugReportPage_JoinedChannel" xml:space="preserve">
-    <value>已加入反饋頻道</value>
-  </data>
-  <data name="BugReportPage_NoHistoryMessages" xml:space="preserve">
-    <value>已連接到服務器，但沒有歷史消息</value>
-  </data>
-  <data name="BugReportPage_HandleRegisterFailed" xml:space="preserve">
-    <value>處理 register_success 失敗: {0}</value>
-  </data>
-  <data name="BugReportPage_UsernameDialog_Title" xml:space="preserve">
-    <value>反饋頻道設置</value>
-  </data>
-  <data name="BugReportPage_UsernameDialog_Content" xml:space="preserve">
-    <value>請輸入您的用戶名以連接到反饋頻道</value>
-  </data>
-  <data name="BugReportPage_UsernameDialog_Connect" xml:space="preserve">
-    <value>連接</value>
-  </data>
-  <data name="BugReportPage_UsernameLabel" xml:space="preserve">
-    <value>用戶名:</value>
-  </data>
-  <data name="BugReportPage_UsernamePlaceholder" xml:space="preserve">
-    <value>請輸入用戶名</value>
-  </data>
-  <data name="BugReportPage_UsernameEmpty" xml:space="preserve">
-    <value>用戶名不能爲空</value>
-  </data>
-  <data name="BugReportPage_UserOnline" xml:space="preserve">
-    <value>{0} 已上線</value>
-  </data>
-  <data name="BugReportPage_UserOffline" xml:space="preserve">
-    <value>{0} 已離線</value>
-  </data>
-  <data name="BugReportPage_AllRead" xml:space="preserve">
-    <value>全部已讀</value>
-  </data>
-  <data name="BugReportPage_ReadCountFormat" xml:space="preserve">
-    <value>{0}人已讀</value>
-  </data>
-  <data name="BugReportPage_TcpNotInitialized" xml:space="preserve">
-    <value>TCP客戶端未初始化</value>
-  </data>
-  <data name="BugReportPage_Me" xml:space="preserve">
-    <value>我</value>
-  </data>
-  <data name="BugReportPage_SettingsDialog_Title" xml:space="preserve">
-    <value>反饋設置</value>
-  </data>
-  <data name="BugReportPage_HostLabel" xml:space="preserve">
-    <value>服務器地址:</value>
-  </data>
-  <data name="BugReportPage_PortLabel" xml:space="preserve">
-    <value>端口:</value>
-  </data>
-  <data name="BugReportPage_PortInvalid" xml:space="preserve">
-    <value>端口必須是數字</value>
-  </data>
-  <data name="BugReportPage_SettingSaved" xml:space="preserve">
-    <value>設置已保存，正在重新連接...</value>
-  </data>
-  <data name="BugReportPage_SettingSaveFailed" xml:space="preserve">
-    <value>保存設置失敗: {0}</value>
-  </data>
-  <data name="BugReportPage_ConnectionFailedAlert" xml:space="preserve">
-    <value>連接失敗，請檢查網絡或稍後再試</value>
-  </data>
-  <data name="BugReportPage_LeavingChannel" xml:space="preserve">
-    <value>已離開反饋頻道</value>
-  </data>
-  <data name="BugReportPage_ErrorFormat" xml:space="preserve">
-    <value>錯誤: {0}</value>
-  </data>
-  <data name="BugReportPage_SettingsButton.Content" xml:space="preserve">
-    <value>設置</value>
-  </data>
-  <data name="BugReportPage_SettingsButtonText.Text" xml:space="preserve">
-    <value>設置</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
     <value>另存爲</value>

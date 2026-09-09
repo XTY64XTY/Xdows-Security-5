@@ -327,11 +327,6 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private void Settings_Feedback_Click(Object sender, RoutedEventArgs e)
-        {
-            App.MainWindow?.GoToBugReportPage(SettingsPage_Other_Feedback.Header.ToString());
-        }
-
         private void RunProtection(Object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;

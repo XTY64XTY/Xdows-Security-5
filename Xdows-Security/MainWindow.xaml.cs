@@ -394,11 +394,6 @@ namespace Xdows_Security
         }
         public void GoToPage(string PageName, bool pushHistory = true)
         {
-            if (PageName == "BugReport")
-            {
-                GoToBugReportPage(null);
-                return;
-            }
             var selectedItem = nav.SelectedItem as NavigationViewItem;
 
             string currentTag = selectedItem?.Tag as string ?? "";
@@ -451,15 +446,7 @@ namespace Xdows_Security
             };
             navContainer.Navigate(pageType, null, App.GetNavigationTransitionInfo());
         }
-        public void GoToBugReportPage(string? PageName)
-        {
-            _navigationHistory.Clear();
-            UpdateBackEnabled();
-            NowPage = "BugReport";
-            nav.Header = PageName;
-            nav.SelectedItem = null;
-            navContainer.Navigate(typeof(BugReportPage), null, App.GetNavigationTransitionInfo());
-        }
+
         private static NavigationViewItem? FindNavigationItemByTag(IList<object> items, string targetTag)
         {
             foreach (var item in items)
