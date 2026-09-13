@@ -1686,6 +1686,9 @@ else
             XdowsSecurityBehaviorType.DestructiveDirectoryDelete => "Xdows.Behavior.DestructiveDirectoryDelete",
             XdowsSecurityBehaviorType.OwnershipEscalation => "Xdows.Behavior.OwnershipEscalation",
             XdowsSecurityBehaviorType.SystemControlCommand => "Xdows.Behavior.SystemControlCommand",
+            XdowsSecurityBehaviorType.EfiMount => "Xdows.Behavior.EfiMount",
+            XdowsSecurityBehaviorType.OobeReset => "Xdows.Behavior.OobeReset",
+            XdowsSecurityBehaviorType.SystemDirectoryRansomware => "Xdows.Behavior.SystemDirectoryRansomware",
             _ => "Xdows.Behavior.Unknown"
         };
     }

@@ -167,7 +167,26 @@ internal enum XdowsSecurityBehaviorType : uint
     SensitiveProcessHandle = 12,
     DestructiveDirectoryDelete = 13,
     OwnershipEscalation = 14,
-    SystemControlCommand = 15
+    SystemControlCommand = 15,
+
+    //
+    // mountvol /S: EFI system partition mounting (bootkit persistence
+    // surface). Kernel classification: fail-closed.
+    //
+    EfiMount = 16,
+
+    //
+    // sysprep /oobe //generalize: destructive re-provisioning reset.
+    // Kernel classification: fail-closed.
+    //
+    OobeReset = 17,
+
+    //
+    // Script-host mass delete under the Windows directory. Currently
+    // enforced purely in-kernel by the ransomware rate monitor (no event
+    // reaches user mode); the value is reserved for protocol symmetry.
+    //
+    SystemDirectoryRansomware = 18
 }
 
 internal enum XdowsSecurityDecisionType : uint
