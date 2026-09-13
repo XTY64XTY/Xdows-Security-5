@@ -691,6 +691,15 @@ public sealed class DriverProtection : IProtectionModel
         string valueName = CleanDriverString(driverEvent.RegistryValueName);
         string? actorPath = ResolveActorPath(driverEvent);
 
+        // System-directory actors are excluded before the trust gates below.
+        // Windows servicing, installers, and group-policy application run from
+        // %SystemRoot% and legitimately rewrite these keys. The driver's
+        // CI cache already covers catalog-signed components, but that verdict
+        // is unavailable during early boot and for processes it never observed
+        // being created; this name-based gate keeps those writes quiet.
+        if (!string.IsNullOrWhiteSpace(actorPath) && IsUnderSystemRoot(actorPath))
+            return Allow(driverEvent.EventId, "registry-actor-system-root", TimeSpan.FromMinutes(10));
+
         // False-positive gate. The kernel already skips PID<=4, the registered
         // client, and CI-trusted actors, but its CI cache only covers processes
         // it observed being created and it cannot consult the trust list or the
@@ -807,10 +816,24 @@ public sealed class DriverProtection : IProtectionModel
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "registry-user-timeout-block"
             : "user-block-registry";
-        return DriverBridgeClient.CreateDecision(
+        XdowsSecurityDecision blockDecision = DriverBridgeClient.CreateDecision(
             driverEvent.EventId,
             XdowsSecurityDecisionType.Block,
             reason);
+
+        // Rewriting safe-mode autostart, boot-execute configuration, or one of
+        // the critical policy values (EnableLUA, Userinit, BootExecute, ...) is
+        // a hostile act that survives reboot, so a *confirmed* Block is
+        // escalated to a counter-kill request. A user-decision timeout is
+        // deliberately excluded: registry traffic is far denser than handle
+        // traffic, and killing on a busy-scanner timeout would be destructive.
+        if (userDecision == ProtectionUserDecision.Block &&
+            RegistryScan.IsCriticalMutation(registryPath, valueName))
+        {
+            blockDecision.ResultCode = DriverProtocol.KillActorResultCode;
+        }
+
+        return blockDecision;
     }
 
     private async Task<XdowsSecurityDecision> HandleBootFileWriteAsync(
