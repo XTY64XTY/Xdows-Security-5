@@ -42,6 +42,14 @@ internal static class DriverProtocol
         CapabilityAsyncReview |
         CapabilityEventBatch;
     public const uint RegisterFlagAsyncReview = 0x00000001;
+
+    //
+    // ResultCode sentinel for a Block verdict that additionally requests the
+    // driver to counter-terminate the acting process (protected-process
+    // terminate and sensitive-process handle gates). Mirrors the kernel
+    // XDOWS_DECISION_RESULT_KILL_ACTOR constant.
+    //
+    public const uint KillActorResultCode = 0x4B494C4Cu;
     public const uint ModuleTokenAuth = 0x00000001;
     public const uint ModuleProcess = 0x00000002;
     public const uint ModuleFile = 0x00000004;
@@ -133,6 +141,15 @@ internal enum XdowsSecurityRegistryOperation : uint
     UnloadKey = 8
 }
 
+internal enum XdowsSecurityEventFlags : uint
+{
+    None = 0x00000000,
+    FileOpenNameAvailable = 0x00000001,
+    UserModeRequired = 0x00000002,
+    ThreatConfirmed = 0x00000004,
+    AutorunInf = 0x00000008
+}
+
 internal enum XdowsSecurityBehaviorType : uint
 {
     None = 0,
@@ -143,7 +160,14 @@ internal enum XdowsSecurityBehaviorType : uint
     DownloadExecute = 5,
     LolbinAbuse = 6,
     ProcessInjection = 7,
-    ThreadInjection = 8
+    ThreadInjection = 8,
+    ParentProcessChain = 9,
+    AutorunInf = 10,
+    ProtectedProcessTerminate = 11,
+    SensitiveProcessHandle = 12,
+    DestructiveDirectoryDelete = 13,
+    OwnershipEscalation = 14,
+    SystemControlCommand = 15
 }
 
 internal enum XdowsSecurityDecisionType : uint

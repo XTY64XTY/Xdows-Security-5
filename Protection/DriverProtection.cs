@@ -1067,13 +1067,62 @@ string gatePath = actorPath;
                     }
                 }
             }
-            else
+else
             {
                 // No acting image to judge. Per the driver's fail-open bridge
                 // policy, absence of evidence must not become a confirmed
                 // threat prompt for a Beta detection.
                 return Allow(driverEvent.EventId, "behavior-handle-actor-unknown", TimeSpan.FromMinutes(1));
             }
+        }
+
+        //
+        // New user-gated behavior types. Each routes through the generic
+        // user-decision prompt below unless a cheaper gate applies:
+        //   * DestructiveDirectoryDelete: prompt only when the rd/rmdir target
+        //     holds more than 500 files; small deletes are silently allowed.
+        //   * OwnershipEscalation / SystemControlCommand: legitimate admin
+        //     commands; trusted/signed actors are silently allowed.
+        //   * ProtectedProcessTerminate / SensitiveProcessHandle: always
+        //     prompt (fail-closed in the kernel) and request the counter-kill
+        //     of the actor on a Block verdict.
+        //
+        switch (behaviorType)
+        {
+            case XdowsSecurityBehaviorType.DestructiveDirectoryDelete:
+            {
+                string? targetPath = ParseRdTargetPath(CleanDriverString(driverEvent.CommandLine));
+                if (string.IsNullOrWhiteSpace(targetPath) ||
+                    !Directory.Exists(targetPath) ||
+                    CountFilesBounded(targetPath, 501) <= 500)
+                {
+                    string smallKey = BuildDecisionCacheKey("Behavior", targetPath ?? "rd-small-unknown");
+                    Cache(
+                        smallKey,
+                        XdowsSecurityDecisionType.Allow,
+                        "rd-target-small",
+                        TimeSpan.FromMinutes(10));
+                    return Allow(driverEvent.EventId, "rd-target-small", TimeSpan.FromMinutes(10));
+                }
+                break;
+            }
+            case XdowsSecurityBehaviorType.OwnershipEscalation:
+            case XdowsSecurityBehaviorType.SystemControlCommand:
+            {
+                if (!string.IsNullOrWhiteSpace(actorPath) &&
+                    !actorPath.StartsWith("PID ", StringComparison.Ordinal))
+                {
+                    if (TrustManager.IsPathTrusted(actorPath))
+                        return Allow(driverEvent.EventId, "behavior-command-actor-trusted", TimeSpan.FromMinutes(10));
+
+                    SignerTrustResult actorTrustResult = SignerTrustService.Evaluate(actorPath);
+                    if (actorTrustResult.IsTrusted)
+                        return Allow(driverEvent.EventId, $"behavior-command-actor-signed:{actorTrustResult.Reason}", TimeSpan.FromMinutes(10));
+                }
+                break;
+            }
+            default:
+                break;
         }
 
         DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
@@ -1103,10 +1152,24 @@ string gatePath = actorPath;
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "behavior-user-timeout-block"
             : "user-block-behavior";
-        return DriverBridgeClient.CreateDecision(
+        XdowsSecurityDecision blockDecision = DriverBridgeClient.CreateDecision(
             driverEvent.EventId,
             XdowsSecurityDecisionType.Block,
             reason);
+
+        //
+        // Blocking a protected-process terminate or a sensitive-process
+        // handle request is a hostile act: ask the kernel to counter-kill
+        // the actor (the driver refuses to kill the client, critical system
+        // processes, or PID <= 4).
+        //
+        if (behaviorType is XdowsSecurityBehaviorType.ProtectedProcessTerminate
+            or XdowsSecurityBehaviorType.SensitiveProcessHandle)
+        {
+            blockDecision.ResultCode = DriverProtocol.KillActorResultCode;
+        }
+
+        return blockDecision;
     }
 
     private async Task<XdowsSecurityDecision> HandleProcessCreateAsync(
@@ -1593,8 +1656,97 @@ string gatePath = actorPath;
             XdowsSecurityBehaviorType.LolbinAbuse => "Xdows.Behavior.LolbinAbuse",
             XdowsSecurityBehaviorType.ProcessInjection => "Xdows.Behavior.ProcessInjection",
             XdowsSecurityBehaviorType.ThreadInjection => "Xdows.Behavior.ThreadInjection",
+            XdowsSecurityBehaviorType.ParentProcessChain => "Xdows.Behavior.ParentProcessChain",
+            XdowsSecurityBehaviorType.AutorunInf => "Xdows.Behavior.AutorunInf",
+            XdowsSecurityBehaviorType.ProtectedProcessTerminate => "Xdows.Behavior.ProtectedProcessTerminate",
+            XdowsSecurityBehaviorType.SensitiveProcessHandle => "Xdows.Behavior.SensitiveProcessHandle",
+            XdowsSecurityBehaviorType.DestructiveDirectoryDelete => "Xdows.Behavior.DestructiveDirectoryDelete",
+            XdowsSecurityBehaviorType.OwnershipEscalation => "Xdows.Behavior.OwnershipEscalation",
+            XdowsSecurityBehaviorType.SystemControlCommand => "Xdows.Behavior.SystemControlCommand",
             _ => "Xdows.Behavior.Unknown"
         };
+    }
+
+    //
+    // Extract the target path from an rd/rmdir command line, e.g.
+    //   cmd.exe /c rd /s /q "C:\Temp\BigFolder"
+    //   rmdir /s /q C:\Temp
+    // Tokenizes respecting double quotes and returns the first non-switch
+    // argument after the rd/rmdir token, or null when no path is present.
+    //
+    private static string? ParseRdTargetPath(string commandLine)
+    {
+        if (string.IsNullOrWhiteSpace(commandLine))
+            return null;
+
+        var tokens = new List<string>();
+        int i = 0;
+        while (i < commandLine.Length)
+        {
+            while (i < commandLine.Length && char.IsWhiteSpace(commandLine[i]))
+                i++;
+            if (i >= commandLine.Length)
+                break;
+
+            if (commandLine[i] == '"')
+            {
+                int start = ++i;
+                while (i < commandLine.Length && commandLine[i] != '"')
+                    i++;
+                tokens.Add(commandLine[start..i]);
+                i++;
+            }
+            else
+            {
+                int start = i;
+                while (i < commandLine.Length && !char.IsWhiteSpace(commandLine[i]))
+                    i++;
+                tokens.Add(commandLine[start..i]);
+            }
+        }
+
+        for (int t = 0; t < tokens.Count; t++)
+        {
+            if (!tokens[t].Equals("rd", StringComparison.OrdinalIgnoreCase) &&
+                !tokens[t].Equals("rmdir", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            for (int u = t + 1; u < tokens.Count; u++)
+            {
+                string arg = tokens[u];
+                if (arg.StartsWith('/') || arg.StartsWith('-'))
+                    continue;
+                return arg;
+            }
+            return null;
+        }
+
+        return null;
+    }
+
+    //
+    // Bounded recursive file count under a directory. Returns when the cap is
+    // exceeded (the caller only cares whether the count is > 500) or on the
+    // first enumeration error (-1), which is treated as "cannot count".
+    //
+    private static int CountFilesBounded(string path, int cap)
+    {
+        try
+        {
+            int count = 0;
+            foreach (string _ in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+            {
+                if (++count > cap)
+                    break;
+            }
+            return count;
+        }
+        catch
+        {
+            return -1;
+        }
     }
 
     private static ProtectionModule DriverEventTypeToModule(XdowsSecurityEventType type)
