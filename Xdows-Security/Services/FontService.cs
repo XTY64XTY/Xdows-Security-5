@@ -1,4 +1,3 @@
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -69,14 +68,15 @@ namespace Xdows_Security.Services
         }
 
         /// <summary>按当前设置应用字体，用于应用启动阶段。</summary>
-        public static void ApplyFromSetting() => SetEnabled(ReadSetting(), false);
+        public static void ApplyFromSetting() => SetEnabled(ReadSetting());
 
         /// <summary>
         /// 应用或撤销 Noto Sans 默认字体。
+        /// 注意：字体资源通过 {ThemeResource} 被默认样式引用，已渲染的控件不会
+        /// 重新求值，调用方需要在变更后重载受影响的页面（见 SettingsPage 的开关逻辑）。
         /// </summary>
         /// <param name="enabled">是否使用 Noto Sans。</param>
-        /// <param name="refreshLoadedUi">是否刷新已经加载的界面。</param>
-        public static void SetEnabled(Boolean enabled, Boolean refreshLoadedUi = true)
+        public static void SetEnabled(Boolean enabled)
         {
             IsEnabled = enabled;
 
@@ -95,9 +95,6 @@ namespace Xdows_Security.Services
                 foreach (String key in FontResourceKeys)
                     resources.Remove(key);
             }
-
-            if (refreshLoadedUi)
-                RequestThemeResourceRefresh();
         }
 
         private static FontFamily CreateNotoSansFontFamily()
@@ -109,57 +106,6 @@ namespace Xdows_Security.Services
                 ",ms-appx:///", CjkFontAssetRelativePath, "#", CjkFontFamilyName);
 
             return new FontFamily(source);
-        }
-
-        /// <summary>
-        /// 字体资源是通过 {ThemeResource} 被默认样式引用的，只在主题变化时才会重新求值。
-        /// 这里把根元素的 RequestedTheme 切换到相反值，再跨一个调度周期还原，
-        /// 强制 WinUI 完成一次真实的主题求值。注意不能在同一调用栈内连续赋值两次——
-        /// 那样会被合并为一次变更，ThemeResource 不会重新解析，导致已渲染的文本
-        /// （例如 ComboBox 的内容）保持旧字体。
-        /// </summary>
-        private static void RequestThemeResourceRefresh()
-        {
-            try
-            {
-                if (App.MainWindow?.Content is not FrameworkElement root)
-                    return;
-
-                ElementTheme original = root.RequestedTheme;
-                ElementTheme temporary = original switch
-                {
-                    ElementTheme.Light => ElementTheme.Dark,
-                    ElementTheme.Dark => ElementTheme.Light,
-                    _ => MainWindow.GetSystemTheme() == ApplicationTheme.Light
-                        ? ElementTheme.Dark
-                        : ElementTheme.Light
-                };
-
-                root.RequestedTheme = temporary;
-                DispatcherQueue dispatcher = root.DispatcherQueue;
-                // 用低优先级还原：保证"临时主题"先经过一次完整的求值与渲染批次，
-                // 再切回原主题，形成两次真实的 ThemeResource 重新解析。
-                Boolean enqueued = dispatcher != null && dispatcher.TryEnqueue(DispatcherQueuePriority.Low, () =>
-                {
-                    try
-                    {
-                        // 还原为切换前的主题；窗口可能已在关闭过程中，忽略异常。
-                        root.RequestedTheme = original;
-                    }
-                    catch
-                    {
-                    }
-                });
-                if (!enqueued)
-                {
-                    root.RequestedTheme = original;
-                }
-            }
-            catch (Exception ex)
-            {
-                LogText.AddNewLog(LogText.LogLevel.WARN, "UI Interface",
-                    $"Refresh font resources failed: {ex.Message}");
-            }
         }
     }
 }

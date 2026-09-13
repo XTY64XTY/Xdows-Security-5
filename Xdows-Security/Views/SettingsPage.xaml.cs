@@ -887,6 +887,18 @@ private void UpdateInjectionProtectionText()
             // Tag 即设置键名（UseNotoSansFont），沿用通用开关保存逻辑持久化。
             Toggled_SaveToggleData(sender, e);
             FontService.SetEnabled(UseNotoSansToggle.IsOn);
+
+            // 字体资源通过 {ThemeResource} 被默认样式引用，已渲染的控件不会重新求值，
+            // 之前的"翻转 RequestedTheme"方案既不彻底又会闪一次相反主题。
+            // 这里改为直接重载设置页：新页面按变更后的字体资源重建。
+            // 开启与关闭都必须重载，否则另一方向的字体不会生效且无闪烁代价。
+            ProtectionStatusTimer?.Stop();
+            Frame frame = this.Frame;
+            if (frame == null) return;
+            frame.Navigate(typeof(SettingsPage));
+            // 重载不应产生一条"返回到旧设置页"的历史记录。
+            if (frame.BackStack.Count > 0)
+                frame.BackStack.RemoveAt(frame.BackStack.Count - 1);
         }
 
         private async void LanguageComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
