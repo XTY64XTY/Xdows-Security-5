@@ -31,3 +31,10 @@
 ## Settings
 
 - **UsbAutoScan setting**: Located in the Protection section of SettingsPage, after the Registry protection expander. Default value: `true`.
+
+## Fonts
+
+- **UseNotoSansFont setting**: Toggles whether the bundled Noto Sans font is used as the application-wide default font. Key: `UseNotoSansFont` in `App.LocalSettings`. Default value: `true`. Located in the Appearance section of SettingsPage as a sub-item of the "app theme" expander (`SettingsPage_Appearance_Theme`).
+- **FontService**: Static service in `Xdows-Security/Services/` that applies or removes the Noto Sans default by overriding WinUI's font theme resources (`ContentControlThemeFontFamily`, `XamlAutoFontFamily`, the calendar keys and the legacy `AutoFontFamily`). `SymbolThemeFontFamily` is deliberately left untouched so icon glyphs keep rendering. Applied early in `App.OnLaunched`. Because default styles read these keys via `{ThemeResource}`, runtime toggles must force a real theme re-evaluation: `RequestedTheme` is flipped and restored across a dispatcher cycle (same-stack double assignment gets coalesced and does NOT refresh already-rendered controls).
+- **Font fallback list**: The default font is the pair `Noto Sans` → `Noto Sans SC`, declared as a comma-separated `FontFamily` fallback list. `Noto Sans` covers Latin/Greek/Cyrillic; `Noto Sans SC` covers the CJK glyphs `Noto Sans` lacks, so Chinese UI text is rendered by Noto as well.
+- **Bundled font assets**: `Xdows-Security/Assets/Fonts/NotoSans-Variable.ttf` and `NotoSansSC-Variable.ttf`, redistributed unmodified under the SIL Open Font License 1.1. License texts ship next to them as `NotoSans-OFL.txt` / `NotoSansSC-OFL.txt`; attribution is recorded in `THIRD-PARTY-NOTICES.md`.

@@ -104,6 +104,7 @@ namespace Xdows_Security.Views
                         LoadScanSettingAsync,
                         LoadLanguageSettingAsync,
                         LoadThemeSettingAsync,
+                        LoadFontSettingAsync,
                         LoadBackdropSettingAsync,
                         LoadSoundSettingAsync,
                         LoadTransitionSettingAsync,
@@ -252,6 +253,14 @@ private void UpdateInjectionProtectionText()
             get
             {
                 return RunOnDispatcher(LoadThemeSetting);
+            }
+        }
+
+        private Task LoadFontSettingAsync
+        {
+            get
+            {
+                return RunOnDispatcher(LoadFontSetting);
             }
         }
 
@@ -860,6 +869,24 @@ private void UpdateInjectionProtectionText()
             // 当导航栏在顶部时，禁用紧凑导航栏选项和左侧导航栏样式（保留数据，仅禁用整张卡片）；在左侧时启用
             SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card.IsEnabled = navIndex == 0;
             SettingsPage_Appearance_Nav_LeftStyle_Card.IsEnabled = navIndex == 0;
+        }
+
+        private void LoadFontSetting()
+        {
+            // 未写入过该设置时视为启用，与 FontService.ReadSetting 的默认值保持一致。
+            UseNotoSansToggle.IsOn = FontService.ReadSetting();
+
+            // 兜底同步一次，避免设置值与实际生效的字体状态不一致。
+            FontService.ApplyFromSetting();
+        }
+
+        private void UseNotoSansToggle_Toggled(Object sender, RoutedEventArgs e)
+        {
+            if (IsInitialize) return;
+
+            // Tag 即设置键名（UseNotoSansFont），沿用通用开关保存逻辑持久化。
+            Toggled_SaveToggleData(sender, e);
+            FontService.SetEnabled(UseNotoSansToggle.IsOn);
         }
 
         private async void LanguageComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)

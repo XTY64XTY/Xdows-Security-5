@@ -21,7 +21,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                     <RepositionThemeTransition />
                 </StackPanel.ChildrenTransitions>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Appearance" x:Name="Appearance_Header"/>
-                <controls:SettingsCard
+                <controls:SettingsExpander
                               l:Uids.Uid="SettingsPage_Appearance_Theme"
                               HeaderIcon="{ui:FontIcon Glyph=&#xE790;}"
                               x:Name="Appearance_Theme"
@@ -31,7 +31,18 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Theme_ComboBox_Light" />
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Theme_ComboBox_Dark" />
                     </ComboBox>
-                </controls:SettingsCard>
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard
+                                      l:Uids.Uid="SettingsPage_Appearance_Theme_UseNotoSans"
+                                      HeaderIcon="{ui:FontIcon Glyph=&#xE8D2;}"
+                                      x:Name="Appearance_Theme_UseNotoSans">
+                            <ToggleSwitch x:Name="UseNotoSansToggle"
+                                          AutomationProperties.AutomationId="UseNotoSansToggle"
+                                          Tag="UseNotoSansFont"
+                                          Toggled="UseNotoSansToggle_Toggled" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
                 <controls:SettingsExpander
                               l:Uids.Uid="SettingsPage_Appearance_Nav"
                               HeaderIcon="{ui:FontIcon Glyph=&#xE700;}"

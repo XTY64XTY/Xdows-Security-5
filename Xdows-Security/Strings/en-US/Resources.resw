@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -485,6 +485,12 @@
   </data>
   <data name="SettingsPage_Appearance_Theme_ComboBox_Dark.Content" xml:space="preserve">
     <value>Dark</value>
+  </data>
+  <data name="SettingsPage_Appearance_Theme_UseNotoSans.Header" xml:space="preserve">
+    <value>Use Noto Sans as the default font</value>
+  </data>
+  <data name="SettingsPage_Appearance_Theme_UseNotoSans.Description" xml:space="preserve">
+    <value>Display interface text with the bundled Noto Sans font (SIL Open Font License 1.1)</value>
   </data>
   <data name="SettingsPage_Scan.Text" xml:space="preserve">
     <value>Scan Engine</value>

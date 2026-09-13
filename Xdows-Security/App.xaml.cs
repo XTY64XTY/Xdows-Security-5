@@ -789,6 +789,9 @@ namespace Xdows_Security
             {
                 ParseCommandLineArgs();
 
+                // 尽早应用默认字体设置，让启动阶段创建的窗口、对话框与页面统一使用同一字体。
+                FontService.ApplyFromSetting();
+
                 if (ProcessManagerView.TryRunDebugKillOnExitHelper(Environment.GetCommandLineArgs()))
                     return;
 

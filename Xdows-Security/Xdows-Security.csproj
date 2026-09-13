@@ -67,6 +67,24 @@
 		</Content>
 	</ItemGroup>
 
+	<!-- Noto Sans / Noto Sans SC（SIL Open Font License 1.1）：内置默认字体及其许可证全文。 -->
+	<ItemGroup>
+		<Content Include="Assets\Fonts\NotoSans-Variable.ttf">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Assets\Fonts\NotoSansSC-Variable.ttf">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Assets\Fonts\NotoSans-OFL.txt">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Content Include="Assets\Fonts\NotoSansSC-OFL.txt">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<PRIResource Include="Assets\Fonts\NotoSans-Variable.ttf" />
+		<PRIResource Include="Assets\Fonts\NotoSansSC-Variable.ttf" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<Content Include="..\BrowserProtection\**\*">
 			<Link>BrowserProtection\%(RecursiveDir)%(Filename)%(Extension)</Link>
