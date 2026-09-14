@@ -23,6 +23,14 @@ namespace Xdows_Security.Views
                 Content = new ProcessManagerView()
             });
 
+            TabView.TabItems.Add(new TabViewItem
+            {
+                Header = new TextBlock { Text = "右键菜单管理", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
+                IconSource = new FontIconSource { Glyph = "\uE8FD" },
+                IsClosable = false,
+                Content = new ContextMenuManagerView()
+            });
+
             TabView.SelectionChanged += TabView_SelectionChanged;
         }
 
