@@ -29,6 +29,8 @@ internal static class DriverProtocol
     public const uint CapabilityR0RegistryProtection = 0x00000200;
     public const uint CapabilityAsyncReview = 0x00000400;
     public const uint CapabilityEventBatch = 0x00000800;
+    public const uint CapabilityRuleInterpreter = 0x00001000;
+    public const uint CapabilityInitiatorExclusion = 0x00002000;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
@@ -40,7 +42,9 @@ internal static class DriverProtocol
         CapabilityR0BootProtection |
         CapabilityR0RegistryProtection |
         CapabilityAsyncReview |
-        CapabilityEventBatch;
+        CapabilityEventBatch |
+        CapabilityRuleInterpreter |
+        CapabilityInitiatorExclusion;
     public const uint RegisterFlagAsyncReview = 0x00000001;
 
     //
@@ -72,6 +76,30 @@ internal static class DriverProtocol
     public const int MaxRegistryRules = 32;
     public const int MaxRegistryPathChars = 260;
     public const int MaxRegistryValueChars = 260;
+
+    //
+    // Declarative rule interpreter (capability 0x1000) and initiator
+    // exclusion list (capability 0x2000). Mirrors the kernel Public.h
+    // constants; the whole rule set travels in one IOCTL.
+    //
+    public const int MaxBehaviorRules = 32;
+    public const int MaxRuleTerms = 3;
+    public const int MaxRuleTermChars = 96;
+    public const int MaxInitiatorExclusions = 32;
+    public const int MaxExclusionChars = 160;
+    public const uint RuleFlagKillActor = 0x00000001;
+    public const uint RuleFlagFailClosed = 0x00000002;
+    public const uint RuleOperationProcessCreate = 0x00000001;
+    public const uint RuleOperationFileCreate = 0x00000002;
+    public const uint RuleOperationFileWrite = 0x00000004;
+    public const uint RuleOperationFileDelete = 0x00000008;
+    public const uint RuleOperationFileRename = 0x00000010;
+    public const uint RuleOperationAll = 0x0000001F;
+    public const uint ExclusionScopeProcess = 0x00000001;
+    public const uint ExclusionScopeFile = 0x00000002;
+    public const uint ExclusionScopeHandle = 0x00000004;
+    public const uint ExclusionScopeRegistry = 0x00000008;
+    public const uint ExclusionScopeAll = 0x0000000F;
     public const string DevicePath = @"\\.\XdowsSecurityDriver";
     public const string GlobalDevicePath = @"\\.\Global\XdowsSecurityDriver";
     public static readonly string[] DevicePaths = [DevicePath, GlobalDevicePath];
@@ -96,6 +124,8 @@ internal static class DriverProtocol
     public static readonly uint SetBootProtection = CtlCode(FileDeviceXdowsSecurity, 0x80E, MethodBuffered, FileAnyAccess);
     public static readonly uint SetRegistryProtection = CtlCode(FileDeviceXdowsSecurity, 0x80F, MethodBuffered, FileAnyAccess);
     public static readonly uint GetNextEvents = CtlCode(FileDeviceXdowsSecurity, 0x810, MethodBuffered, FileAnyAccess);
+    public static readonly uint SetBehaviorRules = CtlCode(FileDeviceXdowsSecurity, 0x811, MethodBuffered, FileAnyAccess);
+    public static readonly uint SetInitiatorExclusions = CtlCode(FileDeviceXdowsSecurity, 0x812, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -431,6 +461,89 @@ internal struct XdowsRegistryProtectionRequest
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxRegistryRules)]
     public XdowsRegistryRulePath[] RulePaths;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsRuleTerm
+{
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxRuleTermChars)]
+    public string Value;
+}
+
+//
+// One matching axis. TermCount == 0 leaves the axis unconstrained.
+//
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsRuleTermAxis
+{
+    public uint TermCount;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxRuleTerms)]
+    public XdowsRuleTerm[] Terms;
+}
+
+//
+// Declarative rule: Initiator x CommandLine x Target, scoped by Operations,
+// optionally rate-limited and escalated. Layout mirrors the kernel
+// XDOWS_SECURITY_BEHAVIOR_RULE.
+//
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsBehaviorRule
+{
+    public uint RuleId;
+    public uint BehaviorType;
+    public uint Flags;
+    public uint Operations;
+    public uint Threshold;
+    public uint WindowMs;
+    public uint TargetMatchKind;
+    public uint Reserved;
+    public XdowsRuleTermAxis Initiator;
+    public XdowsRuleTermAxis Target;
+    public XdowsRuleTermAxis CommandLine;
+}
+
+//
+// The whole rule set travels in one buffered IOCTL. The struct is ~57 KB,
+// below the 85 KB Large Object Heap threshold, so one managed buffer can be
+// built and reused.
+//
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsBehaviorRuleRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint Enabled;
+    public uint RuleCount;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxBehaviorRules)]
+    public XdowsBehaviorRule[] Rules;
+}
+
+//
+// One initiator exclusion entry. Pattern is an image leaf name or, when it
+// contains a backslash, an actor-path suffix.
+//
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsInitiatorExclusion
+{
+    public uint ScopeMask;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxExclusionChars)]
+    public string Pattern;
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+internal struct XdowsInitiatorExclusionRequest
+{
+    public XdowsProtocolHeader Header;
+    public uint Count;
+    public uint Reserved;
+
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxInitiatorExclusions)]
+    public XdowsInitiatorExclusion[] Entries;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

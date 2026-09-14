@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "documentation": [
+    "声明式行为规则（驱动规则解释器，能力位 0x1000）。整份规则集通过一个 IOCTL 下发，内核校验通过后整体替换。",
+    "任一规则校验失败会导致整份规则集被拒绝（不会部分生效），失败时主程序记录日志并跳过下发。",
+    "五元组：initiator（发起者镜像名，含反斜杠时按路径后缀匹配）× commandLine（全部子串命中，大小写不敏感）× target（目标路径，按 targetMatchKind 解释）× operations（操作掩码）× threshold/windowMs（滑动窗口阈值，0 表示每次命中都触发）。",
+    "flags: failClosed = 决策基础设施不可用时拒绝该操作（默认放行）；killActor = 用户确认 Block 后额外反杀发起进程（复用既有反杀护栏）。",
+    "operations: processCreate | fileCreate | fileWrite | fileDelete | fileRename。",
+    "targetMatchKind: any | suffix（扩展名式后缀）| segment（反斜杠边界目录段）| prefix（路径前缀）| contains（路径包含）。",
+    "behaviorType 使用驱动行为类型编号，16/17/18 为扩展区间；未列出的编号请勿使用。",
+    "initiatorExclusions 为发起者排除清单（能力位 0x2000）：命中的进程不再进入用户决策窗口，用于游戏、下载器、输入法、构建工具等高频合法软件。注意：排除项不会绕过内核侧的关键拒绝（关键系统库、伪装拦截、关键目标句柄降权）与确认威胁的命令行规则。pattern 为镜像名或（含反斜杠时）镜像路径后缀。",
+    "本文件为默认配置示例，可由管理员替换；解析失败的规则集不会下发，内核保持既有固定规则。"
+  ],
+  "rules": [
+    {
+      "id": 1,
+      "name": "RecoveryDisabled",
+      "behaviorType": 15,
+      "flags": ["failClosed"],
+      "operations": ["processCreate"],
+      "commandLine": ["bcdedit", "recoveryenabled", "no"]
+    },
+    {
+      "id": 2,
+      "name": "DefenderExclusionAdded",
+      "behaviorType": 15,
+      "flags": ["failClosed"],
+      "operations": ["processCreate"],
+      "commandLine": ["add-mppreference", "-exclusionpath"]
+    },
+    {
+      "id": 3,
+      "name": "RepeatedArchiverLaunch",
+      "behaviorType": 6,
+      "flags": [],
+      "operations": ["processCreate"],
+      "threshold": 5,
+      "windowMs": 3000,
+      "initiator": ["tar.exe", "7z.exe", "expand.exe", "makecab.exe"]
+    }
+  ],
+  "initiatorExclusions": []
+}

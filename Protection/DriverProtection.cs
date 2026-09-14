@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Principal;
+using System.Text.Json;
 using System.Threading.Channels;
 using TrustQuarantine;
 using Helper;
@@ -277,6 +279,14 @@ public sealed class DriverProtection : IProtectionModel
                 var registryNativePaths = BuildNativeRegistryRulePaths(registryOptions);
                 _client.SetRegistryProtection(true, registryNativePaths);
                 Log("RegistryProtect", $"R0 registry protection configured rules={registryNativePaths.Count}");
+
+                //
+                // Declarative behaviour rules and the initiator exclusion list.
+                // Both are optional: an absent configuration file simply means
+                // "no declarative rules", and a malformed one is logged and
+                // skipped so the kernel keeps its fixed rule set.
+                //
+                ConfigureDeclarativeRules();
 
                 bool startupProtectionEnabled = StartupProtectionStateProvider?.Invoke() == true;
                 _client.SetStartupProtection(startupProtectionEnabled);
@@ -1822,5 +1832,67 @@ else
         int nullIndex = value.IndexOf('\0');
         string cleaned = nullIndex >= 0 ? value[..nullIndex] : value;
         return cleaned.Trim();
+    }
+
+    //
+    // Send the declarative rule set and the initiator exclusion list to the
+    // kernel rule interpreter (capabilities 0x1000 / 0x2000).
+    //
+    // Both are operator-editable configuration: an absent file leaves the
+    // kernel's fixed rules in charge, and a malformed file is reported and
+    // skipped rather than taking the whole protection offline. Nothing in this
+    // path can weaken the fixed command-line threat rules or the kernel-side
+    // denials.
+    //
+    private void ConfigureDeclarativeRules()
+    {
+        DriverBridgeClient? client = _client;
+        if (client is null)
+        {
+            Log("Behavior", "Declarative rule configuration skipped; the bridge is not connected.");
+            return;
+        }
+
+        string path = DriverBehaviorRuleCatalog.DefaultPath;
+        DriverBehaviorRuleCatalog? catalog;
+
+        try
+        {
+            catalog = DriverBehaviorRuleCatalog.TryLoad(path);
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException or UnauthorizedAccessException)
+        {
+            Log("Behavior",
+                $"Declarative rule configuration rejected; kernel keeps its fixed rules. file={path} reason={ex.Message}");
+            return;
+        }
+
+        if (catalog is null)
+        {
+            Log("Behavior", $"No declarative rule configuration present file={path}; fixed rules only.");
+            return;
+        }
+
+        try
+        {
+            client.SetBehaviorRules(catalog.Rules);
+            Log("Behavior",
+                $"Declarative rules applied count={catalog.Rules.Count}");
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidDataException)
+        {
+            Log("Behavior", $"Declarative rule download failed reason={ex.Message}");
+        }
+
+        try
+        {
+            client.SetInitiatorExclusions(catalog.Exclusions);
+            Log("Behavior",
+                $"Initiator exclusions applied count={catalog.Exclusions.Count}");
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidDataException)
+        {
+            Log("Behavior", $"Initiator exclusion download failed reason={ex.Message}");
+        }
     }
 }

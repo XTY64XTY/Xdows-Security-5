@@ -67,6 +67,13 @@
 		</Content>
 	</ItemGroup>
 
+	<!-- 声明式行为规则配置：随程序输出，供 DriverBehaviorRuleCatalog 在附加驱动后下发。 -->
+	<ItemGroup>
+		<Content Include="Config\BehaviorRules.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+
 	<!-- Noto Sans / Noto Sans SC（SIL Open Font License 1.1）：内置默认字体及其许可证全文。 -->
 	<ItemGroup>
 		<Content Include="Assets\Fonts\NotoSans-Variable.ttf">

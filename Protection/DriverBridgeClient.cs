@@ -564,6 +564,127 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure R0 registry protection.");
     }
 
+    //
+    // Replace the kernel's declarative rule set. The whole set travels in one
+    // buffered IOCTL; the driver validates it as a unit and keeps the previous
+    // set when validation fails. An empty list clears the set.
+    //
+    public void SetBehaviorRules(IReadOnlyList<XdowsBehaviorRule> rules)
+    {
+        EnsureConnected();
+        ArgumentNullException.ThrowIfNull(rules);
+        if (rules.Count > DriverProtocol.MaxBehaviorRules)
+            throw new InvalidDataException(
+                $"The driver accepts at most {DriverProtocol.MaxBehaviorRules} declarative rules.");
+
+        VerifyRuleSetLayout();
+
+        var entries = new XdowsBehaviorRule[DriverProtocol.MaxBehaviorRules];
+        for (int i = 0; i < DriverProtocol.MaxBehaviorRules; i++)
+        {
+            entries[i] = i < rules.Count
+                ? rules[i]
+                : new XdowsBehaviorRule
+                {
+                    Initiator = EmptyAxis(),
+                    Target = EmptyAxis(),
+                    CommandLine = EmptyAxis()
+                };
+        }
+
+        var request = new XdowsBehaviorRuleRequest
+        {
+            Header = DriverProtocol.Header<XdowsBehaviorRuleRequest>(),
+            Enabled = rules.Count == 0 ? 0u : 1u,
+            RuleCount = checked((uint)rules.Count),
+            Reserved = 0,
+            Rules = entries
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.SetBehaviorRules))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure the declarative behaviour rules.");
+    }
+
+    //
+    // Replace the initiator exclusion list. An empty list clears it, which
+    // restores the default "every actor reaches the decision window" policy.
+    //
+    public void SetInitiatorExclusions(IReadOnlyList<XdowsInitiatorExclusion> exclusions)
+    {
+        EnsureConnected();
+        ArgumentNullException.ThrowIfNull(exclusions);
+        if (exclusions.Count > DriverProtocol.MaxInitiatorExclusions)
+            throw new InvalidDataException(
+                $"The driver accepts at most {DriverProtocol.MaxInitiatorExclusions} initiator exclusions.");
+
+        VerifyRuleSetLayout();
+
+        var entries = new XdowsInitiatorExclusion[DriverProtocol.MaxInitiatorExclusions];
+        for (int i = 0; i < DriverProtocol.MaxInitiatorExclusions; i++)
+        {
+            entries[i] = i < exclusions.Count
+                ? exclusions[i]
+                : new XdowsInitiatorExclusion { ScopeMask = 0, Pattern = string.Empty };
+        }
+
+        var request = new XdowsInitiatorExclusionRequest
+        {
+            Header = DriverProtocol.Header<XdowsInitiatorExclusionRequest>(),
+            Count = checked((uint)exclusions.Count),
+            Reserved = 0,
+            Entries = entries
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.SetInitiatorExclusions))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure the initiator exclusion list.");
+    }
+
+    private static XdowsRuleTermAxis EmptyAxis() => new()
+    {
+        TermCount = 0,
+        Reserved = 0,
+        Terms =
+        [
+            new XdowsRuleTerm { Value = string.Empty },
+            new XdowsRuleTerm { Value = string.Empty },
+            new XdowsRuleTerm { Value = string.Empty }
+        ]
+    };
+
+    //
+    // The rule structs are large and nested (ByValArray of ByValTStr), so a
+    // layout drift between the app and the kernel would only surface as a
+    // STATUS_REVISION_MISMATCH at runtime. Assert the expected byte sizes once
+    // per process to fail loudly and early instead.
+    //
+    private static void VerifyRuleSetLayout()
+    {
+        if (_ruleSetLayoutVerified)
+            return;
+
+        int ruleSize = Marshal.SizeOf<XdowsBehaviorRule>();
+        int expectedRuleSize = 32 + 3 * (8 + DriverProtocol.MaxRuleTerms * DriverProtocol.MaxRuleTermChars * sizeof(char));
+        if (ruleSize != expectedRuleSize)
+            throw new InvalidDataException(
+                $"Declarative rule layout mismatch: {ruleSize} bytes, expected {expectedRuleSize}.");
+
+        int requestSize = Marshal.SizeOf<XdowsBehaviorRuleRequest>();
+        int expectedRequestSize = 20 + DriverProtocol.MaxBehaviorRules * expectedRuleSize;
+        if (requestSize != expectedRequestSize)
+            throw new InvalidDataException(
+                $"Declarative rule request layout mismatch: {requestSize} bytes, expected {expectedRequestSize}.");
+
+        int exclusionSize = Marshal.SizeOf<XdowsInitiatorExclusion>();
+        int expectedExclusionSize = 8 + DriverProtocol.MaxExclusionChars * sizeof(char);
+        if (exclusionSize != expectedExclusionSize)
+            throw new InvalidDataException(
+                $"Initiator exclusion layout mismatch: {exclusionSize} bytes, expected {expectedExclusionSize}.");
+
+        _ruleSetLayoutVerified = true;
+    }
+
+    private static bool _ruleSetLayoutVerified;
+
     public IReadOnlyList<XdowsDriverProcessEntry> QueryProcesses()
     {
         EnsureConnected();
