@@ -245,7 +245,8 @@ namespace Xdows_Security.Views
                 Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = "确定",
                 XamlRoot = XamlRoot,
-                RequestedTheme = GetDialogTheme()
+                RequestedTheme = GetDialogTheme(),
+                DefaultButton = ContentDialogButton.Close
             };
 
             try
