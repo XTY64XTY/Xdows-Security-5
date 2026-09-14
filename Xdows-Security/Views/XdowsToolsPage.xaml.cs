@@ -23,22 +23,6 @@ namespace Xdows_Security.Views
                 Content = new ProcessManagerView()
             });
 
-            TabView.TabItems.Add(new TabViewItem
-            {
-                Header = new TextBlock { Text = "命令提示符", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
-                IconSource = new FontIconSource { Glyph = "\uE756" },
-                IsClosable = false,
-                Content = new CommandPromptView()
-            });
-
-            TabView.TabItems.Add(new TabViewItem
-            {
-                Header = new TextBlock { Text = "弹窗拦截器", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
-                IconSource = new FontIconSource { Glyph = "\uEA0D" },
-                IsClosable = false,
-                Content = new PopupBlockerView()
-            });
-
             TabView.SelectionChanged += TabView_SelectionChanged;
         }
 
