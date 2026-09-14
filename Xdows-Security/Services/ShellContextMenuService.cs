@@ -94,6 +94,12 @@ namespace Xdows_Security.Services
 
         public string ExtendedHint => ExtendedOnly ? "（需按住 Shift）" : "";
 
+        /// <summary>
+        /// 修改注册表失败时 <see cref="IsEnabled"/> 并没有变化，绑定不会自动刷新，
+        /// 用它在界面上把开关拨回真实状态（会重新广播 <see cref="IsEnabled"/>）。
+        /// </summary>
+        public void ResyncIsEnabled() => Raise(nameof(IsEnabled));
+
         public override string ToString() => Name;
 
         private bool Set<T>(ref T field, T value, string propertyName)
@@ -160,6 +166,12 @@ namespace Xdows_Security.Services
 
         /// <summary>界面“位置”下拉框的选项，首项为“全部”。</summary>
         public static IReadOnlyList<string> ScopeNames { get; } = BuildScopeNames();
+
+        /// <summary>删除菜单项前导出的 .reg 备份目录。</summary>
+        public static string BackupDirectory { get; } = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Xdows-Security",
+            "ContextMenuBackups");
 
         private static List<string> BuildScopeNames()
         {
@@ -233,16 +245,12 @@ namespace Xdows_Security.Services
         {
             try
             {
-                string directory = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Xdows-Security",
-                    "ContextMenuBackups");
-                Directory.CreateDirectory(directory);
+                Directory.CreateDirectory(BackupDirectory);
 
                 string safeName = MakeSafeFileName(entry.KeyName);
                 if (string.IsNullOrWhiteSpace(safeName)) safeName = "entry";
 
-                string file = Path.Combine(directory, $"{DateTime.Now:yyyyMMdd-HHmmss}-{safeName}.reg");
+                string file = Path.Combine(BackupDirectory, $"{DateTime.Now:yyyyMMdd-HHmmss}-{safeName}.reg");
 
                 using var process = Process.Start(new ProcessStartInfo("reg.exe",
                     $"export \"{entry.HiveName}\\{entry.RelativePath}\" \"{file}\" /y")

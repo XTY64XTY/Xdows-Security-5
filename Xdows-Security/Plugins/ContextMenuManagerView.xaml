@@ -73,11 +73,7 @@
             </AppBarButton>
         </CommandBar>
 
-        <StackPanel Grid.Row="1" Margin="16,8,16,0" Spacing="8">
-            <InfoBar x:Name="StatusBar"
-                     AutomationProperties.AutomationId="ContextMenuStatusBar"
-                     IsOpen="False"
-                     IsClosable="True"/>
+        <StackPanel Grid.Row="1" Margin="16,8,16,0">
             <ProgressBar x:Name="LoadingBar"
                          IsIndeterminate="True"
                          Visibility="Collapsed"/>

@@ -40,14 +40,10 @@ namespace Xdows_Security.Views
             {
                 _all = await Task.Run(ShellContextMenuService.Enumerate);
                 ApplyFilter();
-
-                ShowStatus(InfoBarSeverity.Informational,
-                    $"共扫描到 {_all.Count} 个右键菜单项，其中已禁用 {_all.Count(x => !x.IsEnabled)} 个。" +
-                    "禁用静态菜单项通过写入 LegacyDisable 实现，禁用外壳扩展通过重命名注册表子键实现，两者均可随时恢复。");
             }
             catch (Exception ex)
             {
-                ShowStatus(InfoBarSeverity.Error, $"扫描右键菜单失败：{ex.Message}");
+                await ShowMessageAsync("扫描右键菜单失败", ex.Message);
             }
             finally
             {
@@ -102,7 +98,7 @@ namespace Xdows_Security.Views
             // 列表项初始化或容器复用时也会触发 Toggled，此状态下开关取值与模型一致，直接忽略。
             if (toggle.IsOn == entry.IsEnabled) return;
 
-            ApplyToggle(entry, toggle.IsOn, toggle);
+            ApplyToggle(entry, toggle.IsOn);
         }
 
         private void MenuList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -111,53 +107,44 @@ namespace Xdows_Security.Views
                         ?? MenuList.SelectedItem as ContextMenuEntry;
             if (entry == null) return;
 
-            ApplyToggle(entry, !entry.IsEnabled, null);
+            ApplyToggle(entry, !entry.IsEnabled);
         }
 
         private void ToggleSelected_Click(object sender, RoutedEventArgs e)
         {
             var entry = GetEntryFromSender(sender);
-            if (entry == null)
-            {
-                ShowStatus(InfoBarSeverity.Warning, "请先选择一个右键菜单项。");
-                return;
-            }
+            if (entry == null) return;
 
-            ApplyToggle(entry, !entry.IsEnabled, null);
+            ApplyToggle(entry, !entry.IsEnabled);
         }
 
-        private void ApplyToggle(ContextMenuEntry entry, bool enabled, ToggleSwitch? toggle)
+        private async void ApplyToggle(ContextMenuEntry entry, bool enabled)
         {
             _suppressToggle = true;
+            bool succeeded;
             try
             {
-                if (ShellContextMenuService.SetEnabled(entry, enabled))
-                {
-                    // IsEnabled 的变更通知会把开关刷新到正确位置。
-                    entry.IsEnabled = enabled;
-                    ShowStatus(InfoBarSeverity.Success, $"“{entry.Name}”已{(enabled ? "启用" : "禁用")}。");
-                }
-                else
-                {
-                    toggle?.SetValue(ToggleSwitch.IsOnProperty, entry.IsEnabled);
-                    ShowStatus(InfoBarSeverity.Error,
-                        $"无法修改“{entry.Name}”，可能是权限不足或该项已不存在。");
-                }
+                succeeded = ShellContextMenuService.SetEnabled(entry, enabled);
+                if (succeeded) entry.IsEnabled = enabled;
             }
             finally
             {
                 _suppressToggle = false;
             }
+
+            // 成功时开关已处于目标状态；失败时 IsEnabled 没有变化，绑定不会刷新，需要手动同步回真实值。
+            if (succeeded) return;
+
+            entry.ResyncIsEnabled();
+
+            await ShowMessageAsync("无法修改右键菜单项",
+                $"“{entry.Name}”修改失败，可能是权限不足或该项已不存在。\r\n\r\n{entry.RegistryPath}");
         }
 
         private async void Delete_Click(object sender, RoutedEventArgs e)
         {
             var entry = GetEntryFromSender(sender);
-            if (entry == null)
-            {
-                ShowStatus(InfoBarSeverity.Warning, "请先选择要删除的右键菜单项。");
-                return;
-            }
+            if (entry == null) return;
 
             var dialog = new ContentDialog
             {
@@ -181,7 +168,8 @@ namespace Xdows_Security.Views
                         },
                         new TextBlock
                         {
-                            Text = "删除前会自动导出一份 .reg 备份，需要恢复时双击备份文件即可。",
+                            Text = "删除前会自动导出一份 .reg 备份，需要恢复时双击备份文件即可。\r\n" +
+                                   $"备份目录：{ShellContextMenuService.BackupDirectory}",
                             TextWrapping = TextWrapping.Wrap
                         }
                     }
@@ -199,25 +187,19 @@ namespace Xdows_Security.Views
             {
                 _all.Remove(entry);
                 ApplyFilter();
-                ShowStatus(InfoBarSeverity.Success, message);
-            }
-            else
-            {
-                ShowStatus(InfoBarSeverity.Error, $"删除失败：{message}");
-            }
-        }
-
-        private void OpenRegedit_Click(object sender, RoutedEventArgs e)
-        {
-            var entry = GetEntryFromSender(sender);
-            if (entry == null)
-            {
-                ShowStatus(InfoBarSeverity.Warning, "请先选择一个右键菜单项。");
                 return;
             }
 
+            await ShowMessageAsync("删除失败", message);
+        }
+
+        private async void OpenRegedit_Click(object sender, RoutedEventArgs e)
+        {
+            var entry = GetEntryFromSender(sender);
+            if (entry == null) return;
+
             if (!ShellContextMenuService.OpenInRegedit(entry))
-                ShowStatus(InfoBarSeverity.Error, "无法启动注册表编辑器。");
+                await ShowMessageAsync("打开注册表失败", "无法启动注册表编辑器。");
         }
 
         private void CopyTarget_Click(object sender, RoutedEventArgs e)
@@ -228,24 +210,23 @@ namespace Xdows_Security.Views
             var data = new Windows.ApplicationModel.DataTransfer.DataPackage();
             data.SetText(entry.Target);
             Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(data);
-
-            ShowStatus(InfoBarSeverity.Success, $"已复制“{entry.Name}”的命令行。");
         }
 
-        private void ClassicMenuToggle_Click(object sender, RoutedEventArgs e)
+        private async void ClassicMenuToggle_Click(object sender, RoutedEventArgs e)
         {
             bool enabled = ClassicMenuToggle.IsChecked == true;
 
             if (!ShellContextMenuService.SetClassicMenuEnabled(enabled))
             {
                 ClassicMenuToggle.IsChecked = !enabled;
-                ShowStatus(InfoBarSeverity.Error, "切换经典右键菜单失败，可能是权限不足。");
+                await ShowMessageAsync("切换失败", "无法修改经典右键菜单设置，可能是权限不足。");
                 return;
             }
 
-            ShowStatus(InfoBarSeverity.Success, enabled
-                ? "已启用 Windows 11 经典右键菜单，重启资源管理器或重新登录后生效。"
-                : "已恢复 Windows 11 新式右键菜单，重启资源管理器或重新登录后生效。");
+            // 该设置需要重启资源管理器才生效，必须让用户知道。
+            await ShowMessageAsync("经典右键菜单", enabled
+                ? "已启用 Windows 11 经典右键菜单。\r\n重启资源管理器或重新登录后生效。"
+                : "已恢复 Windows 11 新式右键菜单。\r\n重启资源管理器或重新登录后生效。");
         }
 
         private ContextMenuEntry? GetEntryFromSender(object sender)
@@ -256,11 +237,25 @@ namespace Xdows_Security.Views
             return MenuList.SelectedItem as ContextMenuEntry;
         }
 
-        private void ShowStatus(InfoBarSeverity severity, string message)
+        private async Task ShowMessageAsync(string title, string message)
         {
-            StatusBar.Severity = severity;
-            StatusBar.Message = message;
-            StatusBar.IsOpen = true;
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
+                CloseButtonText = "确定",
+                XamlRoot = XamlRoot,
+                RequestedTheme = GetDialogTheme()
+            };
+
+            try
+            {
+                await dialog.ShowAsync();
+            }
+            catch (Exception)
+            {
+                // 同一时刻只允许一个 ContentDialog，并发调用时忽略即可（失败详情已由服务层写入日志）。
+            }
         }
 
         private ElementTheme GetDialogTheme()
