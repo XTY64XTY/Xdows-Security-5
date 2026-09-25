@@ -25,7 +25,7 @@ namespace Xdows_Security.Views
 
             TabView.TabItems.Add(new TabViewItem
             {
-                Header = new TextBlock { Text = "右键菜单管理", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
+                Header = new TextBlock { Text = "上下文菜单管理", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
                 IconSource = new FontIconSource { Glyph = "\uE8FD" },
                 IsClosable = false,
                 Content = new ContextMenuManagerView()

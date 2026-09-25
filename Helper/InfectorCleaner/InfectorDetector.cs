@@ -5,30 +5,30 @@ namespace Helper.InfectorCleaner
 {
     public sealed class InfectorDetectionResult
     {
-        public Boolean IsInfected { get; set; }
+        public bool IsInfected { get; set; }
         public Single Confidence { get; set; }
-        public List<String> Indicators { get; set; } = [];
+        public List<string> Indicators { get; set; } = [];
         public Single Entropy { get; set; }
-        public List<String> SuspiciousSections { get; set; } = [];
-        public Boolean EntryPointAnomaly { get; set; }
-        public Boolean SectionMismatch { get; set; }
-        public List<String> HighEntropySections { get; set; } = [];
+        public List<string> SuspiciousSections { get; set; } = [];
+        public bool EntryPointAnomaly { get; set; }
+        public bool SectionMismatch { get; set; }
+        public List<string> HighEntropySections { get; set; } = [];
 
         public static InfectorDetectionResult Clean() => new();
     }
 
     public static class InfectorDetector
     {
-        private static readonly HashSet<String> s_peExtensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".drv", ".ocx", ".scr" };
-        private static readonly HashSet<String> s_excludedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".sys", ".dll", ".drv" };
+        private static readonly HashSet<string> _peExtensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".drv", ".ocx", ".scr" };
+        private static readonly HashSet<string> _excludedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".sys", ".dll", ".drv" };
 
-        public static InfectorDetectionResult DetectInfector(String filePath)
+        public static InfectorDetectionResult DetectInfector(string filePath)
         {
-            String ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (!s_peExtensions.Contains(ext))
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (!_peExtensions.Contains(ext))
                 return InfectorDetectionResult.Clean();
 
-            if (s_excludedExtensions.Contains(ext))
+            if (_excludedExtensions.Contains(ext))
                 return InfectorDetectionResult.Clean();
 
             try
@@ -42,13 +42,13 @@ namespace Helper.InfectorCleaner
             }
         }
 
-        public static InfectorDetectionResult DetectInfectorFromBytes(Byte[] data, String filePath)
+        public static InfectorDetectionResult DetectInfectorFromBytes(Byte[] data, string filePath)
         {
-            String ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (!s_peExtensions.Contains(ext))
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+            if (!_peExtensions.Contains(ext))
                 return InfectorDetectionResult.Clean();
 
-            if (s_excludedExtensions.Contains(ext))
+            if (_excludedExtensions.Contains(ext))
                 return InfectorDetectionResult.Clean();
 
             return AnalyzePeInfector(data);
@@ -57,7 +57,7 @@ namespace Helper.InfectorCleaner
         private static InfectorDetectionResult AnalyzePeInfector(Byte[] data)
         {
             var result = InfectorDetectionResult.Clean();
-            var indicators = new List<String>();
+            var indicators = new List<string>();
             Single score = 0;
 
             if (data.Length < 64)
@@ -66,33 +66,33 @@ namespace Helper.InfectorCleaner
             if (data[0] != 0x4D || data[1] != 0x5A)
                 return result;
 
-            Int32 peOffset = BitConverter.ToInt32(data, 60);
+            int peOffset = BitConverter.ToInt32(data, 60);
             if (peOffset + 24 >= data.Length)
                 return result;
 
             if (data[peOffset] != 0x50 || data[peOffset + 1] != 0x45)
                 return result;
 
-            Int32 coffHeaderOffset = peOffset + 4;
+            int coffHeaderOffset = peOffset + 4;
             UInt16 numSections = BitConverter.ToUInt16(data, coffHeaderOffset + 2);
 
             if (numSections < 2 || numSections > 20)
                 return result;
 
             UInt16 optionalHeaderSize = BitConverter.ToUInt16(data, coffHeaderOffset + 16);
-            Int32 optionalHeaderOffset = coffHeaderOffset + 20;
+            int optionalHeaderOffset = coffHeaderOffset + 20;
             UInt32 entryPoint = BitConverter.ToUInt32(data, optionalHeaderOffset + 16);
 
-            Int32 sectionTableOffset = optionalHeaderOffset + optionalHeaderSize;
+            int sectionTableOffset = optionalHeaderOffset + optionalHeaderSize;
 
             var sections = new List<SectionInfoRaw>();
-            for (Int32 i = 0; i < numSections; i++)
+            for (int i = 0; i < numSections; i++)
             {
-                Int32 sectionOffset = sectionTableOffset + (i * 40);
+                int sectionOffset = sectionTableOffset + (i * 40);
                 if (sectionOffset + 40 > data.Length)
                     break;
 
-                String name = System.Text.Encoding.ASCII.GetString(data, sectionOffset, 8).TrimEnd('\0');
+                string name = System.Text.Encoding.ASCII.GetString(data, sectionOffset, 8).TrimEnd('\0');
                 UInt32 virtualSize = BitConverter.ToUInt32(data, sectionOffset + 8);
                 UInt32 virtualAddress = BitConverter.ToUInt32(data, sectionOffset + 12);
                 UInt32 rawSize = BitConverter.ToUInt32(data, sectionOffset + 16);
@@ -108,7 +108,7 @@ namespace Helper.InfectorCleaner
             var lastSection = sections[^1];
             UInt32 lastSectionStart = lastSection.VirtualAddress;
             UInt32 lastSectionEnd = lastSection.VirtualAddress + lastSection.VirtualSize;
-            Boolean entryPointInLastSection = entryPoint >= lastSectionStart && entryPoint < lastSectionEnd;
+            bool entryPointInLastSection = entryPoint >= lastSectionStart && entryPoint < lastSectionEnd;
 
             SectionInfoRaw? entryPointSection = null;
             foreach (var section in sections)
@@ -124,7 +124,7 @@ namespace Helper.InfectorCleaner
 
             if (entryPointSection != null)
             {
-                Boolean isStandardCodeSection = entryPointSection.Name == ".text" ||
+                bool isStandardCodeSection = entryPointSection.Name == ".text" ||
                     entryPointSection.Name.StartsWith(".text") ||
                     entryPointSection.Name.StartsWith("CODE") ||
                     (entryPointSection.Characteristics & 0x00000020) != 0;
@@ -136,12 +136,12 @@ namespace Helper.InfectorCleaner
                     score += 35.0f;
                 }
 
-                Boolean epSectionExecutable = (entryPointSection.Characteristics & 0x20000000) != 0;
+                bool epSectionExecutable = (entryPointSection.Characteristics & 0x20000000) != 0;
 
                 if (epSectionExecutable && entryPointSection.RawSize > 0)
                 {
-                    Int32 rawDataStart = (Int32)entryPointSection.RawAddress;
-                    Int32 rawDataEnd = rawDataStart + (Int32)entryPointSection.RawSize;
+                    int rawDataStart = (int)entryPointSection.RawAddress;
+                    int rawDataEnd = rawDataStart + (int)entryPointSection.RawSize;
                     if (rawDataStart >= 0 && rawDataEnd <= data.Length)
                     {
                         Single entropy = CalculateEntropy(data, rawDataStart, rawDataEnd);
@@ -164,7 +164,7 @@ namespace Helper.InfectorCleaner
                     }
                 }
 
-                Boolean epSectionRwe = (entryPointSection.Characteristics & 0xE0000000) == 0xE0000000;
+                bool epSectionRwe = (entryPointSection.Characteristics & 0xE0000000) == 0xE0000000;
                 if (epSectionRwe)
                 {
                     indicators.Add($"Entry point section '{entryPointSection.Name}' has RWE permissions");
@@ -172,7 +172,7 @@ namespace Helper.InfectorCleaner
                 }
             }
 
-            Boolean entryPointInText = false;
+            bool entryPointInText = false;
             foreach (var section in sections)
             {
                 if (section.Name == ".text" || section.Name.StartsWith(".text"))
@@ -196,7 +196,7 @@ namespace Helper.InfectorCleaner
             result.Entropy = CalculateEntropy(data, 0, data.Length);
 
             Single threshold = 50.0f;
-            Boolean hasMultipleIndicators = indicators.Count >= 2;
+            bool hasMultipleIndicators = indicators.Count >= 2;
 
             result.IsInfected = score >= threshold && hasMultipleIndicators;
             result.Confidence = Math.Min(score / 100.0f, 1.0f);
@@ -206,7 +206,7 @@ namespace Helper.InfectorCleaner
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Single CalculateEntropy(Byte[] data, Int32 offset, Int32 count)
+        public static Single CalculateEntropy(Byte[] data, int offset, int count)
         {
             if (count <= 0 || offset < 0 || offset + count > data.Length)
                 return 0.0f;
@@ -214,17 +214,17 @@ namespace Helper.InfectorCleaner
             Span<UInt64> frequency = stackalloc UInt64[256];
             frequency.Clear();
 
-            for (Int32 i = offset; i < offset + count; i++)
+            for (int i = offset; i < offset + count; i++)
                 frequency[data[i]]++;
 
-            Double len = count;
-            Double entropy = 0.0;
+            double len = count;
+            double entropy = 0.0;
 
-            for (Int32 i = 0; i < 256; i++)
+            for (int i = 0; i < 256; i++)
             {
                 if (frequency[i] > 0)
                 {
-                    Double probability = frequency[i] / len;
+                    double probability = frequency[i] / len;
                     entropy -= probability * Math.Log2(probability);
                 }
             }
@@ -235,15 +235,15 @@ namespace Helper.InfectorCleaner
 
     public sealed class SectionInfoRaw
     {
-        public String Name { get; }
+        public string Name { get; }
         public UInt32 VirtualSize { get; }
         public UInt32 VirtualAddress { get; }
         public UInt32 RawSize { get; }
         public UInt32 RawAddress { get; }
         public UInt32 Characteristics { get; }
-        public Int32 Index { get; set; }
+        public int Index { get; set; }
 
-        public SectionInfoRaw(String name, UInt32 virtualSize, UInt32 virtualAddress, UInt32 rawSize, UInt32 rawAddress, UInt32 characteristics, Int32 index)
+        public SectionInfoRaw(string name, UInt32 virtualSize, UInt32 virtualAddress, UInt32 rawSize, UInt32 rawAddress, UInt32 characteristics, int index)
         {
             Name = name;
             VirtualSize = virtualSize;

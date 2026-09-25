@@ -16,25 +16,25 @@ namespace Xdows_Local
 
         public sealed class SystemIssue
         {
-            public String Id { get; set; } = String.Empty;
-            public String Category { get; set; } = String.Empty;
-            public String Name { get; set; } = String.Empty;
-            public String Description { get; set; } = String.Empty;
-            public String RegistryPath { get; set; } = String.Empty;
-            public String? CurrentValue { get; set; }
-            public String? ExpectedValue { get; set; }
+            public string Id { get; set; } = string.Empty;
+            public string Category { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
+            public string Description { get; set; } = string.Empty;
+            public string RegistryPath { get; set; } = string.Empty;
+            public string? CurrentValue { get; set; }
+            public string? ExpectedValue { get; set; }
             public IssueSeverity Severity { get; set; }
-            public Boolean CanFix { get; set; }
+            public bool CanFix { get; set; }
             public FixAction Action { get; set; }
         }
 
         public sealed class RepairSummary
         {
-            public Int32 Total;
-            public Int32 High;
-            public Int32 Medium;
-            public Int32 Low;
-            public Int32 Fixed;
+            public int Total;
+            public int High;
+            public int Medium;
+            public int Low;
+            public int Fixed;
         }
 
         public sealed class RepairResult
@@ -45,10 +45,10 @@ namespace Xdows_Local
 
         public sealed class RepairFixResult
         {
-            public Boolean Success;
-            public List<String> FixedIds = new();
-            public List<String> FailedIds = new();
-            public String Message = String.Empty;
+            public bool Success;
+            public List<string> FixedIds = new();
+            public List<string> FailedIds = new();
+            public string Message = string.Empty;
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace Xdows_Local
 
         // ── Hive 解析 ──
 
-        private static RegistryKey? OpenHiveRoot(String hive)
+        private static RegistryKey? OpenHiveRoot(string hive)
         {
             return hive switch
             {
@@ -69,7 +69,7 @@ namespace Xdows_Local
             };
         }
 
-        private static String? ReadString(String hive, String subkey, String value)
+        private static string? ReadString(string hive, string subkey, string value)
         {
             try
             {
@@ -77,15 +77,15 @@ namespace Xdows_Local
                 if (root is null) return null;
                 using RegistryKey? key = root.OpenSubKey(subkey);
                 if (key is null) return null;
-                Object? raw = key.GetValue(value);
+                object? raw = key.GetValue(value);
                 // 处理 REG_MULTI_SZ（如 BootExecute）——合并为空格分隔字符串
-                if (raw is String[] arr) return String.Join(" ", arr);
-                return raw as String;
+                if (raw is string[] arr) return string.Join(" ", arr);
+                return raw as string;
             }
             catch (Exception) { return null; }
         }
 
-        private static Int32? ReadDword(String hive, String subkey, String value)
+        private static int? ReadDword(string hive, string subkey, string value)
         {
             try
             {
@@ -93,13 +93,13 @@ namespace Xdows_Local
                 if (root is null) return null;
                 using RegistryKey? key = root.OpenSubKey(subkey);
                 if (key is null) return null;
-                Object? raw = key.GetValue(value);
-                return raw is Int32 i ? i : null;
+                object? raw = key.GetValue(value);
+                return raw is int i ? i : null;
             }
             catch (Exception) { return null; }
         }
 
-        private static Boolean WriteDword(String hive, String subkey, String value, Int32 data)
+        private static bool WriteDword(string hive, string subkey, string value, int data)
         {
             try
             {
@@ -113,7 +113,7 @@ namespace Xdows_Local
             catch (Exception) { return false; }
         }
 
-        private static Boolean WriteString(String hive, String subkey, String value, String data)
+        private static bool WriteString(string hive, string subkey, string value, string data)
         {
             try
             {
@@ -127,7 +127,7 @@ namespace Xdows_Local
             catch (Exception) { return false; }
         }
 
-        private static Boolean DeleteValue(String hive, String subkey, String value)
+        private static bool DeleteValue(string hive, string subkey, string value)
         {
             try
             {
@@ -145,10 +145,10 @@ namespace Xdows_Local
         // ── 通用策略检查 ──
 
         private static void CheckDwordPolicy(
-            List<SystemIssue> issues, String category, String name, String description,
-            String hive, String subkey, String value, Int32 expected, IssueSeverity severity)
+            List<SystemIssue> issues, string category, string name, string description,
+            string hive, string subkey, string value, int expected, IssueSeverity severity)
         {
-            Int32? current = ReadDword(hive, subkey, value);
+            int? current = ReadDword(hive, subkey, value);
             if (current is null || current.Value == expected) return;
 
             issues.Add(new SystemIssue
@@ -170,8 +170,8 @@ namespace Xdows_Local
 
         private static void CheckSystemToolPolicies(List<SystemIssue> issues)
         {
-            const String policy = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System";
-            const String explorerPolicy = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer";
+            const string policy = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System";
+            const string explorerPolicy = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer";
 
             CheckDwordPolicy(issues, "系统工具禁用", "任务管理器被禁用", "DisableTaskMgr 被设为 1，任务管理器无法打开", "HKCU", policy, "DisableTaskMgr", 0, IssueSeverity.Medium);
             CheckDwordPolicy(issues, "系统工具禁用", "注册表编辑器被禁用", "DisableRegistryTools 被设为 1，regedit 无法打开", "HKCU", policy, "DisableRegistryTools", 0, IssueSeverity.Medium);
@@ -198,8 +198,8 @@ namespace Xdows_Local
             CheckDwordPolicy(issues, "系统工具禁用", "系统还原配置被禁用", "DisableConfig 被设为 1，无法配置系统还原", "HKLM", "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SystemRestore", "DisableConfig", 0, IssueSeverity.Medium);
 
             // CMD AutoRun 劫持
-            String? autoRun = ReadString("HKCU", "Software\\Microsoft\\Command Processor", "AutoRun");
-            if (!String.IsNullOrWhiteSpace(autoRun))
+            string? autoRun = ReadString("HKCU", "Software\\Microsoft\\Command Processor", "AutoRun");
+            if (!string.IsNullOrWhiteSpace(autoRun))
             {
                 issues.Add(new SystemIssue
                 {
@@ -221,7 +221,7 @@ namespace Xdows_Local
 
         private static void CheckExplorerDisplay(List<SystemIssue> issues)
         {
-            const String subkey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced";
+            const string subkey = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced";
 
             CheckDwordPolicy(issues, "资源管理器显示劫持", "文件扩展名被隐藏", "文件扩展名被强制隐藏，常见于双扩展名病毒配合", "HKCU", subkey, "HideFileExt", 0, IssueSeverity.Low);
             CheckDwordPolicy(issues, "资源管理器显示劫持", "显示系统文件被禁用", "资源管理器未显示受保护的操作系统文件", "HKCU", subkey, "ShowSuperHidden", 1, IssueSeverity.Low);
@@ -231,9 +231,9 @@ namespace Xdows_Local
 
         private static void CheckIfeoDebugger(List<SystemIssue> issues)
         {
-            const String baseKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
+            const string baseKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
             // 辅助功能后门目标，单独检测，避免重复
-            HashSet<String> accessibility = new(StringComparer.OrdinalIgnoreCase)
+            HashSet<string> accessibility = new(StringComparer.OrdinalIgnoreCase)
             {
                 "sethc.exe", "utilman.exe", "osk.exe", "magnify.exe", "narrator.exe"
             };
@@ -241,13 +241,13 @@ namespace Xdows_Local
             using RegistryKey? hklm = Registry.LocalMachine.OpenSubKey(baseKey);
             if (hklm is null) return;
 
-            foreach (String subkeyName in hklm.GetSubKeyNames())
+            foreach (string subkeyName in hklm.GetSubKeyNames())
             {
                 if (accessibility.Contains(subkeyName)) continue;
 
-                String subkeyPath = $"{baseKey}\\{subkeyName}";
-                String? debugger = ReadString("HKLM", subkeyPath, "Debugger");
-                if (!String.IsNullOrWhiteSpace(debugger))
+                string subkeyPath = $"{baseKey}\\{subkeyName}";
+                string? debugger = ReadString("HKLM", subkeyPath, "Debugger");
+                if (!string.IsNullOrWhiteSpace(debugger))
                 {
                     issues.Add(new SystemIssue
                     {
@@ -268,10 +268,10 @@ namespace Xdows_Local
 
         private static void CheckAppInitDlls(List<SystemIssue> issues)
         {
-            const String subkey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows";
+            const string subkey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows";
 
-            String? dlls = ReadString("HKLM", subkey, "AppInit_DLLs");
-            if (!String.IsNullOrWhiteSpace(dlls))
+            string? dlls = ReadString("HKLM", subkey, "AppInit_DLLs");
+            if (!string.IsNullOrWhiteSpace(dlls))
             {
                 issues.Add(new SystemIssue
                 {
@@ -288,7 +288,7 @@ namespace Xdows_Local
                 });
             }
 
-            Int32? load = ReadDword("HKLM", subkey, "LoadAppInit_DLLs");
+            int? load = ReadDword("HKLM", subkey, "LoadAppInit_DLLs");
             if (load == 1)
             {
                 issues.Add(new SystemIssue
@@ -309,11 +309,11 @@ namespace Xdows_Local
 
         private static void CheckBootExecute(List<SystemIssue> issues)
         {
-            const String subkey = "SYSTEM\\CurrentControlSet\\Control\\Session Manager";
-            String? v = ReadString("HKLM", subkey, "BootExecute");
-            if (String.IsNullOrEmpty(v)) return;
+            const string subkey = "SYSTEM\\CurrentControlSet\\Control\\Session Manager";
+            string? v = ReadString("HKLM", subkey, "BootExecute");
+            if (string.IsNullOrEmpty(v)) return;
 
-            String normalized = System.Text.RegularExpressions.Regex.Replace(v.Trim().ToLowerInvariant().Replace('\0', ' '), @"\s+", " ").Trim();
+            string normalized = System.Text.RegularExpressions.Regex.Replace(v.Trim().ToLowerInvariant().Replace('\0', ' '), @"\s+", " ").Trim();
             if (normalized != "autocheck autochk *")
             {
                 issues.Add(new SystemIssue
@@ -334,14 +334,14 @@ namespace Xdows_Local
 
         private static void CheckAccessibilityBackdoors(List<SystemIssue> issues)
         {
-            const String baseKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
-            String[] targets = { "sethc.exe", "utilman.exe", "osk.exe", "Magnify.exe", "Narrator.exe" };
+            const string baseKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Image File Execution Options";
+            string[] targets = { "sethc.exe", "utilman.exe", "osk.exe", "Magnify.exe", "Narrator.exe" };
 
-            foreach (String target in targets)
+            foreach (string target in targets)
             {
-                String subkey = $"{baseKey}\\{target}";
-                String? debugger = ReadString("HKLM", subkey, "Debugger");
-                if (!String.IsNullOrWhiteSpace(debugger))
+                string subkey = $"{baseKey}\\{target}";
+                string? debugger = ReadString("HKLM", subkey, "Debugger");
+                if (!string.IsNullOrWhiteSpace(debugger))
                 {
                     issues.Add(new SystemIssue
                     {
@@ -364,10 +364,10 @@ namespace Xdows_Local
 
         private static void CheckWinlogon(List<SystemIssue> issues)
         {
-            const String subkey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon";
+            const string subkey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon";
 
-            String? shell = ReadString("HKLM", subkey, "Shell");
-            if (!String.Equals(shell, "explorer.exe", StringComparison.OrdinalIgnoreCase))
+            string? shell = ReadString("HKLM", subkey, "Shell");
+            if (!string.Equals(shell, "explorer.exe", StringComparison.OrdinalIgnoreCase))
             {
                 issues.Add(new SystemIssue
                 {
@@ -384,9 +384,9 @@ namespace Xdows_Local
                 });
             }
 
-            String? userinit = ReadString("HKLM", subkey, "Userinit");
-            String expected = @"C:\Windows\system32\userinit.exe,";
-            if (!String.Equals(userinit, expected, StringComparison.OrdinalIgnoreCase))
+            string? userinit = ReadString("HKLM", subkey, "Userinit");
+            string expected = @"C:\Windows\system32\userinit.exe,";
+            if (!string.Equals(userinit, expected, StringComparison.OrdinalIgnoreCase))
             {
                 issues.Add(new SystemIssue
                 {
@@ -404,7 +404,7 @@ namespace Xdows_Local
             }
         }
 
-        private static readonly String[][] RunStartupPaths =
+        private static readonly string[][] RunStartupPaths =
         [
             ["HKLM", "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"],
             ["HKCU", "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"],
@@ -418,25 +418,25 @@ namespace Xdows_Local
 
         private static void CheckRunStartup(List<SystemIssue> issues)
         {
-            String[] suspiciousPaths = [@"\temp\", @"\tmp\", @"\appdata\", @"\downloads\", @"\desktop\"];
-            String[] suspiciousExts = [".bat", ".cmd", ".vbs", ".js", ".ps1", ".wsf", ".wsh"];
+            string[] suspiciousPaths = [@"\temp\", @"\tmp\", @"\appdata\", @"\downloads\", @"\desktop\"];
+            string[] suspiciousExts = [".bat", ".cmd", ".vbs", ".js", ".ps1", ".wsf", ".wsh"];
 
-            foreach (String[] entry in RunStartupPaths)
+            foreach (string[] entry in RunStartupPaths)
             {
-                String hive = entry[0];
-                String subkey = entry[1];
+                string hive = entry[0];
+                string subkey = entry[1];
 
                 using RegistryKey? root = OpenHiveRoot(hive);
                 if (root is null) continue;
                 using RegistryKey? key = root.OpenSubKey(subkey);
                 if (key is null) continue;
 
-                foreach (String name in key.GetValueNames())
+                foreach (string name in key.GetValueNames())
                 {
-                    Object? raw = key.GetValue(name);
-                    if (raw is not String s) continue;
-                    String value = s.TrimEnd('\0');
-                    if (String.IsNullOrEmpty(value)) continue;
+                    object? raw = key.GetValue(name);
+                    if (raw is not string s) continue;
+                    string value = s.TrimEnd('\0');
+                    if (string.IsNullOrEmpty(value)) continue;
 
                     if (IsSuspiciousStartup(value, suspiciousPaths, suspiciousExts))
                     {
@@ -458,14 +458,14 @@ namespace Xdows_Local
             }
         }
 
-        private static Boolean IsSuspiciousStartup(String value, String[] suspiciousPaths, String[] suspiciousExts)
+        private static bool IsSuspiciousStartup(string value, string[] suspiciousPaths, string[] suspiciousExts)
         {
-            String lower = value.ToLowerInvariant();
-            foreach (String p in suspiciousPaths)
+            string lower = value.ToLowerInvariant();
+            foreach (string p in suspiciousPaths)
             {
                 if (lower.Contains(p)) return true;
             }
-            foreach (String ext in suspiciousExts)
+            foreach (string ext in suspiciousExts)
             {
                 if (lower.EndsWith(ext, StringComparison.Ordinal)) return true;
             }
@@ -501,20 +501,20 @@ namespace Xdows_Local
 
         // ── 主入口：修复 ──
 
-        public static RepairFixResult Fix(IEnumerable<String> issueIds, RepairResult? scanResult = null)
+        public static RepairFixResult Fix(IEnumerable<string> issueIds, RepairResult? scanResult = null)
         {
             // 构建 id → issue 映射，若调用方传入 scanResult 则用之，否则现场重扫
-            Dictionary<String, SystemIssue> issueMap = new();
+            Dictionary<string, SystemIssue> issueMap = new();
             RepairResult result = scanResult ?? Scan();
             foreach (SystemIssue issue in result.Issues)
             {
                 issueMap[issue.Id] = issue;
             }
 
-            List<String> fixedList = new();
-            List<String> failedList = new();
+            List<string> fixedList = new();
+            List<string> failedList = new();
 
-            foreach (String id in issueIds)
+            foreach (string id in issueIds)
             {
                 if (!issueMap.TryGetValue(id, out SystemIssue? issue))
                 {
@@ -523,17 +523,17 @@ namespace Xdows_Local
                 }
 
                 // 解析 hive\subkey\value
-                String[] parts = issue.RegistryPath.Split('\\');
+                string[] parts = issue.RegistryPath.Split('\\');
                 if (parts.Length < 4)
                 {
                     failedList.Add(id);
                     continue;
                 }
-                String hive = parts[0];
-                String value = parts[^1];
-                String subkey = String.Join('\\', parts, 1, parts.Length - 2);
+                string hive = parts[0];
+                string value = parts[^1];
+                string subkey = string.Join('\\', parts, 1, parts.Length - 2);
 
-                Boolean ok = issue.Action switch
+                bool ok = issue.Action switch
                 {
                     FixAction.SetDword => TrySetDwordFromIssue(issue, hive, subkey, value),
                     FixAction.SetString => TrySetStringFromIssue(issue, hive, subkey, value),
@@ -554,17 +554,17 @@ namespace Xdows_Local
             };
         }
 
-        private static Boolean TrySetDwordFromIssue(SystemIssue issue, String hive, String subkey, String value)
+        private static bool TrySetDwordFromIssue(SystemIssue issue, string hive, string subkey, string value)
         {
             // 从 ExpectedValue 解析目标 DWORD
-            if (!Int32.TryParse(issue.ExpectedValue, out Int32 target)) return false;
+            if (!int.TryParse(issue.ExpectedValue, out int target)) return false;
             return WriteDword(hive, subkey, value, target);
         }
 
-        private static Boolean TrySetStringFromIssue(SystemIssue issue, String hive, String subkey, String value)
+        private static bool TrySetStringFromIssue(SystemIssue issue, string hive, string subkey, string value)
         {
             // 从 ExpectedValue 恢复默认字符串值
-            if (String.IsNullOrEmpty(issue.ExpectedValue) || issue.ExpectedValue == "(空)") return DeleteValue(hive, subkey, value);
+            if (string.IsNullOrEmpty(issue.ExpectedValue) || issue.ExpectedValue == "(空)") return DeleteValue(hive, subkey, value);
             return WriteString(hive, subkey, value, issue.ExpectedValue);
         }
     }

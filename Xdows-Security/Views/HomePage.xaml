@@ -23,14 +23,14 @@
             <StackPanel Margin="24,16,0,0" Orientation="Vertical">
                 <TextBlock x:Name="HomePageText" Margin="0,12,0,0" FontSize="28" FontWeight="Bold"/>
                 <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                    <TextBlock x:Name="PomesLine" Style="{StaticResource BodyTextBlockStyle}"
+                    <TextBlock x:Name="PoemsLine" Style="{StaticResource BodyTextBlockStyle}"
                                VerticalAlignment="Center"
                                IsTextSelectionEnabled="True"/>
-                    <local:CopyButton Click="CopyPomes_Click"
+                    <local:CopyButton Click="CopyPoems_Click"
                             Height="32" Margin="8,0,0,0" Style="{StaticResource SubtleCopyButtonStyle}">
                         <FontIcon Glyph="&#xE8C8;" FontSize="16"/>
                     </local:CopyButton>
-                    <Button Click="RefreshPomes_Click" Padding="4" Width="30"
+                    <Button Click="RefreshPoems_Click" Padding="4" Width="30"
                             Height="32" Style="{StaticResource SubtleButtonStyle}">
                         <FontIcon Glyph="&#xE72C;" FontSize="14"/>
                     </Button>

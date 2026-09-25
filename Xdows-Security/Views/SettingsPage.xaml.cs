@@ -25,14 +25,14 @@ namespace Xdows_Security.Views
 {
     public sealed partial class SettingsPage : Page
     {
-        private Boolean IsInitialize = true;
+        private bool IsInitialize = true;
         private DispatcherTimer? ProtectionStatusTimer;
         private const string DriverProtectionDisclaimerAcceptedSetting = "DriverProtectionDisclaimerAccepted";
         private bool _driverProtectionOperationInProgress;
         private bool _bootOperationInProgress;
         private bool _bootProtectionOperationInProgress;
 
-        private sealed record BootDiskChoice(PhysicalDiskInfo Disk, String Title);
+        private sealed record BootDiskChoice(PhysicalDiskInfo Disk, string Title);
 
         public SettingsPage()
         {
@@ -65,7 +65,7 @@ namespace Xdows_Security.Views
             UpdateRegistryCategoryControlState();
         }
 
-        private void UpdateProtectionToggleState(ToggleSwitch toggle, Int32 runId)
+        private void UpdateProtectionToggleState(ToggleSwitch toggle, int runId)
         {
             if (toggle == null) return;
             toggle.Toggled -= RunProtection;
@@ -124,7 +124,7 @@ namespace Xdows_Security.Views
         private void UpdateAppText()
         {
             SettingsPage_Protection_Registry.Header += " (Beta)";
-            SettingsPage_Scan_Xdows_Model.Header += " (Beta)";
+            SettingsPage_Scan_Model.Header += " (Beta)";
             UpdateInjectionProtectionText();
             UpdateDriverProtectionState();
         }
@@ -138,8 +138,8 @@ private void UpdateInjectionProtectionText()
             // The header is read from the control: WinUI3Localizer splits
             // "xxx.Header" resource keys at the '.', so GetLocalizedString()
             // with the ".Header" suffix always returns empty.
-            String? header = InjectionProtectionCard.Header as String;
-            if (String.IsNullOrWhiteSpace(header)) return;
+            string? header = InjectionProtectionCard.Header as string;
+            if (string.IsNullOrWhiteSpace(header)) return;
 
             InjectionProtectionCard.Header = header + " (Beta)";
         }
@@ -159,7 +159,7 @@ private void UpdateInjectionProtectionText()
             InjectionProtectionToggle.Toggled += InjectionProtectionToggle_Toggled;
         }
 
-        private void InjectionProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void InjectionProtectionToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
             App.LocalSettings.Values["InjectionProtection"] = toggle.IsOn;
@@ -298,7 +298,7 @@ private void UpdateInjectionProtectionText()
 
         private Task<object?> RunOnDispatcher(Action action)
         {
-            TaskCompletionSource<Object?> tcs = new();
+            TaskCompletionSource<object?> tcs = new();
             this.DispatcherQueue.TryEnqueue(() =>
             {
                 try
@@ -314,7 +314,7 @@ private void UpdateInjectionProtectionText()
             return tcs.Task;
         }
 
-        private void RunProtectionWithToggle(ToggleSwitch toggle, Int32 runId)
+        private void RunProtectionWithToggle(ToggleSwitch toggle, int runId)
         {
             if (runId == 5)
             {
@@ -336,11 +336,11 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private void RunProtection(Object sender, RoutedEventArgs e)
+        private void RunProtection(object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
-            String tag = toggle.Tag as String ?? String.Empty;
-            Int32 runId = tag switch
+            string tag = toggle.Tag as string ?? string.Empty;
+            int runId = tag switch
             {
                 "Driver" => 5,
                 "Process" => 0,
@@ -351,12 +351,12 @@ private void UpdateInjectionProtectionText()
             RunProtectionWithToggle(toggle, runId);
         }
 
-        private void RegistryCategoryToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void RegistryCategoryToggle_Toggled(object sender, RoutedEventArgs e)
         {
             Toggled_SaveToggleData(sender, e);
         }
 
-        private async void BootProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        private async void BootProtectionToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
             await RunBootProtectionToggleAsync(toggle);
@@ -370,11 +370,11 @@ private void UpdateInjectionProtectionText()
                 return;
             }
 
-            Boolean requestedOn = toggle.IsOn;
+            bool requestedOn = toggle.IsOn;
             _bootProtectionOperationInProgress = true;
             ApplyDriverProtectionControlState();
-            Boolean operationSucceeded = false;
-            Boolean failureShown = false;
+            bool operationSucceeded = false;
+            bool failureShown = false;
 
             try
             {
@@ -384,7 +384,7 @@ private void UpdateInjectionProtectionText()
                         ProtectionStatus.InspectBootProtectionPreparation);
                     if (!preparation.HasTrustedBaseline)
                     {
-                        Boolean accepted = await ConfirmBootProtectionBaselineAsync(preparation);
+                        bool accepted = await ConfirmBootProtectionBaselineAsync(preparation);
                         if (!accepted)
                             return;
 
@@ -424,7 +424,7 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private void SetBootProtectionToggleSilently(Boolean isOn)
+        private void SetBootProtectionToggleSilently(bool isOn)
         {
             if (BootProtectionToggle == null) return;
             BootProtectionToggle.Toggled -= BootProtectionToggle_Toggled;
@@ -432,7 +432,7 @@ private void UpdateInjectionProtectionText()
             BootProtectionToggle.Toggled += BootProtectionToggle_Toggled;
         }
 
-        private async void DriverProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        private async void DriverProtectionToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
 
@@ -541,12 +541,12 @@ private void UpdateInjectionProtectionText()
             return dialog.SetupSucceeded;
         }
 
-        private async void Toggled_SaveToggleData(Object sender, RoutedEventArgs e)
+        private async void Toggled_SaveToggleData(object sender, RoutedEventArgs e)
         {
             if (sender is not ToggleSwitch toggle || IsInitialize) return;
 
-            String key = toggle.Tag as String ?? toggle.Name;
-            if (String.IsNullOrWhiteSpace(key)) return;
+            string key = toggle.Tag as string ?? toggle.Name;
+            if (string.IsNullOrWhiteSpace(key)) return;
             if (toggle.IsOn && (key == "CloudScan" || key == "ExactRuleScan"))
             {
                 _ = new ContentDialog
@@ -563,7 +563,7 @@ private void UpdateInjectionProtectionText()
             settings.Values[key] = toggle.IsOn;
         }
 
-        private void VirusFamilyToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void VirusFamilyToggle_Toggled(object sender, RoutedEventArgs e)
         {
             Toggled_SaveToggleData(sender, e);
 
@@ -647,8 +647,8 @@ private void UpdateInjectionProtectionText()
             {
                 if (toggle == null) continue;
 
-                String key = toggle.Tag as String ?? "";
-                if (!String.IsNullOrWhiteSpace(key) && settings.Values.TryGetValue(key, out var raw) && raw is Boolean isOn)
+                string key = toggle.Tag as string ?? "";
+                if (!string.IsNullOrWhiteSpace(key) && settings.Values.TryGetValue(key, out var raw) && raw is bool isOn)
                 {
                     toggle.IsOn = isOn;
                 }
@@ -665,9 +665,9 @@ private void UpdateInjectionProtectionText()
                 ComboBox modelCombo = this.FindName("ModelModeComboBox") as ComboBox ?? new();
                 if (modelCombo != null)
                 {
-                    foreach (Object obj in modelCombo.Items)
+                    foreach (object obj in modelCombo.Items)
                     {
-                        if (obj is ComboBoxItem item && (item.Tag as String) == modelMode)
+                        if (obj is ComboBoxItem item && (item.Tag as string) == modelMode)
                         {
                             modelCombo.SelectedItem = item;
                             break;
@@ -721,9 +721,9 @@ private void UpdateInjectionProtectionText()
                 ComboBox combo = this.FindName("ScanIndexModeComboBox") as ComboBox ?? new();
                 if (combo != null)
                 {
-                    foreach (Object obj in combo.Items)
+                    foreach (object obj in combo.Items)
                     {
-                        if (obj is ComboBoxItem item && (item.Tag as String) == mode)
+                        if (obj is ComboBoxItem item && (item.Tag as string) == mode)
                         {
                             combo.SelectedItem = item;
                             break;
@@ -754,10 +754,10 @@ private void UpdateInjectionProtectionText()
             catch { }
         }
 
-        private void ScanIndexModeComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        private void ScanIndexModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
-            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
+            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
                 ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["ScanIndexMode"] = tag;
@@ -784,17 +784,17 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private void ModelModeComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        private void ModelModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
-            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is String tag)
+            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
             {
                 ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["ModelMode"] = tag;
             }
         }
 
-        private void ModelModeForProtectionToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void ModelModeForProtectionToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (IsInitialize) return;
             if (sender is ToggleSwitch toggle)
@@ -880,7 +880,7 @@ private void UpdateInjectionProtectionText()
             FontService.ApplyFromSetting();
         }
 
-        private void UseNotoSansToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void UseNotoSansToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (IsInitialize) return;
 
@@ -901,13 +901,13 @@ private void UpdateInjectionProtectionText()
                 frame.BackStack.RemoveAt(frame.BackStack.Count - 1);
         }
 
-        private async void LanguageComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        private async void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
             if (LanguageComboBox.SelectedItem is ComboBoxItem selectedItem)
             {
-                String currentLanguage = Localizer.Get().GetCurrentLanguage();
-                if (selectedItem.Tag is not String newLanguage) return;
+                string currentLanguage = Localizer.Get().GetCurrentLanguage();
+                if (selectedItem.Tag is not string newLanguage) return;
                 if (newLanguage != currentLanguage)
                 {
                     App.LocalSettings.Values["AppLanguage"] = newLanguage;
@@ -917,7 +917,7 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private async void UpdateButtonClick(Object sender, RoutedEventArgs e)
+        private async void UpdateButtonClick(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -1042,12 +1042,12 @@ private void UpdateInjectionProtectionText()
             return result;
         }
 
-        private void UpdateTeachingTipClose(TeachingTip sender, Object args)
+        private void UpdateTeachingTipClose(TeachingTip sender, object args)
         {
             UpdateTeachingTip.IsOpen = false;
         }
 
-        private void ThemeComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize || ThemeComboBox.SelectedIndex == -1) return;
 
@@ -1077,7 +1077,7 @@ private void UpdateInjectionProtectionText()
         private void LoadBackdropSetting()
         {
             ApplicationDataContainer settings = App.LocalSettings;
-            String savedBackdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdrop
+            string savedBackdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdrop
                 ? backdrop
                 : "";
 
@@ -1085,10 +1085,10 @@ private void UpdateInjectionProtectionText()
             MicaOption.IsEnabled = MicaController.IsSupported();
             MicaAltOption.IsEnabled = MicaController.IsSupported();
 
-            Boolean found = false;
+            bool found = false;
             foreach (ComboBoxItem item in BackdropComboBox.Items.Cast<ComboBoxItem>())
             {
-                if (item.Tag as String == savedBackdrop)
+                if (item.Tag as string == savedBackdrop)
                 {
                     BackdropComboBox.SelectedItem = item;
                     found = true;
@@ -1101,14 +1101,14 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private void BackdropComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        private void BackdropComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
             if (BackdropComboBox.SelectedItem is ComboBoxItem selected)
             {
                 try
                 {
-                    String backdropType = selected.Tag as String ?? ElementTheme.Default.ToString();
+                    string backdropType = selected.Tag as string ?? ElementTheme.Default.ToString();
                     ApplicationDataContainer settings = App.LocalSettings;
                     settings.Values["AppBackdrop"] = backdropType;
                     App.MainWindow?.ApplyBackdrop(backdropType, false);
@@ -1118,7 +1118,7 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private void OpacitySlider_ValueChanged(Object sender, RangeBaseValueChangedEventArgs e)
+        private void OpacitySlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             if (IsInitialize || sender is not Slider slider) return;
             ApplicationDataContainer settings = App.LocalSettings;
@@ -1130,12 +1130,12 @@ private void UpdateInjectionProtectionText()
             App.MainWindow.ApplyBackdrop(backdrop, false);
         }
 
-        private void NavComboBox_SelectionChanged(Object sender, SelectionChangedEventArgs e)
+        private void NavComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
             try
             {
-                Int32 index = NavComboBox.SelectedIndex;
+                int index = NavComboBox.SelectedIndex;
                 ApplicationDataContainer settings = App.LocalSettings;
                 settings.Values["AppNavTheme"] = index;
                 App.MainWindow?.UpdateNavTheme(index);
@@ -1148,7 +1148,7 @@ private void UpdateInjectionProtectionText()
             catch { }
         }
 
-        private async void Quarantine_ViewButton_Click(Object sender, RoutedEventArgs e)
+        private async void Quarantine_ViewButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -1162,12 +1162,12 @@ private void UpdateInjectionProtectionText()
             catch { }
         }
 
-        private async void Quarantine_ClearButton_Click(Object sender, RoutedEventArgs e)
+        private async void Quarantine_ClearButton_Click(object sender, RoutedEventArgs e)
         {
             _ = QuarantineManager.ClearQuarantine();
         }
 
-        private async void Trust_ViewButton_Click(Object sender, RoutedEventArgs e)
+        private async void Trust_ViewButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -1181,7 +1181,7 @@ private void UpdateInjectionProtectionText()
             catch { }
         }
 
-        private async void Trust_AddButton_Click(Object sender, RoutedEventArgs e)
+        private async void Trust_AddButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -1192,13 +1192,13 @@ private void UpdateInjectionProtectionText()
             catch { }
         }
 
-        private void TrayVisibleToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void TrayVisibleToggle_Toggled(object sender, RoutedEventArgs e)
         {
             Toggled_SaveToggleData(sender, e);
             App.MainWindow?.Manager?.IsVisibleInTray = TrayVisibleToggle.IsOn;
         }
 
-        private void StartupToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void StartupToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (IsInitialize || sender is not ToggleSwitch toggle) return;
 
@@ -1229,7 +1229,7 @@ private void UpdateInjectionProtectionText()
             catch { }
         }
 
-        private void ContextMenuScanToggle_Toggled(Object sender, RoutedEventArgs e)
+        private void ContextMenuScanToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (IsInitialize) return;
             if (ContextMenuScanToggle.IsOn)
@@ -1251,8 +1251,8 @@ private void UpdateInjectionProtectionText()
         {
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                String searchText = sender.Text.ToLowerInvariant();
-                if (String.IsNullOrWhiteSpace(searchText))
+                string searchText = sender.Text.ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(searchText))
                 {
                     ShowAllSettingsItems();
                     return;
@@ -1272,7 +1272,7 @@ private void UpdateInjectionProtectionText()
                     element.Visibility = Visibility.Visible;
                     if (element is SettingsExpander expander)
                     {
-                        foreach (Object expanderChild in expander.Items)
+                        foreach (object expanderChild in expander.Items)
                         {
                             if (expanderChild is SettingsCard card)
                             {
@@ -1285,7 +1285,7 @@ private void UpdateInjectionProtectionText()
             App.PlayEntranceAnimation(SettingsContentPanel, "up", 40);
         }
 
-        private void FilterSettingsItems(String searchText)
+        private void FilterSettingsItems(string searchText)
         {
             if (SettingsContentPanel == null) return;
 
@@ -1296,7 +1296,7 @@ private void UpdateInjectionProtectionText()
                     element.Visibility = Visibility.Collapsed;
                     if (element is SettingsExpander expander)
                     {
-                        foreach (Object expanderChild in expander.Items)
+                        foreach (object expanderChild in expander.Items)
                         {
                             if (expanderChild is SettingsCard card)
                             {
@@ -1307,8 +1307,8 @@ private void UpdateInjectionProtectionText()
                 }
             }
 
-            Boolean currentHeaderMatched = false;
-            for (Int32 i = 0; i < SettingsContentPanel.Children.Count; i++)
+            bool currentHeaderMatched = false;
+            for (int i = 0; i < SettingsContentPanel.Children.Count; i++)
             {
                 UIElement child = SettingsContentPanel.Children[i];
                 if (child is FrameworkElement element)
@@ -1323,7 +1323,7 @@ private void UpdateInjectionProtectionText()
                     }
                     else if (element is SettingsCard or SettingsExpander)
                     {
-                        Boolean shouldShow = false;
+                        bool shouldShow = false;
                         if (IsSettingsItemMatched(element, searchText))
                         {
                             shouldShow = true;
@@ -1334,7 +1334,7 @@ private void UpdateInjectionProtectionText()
                         }
                         if (element is SettingsExpander expander)
                         {
-                            foreach (Object expanderChild in expander.Items)
+                            foreach (object expanderChild in expander.Items)
                             {
                                 if (expanderChild is SettingsCard card)
                                 {
@@ -1356,15 +1356,15 @@ private void UpdateInjectionProtectionText()
             App.PlayEntranceAnimation(SettingsContentPanel, "up", 40);
         }
 
-        private static Boolean IsSettingsItemMatched(FrameworkElement item, String searchText)
+        private static bool IsSettingsItemMatched(FrameworkElement item, string searchText)
         {
-            String itemText = GetSettingsItemText(item);
-            if (String.IsNullOrEmpty(itemText))
+            string itemText = GetSettingsItemText(item);
+            if (string.IsNullOrEmpty(itemText))
                 return false;
             return itemText.Contains(searchText, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        private static String GetSettingsItemText(FrameworkElement item)
+        private static string GetSettingsItemText(FrameworkElement item)
         {
             if (item is TextBlock textBlock)
             {
@@ -1372,18 +1372,18 @@ private void UpdateInjectionProtectionText()
             }
             else if (item is SettingsCard card)
             {
-                return card.Header?.ToString() ?? String.Empty;
+                return card.Header?.ToString() ?? string.Empty;
             }
             else if (item is SettingsExpander expander)
             {
-                return expander.Header?.ToString() ?? String.Empty;
+                return expander.Header?.ToString() ?? string.Empty;
             }
-            return String.Empty;
+            return string.Empty;
         }
 
-        private Boolean DisabledVerifyToggleVerify = true;
+        private bool DisabledVerifyToggleVerify = true;
 
-        private async void DisabledVerifyToggle_Toggled(Object sender, RoutedEventArgs e)
+        private async void DisabledVerifyToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (!DisabledVerifyToggleVerify || IsInitialize) return;
 
@@ -1391,7 +1391,7 @@ private void UpdateInjectionProtectionText()
             {
                 DisabledVerifyToggleVerify = false;
                 DisabledVerifyToggle.IsOn = false;
-                UserConsentVerificationResult result = await UserConsentVerifier.RequestVerificationAsync(String.Empty);
+                UserConsentVerificationResult result = await UserConsentVerifier.RequestVerificationAsync(string.Empty);
                 if (result is UserConsentVerificationResult.DeviceNotPresent or
                     UserConsentVerificationResult.DisabledByPolicy or
                     UserConsentVerificationResult.NotConfiguredForUser or
@@ -1408,11 +1408,11 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private async void OpenConfigLocationButton_Click(Object sender, RoutedEventArgs e)
+        private async void OpenConfigLocationButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                String path = App.AppData.LocalPath;
+                string path = App.AppData.LocalPath;
                 Directory.CreateDirectory(path);
                 await Windows.System.Launcher.LaunchFolderPathAsync(path);
             }
@@ -1421,7 +1421,7 @@ private void UpdateInjectionProtectionText()
                 ContentDialog errorDialog = new()
                 {
                     Title = Localizer.Get().GetLocalizedString("SettingsPage_Other_Config_Location_OpenFailed_Title"),
-                    Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_Other_Config_Location_OpenFailed_Content"), ex.Message),
+                    Content = string.Format(Localizer.Get().GetLocalizedString("SettingsPage_Other_Config_Location_OpenFailed_Content"), ex.Message),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot
                 };
@@ -1429,11 +1429,11 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private async void OpenBrowserProtectionFolderButton_Click(Object sender, RoutedEventArgs e)
+        private async void OpenBrowserProtectionFolderButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                String path = Path.Combine(AppContext.BaseDirectory, "BrowserProtection");
+                string path = Path.Combine(AppContext.BaseDirectory, "BrowserProtection");
                 Directory.CreateDirectory(path);
                 await Windows.System.Launcher.LaunchFolderPathAsync(path);
             }
@@ -1442,7 +1442,7 @@ private void UpdateInjectionProtectionText()
                 ContentDialog errorDialog = new()
                 {
                     Title = Localizer.Get().GetLocalizedString("SettingsPage_Feature_BrowserProtection_OpenFailed_Title"),
-                    Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_Feature_BrowserProtection_OpenFailed_Content"), ex.Message),
+                    Content = string.Format(Localizer.Get().GetLocalizedString("SettingsPage_Feature_BrowserProtection_OpenFailed_Content"), ex.Message),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot
                 };
@@ -1450,7 +1450,7 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private async void ResetConfigButton_Click(Object sender, RoutedEventArgs e)
+        private async void ResetConfigButton_Click(object sender, RoutedEventArgs e)
         {
             ContentDialog confirmDialog = new()
             {
@@ -1466,7 +1466,7 @@ private void UpdateInjectionProtectionText()
             {
                 try
                 {
-                    String path = App.AppData.LocalPath;
+                    string path = App.AppData.LocalPath;
                     if (Directory.Exists(path))
                     {
                         Directory.Delete(path, true);
@@ -1477,7 +1477,7 @@ private void UpdateInjectionProtectionText()
                     ContentDialog errorDialog = new()
                     {
                         Title = Localizer.Get().GetLocalizedString("SettingsPage_Other_Config_Reset_DeleteFailed_Title"),
-                        Content = String.Format(Localizer.Get().GetLocalizedString("SettingsPage_Other_Config_Reset_DeleteFailed_Content"), ex.Message),
+                        Content = string.Format(Localizer.Get().GetLocalizedString("SettingsPage_Other_Config_Reset_DeleteFailed_Content"), ex.Message),
                         CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                         XamlRoot = this.XamlRoot
                     };
@@ -1487,8 +1487,8 @@ private void UpdateInjectionProtectionText()
 
                 try
                 {
-                    String? current = Process.GetCurrentProcess().MainModule?.FileName;
-                    if (!String.IsNullOrEmpty(current))
+                    string? current = Process.GetCurrentProcess().MainModule?.FileName;
+                    if (!string.IsNullOrEmpty(current))
                     {
                         Process.Start(new ProcessStartInfo
                         {
@@ -1503,7 +1503,7 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private async void Boot_Save_Button_Click(Object sender, RoutedEventArgs e)
+        private async void Boot_Save_Button_Click(object sender, RoutedEventArgs e)
         {
             await RunBootOperationAsync(async () =>
             {
@@ -1545,7 +1545,7 @@ private void UpdateInjectionProtectionText()
             });
         }
 
-        private async void Boot_Restore_Button_Click(Object sender, RoutedEventArgs e)
+        private async void Boot_Restore_Button_Click(object sender, RoutedEventArgs e)
         {
             await RunBootOperationAsync(async () =>
             {
@@ -1613,7 +1613,7 @@ private void UpdateInjectionProtectionText()
             }
         }
 
-        private async Task<BootDiskChoice?> SelectBootDiskAsync(String instruction)
+        private async Task<BootDiskChoice?> SelectBootDiskAsync(string instruction)
         {
             IReadOnlyList<PhysicalDiskInfo> disks = await Task.Run(DiskOperator.GetPhysicalDisks);
             if (disks.Count == 0)
@@ -1647,7 +1647,7 @@ private void UpdateInjectionProtectionText()
             {
                 details.Text = diskSelector.SelectedItem is BootDiskChoice choice
                     ? FormatDiskDetails(choice.Disk)
-                    : String.Empty;
+                    : string.Empty;
             }
             diskSelector.SelectionChanged += (_, _) => UpdateDetails();
             UpdateDetails();
@@ -1681,7 +1681,7 @@ private void UpdateInjectionProtectionText()
                 : null;
         }
 
-        private async Task<Boolean> ConfirmBootProtectionBaselineAsync(
+        private async Task<bool> ConfirmBootProtectionBaselineAsync(
             BootProtectionPreparation preparation)
         {
             StackPanel content = new()
@@ -1734,8 +1734,8 @@ private void UpdateInjectionProtectionText()
             return await dialog.ShowAsync() == ContentDialogResult.Primary;
         }
 
-        private async Task<Boolean> ConfirmBootRestoreAsync(
-            String backupPath,
+        private async Task<bool> ConfirmBootRestoreAsync(
+            string backupPath,
             BootDiskChoice selected)
         {
             StackPanel content = new()
@@ -1779,7 +1779,7 @@ private void UpdateInjectionProtectionText()
             return await dialog.ShowAsync() == ContentDialogResult.Primary;
         }
 
-        private async Task ShowBootMessageAsync(String title, String message)
+        private async Task ShowBootMessageAsync(string title, string message)
         {
             ContentDialog dialog = new()
             {
@@ -1797,17 +1797,17 @@ private void UpdateInjectionProtectionText()
             await dialog.ShowAsync();
         }
 
-        private static String FormatDiskTitle(PhysicalDiskInfo disk)
+        private static string FormatDiskTitle(PhysicalDiskInfo disk)
         {
-            String model = String.IsNullOrWhiteSpace(disk.Model)
+            string model = string.IsNullOrWhiteSpace(disk.Model)
                 ? BootText("SettingsPage_Protection_Boot_Disk_UnknownModel")
                 : disk.Model;
             if (model.Length > 60)
                 model = model[..59] + "…";
 
-            String systemSuffix = disk.IsSystemDisk
+            string systemSuffix = disk.IsSystemDisk
                 ? BootText("SettingsPage_Protection_Boot_Disk_SystemSuffix")
-                : String.Empty;
+                : string.Empty;
             return BootFormat(
                 "SettingsPage_Protection_Boot_Disk_TitleFormat",
                 disk.Index,
@@ -1815,14 +1815,14 @@ private void UpdateInjectionProtectionText()
                 systemSuffix);
         }
 
-        private static String FormatDiskDetails(PhysicalDiskInfo disk)
+        private static string FormatDiskDetails(PhysicalDiskInfo disk)
         {
-            String unknown = BootText("SettingsPage_Protection_Boot_Disk_UnknownValue");
-            String serial = String.IsNullOrWhiteSpace(disk.SerialNumber) ? unknown : disk.SerialNumber;
-            String busType = String.Equals(disk.BusType, "Unknown", StringComparison.Ordinal)
+            string unknown = BootText("SettingsPage_Protection_Boot_Disk_UnknownValue");
+            string serial = string.IsNullOrWhiteSpace(disk.SerialNumber) ? unknown : disk.SerialNumber;
+            string busType = string.Equals(disk.BusType, "Unknown", StringComparison.Ordinal)
                 ? unknown
                 : disk.BusType;
-            String size = disk.SizeBytes > 0
+            string size = disk.SizeBytes > 0
                 ? BootFormat(
                     "SettingsPage_Protection_Boot_Disk_SizeFormat",
                     disk.SizeBytes / 1024d / 1024d / 1024d)
@@ -1837,9 +1837,9 @@ private void UpdateInjectionProtectionText()
                 busType);
         }
 
-        private static String PartitionStyleText(PhysicalDiskPartitionStyle style)
+        private static string PartitionStyleText(PhysicalDiskPartitionStyle style)
         {
-            String suffix = style switch
+            string suffix = style switch
             {
                 PhysicalDiskPartitionStyle.Mbr => "Mbr",
                 PhysicalDiskPartitionStyle.Gpt => "Gpt",
@@ -1849,14 +1849,14 @@ private void UpdateInjectionProtectionText()
             return BootText($"SettingsPage_Protection_Boot_Disk_Partition_{suffix}");
         }
 
-        private static String BootText(String key)
+        private static string BootText(string key)
         {
             return Localizer.Get().GetLocalizedString(key);
         }
 
-        private static String BootFormat(String key, params Object[] values)
+        private static string BootFormat(string key, params object[] values)
         {
-            return String.Format(CultureInfo.CurrentCulture, BootText(key), values);
+            return string.Format(CultureInfo.CurrentCulture, BootText(key), values);
         }
 
         private async void SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled(object sender, RoutedEventArgs e)

@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 using WinUI3Localizer;
 using Xdows_Security.Services;
 using Xdows_Security.Views;
-using static Protection.CallBack;
+using static Protection.Callback;
 
 namespace Xdows_Security
 {
@@ -120,7 +120,7 @@ namespace Xdows_Security
             return IsRun(0) || IsRun(1) || IsRun(2) || IsRun(4) || IsRun(5);
         }
 
-        private static readonly InterceptCallBack interceptCallBack = interceptEvent =>
+        private static readonly InterceptCallback interceptCallback = interceptEvent =>
         {
             LogText.AddNewLog(LogText.LogLevel.WARN, "Protection", interceptEvent.IsSucceed
                 ? $"Intercepted：{interceptEvent.Path}"
@@ -146,7 +146,7 @@ namespace Xdows_Security
 
         private static LegacyBootProtection CreateLegacyBootProtection()
         {
-            String baselineDirectory = Path.Combine(
+            string baselineDirectory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "Xdows-Software",
                 "Xdows-Security",
@@ -178,7 +178,7 @@ namespace Xdows_Security
         {
             try
             {
-                Object? value = App.LocalSettings.Values["InjectionProtection"];
+                object? value = App.LocalSettings.Values["InjectionProtection"];
                 return value is not false;
             }
             catch
@@ -203,12 +203,12 @@ namespace Xdows_Security
         private static Xdows_Local.RegistryProtectionOptions GetRegistryProtectionOptions()
         {
             var settings = App.LocalSettings;
-            Boolean includeSecondary = !settings.Values.TryGetValue(
+            bool includeSecondary = !settings.Values.TryGetValue(
                 "RegistryProtectionSecondary",
-                out Object? secondaryRaw) || secondaryRaw is not Boolean secondary || secondary;
-            Boolean includeOther = settings.Values.TryGetValue(
+                out object? secondaryRaw) || secondaryRaw is not bool secondary || secondary;
+            bool includeOther = settings.Values.TryGetValue(
                 "RegistryProtectionOther",
-                out Object? otherRaw) && otherRaw is Boolean other && other;
+                out object? otherRaw) && otherRaw is bool other && other;
             return new Xdows_Local.RegistryProtectionOptions(includeSecondary, includeOther);
         }
 
@@ -224,9 +224,9 @@ namespace Xdows_Security
                 if (settings.Values.TryGetValue("ModelModeForProtection", out var mfpRaw) &&
                     mfpRaw is bool mfpOn && mfpOn)
                 {
-                    string modeStr = settings.Values.TryGetValue("ModelMode", out var modeRaw) && modeRaw is string ms
+                    string mode = settings.Values.TryGetValue("ModelMode", out var modeRaw) && modeRaw is string ms
                         ? ms : "Standard";
-                    protection.ModelMode = modeStr switch
+                    protection.ModelMode = mode switch
                     {
                         "Flash" => NativeModelScannerMode.Flash,
                         "Adaptive" => NativeModelScannerMode.Adaptive,
@@ -375,27 +375,27 @@ namespace Xdows_Security
             using CancellationTokenRegistration registration = token.Register(
                 () => completion.TrySetResult(BootProtectionUserDecision.KeepRepair));
 
-            Boolean queued = App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            bool queued = App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
             {
-                Boolean gateEntered = false;
+                bool gateEntered = false;
                 try
                 {
                     await BootDecisionDialogGate.WaitAsync(token);
                     gateEntered = true;
 
-                    String title = Localizer.Get().GetLocalizedString(
+                    string title = Localizer.Get().GetLocalizedString(
                         "SettingsPage_Protection_Boot_Detection_Title");
-                    String disk = String.IsNullOrWhiteSpace(request.DiskModel)
+                    string disk = string.IsNullOrWhiteSpace(request.DiskModel)
                         ? $"PhysicalDrive{request.DiskIndex}"
                         : $"PhysicalDrive{request.DiskIndex} - {request.DiskModel}";
-                    String changedItems = String.Join(
+                    string changedItems = string.Join(
                         Environment.NewLine,
                         request.ChangedItems.Select(item => $"• {item}"));
-                    String messageKey = request.RepairSucceeded
+                    string messageKey = request.RepairSucceeded
                         ? "SettingsPage_Protection_Boot_Detection_Repaired_Message"
                         : "SettingsPage_Protection_Boot_Detection_RepairFailed_Message";
-                    String messageFormat = Localizer.Get().GetLocalizedString(messageKey);
-                    String message = String.Format(
+                    string messageFormat = Localizer.Get().GetLocalizedString(messageKey);
+                    string message = string.Format(
                         System.Globalization.CultureInfo.CurrentCulture,
                         messageFormat,
                         disk,
@@ -478,9 +478,9 @@ namespace Xdows_Security
             }
         }
 
-        public static bool Run(int RunID)
+        public static bool Run(int RunId)
         {
-            IProtectionModel? protection = RunIdToProtection(RunID);
+            IProtectionModel? protection = RunIdToProtection(RunId);
 
             if (protection is null) { return false; }
 
@@ -497,12 +497,12 @@ namespace Xdows_Security
             }
             else
             {
-                result = protection.Run(interceptCallBack);
+                result = protection.Run(interceptCallback);
             }
 
             if (result)
             {
-                SaveProtectionState(RunID, IsRun(RunID));
+                SaveProtectionState(RunId, IsRun(RunId));
                 StateChanged?.Invoke(null, EventArgs.Empty);
             }
 
@@ -562,7 +562,7 @@ namespace Xdows_Security
                 bool changed = false;
                 if (shouldEnable && !protection.IsRun())
                 {
-                    changed = protection.Run(interceptCallBack);
+                    changed = protection.Run(interceptCallback);
                 }
                 else if (!shouldEnable && protection.IsRun())
                 {
@@ -577,9 +577,9 @@ namespace Xdows_Security
             catch { }
         }
 
-        public static bool IsRun(int RunID)
+        public static bool IsRun(int RunId)
         {
-            return RunIdToProtection(RunID)?.IsRun() ?? false;
+            return RunIdToProtection(RunId)?.IsRun() ?? false;
         }
 
         public static void PrepareVoluntaryExit()
@@ -618,9 +618,9 @@ namespace Xdows_Security
             };
         }
 
-        private static IProtectionModel? RunIdToProtection(int RunID)
+        private static IProtectionModel? RunIdToProtection(int RunId)
         {
-            IProtectionModel? protection = RunID switch
+            IProtectionModel? protection = RunId switch
             {
                 0 => LegacyProcessProtection,
                 1 => LegacyFilesProtection,
@@ -987,10 +987,10 @@ namespace Xdows_Security
                 {
                     if (activatedArgs.Data is Windows.ApplicationModel.Activation.LaunchActivatedEventArgs launchArgs)
                     {
-                        string argStr = launchArgs.Arguments;
-                        if (!string.IsNullOrWhiteSpace(argStr))
+                        string arguments = launchArgs.Arguments;
+                        if (!string.IsNullOrWhiteSpace(arguments))
                         {
-                            cmdArgs = argStr.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                            cmdArgs = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                         }
                     }
                 }

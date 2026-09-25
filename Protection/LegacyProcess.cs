@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using TrustQuarantine;
 using Helper;
-using static Protection.CallBack;
+using static Protection.Callback;
 
 namespace Protection
 {
@@ -17,7 +17,7 @@ namespace Protection
         public const string Name = "Process";
         string IProtectionModel.Name => Name;
 
-        public bool Run(InterceptCallBack toastCallBack)
+        public bool Run(InterceptCallback toastCallback)
         {
             if (IsRun())
                 return true;
@@ -28,7 +28,7 @@ namespace Protection
             try
             {
                 _cts = new CancellationTokenSource();
-                _monitorTask = Task.Run(async () => await MonitorNewProcessesLoop(toastCallBack, _cts.Token), _cts.Token);
+                _monitorTask = Task.Run(async () => await MonitorNewProcessesLoop(toastCallback, _cts.Token), _cts.Token);
                 return true;
             }
             catch
@@ -74,7 +74,7 @@ namespace Protection
         private static readonly HashSet<int> _oldPids = [];
         private static readonly Lock _oldPidsLock = new();
 
-        private static async Task MonitorNewProcessesLoop(InterceptCallBack interceptCallBack, CancellationToken token)
+        private static async Task MonitorNewProcessesLoop(InterceptCallback interceptCallback, CancellationToken token)
         {
             while (!token.IsCancellationRequested)
             {
@@ -116,7 +116,7 @@ namespace Protection
                             proc.Kill();
                             await proc.WaitForExitAsync(token).ConfigureAwait(false);
                             bool quarantineSucceeded = await QuarantineManager.AddToQuarantine(path, result).ConfigureAwait(false);
-                            interceptCallBack(new ProtectionInterceptEvent(
+                            interceptCallback(new ProtectionInterceptEvent(
                                 path,
                                 quarantineSucceeded,
                                 result,
@@ -126,7 +126,7 @@ namespace Protection
                         }
                         catch (Exception)
                         {
-                            interceptCallBack(new ProtectionInterceptEvent(
+                            interceptCallback(new ProtectionInterceptEvent(
                                 path,
                                 false,
                                 result,

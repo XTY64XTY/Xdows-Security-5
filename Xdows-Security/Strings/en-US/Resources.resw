@@ -334,7 +334,7 @@
     <value>Please go to Settings - Scan and uncheck this engine.</value>
   </data>
   <data name="SecurityPage_Status_Cancelled" xml:space="preserve">
-    <value>Selection cancelled</value>
+    <value>Cancelled</value>
   </data>
   <data name="SecurityPage_Status_Waiting" xml:space="preserve">
     <value>Waiting</value>
@@ -420,7 +420,7 @@
   <data name="SecurityPage_ThreatsFound_Format" xml:space="preserve">
     <value>{0} threats</value>
   </data>
-  <data name="MainWindow_Nav_Xdows-Tools.Content" xml:space="preserve">
+  <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
     <value>Xdows Tools</value>
   </data>
   <data name="HomePage_TextBlock_Open" xml:space="preserve">
@@ -501,22 +501,22 @@
   <data name="SettingsPage_Scan_Local.Description" xml:space="preserve">
     <value>The built-in local engine is fast but may not detect the latest threats promptly.</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model.Header" xml:space="preserve">
     <value>Xdows Model Engine</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model.Description" xml:space="preserve">
     <value>High-Precision Scanning Engine Based on Machine Learning</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_Mode.Header" xml:space="preserve">
     <value>Model Mode</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_Mode.Description" xml:space="preserve">
     <value>Select the operating mode for Xdows Model</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_ModeForProtection.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_ModeForProtection.Header" xml:space="preserve">
     <value>Apply Model Mode to Protection</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_ModeForProtection.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_ModeForProtection.Description" xml:space="preserve">
     <value>When enabled, protection modules will use the selected model mode; changing this setting requires restarting the corresponding protection to take effect</value>
   </data>
   <data name="SettingsPage_Scan_Local_DeepScan.Header" xml:space="preserve">
@@ -529,22 +529,22 @@
     <value>Protection</value>
   </data>
   <data name="SettingsPage_Protection_CompatGroup.Header" xml:space="preserve">
-    <value>Compat Protection</value>
+    <value>Compatibility Protection</value>
   </data>
   <data name="SettingsPage_Protection_CompatGroup.Description" xml:space="preserve">
     <value>Protection for most systems, but with limited protection capability</value>
   </data>
   <data name="SettingsPage_Protection_Process.Header" xml:space="preserve">
-    <value>Process Scan</value>
+    <value>Process Protection</value>
   </data>
   <data name="SettingsPage_Protection_Files.Header" xml:space="preserve">
-    <value>Files Scan</value>
+    <value>File Protection</value>
   </data>
   <data name="SettingsPage_Protection_Boot.Header" xml:space="preserve">
-    <value>Boot Guard</value>
+    <value>Boot Protection</value>
   </data>
   <data name="SettingsPage_Protection_Registry.Header" xml:space="preserve">
-    <value>Registry Guard</value>
+    <value>Registry Protection</value>
   </data>
   <data name="SettingsPage_Protection_Boot.Description" xml:space="preserve">
     <value>Attempt to repair the boot sector if it is tampered with.</value>
@@ -700,7 +700,7 @@
     <value>Solid</value>
   </data>
   <data name="SettingsPage_Appearance_Backdrop_MicaAlt.Content" xml:space="preserve">
-    <value>MicaAlt</value>
+    <value>Mica Alt</value>
   </data>
   <data name="SettingsPage_Appearance_Backdrop_Mica.Content" xml:space="preserve">
     <value>Mica</value>
@@ -756,7 +756,7 @@
   <data name="SettingsPage_Scan_BuiltInRuleEngine_ExactRule.Description" xml:space="preserve">
     <value>Cloud hash-based exact matching engine, scans before other engines</value>
   </data>
-  <data name="HomePage_Pomes" xml:space="preserve">
+  <data name="HomePage_Poems" xml:space="preserve">
     <value>Light—cosmic dot; black hole its plotted ellipsis.
 Screens fake light with filters, like résumés fake life.
 If light is speech, the rainbow is its slang.
@@ -1004,7 +1004,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
     <value>Handle</value>
   </data>
-  <data name="SecurityPage_HandleAllProgress" xml:space="preserve">
+  <data name="SecurityPage_HandleProcessing" xml:space="preserve">
     <value>Processing threat files...</value>
   </data>
   <data name="SecurityPage_HandleAllResult_Title" xml:space="preserve">
@@ -1032,13 +1032,13 @@ Files can be restored from quarantine after handling. Some files may be deleted 
     <value>Cancel</value>
   </data>
   <data name="AllPage_Status" xml:space="preserve">
-    <value>Enable,Disabled</value>
+    <value>Enabled, Disabled</value>
   </data>
   <data name="SettingsPage_Other_Tray.Header" xml:space="preserve">
-    <value>Tray Icon</value>
+    <value>Notification area icon</value>
   </data>
   <data name="SettingsPage_Other_Tray.Description" xml:space="preserve">
-    <value>Show tray icon in the taskbar</value>
+    <value>Show the icon in the notification area</value>
   </data>
   <data name="SettingsPage_Other_Startup.Header" xml:space="preserve">
     <value>Run on Startup</value>
@@ -1061,10 +1061,10 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="TrayMenu_Settings" xml:space="preserve">
     <value>Settings</value>
   </data>
-  <data name="SettingsPage_Other_DisabledVerify.Header" xml:space="preserve">
+  <data name="SettingsPage_Other_DisableVerify.Header" xml:space="preserve">
     <value>Disabled Verify</value>
   </data>
-  <data name="SettingsPage_Other_DisabledVerify.Description" xml:space="preserve">
+  <data name="SettingsPage_Other_DisableVerify.Description" xml:space="preserve">
     <value>Disable verification for performing high-risk operations</value>
   </data>
   <data name="SettingsPage_Quarantine_Empty_Title" xml:space="preserve">
@@ -1196,7 +1196,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Scan_IndexMode_FastIndex.Description" xml:space="preserve">
     <value>Try a faster indexing method on supported partition formats</value>
   </data>
-  <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
+  <data name="SettingsPage_Protection_Boot_Save_Button_SaveDialog_Title" xml:space="preserve">
     <value>Save As</value>
   </data>
   <data name="InterceptWindow_Title.Title" xml:space="preserve">
@@ -1601,31 +1601,31 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="DriverEnvironmentDialog_Group_Runtime_Title" xml:space="preserve">
     <value>Driver communication and model assets</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_admin_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Admin_Title" xml:space="preserve">
     <value>Administrator rights</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_testsigning_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Testsigning_Title" xml:space="preserve">
     <value>Driver signing</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_package_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Package_Title" xml:space="preserve">
     <value>Main driver package</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_service_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Service_Title" xml:space="preserve">
     <value>Main driver service</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_bootfilter-package_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_BootfilterPackage_Title" xml:space="preserve">
     <value>Boot filter package</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_bootfilter-service_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_BootfilterService_Title" xml:space="preserve">
     <value>Boot filter service</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_communication_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Communication_Title" xml:space="preserve">
     <value>Main driver communication</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_bootfilter-communication_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_BootfilterCommunication_Title" xml:space="preserve">
     <value>Boot filter communication</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_model_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Model_Title" xml:space="preserve">
     <value>Native model assets</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">

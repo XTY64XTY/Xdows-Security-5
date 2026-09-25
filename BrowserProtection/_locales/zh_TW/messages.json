@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "攔截已知的銀狐病毒釣魚網站和惡意網域",
+    "message": "封鎖已知的銀狐病毒釣魚網站和惡意網域",
     "description": "Extension description"
   },
   "blockTitle": {
@@ -16,11 +16,11 @@
     "description": "Block page document title"
   },
   "threatTitle": {
-    "message": "偵測到釣魚網站, 已阻斷連線",
+    "message": "偵測到釣魚網站，已封鎖連線",
     "description": "InfoBar title"
   },
   "threatMsg": {
-    "message": "該網站被 Xdows Security 網路防護 識別為高風險釣魚網域(疑似銀狐病毒仿冒站點), 為防止帳號與財產損失, 本次連線已被阻斷。",
+    "message": "該網站被 Xdows Security 網路防護識別為高風險釣魚網域（疑似銀狐病毒仿冒站點），為防止帳號與財產損失，本次連線已被封鎖。",
     "description": "InfoBar message"
   },
   "urlLabel": {
@@ -36,11 +36,11 @@
     "description": "Back button"
   },
   "popupSubtitle": {
-    "message": "銀狐病毒釣魚網站攔截",
+    "message": "銀狐病毒釣魚網站封鎖",
     "description": "Popup subtitle"
   },
   "statBlocked": {
-    "message": "已攔截",
+    "message": "已封鎖",
     "description": "Popup stat label"
   },
   "statRules": {
@@ -48,11 +48,11 @@
     "description": "Popup stat label"
   },
   "recentTitle": {
-    "message": "最近攔截",
+    "message": "最近封鎖",
     "description": "Popup recent section title"
   },
   "noRecent": {
-    "message": "暫無攔截記錄",
+    "message": "暫無封鎖記錄",
     "description": "Popup empty state"
   },
   "statusLabel": {

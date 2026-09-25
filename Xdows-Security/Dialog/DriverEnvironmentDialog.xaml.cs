@@ -87,7 +87,7 @@ namespace Xdows_Security
 
         private UIElement CreateGroupCard(DriverEnvironmentCheckGroup group)
         {
-            string groupTitleKey = $"DriverEnvironmentDialog_Group_{Capitalize(group.Id)}_Title";
+            string groupTitleKey = $"DriverEnvironmentDialog_Group_{ToKeySegment(group.Id)}_Title";
             string groupTitle = Localizer.Get().GetLocalizedString(groupTitleKey);
 
             var card = new Border
@@ -165,7 +165,7 @@ namespace Xdows_Security
 
         private UIElement CreateItemRow(DriverEnvironmentCheckItem item)
         {
-            string itemTitleKey = $"DriverEnvironmentDialog_Item_{item.Id}_Title";
+            string itemTitleKey = $"DriverEnvironmentDialog_Item_{ToKeySegment(item.Id)}_Title";
             string itemTitle = Localizer.Get().GetLocalizedString(itemTitleKey);
             if (string.IsNullOrEmpty(itemTitle))
                 itemTitle = item.Title;
@@ -212,12 +212,12 @@ namespace Xdows_Security
             if (sender is not Button { Tag: DriverEnvironmentCheckGroup group })
                 return;
 
-            string groupTitleKey = $"DriverEnvironmentDialog_Group_{Capitalize(group.Id)}_Title";
+            string groupTitleKey = $"DriverEnvironmentDialog_Group_{ToKeySegment(group.Id)}_Title";
             string groupTitle = Localizer.Get().GetLocalizedString(groupTitleKey);
             string repairingFormat = Localizer.Get().GetLocalizedString("DriverEnvironmentDialog_Repairing");
-            string repairingMsg = string.Format(repairingFormat, groupTitle);
+            string repairingMessage = string.Format(repairingFormat, groupTitle);
 
-            SetBusy(true, repairingMsg);
+            SetBusy(true, repairingMessage);
             bool anySuccess = false;
             string lastMessage = string.Empty;
 
@@ -271,8 +271,23 @@ namespace Xdows_Security
             _ => Localizer.Get().GetLocalizedString("DriverEnvironmentDialog_Status_Failed")
         };
 
-        private static string Capitalize(string value) =>
-            string.IsNullOrEmpty(value) ? value : char.ToUpperInvariant(value[0]) + value[1..];
+        /// <summary>把检查项的 Id 转换成资源键的 PascalCase 片段（连字符/下划线视为分隔符）。</summary>
+        private static string ToKeySegment(string value)
+        {
+            var builder = new System.Text.StringBuilder(value.Length);
+            bool upper = true;
+            foreach (char c in value)
+            {
+                if (c is '-' or '_')
+                {
+                    upper = true;
+                    continue;
+                }
+                builder.Append(upper ? char.ToUpperInvariant(c) : c);
+                upper = false;
+            }
+            return builder.ToString();
+        }
 
         private void SetBusy(bool busy, string? message)
         {

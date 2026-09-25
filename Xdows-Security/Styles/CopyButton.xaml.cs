@@ -39,12 +39,12 @@ public sealed partial class CopyButton : Button
         base.OnApplyTemplate();
         Click += CopyButton_Click;
     }
-    static public void AnnounceActionForAccessibility(UIElement ue, string announcement, string activityID)
+    static public void AnnounceActionForAccessibility(UIElement ue, string announcement, string activityId)
     {
         if (FrameworkElementAutomationPeer.FromElement(ue) is AutomationPeer peer)
         {
             peer.RaiseNotificationEvent(AutomationNotificationKind.ActionCompleted,
-                                        AutomationNotificationProcessing.ImportantMostRecent, announcement, activityID);
+                                        AutomationNotificationProcessing.ImportantMostRecent, announcement, activityId);
         }
     }
 }

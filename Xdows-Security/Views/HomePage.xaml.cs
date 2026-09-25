@@ -103,7 +103,7 @@ namespace Xdows_Security.Views
 
             LoadData();
             InitTimers();
-            RefreshPomes();
+            RefreshPoems();
         }
 
         private void HomePage_Unloaded(object sender, RoutedEventArgs e)
@@ -361,11 +361,11 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void RefreshPomes_Click(object sender, RoutedEventArgs e) => RefreshPomes();
-        private void CopyPomes_Click(object sender, RoutedEventArgs e)
+        private void RefreshPoems_Click(object sender, RoutedEventArgs e) => RefreshPoems();
+        private void CopyPoems_Click(object sender, RoutedEventArgs e)
         {
             var pkg = new DataPackage();
-            pkg.SetText(PomesLine.Text);
+            pkg.SetText(PoemsLine.Text);
             Clipboard.SetContent(pkg);
         }
 
@@ -511,11 +511,11 @@ namespace Xdows_Security.Views
             LogLevelFilter_Internal(selected);
         }
 
-        private void RefreshPomes()
+        private void RefreshPoems()
         {
-            var all = Localizer.Get().GetLocalizedString("HomePage_Pomes")
+            var all = Localizer.Get().GetLocalizedString("HomePage_Poems")
                                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-            PomesLine.Text = all.OrderBy(_ => Guid.NewGuid()).FirstOrDefault() ?? "";
+            PoemsLine.Text = all.OrderBy(_ => Guid.NewGuid()).FirstOrDefault() ?? "";
         }
 
         private void OnLanguageChanged(object? sender, LanguageChangedEventArgs e)
@@ -526,7 +526,7 @@ namespace Xdows_Security.Views
                 {
                     try
                     {
-                        RefreshPomes();
+                        RefreshPoems();
                         UpdateMemory();
                         LoadProtection();
                         UpdateData();

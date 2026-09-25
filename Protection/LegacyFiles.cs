@@ -1,17 +1,17 @@
 using TrustQuarantine;
 using Helper;
-using static Protection.CallBack;
+using static Protection.Callback;
 namespace Protection
 {
     public class LegacyFilesProtection : IProtectionModel
     {
         private static FileSystemWatcher[]? _watchers;
-        private static InterceptCallBack? _toastCallBack;
+        private static InterceptCallback? _toastCallback;
         private static Thread? _monitorThread;
         private static volatile bool _isMonitoring = false;
         public const string Name = "Files";
         string IProtectionModel.Name => Name;
-        public bool Run(InterceptCallBack toastCallBack)
+        public bool Run(InterceptCallback toastCallback)
         {
             if (_isMonitoring)
             {
@@ -22,7 +22,7 @@ namespace Protection
                 return false;
 
             _isMonitoring = true;
-            _toastCallBack = toastCallBack;
+            _toastCallback = toastCallback;
             _monitorThread = new Thread(StartMonitoring)
             {
                 IsBackground = true
@@ -142,7 +142,7 @@ namespace Protection
                     try
                     {
                         bool quarantineSucceeded = await QuarantineManager.AddToQuarantine(e.FullPath, result);
-                        _toastCallBack?.Invoke(new ProtectionInterceptEvent(
+                        _toastCallback?.Invoke(new ProtectionInterceptEvent(
                             e.FullPath,
                             quarantineSucceeded,
                             result,
@@ -153,7 +153,7 @@ namespace Protection
                     }
                     catch (Exception)
                     {
-                        _toastCallBack?.Invoke(new ProtectionInterceptEvent(
+                        _toastCallback?.Invoke(new ProtectionInterceptEvent(
                             e.FullPath,
                             false,
                             result,

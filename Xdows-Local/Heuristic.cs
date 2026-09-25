@@ -9,47 +9,47 @@ namespace Xdows_Local
 {
     public static class Heuristic
     {
-        private readonly record struct Rule(String[][] Keywords, Int32 Score, String SuspiciousData);
+        private readonly record struct Rule(string[][] Keywords, int Score, string SuspiciousData);
 
         private static readonly Rule[] Rules =
         [
             new Rule([["GetOpenFileName", "GetSaveFileName"]], -20, "FileDialog"),
-            new Rule([["LoadLibrary"], ["GetProcAddress"]], 15, String.Empty),
-            new Rule([["LoadLibrary"]], 10, String.Empty),
-            new Rule([["SetFileAttributes"], ["FILE_ATTRIBUTE_HIDDEN"]], 20, String.Empty),
-            new Rule([["SHFormatDrive"]], 20, String.Empty),
-            new Rule([["RtlAdjustPrivilege"]], 20, String.Empty),
-            new Rule([["HideCurrentProcess"]], 20, String.Empty),
+            new Rule([["LoadLibrary"], ["GetProcAddress"]], 15, string.Empty),
+            new Rule([["LoadLibrary"]], 10, string.Empty),
+            new Rule([["SetFileAttributes"], ["FILE_ATTRIBUTE_HIDDEN"]], 20, string.Empty),
+            new Rule([["SHFormatDrive"]], 20, string.Empty),
+            new Rule([["RtlAdjustPrivilege"]], 20, string.Empty),
+            new Rule([["HideCurrentProcess"]], 20, string.Empty),
             new Rule([["CreateService"], ["StartService"]], 15, "UseService"),
-            new Rule([["CopyFile"], ["CreateDirectory"], ["DeleteFile"], ["GetFullPathName"]], 5, String.Empty),
-            new Rule([["CreateObject"], ["Scriptlet.TypeLib", "Shell.Application", "Scripting.FileSystemObject"]], 15, String.Empty),
-            new Rule([["GetDlgItemInt", "GetDlgItemText"]], 15, String.Empty),
-            new Rule([["InternetReadFile", "FtpGetFile", "URLDownloadToFile"], ["WinExec"], ["RegCreateKey"]], 20, String.Empty),
-            new Rule([["InternetReadFile", "FtpGetFile", "URLDownloadToFile"], ["MoveFile", "CopyFile"]], 5, String.Empty),
+            new Rule([["CopyFile"], ["CreateDirectory"], ["DeleteFile"], ["GetFullPathName"]], 5, string.Empty),
+            new Rule([["CreateObject"], ["Scriptlet.TypeLib", "Shell.Application", "Scripting.FileSystemObject"]], 15, string.Empty),
+            new Rule([["GetDlgItemInt", "GetDlgItemText"]], 15, string.Empty),
+            new Rule([["InternetReadFile", "FtpGetFile", "URLDownloadToFile"], ["WinExec"], ["RegCreateKey"]], 20, string.Empty),
+            new Rule([["InternetReadFile", "FtpGetFile", "URLDownloadToFile"], ["MoveFile", "CopyFile"]], 5, string.Empty),
             new Rule([["CallNextHook", "SetWindowsHook"]], 15, "AddHook"),
-            new Rule([["_"]], 5, String.Empty),
-            new Rule([["free"]], 5, String.Empty),
-            new Rule([["GetLastError"]], 5, String.Empty),
-            new Rule([["FlushInstruction"]], 5, String.Empty),
-            new Rule([["WriteConsole"]], -5, String.Empty),
+            new Rule([["_"]], 5, string.Empty),
+            new Rule([["free"]], 5, string.Empty),
+            new Rule([["GetLastError"]], 5, string.Empty),
+            new Rule([["FlushInstruction"]], 5, string.Empty),
+            new Rule([["WriteConsole"]], -5, string.Empty),
             new Rule([["VirtualAlloc", "VirtualFree", "VirtualProtect", "VirtualQuery"]], 15, "ModifyMemory"),
-            new Rule([["GetModuleFileName", "GetModuleHandle"]], 20, String.Empty),
-            new Rule([["WNetAddConnection"]], 15, String.Empty),
-            new Rule([["CopyScreen"]], 15, String.Empty),
-            new Rule([["ExitWindows"]], 5, String.Empty),
-            new Rule([["URLDownloadToFile"]], 15, String.Empty),
-            new Rule([["URLDownloadToCacheFile"]], -15, String.Empty),
+            new Rule([["GetModuleFileName", "GetModuleHandle"]], 20, string.Empty),
+            new Rule([["WNetAddConnection"]], 15, string.Empty),
+            new Rule([["CopyScreen"]], 15, string.Empty),
+            new Rule([["ExitWindows"]], 5, string.Empty),
+            new Rule([["URLDownloadToFile"]], 15, string.Empty),
+            new Rule([["URLDownloadToCacheFile"]], -15, string.Empty),
             new Rule([["mouse_event ", "keybd_event "]], 15, "InputSimulate"),
-            new Rule([["SetPriorityClass"]], 15, String.Empty),
-            new Rule([["CryptGenRandom"]], 15, String.Empty),
+            new Rule([["SetPriorityClass"]], 15, string.Empty),
+            new Rule([["CryptGenRandom"]], 15, string.Empty),
             new Rule([["EnumAudioEndpoints"]], 15, "LikeSandboxBypass"),
-            new Rule([["AdjustTokenPrivileges", "LookupPrivilegeValue", "OpenProcessToken"]], 10, String.Empty),
-            new Rule([["CryptAcquireContext"]], 10, String.Empty),
-            new Rule([["CreateRemoteThread"]], 10, String.Empty),
-            new Rule([["InternetOpen", "InternetConnect", "HttpSendRequest"]], 5, String.Empty),
-            new Rule([["RegCreateKey", "RegSetValue"]], 5, String.Empty),
+            new Rule([["AdjustTokenPrivileges", "LookupPrivilegeValue", "OpenProcessToken"]], 10, string.Empty),
+            new Rule([["CryptAcquireContext"]], 10, string.Empty),
+            new Rule([["CreateRemoteThread"]], 10, string.Empty),
+            new Rule([["InternetOpen", "InternetConnect", "HttpSendRequest"]], 5, string.Empty),
+            new Rule([["RegCreateKey", "RegSetValue"]], 5, string.Empty),
             new Rule([["WriteProcessMemory "], ["CreateRemoteThread "]], 15, "ProcessInjection"),
-            new Rule([["OpenProcess "]], 5, String.Empty),
+            new Rule([["OpenProcess "]], 5, string.Empty),
             new Rule([["NtCreateThread", "ZwCreateThread"]], 15, "NativeThreadInject"),
             new Rule([["OpenProcessToken "], ["DuplicateToken"], ["ImpersonateLoggedOnUser"]], 20, "TokenTheft"),
             new Rule([["ZwUnmapViewOfSection ", "NtUnmapViewOfSection"], ["ZwMapViewOfSection", "NtMapViewOfSection"]], 25, "ProcessHollowing"),
@@ -57,31 +57,31 @@ namespace Xdows_Local
             new Rule([["QueueUserAPC", "NtQueueApcThread"]], 15, "APCInject"),
             new Rule([["SetThreadContext "], ["GetThreadContext "]], 15, "ThreadHijack"),
             new Rule([["GetAsyncKeyState "]], 10, "KeyloggerPolling"),
-            new Rule([["ShellExecute"]], 5, String.Empty),
-            new Rule([["DeviceIoControl"]], 15, String.Empty),
-            new Rule([["WscGetSecurityProviderHealth", "WscRegisterChanges", "WscUnRegisterChanges"]], 15, String.Empty),
-            new Rule([["GetProcessImageFileName", "NtQueueApcThread"]], 5, String.Empty),
-            new Rule([["RegisterServiceProcess"]], 10, String.Empty),
-            new Rule([["RunFileDlg"]], -5, String.Empty),
-            new Rule([["RtlSetProcessIsCritical"]], 20, String.Empty),
+            new Rule([["ShellExecute"]], 5, string.Empty),
+            new Rule([["DeviceIoControl"]], 15, string.Empty),
+            new Rule([["WscGetSecurityProviderHealth", "WscRegisterChanges", "WscUnRegisterChanges"]], 15, string.Empty),
+            new Rule([["GetProcessImageFileName", "NtQueueApcThread"]], 5, string.Empty),
+            new Rule([["RegisterServiceProcess"]], 10, string.Empty),
+            new Rule([["RunFileDlg"]], -5, string.Empty),
+            new Rule([["RtlSetProcessIsCritical"]], 20, string.Empty),
         ];
 
-        public static (Int32 score, String extra) Evaluate(String path, PeFile peFile, PEInfo peInfo, Boolean deepScan)
+        public static (int score, string extra) Evaluate(string path, PeFile peFile, PEInfo peInfo, bool deepScan)
         {
-            String extra = String.Empty;
-            Int32 score = 0;
-            List<String> suspiciousData = [];
+            string extra = string.Empty;
+            int score = 0;
+            List<string> suspiciousData = [];
 
-            String[] fileExtension = GetExtStrings(path);
+            string[] fileExtension = GetExtStrings(path);
 
             Byte[] rawBytes = peFile.RawFile?.ToArray() ?? [];
-            if (rawBytes.Length == 0) return (0, String.Empty);
+            if (rawBytes.Length == 0) return (0, string.Empty);
             ReadOnlySpan<Byte> rawSpan = rawBytes;
             if (fileExtension.Length > 0)
             {
-                String[] docExts = [".doc", ".ppt", ".xls", ".csv"];
-                String ext = Path.GetExtension(path);
-                if (!String.IsNullOrEmpty(ext) && docExts.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                string[] docExts = [".doc", ".ppt", ".xls", ".csv"];
+                string ext = Path.GetExtension(path);
+                if (!string.IsNullOrEmpty(ext) && docExts.Contains(ext, StringComparer.OrdinalIgnoreCase))
                 {
                     if (IsSuspiciousDoc(rawSpan))
                     {
@@ -119,15 +119,15 @@ namespace Xdows_Local
 
             if (peFile.IsExe || peFile.IsDll || peFile.IsDriver)
             {
-                Int32 code = FileDigitallySignedAndValid(path, peFile);
+                int code = FileDigitallySignedAndValid(path, peFile);
                 if (code == 50)
-                    return (0, String.Empty);
+                    return (0, string.Empty);
                 score -= code;
 
-                Int32 resourceTask = CheckResourceSectionForPacking(peFile);
-                Boolean packingTask = CheckPackingSignatures(peFile, rawBytes);
+                int resourceTask = CheckResourceSectionForPacking(peFile);
+                bool packingTask = CheckPackingSignatures(peFile, rawBytes);
 
-                Int32 tempScore = resourceTask;
+                int tempScore = resourceTask;
                 if (tempScore > 0)
                 {
                     score += tempScore;
@@ -162,15 +162,15 @@ namespace Xdows_Local
                 {
                     score += peInfo.ImportsName.Length <= 50 ? 5 : -5;
 
-                    String[] imports = peInfo.ImportsName;
-                    Boolean Has(params String[] keys) => ContainsSuspiciousApi(imports, keys);
+                    string[] imports = peInfo.ImportsName;
+                    bool Has(params string[] keys) => ContainsSuspiciousApi(imports, keys);
 
-                    Boolean hookHandled = false;
+                    bool hookHandled = false;
 
                     foreach (Rule r in Rules)
                     {
-                        Boolean matched = true;
-                        foreach (String[] group in r.Keywords)
+                        bool matched = true;
+                        foreach (string[] group in r.Keywords)
                         {
                             if (!group.Any(k => Has(k)))
                             {
@@ -181,7 +181,7 @@ namespace Xdows_Local
 
                         if (!matched) continue;
                         score += r.Score;
-                        if (!String.IsNullOrEmpty(r.SuspiciousData)) suspiciousData.Add(r.SuspiciousData);
+                        if (!string.IsNullOrEmpty(r.SuspiciousData)) suspiciousData.Add(r.SuspiciousData);
                         if (r.SuspiciousData == "AddHook") hookHandled = true;
                     }
 
@@ -214,7 +214,7 @@ namespace Xdows_Local
 
             if (deepScan)
             {
-                Boolean t1Result = false, t2Result = false, t3Result = false, t4Result = false, t5Result = false, t6Result = false, t7Result = false;
+                bool t1Result = false, t2Result = false, t3Result = false, t4Result = false, t5Result = false, t6Result = false, t7Result = false;
                 Parallel.Invoke(
                     () => t1Result = ContainsSuspiciousContent(rawBytes, [".sys"]),
                     () => t2Result = ContainsSuspiciousContent(rawBytes, ["Virtual"]),
@@ -244,7 +244,7 @@ namespace Xdows_Local
             return (score, extra);
         }
 
-        public static Boolean CheckPackingSignatures(PeFile pe, Byte[]? cachedRaw = null)
+        public static bool CheckPackingSignatures(PeFile pe, Byte[]? cachedRaw = null)
         {
             Byte[] raw = cachedRaw ?? pe.RawFile.ToArray();
             if (raw.Length > 0x40 &&
@@ -259,9 +259,9 @@ namespace Xdows_Local
             return false;
         }
 
-        public static Int32 CheckResourceSectionForPacking(PeFile pe)
+        public static int CheckResourceSectionForPacking(PeFile pe)
         {
-            Int32 score = 0;
+            int score = 0;
             UInt32 resRva = pe.ImageNtHeaders?.OptionalHeader.DataDirectory[2].VirtualAddress ?? 0;
             if (resRva == 0) score += 10;
             else if (resRva < 4096) score += 5;
@@ -284,24 +284,24 @@ namespace Xdows_Local
             return score;
         }
 
-        private static String[] GetExtStrings(String path)
+        private static string[] GetExtStrings(string path)
         {
-            if (String.IsNullOrEmpty(path)) return [];
+            if (string.IsNullOrEmpty(path)) return [];
 
-            List<String> extensions = [];
-            Int32 lastSlashIndex = path.LastIndexOfAny(['\\', '/']);
-            Int32 extStartIndex = path.LastIndexOf('.');
+            List<string> extensions = [];
+            int lastSlashIndex = path.LastIndexOfAny(['\\', '/']);
+            int extStartIndex = path.LastIndexOf('.');
 
             if (extStartIndex > lastSlashIndex)
             {
-                String extension = path[(extStartIndex + 1)..].ToLowerInvariant();
+                string extension = path[(extStartIndex + 1)..].ToLowerInvariant();
                 extensions.Add(extension);
             }
 
             return [.. extensions];
         }
 
-        private static readonly FrozenSet<String> _trustedThumbprints = new HashSet<String>(StringComparer.OrdinalIgnoreCase)
+        private static readonly FrozenSet<string> _trustedThumbprints = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "3B77DB29AC72AA6B5880ECB2ED5EC1EC6601D847",
             "FACDE3D80E99AFCC15E08AC5A69BD22785287F79",
@@ -443,7 +443,7 @@ namespace Xdows_Local
             "0F55B47074C6B8D76B79ECF07EA9FC92BDA8B87D",
         }.ToFrozenSet();
 
-        public static Int32 FileDigitallySignedAndValid(String filePath, PeFile pe)
+        public static int FileDigitallySignedAndValid(string filePath, PeFile pe)
         {
             try
             {
@@ -463,15 +463,15 @@ namespace Xdows_Local
                     }
                 };
 
-                Boolean chainOk = chain.Build(auth);
-                Boolean isTrusted = chain.ChainElements
+                bool chainOk = chain.Build(auth);
+                bool isTrusted = chain.ChainElements
                     .Any(el => _trustedThumbprints.Contains(el.Certificate.Thumbprint));
 
                 if (isTrusted) return 60;
 
                 if (auth.NotAfter <= DateTime.Now) return -10;
 
-                Boolean revoked = chain.ChainElements
+                bool revoked = chain.ChainElements
                     .Any(el => el.ChainElementStatus.Any(s => s.Status == X509ChainStatusFlags.Revoked));
 
                 if (revoked) return -5;
@@ -481,7 +481,7 @@ namespace Xdows_Local
             catch (Exception) { return 0; }
         }
 
-        private static Boolean IsSuspiciousDoc(ReadOnlySpan<Byte> fileContent)
+        private static bool IsSuspiciousDoc(ReadOnlySpan<Byte> fileContent)
         {
             if (fileContent.Length == 0) return false;
             ReadOnlySpan<Byte> data = fileContent;
@@ -502,15 +502,15 @@ namespace Xdows_Local
             return false;
         }
 
-        private static Boolean ContainsSuspiciousApi(String[] apis, String[] keywords)
+        private static bool ContainsSuspiciousApi(string[] apis, string[] keywords)
         {
             if (apis == null || apis.Length == 0)
             {
                 return false;
             }
-            foreach (String keyword in keywords)
+            foreach (string keyword in keywords)
             {
-                foreach (String api in apis)
+                foreach (string api in apis)
                 {
                     if (api.Contains(keyword))
                         return true;
@@ -519,7 +519,7 @@ namespace Xdows_Local
             return false;
         }
 
-        private static Int32 CountSuspiciousApiOccurrences(String[] apis, String[] keywords)
+        private static int CountSuspiciousApiOccurrences(string[] apis, string[] keywords)
         {
             if (apis == null || keywords == null || keywords.Length == 0)
                 return 0;
@@ -529,7 +529,7 @@ namespace Xdows_Local
                     keyword != null && api.Contains(keyword)));
         }
 
-        private static Boolean ContainsSuspiciousContent(ReadOnlySpan<Byte> fileContent, String[] keywords)
+        private static bool ContainsSuspiciousContent(ReadOnlySpan<Byte> fileContent, string[] keywords)
         {
             if (fileContent.Length == 0) return false;
             ReadOnlySpan<Byte> data = fileContent;
@@ -539,15 +539,15 @@ namespace Xdows_Local
 
             try
             {
-                foreach (String keyword in keywords)
+                foreach (string keyword in keywords)
                 {
-                    Int32 maxBytes = Encoding.UTF8.GetMaxByteCount(keyword.Length);
+                    int maxBytes = Encoding.UTF8.GetMaxByteCount(keyword.Length);
 
                     Span<Byte> tempBuf = maxBytes <= buffer.Length
                         ? buffer
                         : (oversizedBuffer ??= ArrayPool<Byte>.Shared.Rent(maxBytes));
 
-                    Int32 written = Encoding.UTF8.GetBytes(keyword, tempBuf);
+                    int written = Encoding.UTF8.GetBytes(keyword, tempBuf);
                     if (data.IndexOf(tempBuf[..written]) >= 0)
                         return true;
                 }

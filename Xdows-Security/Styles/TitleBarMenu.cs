@@ -15,8 +15,8 @@ namespace Xdows_Security
 {
     public sealed partial class TitleBarMenu : UserControl, INotifyPropertyChanged
     {
-        private SUBCLASSPROC? mainWindowSubClassProc;
-        private SUBCLASSPROC? inputNonClientPointerSourceSubClassProc;
+        private SUBCLASSPROC? mainWindowSubclassProc;
+        private SUBCLASSPROC? inputNonClientPointerSourceSubclassProc;
         private ContentCoordinateConverter? contentCoordinateConverter;
         private OverlappedPresenter? overlappedPresenter;
 
@@ -94,14 +94,14 @@ namespace Xdows_Security
             IsWindowMaximized = overlappedPresenter!.State is OverlappedPresenterState.Maximized;
             contentCoordinateConverter = ContentCoordinateConverter.CreateForWindowId(ownerWindow.AppWindow.Id);
 
-            mainWindowSubClassProc = new SUBCLASSPROC(MainWindowSubClassProc);
-            Comctl32Library.SetWindowSubclass((nint)ownerWindow.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(mainWindowSubClassProc), 0, 0);
+            mainWindowSubclassProc = new SUBCLASSPROC(MainWindowSubclassProc);
+            Comctl32Library.SetWindowSubclass((nint)ownerWindow.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(mainWindowSubclassProc), 0, 0);
 
             nint inputNonClientPointerSourceHandle = User32Library.FindWindowEx((nint)ownerWindow.AppWindow.Id.Value, 0, "InputNonClientPointerSource", lpszWindow: null!);
             if (inputNonClientPointerSourceHandle != 0)
             {
-                inputNonClientPointerSourceSubClassProc = new SUBCLASSPROC(InputNonClientPointerSourceSubClassProc);
-                Comctl32Library.SetWindowSubclass((nint)ownerWindow.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(inputNonClientPointerSourceSubClassProc), 0, 0);
+                inputNonClientPointerSourceSubclassProc = new SUBCLASSPROC(InputNonClientPointerSourceSubclassProc);
+                Comctl32Library.SetWindowSubclass((nint)ownerWindow.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(inputNonClientPointerSourceSubclassProc), 0, 0);
             }
 
             ownerWindow.AppWindow.Changed += OnAppWindowChanged;
@@ -179,7 +179,7 @@ namespace Xdows_Security
         internal void OnCloseClicked(object _, RoutedEventArgs __)
         {
             // 发送 SC_CLOSE 系统命令，与点击标题栏 X 按钮一致，
-            // 触发 AppWindow.Closing 事件以走托盘隐藏/关闭验证流程
+            // 触发 AppWindow.Closing 事件以走通知区域隐藏/关闭验证流程
             User32Library.SendMessage(
                 (nint)OwnerWindow.AppWindow.Id.Value,
                 WindowMessage.WM_SYSCOMMAND,
@@ -187,7 +187,7 @@ namespace Xdows_Security
                 0);
         }
 
-        private nint MainWindowSubClassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
+        private nint MainWindowSubclassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
         {
             if (Msg is WindowMessage.WM_SYSCOMMAND)
             {
@@ -224,7 +224,7 @@ namespace Xdows_Security
             return Comctl32Library.DefSubclassProc(hWnd, Msg, wParam, lParam);
         }
 
-        private nint InputNonClientPointerSourceSubClassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
+        private nint InputNonClientPointerSourceSubclassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
         {
             switch (Msg)
             {

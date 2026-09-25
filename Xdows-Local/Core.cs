@@ -7,23 +7,23 @@ namespace Xdows_Local
     {
         public record PEInfo
         {
-            public String[]? ImportsDll;
-            public String[]? ImportsName;
-            public String[]? ExportsName;
+            public string[]? ImportsDll;
+            public string[]? ImportsName;
+            public string[]? ExportsName;
         }
 
-        public static String Scan(String path, Boolean deep, Boolean extraData)
+        public static string Scan(string path, bool deep, bool extraData)
         {
-            if (!File.Exists(path)) return String.Empty;
+            if (!File.Exists(path)) return string.Empty;
             try
             {
-                const Int32 BufferSize = 65536;
+                const int BufferSize = 65536;
                 using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, BufferSize);
                 using var ms = new MemoryStream();
                 var buffer = ArrayPool<Byte>.Shared.Rent(BufferSize);
                 try
                 {
-                    Int32 bytesRead;
+                    int bytesRead;
                     while ((bytesRead = fs.Read(buffer, 0, BufferSize)) > 0)
                     {
                         ms.Write(buffer, 0, bytesRead);
@@ -36,25 +36,25 @@ namespace Xdows_Local
                 Byte[] fileBytes = ms.ToArray();
                 return ScanFromBytes(path, fileBytes, deep, extraData);
             }
-            catch (Exception) { return String.Empty; }
+            catch (Exception) { return string.Empty; }
         }
 
-        public static String ScanFromBytes(String path, Byte[] fileBytes, Boolean deep, Boolean extraData)
+        public static string ScanFromBytes(string path, Byte[] fileBytes, bool deep, bool extraData)
         {
-            if (fileBytes.Length == 0) return String.Empty;
+            if (fileBytes.Length == 0) return string.Empty;
 
             if (!PeFile.IsPeFile(fileBytes))
             {
                 try
                 {
-                    (Int32 score, String extra) scriptScanResult = ScriptScan.ScanScriptFile(path, fileBytes);
+                    (int score, string extra) scriptScanResult = ScriptScan.ScanScriptFile(path, fileBytes);
                     if (scriptScanResult.score >= 100)
                     {
                         return extraData ? $"Xdows.script.code{scriptScanResult.score} {scriptScanResult.extra}" : $"Xdows.script.code{scriptScanResult.score}";
                     }
-                    return String.Empty;
+                    return string.Empty;
                 }
-                catch (Exception) { return String.Empty; }
+                catch (Exception) { return string.Empty; }
             }
 
             PeFile peFile = new(fileBytes);
@@ -65,7 +65,7 @@ namespace Xdows_Local
                 IReadOnlyList<PeNet.Header.Pe.ExportFunction>? exports = peFile.ExportedFunctions;
                 if (exports != null)
                 {
-                    fileInfo.ExportsName = [.. exports.Select(exported => exported.Name ?? String.Empty)];
+                    fileInfo.ExportsName = [.. exports.Select(exported => exported.Name ?? string.Empty)];
                 }
                 else
                 {
@@ -79,7 +79,7 @@ namespace Xdows_Local
                 List<PeNet.Header.Pe.ImportFunction> validImports = [.. importedFunctions.Where(import => import.Name != null)];
 
                 fileInfo.ImportsDll = [.. validImports.Select(import => import.DLL)];
-                fileInfo.ImportsName = [.. validImports.Select(import => import.Name ?? String.Empty)];
+                fileInfo.ImportsName = [.. validImports.Select(import => import.Name ?? string.Empty)];
             }
             else
             {
@@ -87,13 +87,13 @@ namespace Xdows_Local
                 fileInfo.ImportsName = [];
             }
 
-            (Int32 score, String extra) score = Heuristic.Evaluate(path, peFile, fileInfo, deep);
+            (int score, string extra) score = Heuristic.Evaluate(path, peFile, fileInfo, deep);
             if (score.score >= 100)
             {
                 return extraData ? $"Xdows.local.code{score.score} {score.extra}" : $"Xdows.local.code{score.score}";
             }
 
-            return String.Empty;
+            return string.Empty;
         }
     }
 }

@@ -14,20 +14,20 @@ namespace Helper
     }
 
     public sealed record PhysicalDiskInfo(
-        Int32 Index,
-        String Model,
-        String SerialNumber,
+        int Index,
+        string Model,
+        string SerialNumber,
         Int64 SizeBytes,
         PhysicalDiskPartitionStyle PartitionStyle,
-        String BusType,
-        Boolean IsSystemDisk)
+        string BusType,
+        bool IsSystemDisk)
     {
-        public String DevicePath => $"\\\\.\\PhysicalDrive{Index}";
+        public string DevicePath => $"\\\\.\\PhysicalDrive{Index}";
     }
 
     public static class DiskOperator
     {
-        public const Int32 BootSectorSize = 512;
+        public const int BootSectorSize = 512;
 
         private const UInt32 GenericRead = 0x80000000;
         private const UInt32 GenericWrite = 0x40000000;
@@ -42,12 +42,12 @@ namespace Helper
         private const UInt32 IoctlDiskGetDriveGeometryEx = 0x000700A0;
         private const UInt32 IoctlDiskGetLengthInfo = 0x0007405C;
         private const UInt32 IoctlVolumeGetVolumeDiskExtents = 0x00560000;
-        private const Int32 ErrorInsufficientBuffer = 122;
-        private const Int32 MaxRawRegionSize = 16 * 1024 * 1024;
+        private const int ErrorInsufficientBuffer = 122;
+        private const int MaxRawRegionSize = 16 * 1024 * 1024;
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern SafeFileHandle CreateFileW(
-            String lpFileName,
+            string lpFileName,
             UInt32 dwDesiredAccess,
             UInt32 dwShareMode,
             IntPtr lpSecurityAttributes,
@@ -56,7 +56,7 @@ namespace Helper
             IntPtr hTemplateFile);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern Boolean ReadFile(
+        private static extern bool ReadFile(
             SafeFileHandle hFile,
             Byte[] lpBuffer,
             UInt32 nNumberOfBytesToRead,
@@ -64,7 +64,7 @@ namespace Helper
             IntPtr lpOverlapped);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern Boolean WriteFile(
+        private static extern bool WriteFile(
             SafeFileHandle hFile,
             Byte[] lpBuffer,
             UInt32 nNumberOfBytesToWrite,
@@ -72,17 +72,17 @@ namespace Helper
             IntPtr lpOverlapped);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern Boolean SetFilePointerEx(
+        private static extern bool SetFilePointerEx(
             SafeFileHandle hFile,
             Int64 liDistanceToMove,
             out Int64 lpNewFilePointer,
             UInt32 dwMoveMethod);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern Boolean FlushFileBuffers(SafeFileHandle hFile);
+        private static extern bool FlushFileBuffers(SafeFileHandle hFile);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern Boolean DeviceIoControl(
+        private static extern bool DeviceIoControl(
             SafeFileHandle hDevice,
             UInt32 dwIoControlCode,
             Byte[]? lpInBuffer,
@@ -94,25 +94,25 @@ namespace Helper
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern UInt32 QueryDosDeviceW(
-            String? lpDeviceName,
+            string? lpDeviceName,
             [Out] Char[] lpTargetPath,
             UInt32 ucchMax);
 
         public static IReadOnlyList<PhysicalDiskInfo> GetPhysicalDisks()
         {
-            HashSet<Int32> systemDiskNumbers = GetSystemDiskNumbers();
-            SortedSet<Int32> diskNumbers = GetPhysicalDiskNumbers();
+            HashSet<int> systemDiskNumbers = GetSystemDiskNumbers();
+            SortedSet<int> diskNumbers = GetPhysicalDiskNumbers();
             diskNumbers.UnionWith(systemDiskNumbers);
 
             List<PhysicalDiskInfo> disks = [];
-            foreach (Int32 diskNumber in diskNumbers)
+            foreach (int diskNumber in diskNumbers)
             {
-                String devicePath = GetPhysicalDrivePath(diskNumber);
+                string devicePath = GetPhysicalDrivePath(diskNumber);
                 using SafeFileHandle handle = OpenDevice(devicePath, 0);
 
-                String model = String.Empty;
-                String serialNumber = String.Empty;
-                String busType = "Unknown";
+                string model = string.Empty;
+                string serialNumber = string.Empty;
+                string busType = "Unknown";
                 Int64 sizeBytes = 0;
                 PhysicalDiskPartitionStyle partitionStyle = PhysicalDiskPartitionStyle.Unknown;
 
@@ -144,24 +144,24 @@ namespace Helper
             return disks;
         }
 
-        public static Byte[] ReadBootSector(Int32 physicalDriveIndex)
+        public static Byte[] ReadBootSector(int physicalDriveIndex)
         {
             return ReadDiskRegion(physicalDriveIndex, 0, BootSectorSize);
         }
 
-        public static Byte[] ReadVolumeBootRecord(String driveLetter)
+        public static Byte[] ReadVolumeBootRecord(string driveLetter)
         {
-            if (String.IsNullOrWhiteSpace(driveLetter))
+            if (string.IsNullOrWhiteSpace(driveLetter))
                 throw new ArgumentException("A drive letter is required.", nameof(driveLetter));
 
-            String cleanLetter = driveLetter.Trim().TrimEnd(':').ToUpperInvariant();
+            string cleanLetter = driveLetter.Trim().TrimEnd(':').ToUpperInvariant();
             if (cleanLetter.Length != 1 || cleanLetter[0] is < 'A' or > 'Z')
                 throw new ArgumentException("The drive letter is invalid.", nameof(driveLetter));
 
             return ReadSector($"\\\\.\\{cleanLetter}:");
         }
 
-        public static void WriteBootSector(Int32 physicalDriveIndex, Byte[] bootSector)
+        public static void WriteBootSector(int physicalDriveIndex, Byte[] bootSector)
         {
             ArgumentNullException.ThrowIfNull(bootSector);
             if (!IsValidBootSector(bootSector))
@@ -173,9 +173,9 @@ namespace Helper
             WriteDiskRegion(physicalDriveIndex, 0, bootSector);
         }
 
-        public static Int64 GetDiskLength(Int32 physicalDriveIndex)
+        public static Int64 GetDiskLength(int physicalDriveIndex)
         {
-            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            string devicePath = GetPhysicalDrivePath(physicalDriveIndex);
             using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
             ThrowIfInvalid(handle, devicePath);
 
@@ -186,9 +186,9 @@ namespace Helper
             return diskLength;
         }
 
-        public static Int32 GetLogicalSectorSize(Int32 physicalDriveIndex)
+        public static int GetLogicalSectorSize(int physicalDriveIndex)
         {
-            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            string devicePath = GetPhysicalDrivePath(physicalDriveIndex);
             using SafeFileHandle handle = OpenDevice(devicePath, 0);
             ThrowIfInvalid(handle, devicePath);
 
@@ -214,13 +214,13 @@ namespace Helper
                 throw new IOException($"Disk {physicalDriveIndex} reported an invalid logical sector size: {bytesPerSector}.");
             }
 
-            return checked((Int32)bytesPerSector);
+            return checked((int)bytesPerSector);
         }
 
-        public static Byte[] ReadDiskRegion(Int32 physicalDriveIndex, Int64 offset, Int32 length)
+        public static Byte[] ReadDiskRegion(int physicalDriveIndex, Int64 offset, int length)
         {
             ValidateRegion(offset, length);
-            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            string devicePath = GetPhysicalDrivePath(physicalDriveIndex);
             using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
             ThrowIfInvalid(handle, devicePath);
             ValidateRegionWithinDevice(handle, offset, length, devicePath);
@@ -236,12 +236,12 @@ namespace Helper
             return buffer;
         }
 
-        public static void WriteDiskRegion(Int32 physicalDriveIndex, Int64 offset, Byte[] data)
+        public static void WriteDiskRegion(int physicalDriveIndex, Int64 offset, Byte[] data)
         {
             ArgumentNullException.ThrowIfNull(data);
             ValidateRegion(offset, data.Length);
 
-            String devicePath = GetPhysicalDrivePath(physicalDriveIndex);
+            string devicePath = GetPhysicalDrivePath(physicalDriveIndex);
             using (SafeFileHandle handle = OpenDevice(devicePath, GenericRead | GenericWrite))
             {
                 ThrowIfInvalid(handle, devicePath);
@@ -263,14 +263,14 @@ namespace Helper
                 throw new IOException($"The disk-region write verification failed for {devicePath} at offset {offset}.");
         }
 
-        public static Boolean IsValidBootSector(ReadOnlySpan<Byte> data)
+        public static bool IsValidBootSector(ReadOnlySpan<Byte> data)
         {
             return data.Length == BootSectorSize &&
                 data[BootSectorSize - 2] == 0x55 &&
                 data[BootSectorSize - 1] == 0xAA;
         }
 
-        private static Byte[] ReadSector(String devicePath)
+        private static Byte[] ReadSector(string devicePath)
         {
             using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
             ThrowIfInvalid(handle, devicePath);
@@ -286,7 +286,7 @@ namespace Helper
             return buffer;
         }
 
-        private static void ValidateRegion(Int64 offset, Int32 length)
+        private static void ValidateRegion(Int64 offset, int length)
         {
             if (offset < 0)
                 throw new ArgumentOutOfRangeException(nameof(offset));
@@ -298,8 +298,8 @@ namespace Helper
         private static void ValidateRegionWithinDevice(
             SafeFileHandle handle,
             Int64 offset,
-            Int32 length,
-            String devicePath)
+            int length,
+            string devicePath)
         {
             Int64 diskLength = QueryDiskLength(handle);
             if (diskLength <= 0)
@@ -308,7 +308,7 @@ namespace Helper
                 throw new ArgumentOutOfRangeException(nameof(length), "The raw disk region extends past the end of the device.");
         }
 
-        private static SafeFileHandle OpenDevice(String devicePath, UInt32 access)
+        private static SafeFileHandle OpenDevice(string devicePath, UInt32 access)
         {
             return CreateFileW(
                 devicePath,
@@ -320,30 +320,30 @@ namespace Helper
                 IntPtr.Zero);
         }
 
-        private static void ThrowIfInvalid(SafeFileHandle handle, String devicePath)
+        private static void ThrowIfInvalid(SafeFileHandle handle, string devicePath)
         {
             if (handle.IsInvalid)
                 throw CreateWin32Exception($"Failed to open {devicePath}");
         }
 
-        private static void SeekToBeginning(SafeFileHandle handle, String devicePath)
+        private static void SeekToBeginning(SafeFileHandle handle, string devicePath)
         {
             Seek(handle, devicePath, 0);
         }
 
-        private static void Seek(SafeFileHandle handle, String devicePath, Int64 offset)
+        private static void Seek(SafeFileHandle handle, string devicePath, Int64 offset)
         {
             if (!SetFilePointerEx(handle, offset, out Int64 newOffset, FileBegin) || newOffset != offset)
                 throw CreateWin32Exception($"Failed to seek {devicePath} to offset {offset}");
         }
 
-        private static Win32Exception CreateWin32Exception(String operation)
+        private static Win32Exception CreateWin32Exception(string operation)
         {
-            Int32 error = Marshal.GetLastWin32Error();
+            int error = Marshal.GetLastWin32Error();
             return new Win32Exception(error, $"{operation}. Win32 error {error}.");
         }
 
-        private static String GetPhysicalDrivePath(Int32 physicalDriveIndex)
+        private static string GetPhysicalDrivePath(int physicalDriveIndex)
         {
             if (physicalDriveIndex < 0)
                 throw new ArgumentOutOfRangeException(nameof(physicalDriveIndex));
@@ -351,23 +351,23 @@ namespace Helper
             return $"\\\\.\\PhysicalDrive{physicalDriveIndex}";
         }
 
-        private static SortedSet<Int32> GetPhysicalDiskNumbers()
+        private static SortedSet<int> GetPhysicalDiskNumbers()
         {
-            Int32 bufferSize = 4096;
+            int bufferSize = 4096;
             while (bufferSize <= 1024 * 1024)
             {
                 Char[] buffer = new Char[bufferSize];
                 UInt32 length = QueryDosDeviceW(null, buffer, (UInt32)buffer.Length);
                 if (length != 0)
                 {
-                    String[] deviceNames = new String(buffer, 0, (Int32)length)
+                    string[] deviceNames = new string(buffer, 0, (int)length)
                         .Split('\0', StringSplitOptions.RemoveEmptyEntries);
-                    SortedSet<Int32> diskNumbers = [];
-                    foreach (String deviceName in deviceNames)
+                    SortedSet<int> diskNumbers = [];
+                    foreach (string deviceName in deviceNames)
                     {
-                        const String prefix = "PhysicalDrive";
+                        const string prefix = "PhysicalDrive";
                         if (deviceName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
-                            Int32.TryParse(deviceName.AsSpan(prefix.Length), out Int32 diskNumber) &&
+                            int.TryParse(deviceName.AsSpan(prefix.Length), out int diskNumber) &&
                             diskNumber >= 0)
                         {
                             diskNumbers.Add(diskNumber);
@@ -385,14 +385,14 @@ namespace Helper
             throw new IOException("The physical disk device list exceeded the supported size.");
         }
 
-        private static HashSet<Int32> GetSystemDiskNumbers()
+        private static HashSet<int> GetSystemDiskNumbers()
         {
-            HashSet<Int32> diskNumbers = [];
-            String? systemRoot = Path.GetPathRoot(Environment.SystemDirectory);
-            if (String.IsNullOrWhiteSpace(systemRoot) || systemRoot.Length < 2)
+            HashSet<int> diskNumbers = [];
+            string? systemRoot = Path.GetPathRoot(Environment.SystemDirectory);
+            if (string.IsNullOrWhiteSpace(systemRoot) || systemRoot.Length < 2)
                 return diskNumbers;
 
-            String volumePath = $"\\\\.\\{systemRoot[..2]}";
+            string volumePath = $"\\\\.\\{systemRoot[..2]}";
             using SafeFileHandle handle = OpenDevice(volumePath, 0);
             if (handle.IsInvalid)
                 return diskNumbers;
@@ -413,21 +413,21 @@ namespace Helper
             }
 
             UInt32 count = BitConverter.ToUInt32(output, 0);
-            const Int32 firstExtentOffset = 8;
-            const Int32 extentSize = 24;
+            const int firstExtentOffset = 8;
+            const int extentSize = 24;
             for (UInt32 index = 0; index < count; index++)
             {
-                Int32 offset = firstExtentOffset + checked((Int32)index * extentSize);
+                int offset = firstExtentOffset + checked((int)index * extentSize);
                 if (offset + extentSize > bytesReturned)
                     break;
 
-                diskNumbers.Add(checked((Int32)BitConverter.ToUInt32(output, offset)));
+                diskNumbers.Add(checked((int)BitConverter.ToUInt32(output, offset)));
             }
 
             return diskNumbers;
         }
 
-        private static (String Model, String SerialNumber, String BusType) QueryStorageIdentity(
+        private static (string Model, string SerialNumber, string BusType) QueryStorageIdentity(
             SafeFileHandle handle)
         {
             Byte[] query = new Byte[12];
@@ -443,25 +443,25 @@ namespace Helper
                     IntPtr.Zero) ||
                 bytesReturned < 36)
             {
-                return (String.Empty, String.Empty, "Unknown");
+                return (string.Empty, string.Empty, "Unknown");
             }
 
-            String vendor = ReadDescriptorString(output, bytesReturned, BitConverter.ToUInt32(output, 12));
-            String product = ReadDescriptorString(output, bytesReturned, BitConverter.ToUInt32(output, 16));
-            String serial = ReadDescriptorString(output, bytesReturned, BitConverter.ToUInt32(output, 24));
+            string vendor = ReadDescriptorString(output, bytesReturned, BitConverter.ToUInt32(output, 12));
+            string product = ReadDescriptorString(output, bytesReturned, BitConverter.ToUInt32(output, 16));
+            string serial = ReadDescriptorString(output, bytesReturned, BitConverter.ToUInt32(output, 24));
             UInt32 busTypeValue = BitConverter.ToUInt32(output, 28);
-            String model = String.Join(' ', new[] { vendor, product }.Where(value => !String.IsNullOrWhiteSpace(value)));
+            string model = string.Join(' ', new[] { vendor, product }.Where(value => !string.IsNullOrWhiteSpace(value)));
             return (model.Trim(), serial.Trim(), FormatBusType(busTypeValue));
         }
 
-        private static String ReadDescriptorString(Byte[] buffer, UInt32 bytesReturned, UInt32 offset)
+        private static string ReadDescriptorString(Byte[] buffer, UInt32 bytesReturned, UInt32 offset)
         {
             if (offset == 0 || offset >= bytesReturned)
-                return String.Empty;
+                return string.Empty;
 
-            Int32 start = checked((Int32)offset);
-            Int32 limit = checked((Int32)Math.Min(bytesReturned, (UInt32)buffer.Length));
-            Int32 end = start;
+            int start = checked((int)offset);
+            int limit = checked((int)Math.Min(bytesReturned, (UInt32)buffer.Length));
+            int end = start;
             while (end < limit && buffer[end] != 0)
                 end++;
 
@@ -485,7 +485,7 @@ namespace Helper
                 : 0;
         }
 
-        private static Int64 QueryDiskLengthWithReadAccess(String devicePath)
+        private static Int64 QueryDiskLengthWithReadAccess(string devicePath)
         {
             using SafeFileHandle handle = OpenDevice(devicePath, GenericRead);
             return handle.IsInvalid ? 0 : QueryDiskLength(handle);
@@ -517,7 +517,7 @@ namespace Helper
             };
         }
 
-        private static String FormatBusType(UInt32 busType)
+        private static string FormatBusType(UInt32 busType)
         {
             return busType switch
             {

@@ -29,7 +29,7 @@ namespace Xdows_Security
         private bool _voluntaryExitAuthorized;
         private bool _closeConfirmationPending;
         private readonly Stack<string> _navigationHistory = new();
-        private readonly SUBCLASSPROC? _deviceChangeSubClassProc;
+        private readonly SUBCLASSPROC? _deviceChangeSubclassProc;
         private TaskCompletionSource<SecurityPage?>? _securityPageReadyTcs;
         private static readonly TimeSpan SecurityPageWaitTimeout = TimeSpan.FromSeconds(5);
         private MenuFlyout? _trayMenu;
@@ -48,8 +48,8 @@ namespace Xdows_Security
             AppWindow.SetIcon("logo.ico");
             this.AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
 
-            _deviceChangeSubClassProc = new SUBCLASSPROC(DeviceChangeSubClassProc);
-            Comctl32Library.SetWindowSubclass((nint)this.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(_deviceChangeSubClassProc), 1, 0);
+            _deviceChangeSubclassProc = new SUBCLASSPROC(DeviceChangeSubclassProc);
+            Comctl32Library.SetWindowSubclass((nint)this.AppWindow.Id.Value, Marshal.GetFunctionPointerForDelegate(_deviceChangeSubclassProc), 1, 0);
 
             nav.SelectedItem = nav.MenuItems.OfType<NavigationViewItem>().First();
             Activated += MainWindow_Activated_FirstTime;
@@ -389,7 +389,7 @@ namespace Xdows_Security
                     nav.Header = (nav.SelectedItem as NavigationViewItem)?.Content ?? string.Empty;
                 }
             }
-            // 语言切换后刷新托盘菜单文本（菜单已构建才需要刷新）
+            // 语言切换后刷新通知区域菜单文本（菜单已构建才需要刷新）
             RefreshTrayMenuText();
         }
         public void GoToPage(string PageName, bool pushHistory = true)
@@ -440,7 +440,7 @@ namespace Xdows_Security
             {
                 "Home" => typeof(HomePage),
                 "Security" => typeof(SecurityPage),
-                "Xdows-Tools" => typeof(XdowsToolsPage),
+                "XdowsTools" => typeof(XdowsToolsPage),
                 "Settings" => typeof(SettingsPage),
                 _ => typeof(HomePage)
             };
@@ -620,7 +620,7 @@ namespace Xdows_Security
             nav.IsPaneOpen = !nav.IsPaneOpen;
         }
 
-        // 标题栏图标双击关闭窗口（与点击标题栏 X 按钮一致，走托盘隐藏/关闭验证流程）
+        // 标题栏图标双击关闭窗口（与点击标题栏 X 按钮一致，走通知区域隐藏/关闭验证流程）
         private void AppIcon_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             User32Library.SendMessage(
@@ -631,14 +631,14 @@ namespace Xdows_Security
             e.Handled = true;
         }
 
-        // 右键标题栏图标，打开自定义标题栏菜单
+        // 右键单击标题栏图标，打开自定义标题栏菜单
         private void AppIcon_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             titleBarMenu?.ShowMenuAtPoint(e.GetPosition(titleBarMenu));
             e.Handled = true;
         }
 
-        // 右键标题栏区域（交互区），打开自定义标题栏菜单；
+        // 右键单击标题栏区域（交互区），打开自定义标题栏菜单；
         // 非交互区由 WM_NCRBUTTONUP 子类化处理，两者共同覆盖整个标题栏
         private void AppTitleBar_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
@@ -649,7 +649,7 @@ namespace Xdows_Security
         public void UpdateBackButtonPosition()
         {
             var settings = App.LocalSettings;
-            Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
+            int navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
             bool isCompactMode = navTheme == 0 &&
                 settings.Values.TryGetValue("IsPaneToggleButtonInTitleBar", out var isItInTitleBar) &&
                 isItInTitleBar is bool bv && bv;
@@ -710,7 +710,7 @@ namespace Xdows_Security
             this.AppWindow.Move(new Windows.Graphics.PointInt32(centerX, centerY));
         }
 
-        private nint DeviceChangeSubClassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
+        private nint DeviceChangeSubclassProc(nint hWnd, WindowMessage Msg, UIntPtr wParam, nint lParam, uint uIdSubclass, nint dwRefData)
         {
             bool isCloseMessage = Msg == WindowMessage.WM_CLOSE ||
                 (Msg == WindowMessage.WM_SYSCOMMAND &&

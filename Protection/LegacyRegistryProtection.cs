@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Threading.Channels;
 using TrustQuarantine;
 using Xdows_Local;
-using static Protection.CallBack;
+using static Protection.Callback;
 
 namespace Protection;
 
@@ -32,7 +32,7 @@ public sealed class LegacyRegistryProtection : IProtectionModel
     private Channel<RegistryObservation>? _observations;
     private Task? _traceTask;
     private Task? _processorTask;
-    private InterceptCallBack? _interceptCallback;
+    private InterceptCallback? _interceptCallback;
     private long _nextEventId;
 
     public string Name => "Registry";
@@ -40,7 +40,7 @@ public sealed class LegacyRegistryProtection : IProtectionModel
     public Func<ProtectionDecisionRequest, CancellationToken, Task<ProtectionUserDecision>>? DecisionCallback { get; set; }
     public Action<string>? LogCallback { get; set; }
 
-    public bool Run(InterceptCallBack interceptCallBack)
+    public bool Run(InterceptCallback interceptCallback)
     {
         lock (_gate)
         {
@@ -52,7 +52,7 @@ public sealed class LegacyRegistryProtection : IProtectionModel
             try
             {
                 _cts = new CancellationTokenSource();
-                _interceptCallback = interceptCallBack;
+                _interceptCallback = interceptCallback;
                 _observations = Channel.CreateBounded<RegistryObservation>(
                     new BoundedChannelOptions(256)
                     {

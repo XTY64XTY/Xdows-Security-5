@@ -33,31 +33,31 @@ namespace Xdows_Security.Views
     public enum ScanMode { Quick, Full, File, Folder, More }
     public partial class VirusRow : INotifyPropertyChanged
     {
-        private String _filePath = String.Empty;
-        private String _virusName = String.Empty;
-        private String _familyName = String.Empty;
-        private String _engineName = String.Empty;
+        private string _filePath = string.Empty;
+        private string _virusName = string.Empty;
+        private string _familyName = string.Empty;
+        private string _engineName = string.Empty;
         private bool _useFamilyEngine;
 
-        public String FilePath
+        public string FilePath
         {
             get => _filePath;
             set { _filePath = value; OnPropertyChanged(); }
         }
 
-        public String VirusName
+        public string VirusName
         {
             get => _virusName;
             set { _virusName = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
         }
 
-        public String FamilyName
+        public string FamilyName
         {
             get => _familyName;
             set { _familyName = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
         }
 
-        public String EngineName
+        public string EngineName
         {
             get => _engineName;
             set { _engineName = value; OnPropertyChanged(); }
@@ -69,11 +69,11 @@ namespace Xdows_Security.Views
             set { _useFamilyEngine = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
         }
 
-        public String DisplayName => _useFamilyEngine && !String.IsNullOrWhiteSpace(_familyName) && _familyName != Localizer.Get().GetLocalizedString("AllPage_Undefined") ? _familyName : _virusName;
+        public string DisplayName => _useFamilyEngine && !string.IsNullOrWhiteSpace(_familyName) && _familyName != Localizer.Get().GetLocalizedString("AllPage_Undefined") ? _familyName : _virusName;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] String name = null!)
+        protected void OnPropertyChanged([CallerMemberName] string name = null!)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
@@ -81,37 +81,37 @@ namespace Xdows_Security.Views
 
     public record ScanItem
     {
-        public String ItemName { get; set; } = String.Empty;
-        public String IconGlyph { get; set; } = "&#xE721;";
+        public string ItemName { get; set; } = string.Empty;
+        public string IconGlyph { get; set; } = "&#xE721;";
         public SolidColorBrush IconColor { get; set; } = new SolidColorBrush(Colors.Gray);
-        public String StatusText { get; set; } = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting");
-        public Int32 ThreatCount { get; set; } = 0;
+        public string StatusText { get; set; } = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting");
+        public int ThreatCount { get; set; } = 0;
         public Visibility ThreatCountVisibility { get; set; } = Visibility.Collapsed;
         public SolidColorBrush ThreatCountBackground { get; set; } = new SolidColorBrush(Colors.Red);
     }
 
     public partial class MoreScanItem : INotifyPropertyChanged
     {
-        private String _path = String.Empty;
-        private Boolean _isFolder;
+        private string _path = string.Empty;
+        private bool _isFolder;
 
-        public String Path
+        public string Path
         {
             get => _path;
             set { _path = value; OnPropertyChanged(); }
         }
 
-        public Boolean IsFolder
+        public bool IsFolder
         {
             get => _isFolder;
             set { _isFolder = value; OnPropertyChanged(); OnPropertyChanged(nameof(IconGlyph)); }
         }
 
-        public String IconGlyph => _isFolder ? "\uE8B7" : "\uE8A5";
+        public string IconGlyph => _isFolder ? "\uE8B7" : "\uE8A5";
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] String name = null!)
+        protected void OnPropertyChanged([CallerMemberName] string name = null!)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
@@ -133,13 +133,13 @@ namespace Xdows_Security.Views
         private bool _taskbarProgressActive = false;
         private bool _lastShowScanProgress = false;
         private bool _lastShowTaskbarProgress = true;
-        private Int32 _filesScanned = 0;
-        private Int32 _filesSafe = 0;
-        private Int32 _threatsFound = 0;
-        private Int32 _scanId = 0;
+        private int _filesScanned = 0;
+        private int _filesSafe = 0;
+        private int _threatsFound = 0;
+        private int _scanId = 0;
         private ContentDialog? _moreScanDialog;
         private ContentDialog? _detailsDialog;
-        private readonly Dictionary<String, List<(String EntryPath, String VirusName)>> _zipFileThreats = [];
+        private readonly Dictionary<string, List<(string EntryPath, string VirusName)>> _zipFileThreats = [];
         private ObservableCollection<VirusRow>? CurrentResults;
         private List<ScanItem>? _scanItems;
 
@@ -154,7 +154,7 @@ namespace Xdows_Security.Views
         private bool _isWindowActive = true;
         private float _radarPausedAngle;
 
-        private Boolean IsCurrentScan(Int32 scanId, CancellationToken token)
+        private bool IsCurrentScan(int scanId, CancellationToken token)
         {
             if (token.IsCancellationRequested) return false;
             if (MainWindow.NowPage != "Security")
@@ -165,7 +165,7 @@ namespace Xdows_Security.Views
             return scanId == _scanId;
         }
 
-        private static void ShowWithEntranceAnimation(UIElement element, String kind = "up", Int32 delayMs = 0)
+        private static void ShowWithEntranceAnimation(UIElement element, string kind = "up", int delayMs = 0)
         {
             element.Visibility = Visibility.Visible;
             element.UpdateLayout();
@@ -191,29 +191,29 @@ namespace Xdows_Security.Views
         }
 
 #if DEBUG
-        private const String TestVirusCopyDirectory = @"D:\\Code\\Model\\Files\\Test";
+        private const string TestVirusCopyDirectory = @"D:\\Code\\Model\\Files\\Test";
 
-        private static async Task CopyVirusSampleForTestAsync(String displayName, String? sourceFilePath = null, Byte[]? bytes = null)
+        private static async Task CopyVirusSampleForTestAsync(string displayName, string? sourceFilePath = null, Byte[]? bytes = null)
         {
             try
             {
                 Directory.CreateDirectory(TestVirusCopyDirectory);
 
-                String baseName = String.Empty;
+                string baseName = string.Empty;
                 try
                 {
-                    if (!String.IsNullOrEmpty(sourceFilePath))
+                    if (!string.IsNullOrEmpty(sourceFilePath))
                         baseName = Path.GetFileName(sourceFilePath);
-                    if (String.IsNullOrWhiteSpace(baseName))
+                    if (string.IsNullOrWhiteSpace(baseName))
                         baseName = Path.GetFileName(displayName);
                 }
                 catch { }
 
-                if (String.IsNullOrWhiteSpace(baseName))
+                if (string.IsNullOrWhiteSpace(baseName))
                     baseName = "sample.bin";
 
-                String destFileName = $"{DateTime.Now:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}_{baseName}";
-                String destPath = Path.Combine(TestVirusCopyDirectory, destFileName);
+                string destFileName = $"{DateTime.Now:yyyyMMdd_HHmmssfff}_{Guid.NewGuid():N}_{baseName}";
+                string destPath = Path.Combine(TestVirusCopyDirectory, destFileName);
 
                 if (bytes != null)
                 {
@@ -221,7 +221,7 @@ namespace Xdows_Security.Views
                     return;
                 }
 
-                if (!String.IsNullOrEmpty(sourceFilePath) && File.Exists(sourceFilePath))
+                if (!string.IsNullOrEmpty(sourceFilePath) && File.Exists(sourceFilePath))
                 {
                     File.Copy(sourceFilePath, destPath, overwrite: false);
                 }
@@ -238,10 +238,10 @@ namespace Xdows_Security.Views
             this.InitializeComponent();
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
             PathText.Text = Localizer.Get().GetLocalizedString("SecurityPage_PathText_Default");
-            ScanSpeedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), 0.0);
-            FilesScannedText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), 0);
-            FilesSafeText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);
-            ThreatsFoundText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), 0);
+            ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), 0.0);
+            FilesScannedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), 0);
+            FilesSafeText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);
+            ThreatsFoundText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), 0);
             InitializeScanItems();
             Loaded += SecurityPage_Loaded;
             Unloaded += SecurityPage_Unloaded;
@@ -441,14 +441,14 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void AddVirusResult(String filePath, String virusName, String? familyName = null, String? engineName = null, bool useFamilyEngine = false)
+        private void AddVirusResult(string filePath, string virusName, string? familyName = null, string? engineName = null, bool useFamilyEngine = false)
         {
             VirusRow row = new()
             {
                 FilePath = filePath,
                 VirusName = virusName,
-                FamilyName = familyName ?? String.Empty,
-                EngineName = engineName ?? String.Empty,
+                FamilyName = familyName ?? string.Empty,
+                EngineName = engineName ?? string.Empty,
                 UseFamilyEngine = useFamilyEngine
             };
 
@@ -462,7 +462,7 @@ namespace Xdows_Security.Views
             ContentDialog confirmDialog = new()
             {
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_TrustConfirm_Title"),
-                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_TrustConfirm_Content"), row.FilePath),
+                Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_TrustConfirm_Content"), row.FilePath),
                 PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_TrustConfirm_Primary"),
                 CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
                 XamlRoot = this.XamlRoot,
@@ -474,7 +474,7 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    Boolean success = await TrustManager.AddToTrust(row.FilePath);
+                    bool success = await TrustManager.AddToTrust(row.FilePath);
 
                     ContentDialog resultDialog = new()
                     {
@@ -482,7 +482,7 @@ namespace Xdows_Security.Views
                             Localizer.Get().GetLocalizedString("SecurityPage_TrustResult_Title") :
                             Localizer.Get().GetLocalizedString("SecurityPage_TrustFailed_Title"),
                         Content = success ?
-                            String.Format(Localizer.Get().GetLocalizedString("SecurityPage_TrustResult_Content"), row.FilePath) :
+                            string.Format(Localizer.Get().GetLocalizedString("SecurityPage_TrustResult_Content"), row.FilePath) :
                             Localizer.Get().GetLocalizedString("SecurityPage_TrustFailed_Content"),
                         CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                         XamlRoot = this.XamlRoot,
@@ -500,7 +500,7 @@ namespace Xdows_Security.Views
                         }
                         _threatsFound--;
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-                        StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
+                        StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
                         UpdateHandleAllButtonVisibility();
                     }
                 }
@@ -523,7 +523,7 @@ namespace Xdows_Security.Views
         {
             if (CurrentResults is null || row is null) return;
 
-            String displayPath = row.FilePath;
+            string displayPath = row.FilePath;
 
             var progressContent = new StackPanel
             {
@@ -544,7 +544,7 @@ namespace Xdows_Security.Views
             var dialog = new ContentDialog
             {
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Title"),
-                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Content"), displayPath),
+                Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Content"), displayPath),
                 PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Primary"),
                 CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
                 XamlRoot = this.XamlRoot,
@@ -564,8 +564,8 @@ namespace Xdows_Security.Views
                 {
                     var (handled, actionTaken) = await HandleSingleThreatAsync(row);
 
-                    String? zipPath = null;
-                    String? entryPath = null;
+                    string? zipPath = null;
+                    string? entryPath = null;
                     if (TryParseArchiveEntry(displayPath, out var resolvedArchivePath, out var resolvedEntryPath))
                     {
                         zipPath = resolvedArchivePath;
@@ -574,7 +574,7 @@ namespace Xdows_Security.Views
 
                     if (handled && zipPath != null && entryPath != null)
                     {
-                        var entriesToDelete = new List<String>();
+                        var entriesToDelete = new List<string>();
                         if (_zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                         {
                             foreach (var (EntryPath, VirusName) in threatsInZip)
@@ -620,7 +620,7 @@ namespace Xdows_Security.Views
                             }
                         }
                         UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-                        StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults.Count);
+                        StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults.Count);
                     }
                 }
                 catch (Exception ex)
@@ -638,11 +638,11 @@ namespace Xdows_Security.Views
             await dialog.ShowAsync();
         }
 
-        private async Task<(Boolean handled, String actionTaken)> HandleSingleThreatAsync(VirusRow row)
+        private async Task<(bool handled, string actionTaken)> HandleSingleThreatAsync(VirusRow row)
         {
-            String displayPath = row.FilePath;
-            String? zipPath = null;
-            String? entryPath = null;
+            string displayPath = row.FilePath;
+            string? zipPath = null;
+            string? entryPath = null;
 
             if (TryParseArchiveEntry(displayPath, out var resolvedArchivePath, out var resolvedEntryPath))
             {
@@ -654,13 +654,13 @@ namespace Xdows_Security.Views
             {
                 return await Task.Run(async () =>
                 {
-                    Boolean handled = false;
-                    String actionTaken = "";
+                    bool handled = false;
+                    string actionTaken = "";
 
                     if (zipPath != null && entryPath != null && _zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                     {
-                        var entriesToDelete = new List<String>();
-                        Int32 quarantinedCount = 0;
+                        var entriesToDelete = new List<string>();
+                        int quarantinedCount = 0;
 
                         foreach (var (EntryPath, VirusName) in threatsInZip)
                         {
@@ -680,8 +680,8 @@ namespace Xdows_Security.Views
                                     if (fileData != null && fileData.Length > 0)
                                     {
                                         var (_, threatVirusName) = threatsInZip.FirstOrDefault(t => t.EntryPath == entry);
-                                        String virusName = threatVirusName ?? row.VirusName ?? "Unknown";
-                                        String sourcePath = Path.GetDirectoryName(zipPath) + "\\" + Path.GetFileName(entry);
+                                        string virusName = threatVirusName ?? row.VirusName ?? "Unknown";
+                                        string sourcePath = Path.GetDirectoryName(zipPath) + "\\" + Path.GetFileName(entry);
 
                                         LogText.AddNewLog(LogText.LogLevel.INFO, "Security - QuarantineZipEntry", $"Quarantining {sourcePath} from {zipPath}, size: {fileData.Length} bytes");
 
@@ -706,7 +706,7 @@ namespace Xdows_Security.Views
                                 }
                             }
 
-                            Int32 deletedCount = 0;
+                            int deletedCount = 0;
                             if (quarantinedCount > 0)
                             {
                                 deletedCount = await ArchiveScanner.DeleteMultipleEntriesFromZipAsync(zipPath, entriesToDelete);
@@ -715,7 +715,7 @@ namespace Xdows_Security.Views
 
                             if (deletedCount > 0 || quarantinedCount > 0)
                             {
-                                actionTaken = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_ZipEntriesQuarantined"), quarantinedCount, deletedCount);
+                                actionTaken = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAction_ZipEntriesQuarantined"), quarantinedCount, deletedCount);
                                 handled = true;
                             }
                         }
@@ -794,16 +794,16 @@ namespace Xdows_Security.Views
             });
         }
 
-        private async void OnHandleAllClick(Object sender, RoutedEventArgs e)
+        private async void OnHandleAllClick(object sender, RoutedEventArgs e)
         {
             if (CurrentResults == null || CurrentResults.Count == 0) return;
 
-            Int32 threatCount = CurrentResults.Count;
+            int threatCount = CurrentResults.Count;
 
             ContentDialog confirmDialog = new()
             {
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleAllConfirm_Title"),
-                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAllConfirm_Content"), threatCount),
+                Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAllConfirm_Content"), threatCount),
                 PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_HandleAllConfirm_Primary"),
                 CloseButtonText = Localizer.Get().GetLocalizedString("Button_Cancel"),
                 XamlRoot = this.XamlRoot,
@@ -821,7 +821,7 @@ namespace Xdows_Security.Views
             if (CurrentResults == null || CurrentResults.Count == 0) return;
 
             List<VirusRow> snapshot = [.. CurrentResults];
-            Int32 total = snapshot.Count;
+            int total = snapshot.Count;
 
             HideWithVisualReset(HandleAllButton);
 
@@ -863,10 +863,10 @@ namespace Xdows_Security.Views
 
             _ = dialog.ShowAsync();
 
-            Int32 successCount = 0;
+            int successCount = 0;
             var failedItems = new List<VirusRow>();
 
-            for (Int32 i = 0; i < snapshot.Count; i++)
+            for (int i = 0; i < snapshot.Count; i++)
             {
                 VirusRow row = snapshot[i];
                 currentFileText.Text = row.FilePath;
@@ -881,12 +881,12 @@ namespace Xdows_Security.Views
                     {
                         successCount++;
 
-                        String displayPath = row.FilePath;
-                        if (TryParseArchiveEntry(displayPath, out String zipPath, out String entryPath))
+                        string displayPath = row.FilePath;
+                        if (TryParseArchiveEntry(displayPath, out string zipPath, out string entryPath))
                         {
                             if (_zipFileThreats.TryGetValue(zipPath, out var threatsInZip))
                             {
-                                var entriesToDelete = new List<String>();
+                                var entriesToDelete = new List<string>();
                                 foreach (var (EntryPath, VirusName) in threatsInZip)
                                 {
                                     if (EntryPath == entryPath || threatsInZip.Any(t => t.EntryPath.StartsWith(entryPath + "\\")))
@@ -931,7 +931,7 @@ namespace Xdows_Security.Views
             }
 
             UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-            StatusText.Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
+            StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
 
             dialog.Hide();
 
@@ -940,16 +940,16 @@ namespace Xdows_Security.Views
             UpdateHandleAllButtonVisibility();
         }
 
-        private async Task ShowHandleAllResultDialog(Int32 successCount, List<VirusRow> failedItems)
+        private async Task ShowHandleAllResultDialog(int successCount, List<VirusRow> failedItems)
         {
-            Boolean allFailed = successCount == 0 && failedItems.Count > 0;
-            Boolean hasFailures = failedItems.Count > 0;
+            bool allFailed = successCount == 0 && failedItems.Count > 0;
+            bool hasFailures = failedItems.Count > 0;
 
             var contentPanel = new StackPanel { Spacing = 8 };
 
             var successText = new TextBlock
             {
-                Text = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAllResult_Success"), successCount),
+                Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleAllResult_Success"), successCount),
                 TextWrapping = TextWrapping.Wrap
             };
             contentPanel.Children.Add(successText);
@@ -979,7 +979,7 @@ namespace Xdows_Security.Views
                 compactStyle.Setters.Add(new Setter { Property = ListViewItem.MarginProperty, Value = new Thickness(0) });
                 failedList.ItemContainerStyle = compactStyle;
 
-                Int32 itemIndex = 0;
+                int itemIndex = 0;
                 foreach (var failed in failedItems)
                 {
                     var row = new Grid
@@ -1014,7 +1014,7 @@ namespace Xdows_Security.Views
                     row.Children.Add(icon);
                     row.Children.Add(pathText);
 
-                    Int32 delay = itemIndex * 15;
+                    int delay = itemIndex * 15;
                     row.Loaded += (s, e) => App.PlayEntranceAnimation(row, "up", delayMs: delay);
 
                     failedList.Items.Add(row);
@@ -1059,7 +1059,7 @@ namespace Xdows_Security.Views
             ];
         }
 
-        private void UpdateScanItemStatus(Int32 itemIndex, String status, Boolean isActive, Int32 threatCount = 0)
+        private void UpdateScanItemStatus(int itemIndex, string status, bool isActive, int threatCount = 0)
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
@@ -1078,15 +1078,15 @@ namespace Xdows_Security.Views
             });
         }
 
-        private void UpdateScanStats(Int32 filesScanned, Int32 _, Int32 threatsFound)
+        private void UpdateScanStats(int filesScanned, int _, int threatsFound)
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
-                Int32 threatForDisplay = CurrentResults?.Count ?? threatsFound;
+                int threatForDisplay = CurrentResults?.Count ?? threatsFound;
 
                 // Keep UI counters consistent even under parallel scanning:
                 // safe + threats should match scanned (treat failures/unknown as safe for display).
-                Int32 safeForDisplay = filesScanned - threatForDisplay;
+                int safeForDisplay = filesScanned - threatForDisplay;
                 if (safeForDisplay < 0) safeForDisplay = 0;
 
                 _filesScanned = filesScanned;
@@ -1095,20 +1095,20 @@ namespace Xdows_Security.Views
                 try
                 {
                     // 优先使用缓存的格式字符串（扫描期间已初始化），回退到实时查询以支持非扫描上下文调用
-                    FilesScannedText.Text = String.Format(_fmtFilesScanned ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), filesScanned);
-                    FilesSafeText.Text = String.Format(_fmtFilesSafe ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), safeForDisplay);
-                    ThreatsFoundText.Text = String.Format(_fmtThreatsFound ?? Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatForDisplay);
+                    FilesScannedText.Text = string.Format(_fmtFilesScanned ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), filesScanned);
+                    FilesSafeText.Text = string.Format(_fmtFilesSafe ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), safeForDisplay);
+                    ThreatsFoundText.Text = string.Format(_fmtThreatsFound ?? Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatForDisplay);
                 }
                 catch { }
             });
         }
 
-        private async void OnScanMenuClick(Object sender, RoutedEventArgs e)
+        private async void OnScanMenuClick(object sender, RoutedEventArgs e)
         {
             ApplicationDataContainer settings = App.LocalSettings;
-            Boolean UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
-            Boolean UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
-            Boolean UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
+            bool UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
+            bool UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
+            bool UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
             if (!UseLocalScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
@@ -1124,7 +1124,7 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            if (sender is not MenuFlyoutItem { Tag: String tag }) return;
+            if (sender is not MenuFlyoutItem { Tag: string tag }) return;
             ScanMode mode = tag switch
             {
                 "Quick" => ScanMode.Quick,
@@ -1136,10 +1136,10 @@ namespace Xdows_Security.Views
 
             if (mode == ScanMode.More)
             {
-                IReadOnlyList<String> paths = await ShowMoreScanDialogAsync();
+                IReadOnlyList<string> paths = await ShowMoreScanDialogAsync();
                 if (paths.Count > 0)
                 {
-                    await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_More"), ScanMode.More, paths);
+                    await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_More.Text"), ScanMode.More, paths);
                 }
                 return;
             }
@@ -1150,9 +1150,9 @@ namespace Xdows_Security.Views
         private async void ScanButton_Click(SplitButton sender, SplitButtonClickEventArgs e)
         {
             ApplicationDataContainer settings = App.LocalSettings;
-            Boolean UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
-            Boolean UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
-            Boolean UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
+            bool UseLocalScan = settings.Values.TryGetValue("LocalScan", out object? localRaw) && localRaw is bool local && local;
+            bool UseCloudScan = settings.Values.TryGetValue("CloudScan", out object? cloudRaw) && cloudRaw is bool cloud && cloud;
+            bool UseModelScan = settings.Values.TryGetValue("ModelScan", out object? modelRaw) && modelRaw is bool model && model;
             if (!UseLocalScan && !UseCloudScan && !UseModelScan)
             {
                 ContentDialog dialog = new()
@@ -1168,22 +1168,22 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_Quick"), ScanMode.Quick);
+            await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_Quick.Text"), ScanMode.Quick);
         }
 
-        private static IEnumerable<String> EnumerateFilesStreaming(ScanMode mode, String? userPath, IReadOnlyList<String>? customPaths)
+        private static IEnumerable<string> EnumerateFilesStreaming(ScanMode mode, string? userPath, IReadOnlyList<string>? customPaths)
         {
             switch (mode)
             {
                 case ScanMode.Quick:
-                    foreach (String f in GetEnumerateQuickScanFiles()) yield return f;
+                    foreach (string f in GetEnumerateQuickScanFiles()) yield return f;
                     yield break;
                 case ScanMode.Full:
                     foreach (DriveInfo drive in DriveInfo.GetDrives())
                     {
                         if (!drive.IsReady || drive.DriveType is DriveType.CDRom or DriveType.Network)
                             continue;
-                        foreach (String file in SafeEnumerateFiles(drive.RootDirectory.FullName, [with(StringComparer.OrdinalIgnoreCase)]))
+                        foreach (string file in SafeEnumerateFiles(drive.RootDirectory.FullName, [with(StringComparer.OrdinalIgnoreCase)]))
                             yield return file;
                     }
                     yield break;
@@ -1193,17 +1193,17 @@ namespace Xdows_Security.Views
                 case ScanMode.Folder:
                     if (userPath != null && Directory.Exists(userPath))
                     {
-                        foreach (String f in SafeEnumerateFolder(userPath)) yield return f;
+                        foreach (string f in SafeEnumerateFolder(userPath)) yield return f;
                     }
                     yield break;
                 case ScanMode.More:
                     if (customPaths != null)
                     {
-                        foreach (String p in customPaths)
+                        foreach (string p in customPaths)
                         {
                             if (Directory.Exists(p))
                             {
-                                foreach (String f in SafeEnumerateFolder(p)) yield return f;
+                                foreach (string f in SafeEnumerateFolder(p)) yield return f;
                             }
                             else if (System.IO.File.Exists(p))
                             {
@@ -1217,7 +1217,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task<IReadOnlyList<String>> ShowMoreScanDialogAsync()
+        private async Task<IReadOnlyList<string>> ShowMoreScanDialogAsync()
         {
             ObservableCollection<MoreScanItem> items = [];
             ListView listView = new()
@@ -1281,7 +1281,7 @@ namespace Xdows_Security.Views
             return [];
         }
 
-        private void OnMoreScanRemovePathClick(Object sender, RoutedEventArgs e)
+        private void OnMoreScanRemovePathClick(object sender, RoutedEventArgs e)
         {
             ListView? listView = FindChild<ListView>(_moreScanDialog?.Content as DependencyObject);
             if (listView?.SelectedItem is MoreScanItem item)
@@ -1293,33 +1293,33 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void OnMoreScanBrowseFolderClick(Object sender, RoutedEventArgs e)
+        private async void OnMoreScanBrowseFolderClick(object sender, RoutedEventArgs e)
         {
             string? folder = await PickPathAsync(ScanMode.Folder);
             if (folder is null) return;
             await AddPathToMoreScanList(folder, true);
         }
 
-        private async void OnMoreScanBrowseFileClick(Object sender, RoutedEventArgs e)
+        private async void OnMoreScanBrowseFileClick(object sender, RoutedEventArgs e)
         {
             string? file = await PickPathAsync(ScanMode.File);
             if (file is null) return;
             await AddPathToMoreScanList(file, false);
         }
 
-        private async Task AddPathToMoreScanList(String path, Boolean isFolder)
+        private async Task AddPathToMoreScanList(string path, bool isFolder)
         {
             ListView? listView = FindChild<ListView>(_moreScanDialog?.Content as DependencyObject);
             if (listView?.ItemsSource is not ObservableCollection<MoreScanItem> items) return;
 
-            HashSet<String> existingPaths = new(items.Select(i => i.Path), StringComparer.OrdinalIgnoreCase);
+            HashSet<string> existingPaths = new(items.Select(i => i.Path), StringComparer.OrdinalIgnoreCase);
 
             if (existingPaths.Contains(path))
             {
                 ContentDialog dup = new()
                 {
                     Title = Localizer.Get().GetLocalizedString("SecurityPage_DuplicatePath_Title"),
-                    Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_DuplicatePath_Content"), path),
+                    Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_DuplicatePath_Content"), path),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot,
                     RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
@@ -1331,7 +1331,7 @@ namespace Xdows_Security.Views
             items.Add(new MoreScanItem { Path = path, IsFolder = isFolder });
         }
 
-        private void OnMoreScanClearClick(Object sender, RoutedEventArgs e)
+        private void OnMoreScanClearClick(object sender, RoutedEventArgs e)
         {
             ListView? listView = FindChild<ListView>(_moreScanDialog?.Content as DependencyObject);
             if (listView?.ItemsSource is ObservableCollection<MoreScanItem> items)
@@ -1344,7 +1344,7 @@ namespace Xdows_Security.Views
         {
             if (parent == null) return null;
 
-            for (Int32 i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 DependencyObject child = VisualTreeHelper.GetChild(parent, i);
                 if (child is T typedChild)
@@ -1357,13 +1357,13 @@ namespace Xdows_Security.Views
             return null;
         }
 
-        internal record ScanResult(String EngineName, String? VirusInfo, String? FamilyInfo = null);
+        internal record ScanResult(string EngineName, string? VirusInfo, string? FamilyInfo = null);
 
         // Run configured scan engines against a single file and return the first detection (if any).
-        internal static async Task<ScanResult> RunScansOnFileAsync(String filePath, Byte[]? _fileBytes, String? md5Hash,
-            Boolean deepScan, Boolean extraData,
-            Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan,
-            Boolean _useInfectorCleaner, Boolean useVirusFamily,
+        internal static async Task<ScanResult> RunScansOnFileAsync(string filePath, Byte[]? _fileBytes, string? md5Hash,
+            bool deepScan, bool extraData,
+            bool useLocalScan, bool useCloudScan, bool useModelScan,
+            bool _useInfectorCleaner, bool useVirusFamily,
             Helper.ScanEngine.ModelEngineScan? modelEngine,
             CancellationToken token)
         {
@@ -1387,7 +1387,7 @@ namespace Xdows_Security.Views
                 {
                     scanTasks.Add(Task.Run(() =>
                     {
-                        (Boolean isVirus, String result) = ScanEngine.ModelEngineScan.ScanFile(filePath);
+                        (bool isVirus, string result) = ScanEngine.ModelEngineScan.ScanFile(filePath);
                         return new ScanResult(ScanEngine.ModelEngineScan.GetEngineDisplayName(), isVirus ? result : null);
                     }, token));
                 }
@@ -1397,8 +1397,8 @@ namespace Xdows_Security.Views
                     scanTasks.Add(Helper.ScanEngine.LocalScanAsync(filePath, deepScan, extraData)
                         .ContinueWith(t =>
                         {
-                            String localResult = t.Result;
-                            String? info = !String.IsNullOrEmpty(localResult) ? (deepScan ? $"{localResult} with DeepScan" : localResult) : null;
+                            string localResult = t.Result;
+                            string? info = !string.IsNullOrEmpty(localResult) ? (deepScan ? $"{localResult} with DeepScan" : localResult) : null;
                             return new ScanResult("Local", info);
                         }, TaskScheduler.Default));
                 }
@@ -1407,35 +1407,35 @@ namespace Xdows_Security.Views
                 {
                     scanTasks.Add(Helper.ScanEngine.CloudScanWithHashAsync(md5Hash).ContinueWith(t =>
                     {
-                        (Int32? statusCode, String? result) = t.Result;
-                        String? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
+                        (int? statusCode, string? result) = t.Result;
+                        string? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
                         return new ScanResult("Cloud", info);
                     }, TaskScheduler.Default));
                 }
 
                 if (scanTasks.Count == 0)
-                    return new ScanResult(String.Empty, null);
+                    return new ScanResult(string.Empty, null);
 
                 ScanResult[] results;
                 try
                 {
                     results = await Task.WhenAll(scanTasks).WaitAsync(token);
                 }
-                catch (OperationCanceledException) { return new ScanResult(String.Empty, null); }
+                catch (OperationCanceledException) { return new ScanResult(string.Empty, null); }
                 catch
                 {
-                    return new ScanResult(String.Empty, null);
+                    return new ScanResult(string.Empty, null);
                 }
 
                 foreach (var r in results)
                 {
-                    if (!String.IsNullOrEmpty(r.VirusInfo))
+                    if (!string.IsNullOrEmpty(r.VirusInfo))
                     {
                         if (useVirusFamily)
                         {
                             try
                             {
-                                String familyResult = Xdows_Local.VirusFamilyEngine.GetVirusFamily(filePath, 0.8f);
+                                string familyResult = Xdows_Local.VirusFamilyEngine.GetVirusFamily(filePath, 0.8f);
                                 if (!familyResult.StartsWith("HEUR:Malware"))
                                     return r with { FamilyInfo = familyResult };
                                 return r with { FamilyInfo = Localizer.Get().GetLocalizedString("AllPage_Undefined") };
@@ -1446,17 +1446,17 @@ namespace Xdows_Security.Views
                     }
                 }
 
-                return new ScanResult(String.Empty, null);
+                return new ScanResult(string.Empty, null);
             }
-            catch (OperationCanceledException) { return new ScanResult(String.Empty, null); }
+            catch (OperationCanceledException) { return new ScanResult(string.Empty, null); }
             catch (Exception ex)
             {
                 LogText.AddNewLog(LogText.LogLevel.WARN, "Security - RunScansOnFileFailed", ex.Message);
-                return new ScanResult(String.Empty, null);
+                return new ScanResult(string.Empty, null);
             }
         }
 
-        private async Task ScanArchiveFileAsync(Int32 scanId, String archivePath, Boolean deepScan, Boolean extraData, Boolean useLocalScan, Boolean useCloudScan, Boolean useModelScan, Boolean useInfectorCleaner, Boolean useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, SemaphoreSlim scanGate, CancellationToken token)
+        private async Task ScanArchiveFileAsync(int scanId, string archivePath, bool deepScan, bool extraData, bool useLocalScan, bool useCloudScan, bool useModelScan, bool useInfectorCleaner, bool useVirusFamily, Helper.ScanEngine.ModelEngineScan? modelEngine, SemaphoreSlim scanGate, CancellationToken token)
         {
             try
             {
@@ -1544,7 +1544,7 @@ namespace Xdows_Security.Views
                         string entryMd5 = ScanEngine.ComputeMD5(data);
                         var scanRes = await RunScansOnFileAsync(tempFile, data, entryMd5, deepScan, extraData, useLocalScan, useCloudScan, useModelScan, useInfectorCleaner, useVirusFamily, modelEngine, token);
                         string? virusResult = scanRes.VirusInfo;
-                        if (!String.IsNullOrEmpty(virusResult))
+                        if (!string.IsNullOrEmpty(virusResult))
                         {
                             Interlocked.Increment(ref Statistics.ScansQuantity);
                             Interlocked.Increment(ref Statistics.VirusQuantity);
@@ -1596,9 +1596,9 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task<String?> AskArchivePasswordAsync(String archivePath, Int32 scanId, CancellationToken token)
+        private async Task<string?> AskArchivePasswordAsync(string archivePath, int scanId, CancellationToken token)
         {
-            var tcs = new TaskCompletionSource<String?>();
+            var tcs = new TaskCompletionSource<string?>();
 
             _dispatcherQueue.TryEnqueue(async () =>
             {
@@ -1650,12 +1650,12 @@ namespace Xdows_Security.Views
             }
         }
 
-        public async Task StartScanAsync(String displayName, ScanMode mode, IReadOnlyList<String>? customPaths = null)
+        public async Task StartScanAsync(string displayName, ScanMode mode, IReadOnlyList<string>? customPaths = null)
         {
             _cts?.Cancel();
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
-            Int32 thisId = Interlocked.Increment(ref _scanId);
+            int thisId = Interlocked.Increment(ref _scanId);
             _isPaused = false;
             _pauseEvent.Set();
             _zipFileThreats.Clear();
@@ -1815,7 +1815,7 @@ namespace Xdows_Security.Views
 
                     DateTime startTime = DateTime.Now;
                     DateTime lastSpeedUpdateUtc = DateTime.UtcNow;
-                    Int32 lastSpeedScanned = 0;
+                    int lastSpeedScanned = 0;
 
                     int currentItemIndex = mode switch
                     {
@@ -2036,11 +2036,11 @@ namespace Xdows_Security.Views
                                         exactRuleSuccess = false;
                                     }
 
-                                    if (exactRuleSuccess && !String.IsNullOrEmpty(result) && result != "safe")
+                                    if (exactRuleSuccess && !string.IsNullOrEmpty(result) && result != "safe")
                                     {
                                         Interlocked.Increment(ref Statistics.ScansQuantity);
                                         Interlocked.Increment(ref Statistics.VirusQuantity);
-                                        string familyInfo = (UseVirusFamily && !String.IsNullOrEmpty(family)) ? family : String.Empty;
+                                        string familyInfo = (UseVirusFamily && !string.IsNullOrEmpty(family)) ? family : string.Empty;
 
 #if DEBUG
                                         _ = CopyVirusSampleForTestAsync(file, sourceFilePath: file);
@@ -2095,7 +2095,7 @@ namespace Xdows_Security.Views
                         {
                             var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
                             Interlocked.Increment(ref Statistics.ScansQuantity);
-                            if (!String.IsNullOrEmpty(scanRes.VirusInfo))
+                            if (!string.IsNullOrEmpty(scanRes.VirusInfo))
                             {
                                 Interlocked.Increment(ref Statistics.VirusQuantity);
 
@@ -2115,7 +2115,7 @@ namespace Xdows_Security.Views
                                             {
                                                 if (cleanResult.OriginalFileData != null)
                                                 {
-                                                    String threatName = $"Infector.{cleanResult.MaliciousSection?.TrimStart('.') ?? "Unknown"}!ml";
+                                                    string threatName = $"Infector.{cleanResult.MaliciousSection?.TrimStart('.') ?? "Unknown"}!ml";
                                                     _ = TrustQuarantine.QuarantineManager.AddToQuarantineFromBytes(
                                                         cleanResult.OriginalFileData, file, threatName, false);
                                                 }
@@ -2137,7 +2137,7 @@ namespace Xdows_Security.Views
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
                                     if (!IsCurrentScan(thisId, token)) return;
-                                    AddVirusResult(file, scanRes.VirusInfo ?? String.Empty, scanRes.FamilyInfo, scanRes.EngineName, UseVirusFamily);
+                                    AddVirusResult(file, scanRes.VirusInfo ?? string.Empty, scanRes.FamilyInfo, scanRes.EngineName, UseVirusFamily);
                                     ShowBackToVirusListButton();
                                 });
                                 int newThreats = Interlocked.Increment(ref _threatsFound);
@@ -2168,8 +2168,8 @@ namespace Xdows_Security.Views
                             double speedWindowSeconds = (nowUtc - lastSpeedUpdateUtc).TotalSeconds;
                             if (speedWindowSeconds >= 1.0)
                             {
-                                Int32 nowScanned = _filesScanned;
-                                Int32 delta = nowScanned - lastSpeedScanned;
+                                int nowScanned = _filesScanned;
+                                int delta = nowScanned - lastSpeedScanned;
                                 scanSpeed = speedWindowSeconds > 0 ? delta / speedWindowSeconds : 0.0;
                                 lastSpeedScanned = nowScanned;
                                 lastSpeedUpdateUtc = nowUtc;
@@ -2264,12 +2264,12 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = true;
         }
 
-        private void OnBackToVirusListClick(Object sender, RoutedEventArgs e)
+        private void OnBackToVirusListClick(object sender, RoutedEventArgs e)
         {
             OnBackList(VirusList.Visibility != Visibility.Visible);
         }
 
-        private void OnBackList(Boolean isShow)
+        private void OnBackList(bool isShow)
         {
             if (isShow)
             {
@@ -2284,7 +2284,7 @@ namespace Xdows_Security.Views
             BackToVirusListButtonIcon.Glyph = isShow ? "\uED1A" : "\uE890";
         }
 
-        private void OnPauseScanClick(Object sender, RoutedEventArgs e)
+        private void OnPauseScanClick(object sender, RoutedEventArgs e)
         {
             _isPaused = true;
             _pauseEvent.Reset();
@@ -2313,7 +2313,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void OnResumeScanClick(Object sender, RoutedEventArgs e)
+        private void OnResumeScanClick(object sender, RoutedEventArgs e)
         {
             _isPaused = false;
             _pauseEvent.Set();
@@ -2347,7 +2347,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void OnVirusRowDetailsClick(Object sender, RoutedEventArgs e)
+        private async void OnVirusRowDetailsClick(object sender, RoutedEventArgs e)
         {
             if (sender is MenuFlyoutItem { Tag: VirusRow row })
             {
@@ -2355,7 +2355,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void OnVirusRowTrustClick(Object sender, RoutedEventArgs e)
+        private async void OnVirusRowTrustClick(object sender, RoutedEventArgs e)
         {
             if (sender is MenuFlyoutItem { Tag: VirusRow row })
             {
@@ -2363,7 +2363,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void OnVirusRowHandleClick(Object sender, RoutedEventArgs e)
+        private async void OnVirusRowHandleClick(object sender, RoutedEventArgs e)
         {
             if (sender is MenuFlyoutItem { Tag: VirusRow row })
             {
@@ -2371,7 +2371,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void VirusList_DoubleTapped(Object sender, DoubleTappedRoutedEventArgs e)
+        private async void VirusList_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             if (sender is ListView { SelectedItem: VirusRow row })
             {
@@ -2467,30 +2467,30 @@ namespace Xdows_Security.Views
             if (row is null) return;
             if (_detailsDialog != null) return;
 
-            Boolean isDetailsPause = false;
+            bool isDetailsPause = false;
             try
             {
                 isDetailsPause = PauseScanButton.Visibility == Visibility.Visible && PauseScanButton.IsEnabled;
                 if (isDetailsPause)
                 {
-                    OnPauseScanClick(new Object(), new RoutedEventArgs());
+                    OnPauseScanClick(new object(), new RoutedEventArgs());
                 }
 
-                String displayPath = row.FilePath;
-                String? archivePath = null;
-                String? entryPath = null;
-                Boolean isArchiveEntry = TryParseArchiveEntry(displayPath, out archivePath, out entryPath);
-                Boolean isZipEntry = false;
+                string displayPath = row.FilePath;
+                string? archivePath = null;
+                string? entryPath = null;
+                bool isArchiveEntry = TryParseArchiveEntry(displayPath, out archivePath, out entryPath);
+                bool isZipEntry = false;
 
                 if (isArchiveEntry)
                 {
                     // 进一步检查是否为 zip 格式，用于获取 entry 信息
-                    isZipEntry = String.Equals(Path.GetExtension(archivePath), ".zip", StringComparison.OrdinalIgnoreCase);
+                    isZipEntry = string.Equals(Path.GetExtension(archivePath), ".zip", StringComparison.OrdinalIgnoreCase);
                 }
 
-                String fileSizeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
-                String creationTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
-                String lastWriteTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
+                string fileSizeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
+                string creationTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
+                string lastWriteTimeText = Localizer.Get().GetLocalizedString("SecurityPage_Details_Unknown");
 
                 if (isZipEntry && archivePath != null && entryPath != null)
                 {
@@ -2499,7 +2499,7 @@ namespace Xdows_Security.Views
                         var entryInfo = await ArchiveScanner.GetEntryInfoAsync(archivePath, entryPath);
                         if (entryInfo.HasValue)
                         {
-                            fileSizeText = String.Format(CultureInfo.CurrentCulture, "{0:F2} KB", entryInfo.Value.Size / 1024.0);
+                            fileSizeText = string.Format(CultureInfo.CurrentCulture, "{0:F2} KB", entryInfo.Value.Size / 1024.0);
                             creationTimeText = entryInfo.Value.CreationTime.ToString("g", CultureInfo.CurrentCulture);
                             lastWriteTimeText = entryInfo.Value.LastWriteTime.ToString("g", CultureInfo.CurrentCulture);
                         }
@@ -2518,7 +2518,7 @@ namespace Xdows_Security.Views
                     try
                     {
                         FileInfo fileInfo = new(displayPath);
-                        fileSizeText = String.Format(CultureInfo.CurrentCulture, "{0:F2} KB", fileInfo.Length / 1024.0);
+                        fileSizeText = string.Format(CultureInfo.CurrentCulture, "{0:F2} KB", fileInfo.Length / 1024.0);
                         creationTimeText = fileInfo.CreationTime.ToString("g", CultureInfo.CurrentCulture);
                         lastWriteTimeText = fileInfo.LastWriteTime.ToString("g", CultureInfo.CurrentCulture);
                     }
@@ -2540,13 +2540,13 @@ namespace Xdows_Security.Views
                 compactStyle.Setters.Add(new Setter { Property = ListViewItem.MarginProperty, Value = new Thickness(0) });
                 listView.ItemContainerStyle = compactStyle;
 
-                static String ToLabelFromTemplate(String template)
+                static string ToLabelFromTemplate(string template)
                 {
-                    if (String.IsNullOrWhiteSpace(template)) return template;
+                    if (string.IsNullOrWhiteSpace(template)) return template;
 
-                    var label = TemplateBraceRegex().Replace(template, String.Empty);
+                    var label = TemplateBraceRegex().Replace(template, string.Empty);
                     label = WhitespaceRegex().Replace(label, " ").Trim();
-                    label = UnitSuffixRegex().Replace(label, String.Empty).Trim();
+                    label = UnitSuffixRegex().Replace(label, string.Empty).Trim();
 
                     while (label.EndsWith(':') || label.EndsWith('：'))
                         label = label[..^1].TrimEnd();
@@ -2569,7 +2569,7 @@ namespace Xdows_Security.Views
 
                 if (row.UseFamilyEngine)
                 {
-                    String familyDisplay = String.IsNullOrWhiteSpace(row.FamilyName)
+                    string familyDisplay = string.IsNullOrWhiteSpace(row.FamilyName)
                         ? Localizer.Get().GetLocalizedString("AllPage_Undefined")
                         : row.FamilyName;
                     items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_FamilyName")), new TextBlock { Text = familyDisplay, IsTextSelectionEnabled = true }));
@@ -2579,7 +2579,7 @@ namespace Xdows_Security.Views
                 items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_CreationTime")), new TextBlock { Text = creationTimeText, IsTextSelectionEnabled = true }));
                 items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_LastWriteTime")), new TextBlock { Text = lastWriteTimeText, IsTextSelectionEnabled = true }));
 
-                if (!String.IsNullOrWhiteSpace(row.EngineName))
+                if (!string.IsNullOrWhiteSpace(row.EngineName))
                 {
                     items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_EngineName")), new TextBlock { Text = row.EngineName, IsTextSelectionEnabled = true }));
                 }
@@ -2588,7 +2588,7 @@ namespace Xdows_Security.Views
                 {
                     try
                     {
-                        String sha256 = await Helper.ScanEngine.GetFileSHA256Async(displayPath);
+                        string sha256 = await Helper.ScanEngine.GetFileSHA256Async(displayPath);
                         items.Add((ToLabelFromTemplate(Localizer.Get().GetLocalizedString("SecurityPage_Details_SHA256")), new TextBlock
                         {
                             Text = sha256,
@@ -2654,8 +2654,8 @@ namespace Xdows_Security.Views
                         Content = new TextBlock
                         {
                             Text = isArchiveEntry
-                                ? String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Risk_ArchiveContent"), archivePath)
-                                : String.Format(Localizer.Get().GetLocalizedString("SecurityPage_Risk_FileContent"), displayPath),
+                                ? string.Format(Localizer.Get().GetLocalizedString("SecurityPage_Risk_ArchiveContent"), archivePath)
+                                : string.Format(Localizer.Get().GetLocalizedString("SecurityPage_Risk_FileContent"), displayPath),
                             TextWrapping = TextWrapping.Wrap
                         },
                         PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_Risk_Allow"),
@@ -2683,7 +2683,7 @@ namespace Xdows_Security.Views
                             ContentDialog dlg = new()
                             {
                                 Title = Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Title"),
-                                Content = String.Format(Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Content"), ex.Message),
+                                Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_LocateFailed_Content"), ex.Message),
                                 CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                                 RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
                                 XamlRoot = this.XamlRoot,
@@ -2699,7 +2699,7 @@ namespace Xdows_Security.Views
                 try
                 {
                     LogText.AddNewLog(LogText.LogLevel.FATAL, "Security - FilesInfo - GetFailed", ex.Message);
-                    ContentDialog failDlg = new()
+                    ContentDialog failDialog = new()
                     {
                         Title = Localizer.Get().GetLocalizedString("SecurityPage_GetFailed_Text"),
                         Content = ex.Message,
@@ -2708,7 +2708,7 @@ namespace Xdows_Security.Views
                         RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
                         DefaultButton = ContentDialogButton.Close
                     };
-                    await failDlg.ShowAsync();
+                    await failDialog.ShowAsync();
                 }
                 catch { }
             }
@@ -2719,7 +2719,7 @@ namespace Xdows_Security.Views
                 {
                     try
                     {
-                        OnResumeScanClick(new Object(), new RoutedEventArgs());
+                        OnResumeScanClick(new object(), new RoutedEventArgs());
                     }
                     catch (Exception resumeEx)
                     {
@@ -2729,7 +2729,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task<String?> PickPathAsync(ScanMode mode)
+        private async Task<string?> PickPathAsync(ScanMode mode)
         {
             try
             {
@@ -2749,7 +2749,7 @@ namespace Xdows_Security.Views
             catch { return null; }
         }
 
-        private static Int32 CountFiles(ScanMode mode, String? userPath, IReadOnlyList<String>? customPaths) => mode switch
+        private static int CountFiles(ScanMode mode, string? userPath, IReadOnlyList<string>? customPaths) => mode switch
         {
             ScanMode.Quick => CountQuickScanFiles(),
             ScanMode.Full => CountFullScanFiles(),
@@ -2763,29 +2763,29 @@ namespace Xdows_Security.Views
 
         private static bool TryEnumerateFilesUsingNtfsTable(
             ScanMode mode,
-            String? userPath,
-            IReadOnlyList<String>? customPaths,
-            out IReadOnlyList<String> files)
+            string? userPath,
+            IReadOnlyList<string>? customPaths,
+            out IReadOnlyList<string> files)
         {
             files = [];
             if (mode is ScanMode.Quick or ScanMode.File)
                 return false;
 
-            HashSet<String> indexedFiles = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> indexedFiles = new(StringComparer.OrdinalIgnoreCase);
             bool indexComplete = false;
             NtfsFileTableIndexer.VolumeIndexCache volumeCache = new();
-            HashSet<String> volumesReadFromTable = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> volumesReadFromTable = new(StringComparer.OrdinalIgnoreCase);
 
-            void AddDirectory(String directory)
+            void AddDirectory(string directory)
             {
-                String volumeRoot = Path.GetPathRoot(Path.GetFullPath(directory)) ?? String.Empty;
+                string volumeRoot = Path.GetPathRoot(Path.GetFullPath(directory)) ?? string.Empty;
                 bool volumeTableReady = volumesReadFromTable.Contains(volumeRoot);
 
                 // 读取整卷 MFT 的成本与目标目录大小无关，因此小目录直接使用普通遍历。
                 // 只按文件数量判定规模，不按耗时判定，避免慢盘上的小目录重复付出两种索引成本。
                 if (mode != ScanMode.Full &&
                     !volumeTableReady &&
-                    TryEnumerateSmallFolder(directory, out IReadOnlyList<String> budgetedFiles))
+                    TryEnumerateSmallFolder(directory, out IReadOnlyList<string> budgetedFiles))
                 {
                     indexComplete = true;
                     indexedFiles.UnionWith(budgetedFiles);
@@ -2796,7 +2796,7 @@ namespace Xdows_Security.Views
                     return;
                 }
 
-                if (NtfsFileTableIndexer.TryEnumerateFiles(directory, out IReadOnlyList<String> ntfsFiles, out String? errorMessage, volumeCache))
+                if (NtfsFileTableIndexer.TryEnumerateFiles(directory, out IReadOnlyList<string> ntfsFiles, out string? errorMessage, volumeCache))
                 {
                     indexComplete = true;
                     volumesReadFromTable.Add(volumeRoot);
@@ -2828,7 +2828,7 @@ namespace Xdows_Security.Views
                     AddDirectory(userPath);
                     break;
                 case ScanMode.More when customPaths != null:
-                    foreach (String path in customPaths)
+                    foreach (string path in customPaths)
                     {
                         if (Directory.Exists(path))
                             AddDirectory(path);
@@ -2848,26 +2848,26 @@ namespace Xdows_Security.Views
         }
 
         // 超过此数量才读取整卷 MFT；阈值应低于典型整卷文件数，但足够覆盖小目录。
-        private const Int32 FastIndexProbeFileLimit = 4_096;
+        private const int FastIndexProbeFileLimit = 4_096;
 
         private static bool TryEnumerateSmallFolder(
-            String directory,
-            out IReadOnlyList<String> files)
+            string directory,
+            out IReadOnlyList<string> files)
         {
             files = [];
-            List<String> collected = [];
-            Stack<String> stack = new();
+            List<string> collected = [];
+            Stack<string> stack = new();
             stack.Push(directory);
 
             while (stack.Count > 0)
             {
-                String dir = stack.Pop();
+                string dir = stack.Pop();
 
-                IEnumerable<String> entries;
+                IEnumerable<string> entries;
                 try { entries = Directory.EnumerateFileSystemEntries(dir); }
                 catch { continue; }
 
-                foreach (String entry in entries)
+                foreach (string entry in entries)
                 {
                     System.IO.FileAttributes attr;
                     try { attr = System.IO.File.GetAttributes(entry); }
@@ -2887,22 +2887,22 @@ namespace Xdows_Security.Views
             return true;
         }
 
-        private static Int32 CountFilesInFolder(String folder)
+        private static int CountFilesInFolder(string folder)
         {
-            Int32 total = 0;
-            Stack<String> stack = new();
+            int total = 0;
+            Stack<string> stack = new();
             stack.Push(folder);
 
             while (stack.Count > 0)
             {
-                String dir = stack.Pop();
+                string dir = stack.Pop();
 
-                IEnumerable<String> entries;
+                IEnumerable<string> entries;
                 try { entries = Directory.EnumerateFileSystemEntries(dir); }
                 catch { continue; }
 
-                Int32 dirCount = 0;
-                foreach (String entry in entries)
+                int dirCount = 0;
+                foreach (string entry in entries)
                 {
                     System.IO.FileAttributes attr;
                     try { attr = System.IO.File.GetAttributes(entry); }
@@ -2918,9 +2918,9 @@ namespace Xdows_Security.Views
             return total;
         }
 
-        private static Int32 CountQuickScanFiles()
+        private static int CountQuickScanFiles()
         {
-            String[] criticalPaths =
+            string[] criticalPaths =
             [
                  Environment.GetFolderPath(Environment.SpecialFolder.Windows),
                  Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
@@ -2932,7 +2932,7 @@ namespace Xdows_Security.Views
                  Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysWOW64")
             ];
 
-            HashSet<String> extensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".com", ".scr", ".bat" };
+            HashSet<string> extensions = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".com", ".scr", ".bat" };
 
             return criticalPaths
                    .Where(Directory.Exists)
@@ -2952,20 +2952,20 @@ namespace Xdows_Security.Views
                    .Count();
         }
 
-        private static IEnumerable<String> SafeEnumerateFolder(String folder)
+        private static IEnumerable<string> SafeEnumerateFolder(string folder)
         {
-            Stack<String> stack = new();
+            Stack<string> stack = new();
             stack.Push(folder);
 
             while (stack.Count > 0)
             {
-                String dir = stack.Pop();
+                string dir = stack.Pop();
 
-                IEnumerable<String> entries;
+                IEnumerable<string> entries;
                 try { entries = Directory.EnumerateFileSystemEntries(dir); }
                 catch { continue; }
 
-                foreach (String entry in entries)
+                foreach (string entry in entries)
                 {
                     System.IO.FileAttributes attr;
                     try { attr = System.IO.File.GetAttributes(entry); }
@@ -2981,7 +2981,7 @@ namespace Xdows_Security.Views
 
         private static IEnumerable<string> GetEnumerateQuickScanFiles()
         {
-            String[] criticalPaths =
+            string[] criticalPaths =
             [
                  Environment.GetFolderPath(Environment.SpecialFolder.Windows),
                  Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
@@ -2993,7 +2993,7 @@ namespace Xdows_Security.Views
                  Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "SysWOW64")
             ];
 
-            HashSet<String> extensions = [with(StringComparer.OrdinalIgnoreCase), ".exe", ".dll", ".sys", ".com", ".scr", ".bat"];
+            HashSet<string> extensions = [with(StringComparer.OrdinalIgnoreCase), ".exe", ".dll", ".sys", ".com", ".scr", ".bat"];
 
             return criticalPaths
                    .Where(Directory.Exists)
@@ -3012,10 +3012,10 @@ namespace Xdows_Security.Views
                    .Distinct(StringComparer.OrdinalIgnoreCase);
         }
 
-        private static Int32 CountFullScanFiles()
+        private static int CountFullScanFiles()
         {
-            HashSet<String> scanned = new(StringComparer.OrdinalIgnoreCase);
-            Int32 total = 0;
+            HashSet<string> scanned = new(StringComparer.OrdinalIgnoreCase);
+            int total = 0;
 
             foreach (DriveInfo drive in DriveInfo.GetDrives())
             {
@@ -3027,20 +3027,20 @@ namespace Xdows_Security.Views
             return total;
         }
 
-        private static Int32 CountFilesInTree(String root, HashSet<String> scanned)
+        private static int CountFilesInTree(string root, HashSet<string> scanned)
         {
-            Int32 total = 0;
-            Stack<String> stack = new();
+            int total = 0;
+            Stack<string> stack = new();
             stack.Push(root);
 
             while (stack.Count > 0)
             {
-                String currentDir = stack.Pop();
+                string currentDir = stack.Pop();
 
                 if (!scanned.Add(currentDir))
                     continue;
 
-                IEnumerable<String>? entries;
+                IEnumerable<string>? entries;
                 try
                 {
                     entries = Directory.EnumerateFileSystemEntries(currentDir);
@@ -3050,8 +3050,8 @@ namespace Xdows_Security.Views
                     continue;
                 }
 
-                Int32 dirCount = 0;
-                foreach (String entry in entries)
+                int dirCount = 0;
+                foreach (string entry in entries)
                 {
                     if (Directory.Exists(entry))
                     {
@@ -3067,19 +3067,19 @@ namespace Xdows_Security.Views
             return total;
         }
 
-        private static IEnumerable<String> SafeEnumerateFiles(String root, HashSet<String> scanned)
+        private static IEnumerable<string> SafeEnumerateFiles(string root, HashSet<string> scanned)
         {
-            Stack<String> stack = new();
+            Stack<string> stack = new();
             stack.Push(root);
 
             while (stack.Count > 0)
             {
-                String currentDir = stack.Pop();
+                string currentDir = stack.Pop();
 
                 if (!scanned.Add(currentDir))
                     continue;
 
-                IEnumerable<String>? entries;
+                IEnumerable<string>? entries;
                 try
                 {
                     entries = Directory.EnumerateFileSystemEntries(currentDir);
@@ -3089,7 +3089,7 @@ namespace Xdows_Security.Views
                     continue;
                 }
 
-                foreach (String entry in entries)
+                foreach (string entry in entries)
                 {
                     if (Directory.Exists(entry))
                     {

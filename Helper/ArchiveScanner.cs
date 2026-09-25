@@ -13,7 +13,7 @@ namespace Helper
     public static class ArchiveScanner
     {
         private const Int64 MaxEntrySize = 100 * 1024 * 1024; // 100MB limit per entry
-        private const Int32 BufferSize = 262144; // 256KB buffer for streaming
+        private const int BufferSize = 262144; // 256KB buffer for streaming
 
         private static readonly byte[] Magic7z = [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C];
         private static readonly byte[] MagicGz = [0x1F, 0x8B];
@@ -470,7 +470,7 @@ namespace Helper
             ];
         }
 
-        private static String DecodeEntryName(ZipArchiveEntry entry)
+        private static string DecodeEntryName(ZipArchiveEntry entry)
         {
             try
             {
@@ -480,7 +480,7 @@ namespace Helper
                 var nameBytes = nameField.GetValue(entry) as Byte[];
                 if (nameBytes == null || nameBytes.Length == 0) return entry.FullName;
 
-                String utf8Result = Encoding.UTF8.GetString(nameBytes);
+                string utf8Result = Encoding.UTF8.GetString(nameBytes);
                 if (!utf8Result.Contains('\uFFFD') && !utf8Result.Contains('?'))
                     return utf8Result;
 
@@ -489,7 +489,7 @@ namespace Helper
                     if (enc.CodePage == Encoding.UTF8.CodePage) continue;
                     try
                     {
-                        String decoded = enc.GetString(nameBytes);
+                        string decoded = enc.GetString(nameBytes);
                         if (!decoded.Contains('\uFFFD') && !decoded.Contains('?'))
                             return decoded;
                     }
@@ -515,7 +515,7 @@ namespace Helper
                 try
                 {
                     using var ms = new MemoryStream();
-                    Int32 bytesRead;
+                    int bytesRead;
                     while ((bytesRead = stream.Read(buffer, 0, BufferSize)) > 0)
                     {
                         ms.Write(buffer, 0, bytesRead);
@@ -535,11 +535,11 @@ namespace Helper
             }
         }
 
-        public static async Task<Boolean> DeleteEntryFromZipAsync(String zipPath, String entryPath)
+        public static async Task<bool> DeleteEntryFromZipAsync(string zipPath, string entryPath)
         {
             return await Task.Run(() =>
             {
-                String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 try
                 {
                     using (var readArchive = ZipFile.OpenRead(zipPath))
@@ -547,8 +547,8 @@ namespace Helper
                     {
                         foreach (var entry in readArchive.Entries)
                         {
-                            String decodedName = DecodeEntryName(entry);
-                            if (String.Equals(decodedName, entryPath, StringComparison.OrdinalIgnoreCase))
+                            string decodedName = DecodeEntryName(entry);
+                            if (string.Equals(decodedName, entryPath, StringComparison.OrdinalIgnoreCase))
                                 continue;
 
                             var newEntry = createArchive.CreateEntry(decodedName);
@@ -570,24 +570,24 @@ namespace Helper
             });
         }
 
-        public static async Task<Int32> DeleteMultipleEntriesFromZipAsync(String zipPath, List<String> entryPaths)
+        public static async Task<int> DeleteMultipleEntriesFromZipAsync(string zipPath, List<string> entryPaths)
         {
             return await Task.Run(() =>
             {
-                String tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+                string tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 try
                 {
-                    var entriesToDelete = new HashSet<String>(
+                    var entriesToDelete = new HashSet<string>(
                         entryPaths.Select(p => p.Replace('\\', '/')),
                         StringComparer.OrdinalIgnoreCase);
-                    Int32 deletedCount = 0;
+                    int deletedCount = 0;
 
                     using (var readArchive = ZipFile.OpenRead(zipPath))
                     using (var createArchive = ZipFile.Open(tempPath, ZipArchiveMode.Create))
                     {
                         foreach (var entry in readArchive.Entries)
                         {
-                            String decodedName = DecodeEntryName(entry);
+                            string decodedName = DecodeEntryName(entry);
                             if (entriesToDelete.Contains(decodedName))
                             {
                                 deletedCount++;
@@ -613,18 +613,18 @@ namespace Helper
             });
         }
 
-        public static async Task<Byte[]?> ExtractEntryAsync(String zipPath, String entryPath)
+        public static async Task<Byte[]?> ExtractEntryAsync(string zipPath, string entryPath)
         {
             return await Task.Run(() =>
             {
                 try
                 {
-                    String normalizedEntryPath = entryPath.Replace('\\', '/');
+                    string normalizedEntryPath = entryPath.Replace('\\', '/');
                     using var archive = ZipFile.OpenRead(zipPath);
 
                     foreach (var entry in archive.Entries)
                     {
-                        if (String.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
                         {
                             return ReadEntryData(entry);
                         }
@@ -638,30 +638,30 @@ namespace Helper
             });
         }
 
-        public static async Task<(Int64 Size, DateTime CreationTime, DateTime LastWriteTime)?> GetEntryInfoAsync(String zipPath, String entryPath)
+        public static async Task<(Int64 Size, DateTime CreationTime, DateTime LastWriteTime)?> GetEntryInfoAsync(string zipPath, string entryPath)
         {
             return await Task.Run<(Int64 Size, DateTime CreationTime, DateTime LastWriteTime)?>(() =>
             {
                 try
                 {
-                    String normalizedEntryPath = entryPath.Replace('\\', '/');
-                    Int32 innerZipIndex = normalizedEntryPath.IndexOf(".zip/", StringComparison.OrdinalIgnoreCase);
+                    string normalizedEntryPath = entryPath.Replace('\\', '/');
+                    int innerZipIndex = normalizedEntryPath.IndexOf(".zip/", StringComparison.OrdinalIgnoreCase);
 
                     if (innerZipIndex > 0)
                     {
-                        String outerEntryPath = normalizedEntryPath.Substring(0, innerZipIndex + 4);
-                        String remainingPath = normalizedEntryPath.Substring(innerZipIndex + 5);
+                        string outerEntryPath = normalizedEntryPath.Substring(0, innerZipIndex + 4);
+                        string remainingPath = normalizedEntryPath.Substring(innerZipIndex + 5);
 
                         using var outerArchive = ZipFile.OpenRead(zipPath);
                         var outerEntry = outerArchive.Entries.FirstOrDefault(e =>
-                            String.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase));
+                            string.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase));
 
                         if (outerEntry == null)
                         {
                             outerEntryPath = normalizedEntryPath.Substring(0, innerZipIndex + 4).Replace(".zip/", "/");
                             outerEntry = outerArchive.Entries.FirstOrDefault(e =>
-                                String.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase) ||
-                                String.Equals(DecodeEntryName(e), outerEntryPath.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+                                string.Equals(DecodeEntryName(e), outerEntryPath, StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(DecodeEntryName(e), outerEntryPath.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
                         }
 
                         if (outerEntry != null)
@@ -676,7 +676,7 @@ namespace Helper
                                 {
                                     using var innerMs = new MemoryStream();
                                     using var outerStream = outerEntry.Open();
-                                    Int32 bytesRead;
+                                    int bytesRead;
                                     while ((bytesRead = outerStream.Read(buffer, 0, BufferSize)) > 0)
                                     {
                                         innerMs.Write(buffer, 0, bytesRead);
@@ -686,7 +686,7 @@ namespace Helper
 
                                     using var innerArchive = new ZipArchive(innerMs, ZipArchiveMode.Read);
                                     var innerEntry = innerArchive.Entries.FirstOrDefault(e =>
-                                        String.Equals(DecodeEntryName(e), remainingPath, StringComparison.OrdinalIgnoreCase));
+                                        string.Equals(DecodeEntryName(e), remainingPath, StringComparison.OrdinalIgnoreCase));
 
                                     if (innerEntry != null)
                                     {
@@ -708,7 +708,7 @@ namespace Helper
 
                         foreach (var entry in archive.Entries)
                         {
-                            if (String.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
+                            if (string.Equals(DecodeEntryName(entry), normalizedEntryPath, StringComparison.OrdinalIgnoreCase))
                             {
                                 return (entry.Length, entry.LastWriteTime.DateTime, entry.LastWriteTime.DateTime);
                             }

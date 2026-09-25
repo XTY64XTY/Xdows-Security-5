@@ -298,7 +298,7 @@ namespace Xdows_Security
             var settings = App.LocalSettings;
 
             // 检查导航栏位置，如果在顶部则不应用紧凑导航栏设置
-            Int32 navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
+            int navTheme = settings.Values.TryGetValue("AppNavTheme", out var navRaw) && navRaw is double d ? (int)d : 0;
             if (navTheme == 1) // 顶部导航栏
             {
                 AppTitleBar.IsPaneToggleButtonVisible = false;

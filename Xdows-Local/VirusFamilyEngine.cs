@@ -30,7 +30,7 @@ namespace Xdows_Local
 
     public static class VirusFamilyFormatter
     {
-        public static String ToString(VirusFamily family, Single probability)
+        public static string ToString(VirusFamily family, Single probability)
         {
             var (category, name) = family switch
             {
@@ -100,7 +100,7 @@ namespace Xdows_Local
                 _ => ("Malware", "")
             };
 
-            if (String.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
                 return $"HEUR:{category}!ml ({probability * 100.0f:F1}%)";
             return $"HEUR:{category}.{name}!ml ({probability * 100.0f:F1}%)";
         }
@@ -112,7 +112,7 @@ namespace Xdows_Local
 
     internal sealed class VirusFamilyRuleFile
     {
-        public Int32 Version { get; set; }
+        public int Version { get; set; }
         public List<SignatureRule>? Signatures { get; set; }
         public SilverFoxHeuristicConfig? SilverfoxHeuristic { get; set; }
         public AVKillHeuristicConfig? AvkillHeuristic { get; set; }
@@ -120,36 +120,36 @@ namespace Xdows_Local
 
     internal sealed class SignatureRule
     {
-        public String Family { get; set; } = String.Empty;
-        public String DetectionName { get; set; } = String.Empty;
-        public List<String>? Patterns { get; set; }
-        public Int32 MinMatches { get; set; } = 1;
-        public Int32 Priority { get; set; } = 100;
+        public string Family { get; set; } = string.Empty;
+        public string DetectionName { get; set; } = string.Empty;
+        public List<string>? Patterns { get; set; }
+        public int MinMatches { get; set; } = 1;
+        public int Priority { get; set; } = 100;
     }
 
     internal sealed class SilverFoxHeuristicConfig
     {
-        public Boolean Enabled { get; set; } = true;
-        public Int32 MaxSizeMb { get; set; } = 50;
-        public Int32 RandomNameMinLen { get; set; } = 6;
-        public Int32 RandomNameMaxLen { get; set; } = 16;
-        public Double MinEntropy { get; set; } = 2.2;
-        public Double MaxCharFrequency { get; set; } = 0.45;
-        public Int32 MinLetters { get; set; } = 2;
-        public Int32 MinDigits { get; set; } = 1;
+        public bool Enabled { get; set; } = true;
+        public int MaxSizeMb { get; set; } = 50;
+        public int RandomNameMinLen { get; set; } = 6;
+        public int RandomNameMaxLen { get; set; } = 16;
+        public double MinEntropy { get; set; } = 2.2;
+        public double MaxCharFrequency { get; set; } = 0.45;
+        public int MinLetters { get; set; } = 2;
+        public int MinDigits { get; set; } = 1;
         public Single MinProbability { get; set; } = 0.5f;
-        public List<String>? SuspiciousPaths { get; set; }
-        public List<String>? TrustedPathKeywords { get; set; }
+        public List<string>? SuspiciousPaths { get; set; }
+        public List<string>? TrustedPathKeywords { get; set; }
     }
 
     internal sealed class AVKillHeuristicConfig
     {
-        public Boolean Enabled { get; set; } = true;
-        public Int32 MinToolStringHits { get; set; } = 1;
-        public Int32 MinTargetProcessHits { get; set; } = 2;
-        public List<String>? ToolStrings { get; set; }
-        public List<String>? TargetProcessesAscii { get; set; }
-        public List<String>? TargetProcessesWide { get; set; }
+        public bool Enabled { get; set; } = true;
+        public int MinToolStringHits { get; set; } = 1;
+        public int MinTargetProcessHits { get; set; } = 2;
+        public List<string>? ToolStrings { get; set; }
+        public List<string>? TargetProcessesAscii { get; set; }
+        public List<string>? TargetProcessesWide { get; set; }
     }
 
     /// <summary>AOT 友好的 JSON 序列化上下文。</summary>
@@ -166,54 +166,54 @@ namespace Xdows_Local
     internal sealed class CompiledSignature
     {
         public VirusFamily Family { get; init; }
-        public String DetectionName { get; init; } = String.Empty;
+        public string DetectionName { get; init; } = string.Empty;
         public Byte[][] Patterns { get; init; } = [];
-        public Int32 MinMatches { get; init; }
-        public Int32 Priority { get; init; }
+        public int MinMatches { get; init; }
+        public int Priority { get; init; }
     }
 
     public static class VirusFamilyEngine
     {
-        private const String RulesFileName = "XdowsVirusFamilyRules.json";
-        private const Int32 ScanSize = 512 * 1024;
+        private const string RulesFileName = "XdowsVirusFamilyRules.json";
+        private const int ScanSize = 512 * 1024;
 
-        private static readonly CompiledSignature[] s_signatures;
-        private static readonly SilverFoxHeuristicConfig s_silverFoxConfig;
+        private static readonly CompiledSignature[] _signatures;
+        private static readonly SilverFoxHeuristicConfig _silverFoxConfig;
 
         // SilverFox 预编译
-        private static readonly String[] s_silverFoxSuspiciousPaths;
-        private static readonly String[] s_silverFoxTrustedKeywords;
+        private static readonly string[] _silverFoxSuspiciousPaths;
+        private static readonly string[] _silverFoxTrustedKeywords;
 
         // AVKill 预编译字节模式
-        private static readonly Byte[][] s_avkillToolAscii;
-        private static readonly Byte[][] s_avkillTargetAscii;
-        private static readonly Byte[][] s_avkillTargetWide;
-        private static readonly Int32 s_avkillMinToolHits;
-        private static readonly Int32 s_avkillMinTargetHits;
-        private static readonly Boolean s_avkillEnabled;
+        private static readonly Byte[][] _avkillToolAscii;
+        private static readonly Byte[][] _avkillTargetAscii;
+        private static readonly Byte[][] _avkillTargetWide;
+        private static readonly int _avkillMinToolHits;
+        private static readonly int _avkillMinTargetHits;
+        private static readonly bool _avkillEnabled;
 
-        private static readonly FrozenDictionary<String, VirusFamily> s_familyLookup;
+        private static readonly FrozenDictionary<string, VirusFamily> _familyLookup;
 
-        private static readonly ConcurrentDictionary<String, (VirusFamily family, Single probability)> s_cache = new();
+        private static readonly ConcurrentDictionary<string, (VirusFamily family, Single probability)> _cache = new();
 
         static VirusFamilyEngine()
         {
             VirusFamilyRuleFile ruleFile = LoadRuleFile();
 
-            s_familyLookup = BuildFamilyLookup();
-            s_signatures = CompileSignatures(ruleFile.Signatures);
+            _familyLookup = BuildFamilyLookup();
+            _signatures = CompileSignatures(ruleFile.Signatures);
 
-            s_silverFoxConfig = ruleFile.SilverfoxHeuristic ?? new SilverFoxHeuristicConfig();
-            s_silverFoxSuspiciousPaths = s_silverFoxConfig.SuspiciousPaths?.ToArray() ?? [];
-            s_silverFoxTrustedKeywords = s_silverFoxConfig.TrustedPathKeywords?.ToArray() ?? [];
+            _silverFoxConfig = ruleFile.SilverfoxHeuristic ?? new SilverFoxHeuristicConfig();
+            _silverFoxSuspiciousPaths = _silverFoxConfig.SuspiciousPaths?.ToArray() ?? [];
+            _silverFoxTrustedKeywords = _silverFoxConfig.TrustedPathKeywords?.ToArray() ?? [];
 
             AVKillHeuristicConfig avkill = ruleFile.AvkillHeuristic ?? new AVKillHeuristicConfig();
-            s_avkillEnabled = avkill.Enabled;
-            s_avkillMinToolHits = avkill.MinToolStringHits;
-            s_avkillMinTargetHits = avkill.MinTargetProcessHits;
-            s_avkillToolAscii = EncodeAsciiLower(avkill.ToolStrings);
-            s_avkillTargetAscii = EncodeAsciiLower(avkill.TargetProcessesAscii);
-            s_avkillTargetWide = EncodeUtf16WideLower(avkill.TargetProcessesWide);
+            _avkillEnabled = avkill.Enabled;
+            _avkillMinToolHits = avkill.MinToolStringHits;
+            _avkillMinTargetHits = avkill.MinTargetProcessHits;
+            _avkillToolAscii = EncodeAsciiLower(avkill.ToolStrings);
+            _avkillTargetAscii = EncodeAsciiLower(avkill.TargetProcessesAscii);
+            _avkillTargetWide = EncodeUtf16WideLower(avkill.TargetProcessesWide);
         }
 
         // ============================================================
@@ -223,7 +223,7 @@ namespace Xdows_Local
         private static VirusFamilyRuleFile LoadRuleFile()
         {
             // 1. 外部文件覆盖 (运行目录同名文件)
-            String externalPath = Path.Combine(AppContext.BaseDirectory, RulesFileName);
+            string externalPath = Path.Combine(AppContext.BaseDirectory, RulesFileName);
             if (TryLoadFromFile(externalPath, out VirusFamilyRuleFile? external) && external != null)
                 return external;
 
@@ -231,7 +231,7 @@ namespace Xdows_Local
             try
             {
                 Assembly asm = typeof(VirusFamilyEngine).Assembly;
-                String resourceName = $"Xdows_Local.{RulesFileName}";
+                string resourceName = $"Xdows_Local.{RulesFileName}";
                 using Stream? stream = asm.GetManifestResourceStream(resourceName);
                 if (stream != null)
                 {
@@ -246,14 +246,14 @@ namespace Xdows_Local
             return new VirusFamilyRuleFile { Version = 3, Signatures = new List<SignatureRule>() };
         }
 
-        private static Boolean TryLoadFromFile(String path, [NotNullWhen(true)] out VirusFamilyRuleFile? result)
+        private static bool TryLoadFromFile(string path, [NotNullWhen(true)] out VirusFamilyRuleFile? result)
         {
             result = null;
             if (!File.Exists(path))
                 return false;
             try
             {
-                String json = File.ReadAllText(path);
+                string json = File.ReadAllText(path);
                 result = JsonSerializer.Deserialize(json, VirusFamilyRulesJsonContext.Default.VirusFamilyRuleFile);
                 return result != null;
             }
@@ -268,16 +268,16 @@ namespace Xdows_Local
             List<CompiledSignature> compiled = new(signatures.Count);
             foreach (SignatureRule sig in signatures)
             {
-                if (!s_familyLookup.TryGetValue(sig.Family, out VirusFamily family))
+                if (!_familyLookup.TryGetValue(sig.Family, out VirusFamily family))
                     continue;
                 if (sig.Patterns == null || sig.Patterns.Count == 0)
                     continue;
 
                 Byte[][] patterns = new Byte[sig.Patterns.Count][];
-                Boolean valid = true;
-                for (Int32 i = 0; i < sig.Patterns.Count; i++)
+                bool valid = true;
+                for (int i = 0; i < sig.Patterns.Count; i++)
                 {
-                    if (String.IsNullOrEmpty(sig.Patterns[i]))
+                    if (string.IsNullOrEmpty(sig.Patterns[i]))
                     {
                         valid = false;
                         break;
@@ -290,7 +290,7 @@ namespace Xdows_Local
                 compiled.Add(new CompiledSignature
                 {
                     Family = family,
-                    DetectionName = String.IsNullOrEmpty(sig.DetectionName) ? sig.Family : sig.DetectionName,
+                    DetectionName = string.IsNullOrEmpty(sig.DetectionName) ? sig.Family : sig.DetectionName,
                     Patterns = patterns,
                     MinMatches = Math.Max(1, sig.MinMatches),
                     Priority = sig.Priority
@@ -299,32 +299,32 @@ namespace Xdows_Local
             return compiled.ToArray();
         }
 
-        private static FrozenDictionary<String, VirusFamily> BuildFamilyLookup()
+        private static FrozenDictionary<string, VirusFamily> BuildFamilyLookup()
         {
-            Dictionary<String, VirusFamily> dict = new(StringComparer.Ordinal);
+            Dictionary<string, VirusFamily> dict = new(StringComparer.Ordinal);
             foreach (VirusFamily f in Enum.GetValues<VirusFamily>())
                 dict[f.ToString()] = f;
             return dict.ToFrozenDictionary(StringComparer.Ordinal);
         }
 
         // 小写化后编码为 UTF-8 字节, 用于大小写不敏感匹配 (搜索时对数据也做同样小写化)
-        private static Byte[][] EncodeAsciiLower(List<String>? strings)
+        private static Byte[][] EncodeAsciiLower(List<string>? strings)
         {
             if (strings == null || strings.Count == 0)
                 return [];
             Byte[][] result = new Byte[strings.Count][];
-            for (Int32 i = 0; i < strings.Count; i++)
+            for (int i = 0; i < strings.Count; i++)
                 result[i] = Encoding.UTF8.GetBytes(strings[i].ToLowerInvariant());
             return result;
         }
 
         // 小写化后编码为 UTF-16 LE 字节序列, 用于大小写不敏感宽字符匹配
-        private static Byte[][] EncodeUtf16WideLower(List<String>? strings)
+        private static Byte[][] EncodeUtf16WideLower(List<string>? strings)
         {
             if (strings == null || strings.Count == 0)
                 return [];
             Byte[][] result = new Byte[strings.Count][];
-            for (Int32 i = 0; i < strings.Count; i++)
+            for (int i = 0; i < strings.Count; i++)
                 result[i] = Encoding.Unicode.GetBytes(strings[i].ToLowerInvariant());
             return result;
         }
@@ -333,9 +333,9 @@ namespace Xdows_Local
         // 公共 API (保持向后兼容)
         // ============================================================
 
-        public static (VirusFamily family, Single probability) Analyze(String filePath, Single modelProbability)
+        public static (VirusFamily family, Single probability) Analyze(string filePath, Single modelProbability)
         {
-            if (s_cache.TryGetValue(filePath, out var cached))
+            if (_cache.TryGetValue(filePath, out var cached))
                 return cached;
 
             Byte[] data;
@@ -345,12 +345,12 @@ namespace Xdows_Local
                 FileInfo fi = new(filePath);
                 fileSize = fi.Length;
                 using var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                Int32 toRead = (Int32)Math.Min(fs.Length, ScanSize);
+                int toRead = (int)Math.Min(fs.Length, ScanSize);
                 data = new Byte[toRead];
-                Int32 bytesRead = 0;
+                int bytesRead = 0;
                 while (bytesRead < toRead)
                 {
-                    Int32 n = fs.Read(data, bytesRead, toRead - bytesRead);
+                    int n = fs.Read(data, bytesRead, toRead - bytesRead);
                     if (n == 0) break;
                     bytesRead += n;
                 }
@@ -366,14 +366,14 @@ namespace Xdows_Local
             Single probability = modelProbability;
 
             // 1. SilverFox 专项启发式 (随机文件名 + 可疑路径 + PE + 体积 + 概率门控)
-            if (s_silverFoxConfig.Enabled && modelProbability >= s_silverFoxConfig.MinProbability &&
-                DetectSilverFox(filePath, data, fileSize, s_silverFoxConfig))
+            if (_silverFoxConfig.Enabled && modelProbability >= _silverFoxConfig.MinProbability &&
+                DetectSilverFox(filePath, data, fileSize, _silverFoxConfig))
             {
                 family = VirusFamily.SilverFox;
                 probability = 0.95f;
             }
             // 2. AVKill 专项启发式 (工具字符串 / 目标 AV 进程名)
-            else if (s_avkillEnabled && DetectAVKill(data))
+            else if (_avkillEnabled && DetectAVKill(data))
             {
                 family = VirusFamily.AVKill;
                 probability = 0.95f;
@@ -386,17 +386,17 @@ namespace Xdows_Local
 
             var result = (family, probability);
 
-            if (s_cache.Count > 5000)
+            if (_cache.Count > 5000)
             {
-                foreach (var key in s_cache.Keys.Take(s_cache.Count - 2500).ToList())
-                    s_cache.TryRemove(key, out _);
+                foreach (var key in _cache.Keys.Take(_cache.Count - 2500).ToList())
+                    _cache.TryRemove(key, out _);
             }
 
-            s_cache[filePath] = result;
+            _cache[filePath] = result;
             return result;
         }
 
-        public static String GetVirusFamily(String filePath, Single modelProbability)
+        public static string GetVirusFamily(string filePath, Single modelProbability)
         {
             var (family, probability) = Analyze(filePath, modelProbability);
             return VirusFamilyFormatter.ToString(family, probability);
@@ -406,7 +406,7 @@ namespace Xdows_Local
         // SilverFox 专项启发式
         // ============================================================
 
-        private static Boolean DetectSilverFox(String filePath, Byte[] data, Int64 fileSize, SilverFoxHeuristicConfig cfg)
+        private static bool DetectSilverFox(string filePath, Byte[] data, Int64 fileSize, SilverFoxHeuristicConfig cfg)
         {
             // 必须为 PE 文件
             if (data.Length < 2 || data[0] != 0x4D || data[1] != 0x5A)
@@ -417,28 +417,28 @@ namespace Xdows_Local
             if (fileSize > maxSizeBytes || fileSize < 1024)
                 return false;
 
-            String fileName = Path.GetFileNameWithoutExtension(filePath);
+            string fileName = Path.GetFileNameWithoutExtension(filePath);
             if (!IsRandomFileName(fileName, cfg))
                 return false;
 
-            if (!IsSuspiciousPath(filePath, s_silverFoxSuspiciousPaths, s_silverFoxTrustedKeywords))
+            if (!IsSuspiciousPath(filePath, _silverFoxSuspiciousPaths, _silverFoxTrustedKeywords))
                 return false;
 
             return true;
         }
 
-        private static Boolean IsRandomFileName(String name, SilverFoxHeuristicConfig cfg)
+        private static bool IsRandomFileName(string name, SilverFoxHeuristicConfig cfg)
         {
-            if (String.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
                 return false;
 
-            Int32 len = name.Length;
+            int len = name.Length;
             if (len < cfg.RandomNameMinLen || len > cfg.RandomNameMaxLen)
                 return false;
 
             // 必须仅含字母数字
-            Int32 letterCount = 0;
-            Int32 digitCount = 0;
+            int letterCount = 0;
+            int digitCount = 0;
             foreach (Char c in name)
             {
                 if (Char.IsAsciiLetter(c))
@@ -457,18 +457,18 @@ namespace Xdows_Local
                 return false;
 
             // Shannon 熵
-            Double entropy = ShannonEntropy(name);
+            double entropy = ShannonEntropy(name);
             if (entropy < cfg.MinEntropy)
                 return false;
 
             // 最大字符出现频率
-            Dictionary<Char, Int32> freq = new();
+            Dictionary<Char, int> freq = new();
             foreach (Char c in name)
             {
-                freq.TryGetValue(c, out Int32 v);
+                freq.TryGetValue(c, out int v);
                 freq[c] = v + 1;
             }
-            Double maxFreq = (Double)freq.Values.Max() / len;
+            double maxFreq = (double)freq.Values.Max() / len;
             if (maxFreq > cfg.MaxCharFrequency)
                 return false;
 
@@ -476,7 +476,7 @@ namespace Xdows_Local
         }
 
         // 常见合法软件名片段 (小写比较), 用于排除 SilverFox 误报
-        private static readonly String[] s_commonSoftwareNames =
+        private static readonly string[] _commonSoftwareNames =
         [
             "setup", "install", "update", "upgrade", "uninstall",
             "helper", "service", "monitor", "config", "setting",
@@ -491,10 +491,10 @@ namespace Xdows_Local
             "visual", "code", "studio", "eclipse", "intellij"
         ];
 
-        private static Boolean IsCommonSoftwareName(String name)
+        private static bool IsCommonSoftwareName(string name)
         {
-            String lower = name.ToLowerInvariant();
-            foreach (String c in s_commonSoftwareNames)
+            string lower = name.ToLowerInvariant();
+            foreach (string c in _commonSoftwareNames)
             {
                 if (lower.Contains(c, StringComparison.Ordinal))
                     return true;
@@ -502,40 +502,40 @@ namespace Xdows_Local
             return false;
         }
 
-        private static Double ShannonEntropy(String s)
+        private static double ShannonEntropy(string s)
         {
             if (s.Length == 0)
                 return 0.0;
-            Dictionary<Char, Int32> freq = new();
+            Dictionary<Char, int> freq = new();
             foreach (Char c in s)
             {
-                freq.TryGetValue(c, out Int32 v);
+                freq.TryGetValue(c, out int v);
                 freq[c] = v + 1;
             }
-            Double entropy = 0.0;
-            Double len = s.Length;
-            foreach (Int32 count in freq.Values)
+            double entropy = 0.0;
+            double len = s.Length;
+            foreach (int count in freq.Values)
             {
-                Double p = count / len;
+                double p = count / len;
                 entropy -= p * Math.Log(p, 2);
             }
             return entropy;
         }
 
-        private static Boolean IsSuspiciousPath(String path, String[] suspiciousPaths, String[] trustedKeywords)
+        private static bool IsSuspiciousPath(string path, string[] suspiciousPaths, string[] trustedKeywords)
         {
-            if (String.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path))
                 return false;
 
             // 信任路径白名单优先
-            String lowerPath = path.ToLowerInvariant();
-            foreach (String trusted in trustedKeywords)
+            string lowerPath = path.ToLowerInvariant();
+            foreach (string trusted in trustedKeywords)
             {
                 if (lowerPath.Contains(trusted, StringComparison.Ordinal))
                     return false;
             }
 
-            foreach (String suspicious in suspiciousPaths)
+            foreach (string suspicious in suspiciousPaths)
             {
                 if (path.Contains(suspicious, StringComparison.OrdinalIgnoreCase))
                     return true;
@@ -547,7 +547,7 @@ namespace Xdows_Local
         // AVKill 专项启发式
         // ============================================================
 
-        private static Boolean DetectAVKill(Byte[] data)
+        private static bool DetectAVKill(Byte[] data)
         {
             if (data.Length == 0)
                 return false;
@@ -555,38 +555,38 @@ namespace Xdows_Local
             // 对数据做 ASCII 小写化 (仅 A-Z→a-z), 用于大小写不敏感匹配
             // 对 UTF-16 LE 同样有效: ASCII 字符的低字节被小写, 高字节 (0x00) 不变
             Byte[] lower = new Byte[data.Length];
-            for (Int32 i = 0; i < data.Length; i++)
+            for (int i = 0; i < data.Length; i++)
             {
                 Byte b = data[i];
                 lower[i] = (Byte)(b >= 0x41 && b <= 0x5A ? b + 32 : b);
             }
 
             // 1. 工具字符串 (ASCII, 大小写不敏感) - 任一命中即足够 (defendnot/defenderkiller 等)
-            Int32 toolHits = 0;
-            foreach (Byte[] pattern in s_avkillToolAscii)
+            int toolHits = 0;
+            foreach (Byte[] pattern in _avkillToolAscii)
             {
                 if (SimpleSearch(lower, pattern))
                 {
                     toolHits++;
-                    if (toolHits >= s_avkillMinToolHits)
+                    if (toolHits >= _avkillMinToolHits)
                         return true;
                 }
             }
 
             // 2. 目标 AV 进程名 (ASCII + UTF-16, 大小写不敏感) - 需要足够多命中避免单个 "avp.exe" 误报
-            Int32 targetHits = 0;
-            foreach (Byte[] pattern in s_avkillTargetAscii)
+            int targetHits = 0;
+            foreach (Byte[] pattern in _avkillTargetAscii)
             {
                 if (SimpleSearch(lower, pattern))
                     targetHits++;
             }
-            foreach (Byte[] pattern in s_avkillTargetWide)
+            foreach (Byte[] pattern in _avkillTargetWide)
             {
                 if (SimpleSearch(lower, pattern))
                     targetHits++;
             }
 
-            return targetHits >= s_avkillMinTargetHits;
+            return targetHits >= _avkillMinTargetHits;
         }
 
         // ============================================================
@@ -595,15 +595,15 @@ namespace Xdows_Local
 
         private static VirusFamily MatchSignatures(Byte[] data)
         {
-            if (s_signatures.Length == 0 || data.Length == 0)
+            if (_signatures.Length == 0 || data.Length == 0)
                 return VirusFamily.Generic;
 
             VirusFamily bestFamily = VirusFamily.Generic;
-            Int32 bestPriority = 0;
+            int bestPriority = 0;
 
-            foreach (CompiledSignature sig in s_signatures)
+            foreach (CompiledSignature sig in _signatures)
             {
-                Int32 matchCount = 0;
+                int matchCount = 0;
                 foreach (Byte[] pattern in sig.Patterns)
                 {
                     if (SimpleSearch(data, pattern))
@@ -628,7 +628,7 @@ namespace Xdows_Local
         // 辅助
         // ============================================================
 
-        private static Boolean SimpleSearch(Byte[] text, Byte[] pattern)
+        private static bool SimpleSearch(Byte[] text, Byte[] pattern)
         {
             if (pattern.Length == 0 || pattern.Length > text.Length)
                 return false;

@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "拦截已知的银狐病毒钓鱼网站和恶意域名",
+    "message": "阻止已知的银狐病毒钓鱼网站和恶意域名",
     "description": "Extension description"
   },
   "blockTitle": {
@@ -16,11 +16,11 @@
     "description": "Block page document title"
   },
   "threatTitle": {
-    "message": "检测到钓鱼网站, 已阻断连接",
+    "message": "检测到钓鱼网站，已阻止连接",
     "description": "InfoBar title"
   },
   "threatMsg": {
-    "message": "该网站被 Xdows Security 网络防护 识别为高风险钓鱼域名(疑似银狐病毒仿冒站点), 为防止账号与财产损失, 本次连接已被阻断。",
+    "message": "该网站被 Xdows Security 网络防护识别为高风险钓鱼域名（疑似银狐病毒仿冒站点），为防止账号与财产损失，本次连接已被阻止。",
     "description": "InfoBar message"
   },
   "urlLabel": {
@@ -36,11 +36,11 @@
     "description": "Back button"
   },
   "popupSubtitle": {
-    "message": "银狐病毒钓鱼网站拦截",
+    "message": "银狐病毒钓鱼网站阻止",
     "description": "Popup subtitle"
   },
   "statBlocked": {
-    "message": "已拦截",
+    "message": "已阻止",
     "description": "Popup stat label"
   },
   "statRules": {
@@ -48,11 +48,11 @@
     "description": "Popup stat label"
   },
   "recentTitle": {
-    "message": "最近拦截",
+    "message": "最近阻止",
     "description": "Popup recent section title"
   },
   "noRecent": {
-    "message": "暂无拦截记录",
+    "message": "暂无阻止记录",
     "description": "Popup empty state"
   },
   "statusLabel": {

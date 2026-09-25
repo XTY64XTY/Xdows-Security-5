@@ -56,7 +56,7 @@
                         <FontIcon Glyph="&#xEA18;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem l:Uids.Uid="MainWindow_Nav_Xdows-Tools" Tag="Xdows-Tools">
+                <NavigationViewItem l:Uids.Uid="MainWindow_Nav_XdowsTools" Tag="XdowsTools">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEA86;" />
                     </NavigationViewItem.Icon>

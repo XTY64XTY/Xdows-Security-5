@@ -159,7 +159,7 @@ public static class DriverInstaller
     private static string? FindAsset(string fileName)
     {
         // 模型与驱动资产随解决方案构建复制到应用输出目录（AppContext.BaseDirectory），
-        // 无需猜测其它目录布局。开发机可经 LocalSettings 的 ModelSourceRoot 键显式
+        // 无需猜测其他文件夹布局。开发机可经 LocalSettings 的 ModelSourceRoot 键显式
         // 指定源码根目录用于递归搜索（未设置则跳过）。
         string candidate = Path.Combine(AppContext.BaseDirectory, fileName);
         if (File.Exists(candidate))

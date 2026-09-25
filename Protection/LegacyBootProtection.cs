@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using static Protection.CallBack;
+using static Protection.Callback;
 
 namespace Protection;
 
@@ -18,13 +18,13 @@ public enum BootProtectionUserDecision
 
 public sealed record BootProtectionPreparation(
     PhysicalDiskInfo Disk,
-    Boolean HasTrustedBaseline);
+    bool HasTrustedBaseline);
 
 public sealed record BootProtectionDecisionRequest(
-    Int32 DiskIndex,
-    String DiskModel,
-    IReadOnlyList<String> ChangedItems,
-    Boolean RepairSucceeded,
+    int DiskIndex,
+    string DiskModel,
+    IReadOnlyList<string> ChangedItems,
+    bool RepairSucceeded,
     DateTimeOffset DetectedAt);
 
 public sealed class LegacyBootProtection : IProtectionModel
@@ -36,24 +36,24 @@ public sealed class LegacyBootProtection : IProtectionModel
     private Task? _monitorTask;
     private BootProtectionSnapshot? _baseline;
 
-    public LegacyBootProtection(String baselineDirectory)
+    public LegacyBootProtection(string baselineDirectory)
     {
-        if (String.IsNullOrWhiteSpace(baselineDirectory))
+        if (string.IsNullOrWhiteSpace(baselineDirectory))
             throw new ArgumentException("A baseline directory is required.", nameof(baselineDirectory));
 
         _store = new BootBaselineStore(baselineDirectory);
     }
 
-    public const String Name = "Boot";
-    String IProtectionModel.Name => Name;
+    public const string Name = "Boot";
+    string IProtectionModel.Name => Name;
 
     public Func<BootProtectionDecisionRequest, CancellationToken, Task<BootProtectionUserDecision>>? DecisionCallback { get; set; }
-    public Action<String>? LogCallback { get; set; }
+    public Action<string>? LogCallback { get; set; }
 
     public BootProtectionPreparation InspectPreparation()
     {
         PhysicalDiskInfo disk = GetSystemBootDisk();
-        Boolean hasBaseline = _store.TryLoad(out BootProtectionSnapshot? snapshot) &&
+        bool hasBaseline = _store.TryLoad(out BootProtectionSnapshot? snapshot) &&
             snapshot is not null &&
             SnapshotMatchesDisk(snapshot, disk);
 
@@ -77,9 +77,9 @@ public sealed class LegacyBootProtection : IProtectionModel
             $"{snapshot.RawRegions.Count} raw regions and {snapshot.Files.Count} boot files.");
     }
 
-    public Boolean Run(InterceptCallBack interceptCallBack)
+    public bool Run(InterceptCallback interceptCallback)
     {
-        _ = interceptCallBack;
+        _ = interceptCallback;
 
         lock (_stateLock)
         {
@@ -114,7 +114,7 @@ public sealed class LegacyBootProtection : IProtectionModel
         }
     }
 
-    public Boolean Stop()
+    public bool Stop()
     {
         CancellationTokenSource? cts;
         Task? monitorTask;
@@ -140,7 +140,7 @@ public sealed class LegacyBootProtection : IProtectionModel
         return true;
     }
 
-    public Boolean IsRun()
+    public bool IsRun()
     {
         lock (_stateLock)
         {
@@ -148,12 +148,12 @@ public sealed class LegacyBootProtection : IProtectionModel
         }
     }
 
-    private Boolean IsRunUnsafe()
+    private bool IsRunUnsafe()
     {
         return _cts is { IsCancellationRequested: false } && _monitorTask is not null;
     }
 
-    private Boolean HasActiveMonitorUnsafe()
+    private bool HasActiveMonitorUnsafe()
     {
         return _monitorTask is { IsCompleted: false };
     }
@@ -173,7 +173,7 @@ public sealed class LegacyBootProtection : IProtectionModel
         }
         finally
         {
-            Boolean cleared = false;
+            bool cleared = false;
             lock (_stateLock)
             {
                 if (ReferenceEquals(_monitorTask, monitorTask))
@@ -214,7 +214,7 @@ public sealed class LegacyBootProtection : IProtectionModel
                     continue;
 
                 Log($"Detected {changes.Count} protected boot changes. Repairing before user notification.");
-                Boolean repaired = false;
+                bool repaired = false;
                 try
                 {
                     BootProtectionSnapshotService.ApplySnapshot(baseline, observed, changes);
@@ -273,7 +273,7 @@ public sealed class LegacyBootProtection : IProtectionModel
     private async Task<BootProtectionUserDecision> RequestDecisionAsync(
         BootProtectionSnapshot baseline,
         IReadOnlyList<BootProtectionChange> changes,
-        Boolean repairSucceeded,
+        bool repairSucceeded,
         CancellationToken token)
     {
         if (DecisionCallback is null)
@@ -301,7 +301,7 @@ public sealed class LegacyBootProtection : IProtectionModel
         }
     }
 
-    private void Log(String message)
+    private void Log(string message)
     {
         LogCallback?.Invoke(message);
     }
@@ -340,7 +340,7 @@ public sealed class LegacyBootProtection : IProtectionModel
             : disk with { SizeBytes = DiskOperator.GetDiskLength(disk.Index) };
     }
 
-    private static Boolean SnapshotMatchesDisk(BootProtectionSnapshot snapshot, PhysicalDiskInfo disk)
+    private static bool SnapshotMatchesDisk(BootProtectionSnapshot snapshot, PhysicalDiskInfo disk)
     {
         if (snapshot.DiskIndex != disk.Index ||
             snapshot.DiskSizeBytes != disk.SizeBytes ||
@@ -349,9 +349,9 @@ public sealed class LegacyBootProtection : IProtectionModel
             return false;
         }
 
-        return String.IsNullOrWhiteSpace(snapshot.DiskSerialNumber) ||
-            String.IsNullOrWhiteSpace(disk.SerialNumber) ||
-            String.Equals(snapshot.DiskSerialNumber, disk.SerialNumber, StringComparison.OrdinalIgnoreCase);
+        return string.IsNullOrWhiteSpace(snapshot.DiskSerialNumber) ||
+            string.IsNullOrWhiteSpace(disk.SerialNumber) ||
+            string.Equals(snapshot.DiskSerialNumber, disk.SerialNumber, StringComparison.OrdinalIgnoreCase);
     }
 }
 
@@ -365,44 +365,44 @@ internal enum BootProtectionChangeKind
 
 internal sealed record BootProtectionChange(
     BootProtectionChangeKind Kind,
-    String Key,
-    String DisplayName);
+    string Key,
+    string DisplayName);
 
 internal sealed record BootRawRegion(
-    String Name,
+    string Name,
     Int64 Offset,
     Byte[] Data);
 
 internal sealed record BootDriverProtectionConfiguration(
-    Int32 DiskIndex,
-    String DiskModel,
+    int DiskIndex,
+    string DiskModel,
     IReadOnlyList<BootRawRegion> RawRegions,
-    IReadOnlyList<String> NtVolumeRoots);
+    IReadOnlyList<string> NtVolumeRoots);
 
 internal sealed record BootFileEntry(
-    String VolumeRoot,
-    String RelativePath,
+    string VolumeRoot,
+    string RelativePath,
     Byte[] Data,
     FileAttributes Attributes,
     DateTime LastWriteTimeUtc)
 {
-    public String Key => $"{VolumeRoot}|{RelativePath}";
+    public string Key => $"{VolumeRoot}|{RelativePath}";
 }
 
 internal sealed record BootProtectionSnapshot(
-    Int32 DiskIndex,
-    String DiskModel,
-    String DiskSerialNumber,
+    int DiskIndex,
+    string DiskModel,
+    string DiskSerialNumber,
     Int64 DiskSizeBytes,
     PhysicalDiskPartitionStyle PartitionStyle,
-    Int32 LogicalSectorSize,
+    int LogicalSectorSize,
     IReadOnlyList<BootRawRegion> RawRegions,
-    IReadOnlyList<String> ProtectedRoots,
+    IReadOnlyList<string> ProtectedRoots,
     IReadOnlyList<BootFileEntry> Files);
 
 internal static class BootProtectionSnapshotService
 {
-    private const Int32 MaxGptEntryBytes = 16 * 1024 * 1024;
+    private const int MaxGptEntryBytes = 16 * 1024 * 1024;
     private const Int64 MaxProtectedFileBytes = 64L * 1024 * 1024;
     private const Int64 MaxProtectedFilesTotalBytes = 256L * 1024 * 1024;
     private static readonly Byte[] GptSignature = "EFI PART"u8.ToArray();
@@ -410,10 +410,10 @@ internal static class BootProtectionSnapshotService
     public static BootDriverProtectionConfiguration CreateDriverConfiguration()
     {
         PhysicalDiskInfo disk = LegacyBootProtection.GetSystemBootDisk();
-        Int32 sectorSize = DiskOperator.GetLogicalSectorSize(disk.Index);
+        int sectorSize = DiskOperator.GetLogicalSectorSize(disk.Index);
         IReadOnlyList<BootRawRegion> rawRegions = CaptureInitialRawRegions(disk, sectorSize);
-        IReadOnlyList<String> protectedRoots = BootVolumeLocator.FindProtectedRoots(disk.Index);
-        String[] ntVolumeRoots = protectedRoots
+        IReadOnlyList<string> protectedRoots = BootVolumeLocator.FindProtectedRoots(disk.Index);
+        string[] ntVolumeRoots = protectedRoots
             .Select(root => root.Split('|', 2)[0])
             .Select(BootVolumeLocator.GetNtVolumeRoot)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -433,9 +433,9 @@ internal static class BootProtectionSnapshotService
 
     public static BootProtectionSnapshot CaptureInitial(PhysicalDiskInfo disk)
     {
-        Int32 sectorSize = DiskOperator.GetLogicalSectorSize(disk.Index);
+        int sectorSize = DiskOperator.GetLogicalSectorSize(disk.Index);
         IReadOnlyList<BootRawRegion> rawRegions = CaptureInitialRawRegions(disk, sectorSize);
-        IReadOnlyList<String> protectedRoots = BootVolumeLocator.FindProtectedRoots(disk.Index);
+        IReadOnlyList<string> protectedRoots = BootVolumeLocator.FindProtectedRoots(disk.Index);
         if (protectedRoots.Count == 0)
             throw new IOException("No active EFI or BCD boot path was found on the Windows system disk.");
 
@@ -463,9 +463,9 @@ internal static class BootProtectionSnapshotService
 
         if (disk.SizeBytes != layout.DiskSizeBytes ||
             disk.PartitionStyle != layout.PartitionStyle ||
-            (!String.IsNullOrWhiteSpace(layout.DiskSerialNumber) &&
-             !String.IsNullOrWhiteSpace(disk.SerialNumber) &&
-             !String.Equals(layout.DiskSerialNumber, disk.SerialNumber, StringComparison.OrdinalIgnoreCase)))
+            (!string.IsNullOrWhiteSpace(layout.DiskSerialNumber) &&
+             !string.IsNullOrWhiteSpace(disk.SerialNumber) &&
+             !string.Equals(layout.DiskSerialNumber, disk.SerialNumber, StringComparison.OrdinalIgnoreCase)))
         {
             throw new IOException("The protected boot disk identity changed; a new trusted baseline is required.");
         }
@@ -494,7 +494,7 @@ internal static class BootProtectionSnapshotService
         BootProtectionSnapshot observed)
     {
         var changes = new List<BootProtectionChange>();
-        Dictionary<String, BootRawRegion> observedRaw = observed.RawRegions
+        Dictionary<string, BootRawRegion> observedRaw = observed.RawRegions
             .ToDictionary(region => region.Name, StringComparer.OrdinalIgnoreCase);
 
         foreach (BootRawRegion expected in baseline.RawRegions)
@@ -510,12 +510,12 @@ internal static class BootProtectionSnapshotService
             }
         }
 
-        Dictionary<String, BootFileEntry> expectedFiles = baseline.Files
+        Dictionary<string, BootFileEntry> expectedFiles = baseline.Files
             .ToDictionary(file => file.Key, StringComparer.OrdinalIgnoreCase);
-        Dictionary<String, BootFileEntry> currentFiles = observed.Files
+        Dictionary<string, BootFileEntry> currentFiles = observed.Files
             .ToDictionary(file => file.Key, StringComparer.OrdinalIgnoreCase);
 
-        foreach ((String key, BootFileEntry expected) in expectedFiles)
+        foreach ((string key, BootFileEntry expected) in expectedFiles)
         {
             if (!currentFiles.TryGetValue(key, out BootFileEntry? current))
             {
@@ -533,7 +533,7 @@ internal static class BootProtectionSnapshotService
             }
         }
 
-        foreach ((String key, BootFileEntry current) in currentFiles)
+        foreach ((string key, BootFileEntry current) in currentFiles)
         {
             if (!expectedFiles.ContainsKey(key))
             {
@@ -552,11 +552,11 @@ internal static class BootProtectionSnapshotService
         BootProtectionSnapshot previous,
         IReadOnlyList<BootProtectionChange> changes)
     {
-        Dictionary<String, BootRawRegion> desiredRaw = desired.RawRegions
+        Dictionary<string, BootRawRegion> desiredRaw = desired.RawRegions
             .ToDictionary(region => region.Name, StringComparer.OrdinalIgnoreCase);
-        Dictionary<String, BootFileEntry> desiredFiles = desired.Files
+        Dictionary<string, BootFileEntry> desiredFiles = desired.Files
             .ToDictionary(file => file.Key, StringComparer.OrdinalIgnoreCase);
-        Dictionary<String, BootFileEntry> previousFiles = previous.Files
+        Dictionary<string, BootFileEntry> previousFiles = previous.Files
             .ToDictionary(file => file.Key, StringComparer.OrdinalIgnoreCase);
 
         foreach (BootProtectionChange change in changes
@@ -582,7 +582,7 @@ internal static class BootProtectionSnapshotService
 
     private static IReadOnlyList<BootRawRegion> CaptureInitialRawRegions(
         PhysicalDiskInfo disk,
-        Int32 sectorSize)
+        int sectorSize)
     {
         var regions = new List<BootRawRegion>
         {
@@ -621,9 +621,9 @@ internal static class BootProtectionSnapshotService
 
     private static GptHeaderInfo ParseAndValidateGptHeader(
         Byte[] data,
-        Int32 sectorSize,
+        int sectorSize,
         Int64 diskSize,
-        String label)
+        string label)
     {
         if (data.Length != sectorSize || !data.AsSpan(0, GptSignature.Length).SequenceEqual(GptSignature))
             throw new InvalidDataException($"The {label} signature is invalid.");
@@ -633,7 +633,7 @@ internal static class BootProtectionSnapshotService
             throw new InvalidDataException($"The {label} size is invalid: {headerSize}.");
 
         UInt32 storedHeaderCrc = BitConverter.ToUInt32(data, 16);
-        Byte[] headerForCrc = data.AsSpan(0, checked((Int32)headerSize)).ToArray();
+        Byte[] headerForCrc = data.AsSpan(0, checked((int)headerSize)).ToArray();
         Array.Clear(headerForCrc, 16, sizeof(UInt32));
         if (Crc32.Compute(headerForCrc) != storedHeaderCrc)
             throw new InvalidDataException($"The {label} CRC is invalid.");
@@ -662,16 +662,16 @@ internal static class BootProtectionSnapshotService
         if (entryBytes == 0 || entryBytes > MaxGptEntryBytes)
             throw new InvalidDataException($"The {label} partition-entry array is too large.");
 
-        return new GptHeaderInfo(backupLba, entryLba, checked((Int32)entryBytes), entryCrc);
+        return new GptHeaderInfo(backupLba, entryLba, checked((int)entryBytes), entryCrc);
     }
 
     private static Byte[] ReadAndValidateGptEntries(
-        Int32 diskIndex,
+        int diskIndex,
         GptHeaderInfo header,
-        Int32 sectorSize,
-        String label)
+        int sectorSize,
+        string label)
     {
-        Int32 roundedLength = checked((header.EntryBytes + sectorSize - 1) / sectorSize * sectorSize);
+        int roundedLength = checked((header.EntryBytes + sectorSize - 1) / sectorSize * sectorSize);
         if (roundedLength > MaxGptEntryBytes)
             throw new InvalidDataException($"The {label} rounded partition-entry array is too large.");
         Byte[] data = DiskOperator.ReadDiskRegion(
@@ -685,19 +685,19 @@ internal static class BootProtectionSnapshotService
         return data;
     }
 
-    private static IReadOnlyList<BootFileEntry> CaptureFiles(IReadOnlyList<String> protectedRoots)
+    private static IReadOnlyList<BootFileEntry> CaptureFiles(IReadOnlyList<string> protectedRoots)
     {
-        var files = new Dictionary<String, BootFileEntry>(StringComparer.OrdinalIgnoreCase);
+        var files = new Dictionary<string, BootFileEntry>(StringComparer.OrdinalIgnoreCase);
         Int64 totalBytes = 0;
 
-        foreach (String protectedRoot in protectedRoots)
+        foreach (string protectedRoot in protectedRoots)
         {
-            (String volumeRoot, String relativeRoot) = SplitProtectedRoot(protectedRoot);
-            String directory = CombineProtectedPath(volumeRoot, relativeRoot);
+            (string volumeRoot, string relativeRoot) = SplitProtectedRoot(protectedRoot);
+            string directory = CombineProtectedPath(volumeRoot, relativeRoot);
             if (!Directory.Exists(directory))
                 continue;
 
-            foreach (String path in EnumerateFilesWithoutReparsePoints(directory))
+            foreach (string path in EnumerateFilesWithoutReparsePoints(directory))
             {
                 FileAttributes currentAttributes = File.GetAttributes(path);
                 if ((currentAttributes & FileAttributes.ReparsePoint) != 0)
@@ -709,7 +709,7 @@ internal static class BootProtectionSnapshotService
                 if (info.Length > MaxProtectedFileBytes)
                     throw new IOException($"Protected boot file is too large: {path}.");
 
-                String relativePath = Path.GetRelativePath(volumeRoot, path);
+                string relativePath = Path.GetRelativePath(volumeRoot, path);
                 ValidateRelativePath(relativePath);
                 EnsureNoReparsePoints(volumeRoot, relativePath);
                 Byte[] data = ReadSharedFile(path);
@@ -733,18 +733,18 @@ internal static class BootProtectionSnapshotService
         return files.Values.OrderBy(file => file.Key, StringComparer.OrdinalIgnoreCase).ToArray();
     }
 
-    private static IEnumerable<String> EnumerateFilesWithoutReparsePoints(String root)
+    private static IEnumerable<string> EnumerateFilesWithoutReparsePoints(string root)
     {
-        var pending = new Stack<String>();
+        var pending = new Stack<string>();
         pending.Push(root);
 
         while (pending.Count != 0)
         {
-            String directory = pending.Pop();
-            foreach (String file in Directory.EnumerateFiles(directory))
+            string directory = pending.Pop();
+            foreach (string file in Directory.EnumerateFiles(directory))
                 yield return file;
 
-            foreach (String child in Directory.EnumerateDirectories(directory))
+            foreach (string child in Directory.EnumerateDirectories(directory))
             {
                 FileAttributes attributes = File.GetAttributes(child);
                 if ((attributes & FileAttributes.ReparsePoint) == 0)
@@ -753,9 +753,9 @@ internal static class BootProtectionSnapshotService
         }
     }
 
-    private static Boolean IsProtectedBootFile(String path)
+    private static bool IsProtectedBootFile(string path)
     {
-        String name = Path.GetFileName(path);
+        string name = Path.GetFileName(path);
         if (name.StartsWith("BCD.LOG", StringComparison.OrdinalIgnoreCase) ||
             name.Equals("bootstat.dat", StringComparison.OrdinalIgnoreCase))
         {
@@ -764,12 +764,12 @@ internal static class BootProtectionSnapshotService
         if (name.Equals("BCD", StringComparison.OrdinalIgnoreCase))
             return true;
 
-        String extension = Path.GetExtension(name);
+        string extension = Path.GetExtension(name);
         return !extension.Equals(".tmp", StringComparison.OrdinalIgnoreCase) &&
             !extension.Equals(".log", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static Byte[] ReadSharedFile(String path)
+    private static Byte[] ReadSharedFile(string path)
     {
         using FileStream stream = new(
             path,
@@ -778,7 +778,7 @@ internal static class BootProtectionSnapshotService
             FileShare.ReadWrite | FileShare.Delete,
             64 * 1024,
             FileOptions.SequentialScan);
-        using var memory = new MemoryStream(checked((Int32)Math.Min(stream.Length, Int32.MaxValue)));
+        using var memory = new MemoryStream(checked((int)Math.Min(stream.Length, int.MaxValue)));
         stream.CopyTo(memory);
         return memory.ToArray();
     }
@@ -786,7 +786,7 @@ internal static class BootProtectionSnapshotService
     private static void WriteProtectedFile(BootFileEntry file)
     {
         EnsureNoReparsePoints(file.VolumeRoot, file.RelativePath);
-        String path = CombineProtectedPath(file.VolumeRoot, file.RelativePath);
+        string path = CombineProtectedPath(file.VolumeRoot, file.RelativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? file.VolumeRoot);
         if (File.Exists(path))
         {
@@ -811,10 +811,10 @@ internal static class BootProtectionSnapshotService
         File.SetAttributes(path, file.Attributes);
     }
 
-    private static void DeleteProtectedFile(String volumeRoot, String relativePath)
+    private static void DeleteProtectedFile(string volumeRoot, string relativePath)
     {
         EnsureNoReparsePoints(volumeRoot, relativePath);
-        String path = CombineProtectedPath(volumeRoot, relativePath);
+        string path = CombineProtectedPath(volumeRoot, relativePath);
         if (!File.Exists(path))
             return;
 
@@ -824,44 +824,44 @@ internal static class BootProtectionSnapshotService
         File.Delete(path);
     }
 
-    private static (String VolumeRoot, String RelativeRoot) SplitProtectedRoot(String protectedRoot)
+    private static (string VolumeRoot, string RelativeRoot) SplitProtectedRoot(string protectedRoot)
     {
-        Int32 separator = protectedRoot.IndexOf('|');
+        int separator = protectedRoot.IndexOf('|');
         if (separator <= 0 || separator == protectedRoot.Length - 1)
             throw new InvalidDataException("A protected boot root is malformed.");
 
-        String volumeRoot = EnsureTrailingSeparator(protectedRoot[..separator]);
-        String relativeRoot = protectedRoot[(separator + 1)..];
+        string volumeRoot = EnsureTrailingSeparator(protectedRoot[..separator]);
+        string relativeRoot = protectedRoot[(separator + 1)..];
         ValidateRelativePath(relativeRoot);
         return (volumeRoot, relativeRoot);
     }
 
-    private static String CombineProtectedPath(String volumeRoot, String relativePath)
+    private static string CombineProtectedPath(string volumeRoot, string relativePath)
     {
         ValidateRelativePath(relativePath);
-        String normalizedRoot = EnsureTrailingSeparator(Path.GetFullPath(volumeRoot));
-        String fullPath = Path.GetFullPath(Path.Combine(normalizedRoot, relativePath));
+        string normalizedRoot = EnsureTrailingSeparator(Path.GetFullPath(volumeRoot));
+        string fullPath = Path.GetFullPath(Path.Combine(normalizedRoot, relativePath));
         if (!fullPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("A protected boot path escaped its volume root.");
         return fullPath;
     }
 
-    private static void ValidateRelativePath(String relativePath)
+    private static void ValidateRelativePath(string relativePath)
     {
-        if (String.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+        if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
             throw new InvalidDataException("A protected boot path must be relative.");
 
-        String[] components = relativePath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        string[] components = relativePath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
         if (components.Any(component => component is "." or ".."))
             throw new InvalidDataException("A protected boot path contains traversal components.");
     }
 
-    private static void EnsureNoReparsePoints(String volumeRoot, String relativePath)
+    private static void EnsureNoReparsePoints(string volumeRoot, string relativePath)
     {
         ValidateRelativePath(relativePath);
-        String current = EnsureTrailingSeparator(Path.GetFullPath(volumeRoot));
-        String[] components = relativePath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
-        foreach (String component in components)
+        string current = EnsureTrailingSeparator(Path.GetFullPath(volumeRoot));
+        string[] components = relativePath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        foreach (string component in components)
         {
             current = Path.Combine(current, component);
             if (!File.Exists(current) && !Directory.Exists(current))
@@ -872,12 +872,12 @@ internal static class BootProtectionSnapshotService
         }
     }
 
-    private static String EnsureTrailingSeparator(String path)
+    private static string EnsureTrailingSeparator(string path)
     {
         return path.EndsWith(Path.DirectorySeparatorChar) ? path : path + Path.DirectorySeparatorChar;
     }
 
-    private static Int32 RawWritePriority(String name)
+    private static int RawWritePriority(string name)
     {
         return name switch
         {
@@ -893,7 +893,7 @@ internal static class BootProtectionSnapshotService
     private sealed record GptHeaderInfo(
         UInt64 BackupLba,
         UInt64 EntryLba,
-        Int32 EntryBytes,
+        int EntryBytes,
         UInt32 EntryCrc);
 }
 
@@ -903,9 +903,9 @@ internal static class BootVolumeLocator
     private const UInt32 FileShareWrite = 0x00000002;
     private const UInt32 OpenExisting = 3;
     private const UInt32 IoctlVolumeGetVolumeDiskExtents = 0x00560000;
-    private const Int32 ErrorNoMoreFiles = 18;
-    private const Int32 ErrorInsufficientBuffer = 122;
-    private static readonly String[] CandidateRoots =
+    private const int ErrorNoMoreFiles = 18;
+    private const int ErrorInsufficientBuffer = 122;
+    private static readonly string[] CandidateRoots =
     [
         @"EFI\Microsoft\Boot",
         @"EFI\Boot",
@@ -916,14 +916,14 @@ internal static class BootVolumeLocator
     private static extern IntPtr FindFirstVolumeW(StringBuilder volumeName, UInt32 bufferLength);
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern Boolean FindNextVolumeW(IntPtr findVolume, StringBuilder volumeName, UInt32 bufferLength);
+    private static extern bool FindNextVolumeW(IntPtr findVolume, StringBuilder volumeName, UInt32 bufferLength);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern Boolean FindVolumeClose(IntPtr findVolume);
+    private static extern bool FindVolumeClose(IntPtr findVolume);
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern SafeFileHandle CreateFileW(
-        String fileName,
+        string fileName,
         UInt32 desiredAccess,
         UInt32 shareMode,
         IntPtr securityAttributes,
@@ -933,12 +933,12 @@ internal static class BootVolumeLocator
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     private static extern UInt32 QueryDosDeviceW(
-        String deviceName,
+        string deviceName,
         Char[] targetPath,
         UInt32 maximumLength);
 
     [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern Boolean DeviceIoControl(
+    private static extern bool DeviceIoControl(
         SafeFileHandle device,
         UInt32 controlCode,
         Byte[]? input,
@@ -948,12 +948,12 @@ internal static class BootVolumeLocator
         out UInt32 bytesReturned,
         IntPtr overlapped);
 
-    public static IReadOnlyList<String> FindProtectedRoots(Int32 diskIndex)
+    public static IReadOnlyList<string> FindProtectedRoots(int diskIndex)
     {
-        var protectedRoots = new SortedSet<String>(StringComparer.OrdinalIgnoreCase);
+        var protectedRoots = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
         const UInt32 capacity = 1024;
-        var volumeName = new StringBuilder((Int32)capacity);
+        var volumeName = new StringBuilder((int)capacity);
         IntPtr search = FindFirstVolumeW(volumeName, capacity);
         if (search == new IntPtr(-1))
             throw new IOException($"Failed to enumerate volumes. Win32 error {Marshal.GetLastWin32Error()}.");
@@ -962,16 +962,16 @@ internal static class BootVolumeLocator
         {
             while (true)
             {
-                String volumeRoot = volumeName.ToString();
+                string volumeRoot = volumeName.ToString();
                 if (VolumeUsesDisk(volumeRoot, diskIndex))
                     AddCandidateRoots(protectedRoots, volumeRoot);
 
                 volumeName.Clear();
-                volumeName.EnsureCapacity((Int32)capacity);
+                volumeName.EnsureCapacity((int)capacity);
                 if (FindNextVolumeW(search, volumeName, capacity))
                     continue;
 
-                Int32 error = Marshal.GetLastWin32Error();
+                int error = Marshal.GetLastWin32Error();
                 if (error == ErrorNoMoreFiles)
                     break;
                 throw new IOException($"Failed to enumerate volumes. Win32 error {error}.");
@@ -985,14 +985,14 @@ internal static class BootVolumeLocator
         return protectedRoots.ToArray();
     }
 
-    public static String GetNtVolumeRoot(String volumeRoot)
+    public static string GetNtVolumeRoot(string volumeRoot)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(volumeRoot);
-        String normalized = volumeRoot.TrimEnd('\\');
+        string normalized = volumeRoot.TrimEnd('\\');
         if (normalized.StartsWith(@"\Device\", StringComparison.OrdinalIgnoreCase))
             return normalized;
 
-        String dosDeviceName;
+        string dosDeviceName;
         if (normalized.StartsWith(@"\\?\", StringComparison.OrdinalIgnoreCase))
             dosDeviceName = normalized[4..];
         else if (normalized.Length >= 2 && normalized[1] == ':')
@@ -1000,23 +1000,23 @@ internal static class BootVolumeLocator
         else
             throw new IOException($"Unsupported boot volume path: {volumeRoot}.");
 
-        Int32 bufferSize = 512;
+        int bufferSize = 512;
         while (bufferSize <= 64 * 1024)
         {
             Char[] buffer = new Char[bufferSize];
             UInt32 length = QueryDosDeviceW(dosDeviceName, buffer, (UInt32)buffer.Length);
             if (length != 0)
             {
-                Int32 terminator = Array.IndexOf(buffer, '\0');
+                int terminator = Array.IndexOf(buffer, '\0');
                 if (terminator < 0)
-                    terminator = checked((Int32)length);
-                String target = new(buffer, 0, terminator);
+                    terminator = checked((int)length);
+                string target = new(buffer, 0, terminator);
                 if (!target.StartsWith(@"\Device\", StringComparison.OrdinalIgnoreCase))
                     throw new IOException($"Boot volume {volumeRoot} resolved to an invalid NT path.");
                 return target.TrimEnd('\\');
             }
 
-            Int32 error = Marshal.GetLastWin32Error();
+            int error = Marshal.GetLastWin32Error();
             if (error != ErrorInsufficientBuffer)
                 throw new IOException($"Failed to resolve boot volume {volumeRoot}. Win32 error {error}.");
             bufferSize *= 2;
@@ -1025,25 +1025,25 @@ internal static class BootVolumeLocator
         throw new IOException($"The NT path for boot volume {volumeRoot} exceeded the supported size.");
     }
 
-    private static void AddCandidateRoots(ISet<String> protectedRoots, String volumeRoot)
+    private static void AddCandidateRoots(ISet<string> protectedRoots, string volumeRoot)
     {
-        String normalizedRoot = EnsureTrailingSeparator(volumeRoot);
-        foreach (String relativeRoot in CandidateRoots)
+        string normalizedRoot = EnsureTrailingSeparator(volumeRoot);
+        foreach (string relativeRoot in CandidateRoots)
         {
-            String path = Path.Combine(normalizedRoot, relativeRoot);
+            string path = Path.Combine(normalizedRoot, relativeRoot);
             if (Directory.Exists(path))
                 protectedRoots.Add($"{normalizedRoot}|{relativeRoot}");
         }
     }
 
-    private static String EnsureTrailingSeparator(String path)
+    private static string EnsureTrailingSeparator(string path)
     {
         return path.EndsWith(Path.DirectorySeparatorChar) ? path : path + Path.DirectorySeparatorChar;
     }
 
-    private static Boolean VolumeUsesDisk(String volumeRoot, Int32 diskIndex)
+    private static bool VolumeUsesDisk(string volumeRoot, int diskIndex)
     {
-        String devicePath = volumeRoot.TrimEnd('\\');
+        string devicePath = volumeRoot.TrimEnd('\\');
         using SafeFileHandle handle = CreateFileW(
             devicePath,
             0,
@@ -1071,11 +1071,11 @@ internal static class BootVolumeLocator
         }
 
         UInt32 count = BitConverter.ToUInt32(output, 0);
-        const Int32 firstExtentOffset = 8;
-        const Int32 extentSize = 24;
+        const int firstExtentOffset = 8;
+        const int extentSize = 24;
         for (UInt32 index = 0; index < count; index++)
         {
-            Int32 offset = firstExtentOffset + checked((Int32)index * extentSize);
+            int offset = firstExtentOffset + checked((int)index * extentSize);
             if (offset + extentSize > bytesReturned)
                 break;
 
@@ -1089,13 +1089,13 @@ internal static class BootVolumeLocator
 
 internal sealed class BootBaselineStore
 {
-    private const Int32 FormatVersion = 1;
-    private const String ArchiveFileName = "boot-baseline.zip";
-    private const String KeyFileName = "boot-baseline.key";
-    private const String ManifestEntryName = "manifest.json";
-    private readonly String _directory;
+    private const int FormatVersion = 1;
+    private const string ArchiveFileName = "boot-baseline.zip";
+    private const string KeyFileName = "boot-baseline.key";
+    private const string ManifestEntryName = "manifest.json";
+    private readonly string _directory;
 
-    public BootBaselineStore(String directory)
+    public BootBaselineStore(string directory)
     {
         _directory = Path.GetFullPath(directory);
     }
@@ -1104,8 +1104,8 @@ internal sealed class BootBaselineStore
     {
         Directory.CreateDirectory(_directory);
         Byte[] key = LoadOrCreateKey();
-        String archivePath = Path.Combine(_directory, ArchiveFileName);
-        String temporaryPath = archivePath + ".tmp";
+        string archivePath = Path.Combine(_directory, ArchiveFileName);
+        string temporaryPath = archivePath + ".tmp";
 
         var manifest = new BootBaselineManifest
         {
@@ -1124,10 +1124,10 @@ internal sealed class BootBaselineStore
             using (FileStream stream = new(temporaryPath, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
             using (var archive = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: false))
             {
-                for (Int32 index = 0; index < snapshot.RawRegions.Count; index++)
+                for (int index = 0; index < snapshot.RawRegions.Count; index++)
                 {
                     BootRawRegion region = snapshot.RawRegions[index];
-                    String entryName = $"raw/{index:D4}.bin";
+                    string entryName = $"raw/{index:D4}.bin";
                     WriteEntry(archive, entryName, region.Data);
                     manifest.RawRegions.Add(new BootRawManifest
                     {
@@ -1139,10 +1139,10 @@ internal sealed class BootBaselineStore
                     });
                 }
 
-                for (Int32 index = 0; index < snapshot.Files.Count; index++)
+                for (int index = 0; index < snapshot.Files.Count; index++)
                 {
                     BootFileEntry file = snapshot.Files[index];
-                    String entryName = $"files/{index:D6}.bin";
+                    string entryName = $"files/{index:D6}.bin";
                     WriteEntry(archive, entryName, file.Data);
                     manifest.Files.Add(new BootFileManifest
                     {
@@ -1176,11 +1176,11 @@ internal sealed class BootBaselineStore
         }
     }
 
-    public Boolean TryLoad(out BootProtectionSnapshot? snapshot)
+    public bool TryLoad(out BootProtectionSnapshot? snapshot)
     {
         snapshot = null;
-        String archivePath = Path.Combine(_directory, ArchiveFileName);
-        String keyPath = Path.Combine(_directory, KeyFileName);
+        string archivePath = Path.Combine(_directory, ArchiveFileName);
+        string keyPath = Path.Combine(_directory, KeyFileName);
         if (!File.Exists(archivePath) || !File.Exists(keyPath))
             return false;
 
@@ -1194,10 +1194,10 @@ internal sealed class BootBaselineStore
             BootBaselineManifest? manifest = JsonSerializer.Deserialize(
                 manifestBytes,
                 BootBaselineJsonContext.Default.BootBaselineManifest);
-            if (manifest is null || manifest.Version != FormatVersion || String.IsNullOrWhiteSpace(manifest.Signature))
+            if (manifest is null || manifest.Version != FormatVersion || string.IsNullOrWhiteSpace(manifest.Signature))
                 return false;
 
-            String signature = manifest.Signature;
+            string signature = manifest.Signature;
             manifest.Signature = null;
             Byte[] unsignedManifest = JsonSerializer.SerializeToUtf8Bytes(
                 manifest,
@@ -1255,7 +1255,7 @@ internal sealed class BootBaselineStore
 
     private Byte[] LoadOrCreateKey()
     {
-        String path = Path.Combine(_directory, KeyFileName);
+        string path = Path.Combine(_directory, KeyFileName);
         if (File.Exists(path))
             return Dpapi.Unprotect(File.ReadAllBytes(path));
 
@@ -1272,7 +1272,7 @@ internal sealed class BootBaselineStore
         }
     }
 
-    private static void WriteEntry(ZipArchive archive, String name, Byte[] data)
+    private static void WriteEntry(ZipArchive archive, string name, Byte[] data)
     {
         ZipArchiveEntry entry = archive.CreateEntry(name, CompressionLevel.Optimal);
         using Stream stream = entry.Open();
@@ -1281,9 +1281,9 @@ internal sealed class BootBaselineStore
 
     private static Byte[] ReadVerifiedEntry(
         ZipArchive archive,
-        String entryName,
-        Int32 length,
-        String sha256)
+        string entryName,
+        int length,
+        string sha256)
     {
         if (length < 0 || length > 64 * 1024 * 1024)
             throw new InvalidDataException("A boot baseline entry length is invalid.");
@@ -1300,7 +1300,7 @@ internal sealed class BootBaselineStore
         return data;
     }
 
-    private static Byte[] ReadEntry(ZipArchive archive, String name, Int32 maximumLength)
+    private static Byte[] ReadEntry(ZipArchive archive, string name, int maximumLength)
     {
         ZipArchiveEntry entry = archive.GetEntry(name) ??
             throw new InvalidDataException($"Boot baseline entry is missing: {name}.");
@@ -1308,7 +1308,7 @@ internal sealed class BootBaselineStore
             throw new InvalidDataException($"Boot baseline entry is too large: {name}.");
 
         using Stream source = entry.Open();
-        using var destination = new MemoryStream(checked((Int32)entry.Length));
+        using var destination = new MemoryStream(checked((int)entry.Length));
         source.CopyTo(destination);
         return destination.ToArray();
     }
@@ -1316,35 +1316,35 @@ internal sealed class BootBaselineStore
 
 internal sealed class BootBaselineManifest
 {
-    public Int32 Version { get; set; }
-    public Int32 DiskIndex { get; set; }
-    public String DiskModel { get; set; } = String.Empty;
-    public String DiskSerialNumber { get; set; } = String.Empty;
+    public int Version { get; set; }
+    public int DiskIndex { get; set; }
+    public string DiskModel { get; set; } = string.Empty;
+    public string DiskSerialNumber { get; set; } = string.Empty;
     public Int64 DiskSizeBytes { get; set; }
     public PhysicalDiskPartitionStyle PartitionStyle { get; set; }
-    public Int32 LogicalSectorSize { get; set; }
-    public List<String> ProtectedRoots { get; set; } = [];
+    public int LogicalSectorSize { get; set; }
+    public List<string> ProtectedRoots { get; set; } = [];
     public List<BootRawManifest> RawRegions { get; set; } = [];
     public List<BootFileManifest> Files { get; set; } = [];
-    public String? Signature { get; set; }
+    public string? Signature { get; set; }
 }
 
 internal sealed class BootRawManifest
 {
-    public String Name { get; set; } = String.Empty;
+    public string Name { get; set; } = string.Empty;
     public Int64 Offset { get; set; }
-    public String EntryName { get; set; } = String.Empty;
-    public Int32 Length { get; set; }
-    public String Sha256 { get; set; } = String.Empty;
+    public string EntryName { get; set; } = string.Empty;
+    public int Length { get; set; }
+    public string Sha256 { get; set; } = string.Empty;
 }
 
 internal sealed class BootFileManifest
 {
-    public String VolumeRoot { get; set; } = String.Empty;
-    public String RelativePath { get; set; } = String.Empty;
-    public String EntryName { get; set; } = String.Empty;
-    public Int32 Length { get; set; }
-    public String Sha256 { get; set; } = String.Empty;
+    public string VolumeRoot { get; set; } = string.Empty;
+    public string RelativePath { get; set; } = string.Empty;
+    public string EntryName { get; set; } = string.Empty;
+    public int Length { get; set; }
+    public string Sha256 { get; set; } = string.Empty;
     public FileAttributes Attributes { get; set; }
     public DateTime LastWriteTimeUtc { get; set; }
 }
@@ -1360,14 +1360,14 @@ internal static class Dpapi
     [StructLayout(LayoutKind.Sequential)]
     private struct DataBlob
     {
-        public Int32 Length;
+        public int Length;
         public IntPtr Data;
     }
 
     [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern Boolean CryptProtectData(
+    private static extern bool CryptProtectData(
         ref DataBlob dataIn,
-        String? description,
+        string? description,
         IntPtr optionalEntropy,
         IntPtr reserved,
         IntPtr promptStruct,
@@ -1375,7 +1375,7 @@ internal static class Dpapi
         out DataBlob dataOut);
 
     [DllImport("crypt32.dll", SetLastError = true)]
-    private static extern Boolean CryptUnprotectData(
+    private static extern bool CryptUnprotectData(
         ref DataBlob dataIn,
         IntPtr description,
         IntPtr optionalEntropy,
@@ -1397,7 +1397,7 @@ internal static class Dpapi
         return Transform(data, protect: false);
     }
 
-    private static Byte[] Transform(Byte[] data, Boolean protect)
+    private static Byte[] Transform(Byte[] data, bool protect)
     {
         ArgumentNullException.ThrowIfNull(data);
         if (data.Length == 0)
@@ -1412,7 +1412,7 @@ internal static class Dpapi
         try
         {
             Marshal.Copy(data, 0, input.Data, data.Length);
-            Boolean success = protect
+            bool success = protect
                 ? CryptProtectData(
                     ref input,
                     "Xdows Security R3 boot baseline",
@@ -1459,7 +1459,7 @@ internal static class Crc32
         foreach (Byte value in data)
         {
             crc ^= value;
-            for (Int32 bit = 0; bit < 8; bit++)
+            for (int bit = 0; bit < 8; bit++)
                 crc = (crc >> 1) ^ ((crc & 1) != 0 ? Polynomial : 0);
         }
         return ~crc;

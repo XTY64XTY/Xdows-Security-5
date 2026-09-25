@@ -43,7 +43,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("扫描右键菜单失败", ex.Message);
+                await ShowMessageAsync("扫描上下文菜单失败", ex.Message);
             }
             finally
             {
@@ -137,7 +137,7 @@ namespace Xdows_Security.Views
 
             entry.ResyncIsEnabled();
 
-            await ShowMessageAsync("无法修改右键菜单项",
+            await ShowMessageAsync("无法修改上下文菜单项",
                 $"“{entry.Name}”修改失败，可能是权限不足或该项已不存在。\r\n\r\n{entry.RegistryPath}");
         }
 
@@ -148,7 +148,7 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
-                Title = "删除右键菜单项",
+                Title = "删除上下文菜单项",
                 Content = new StackPanel
                 {
                     Spacing = 8,
@@ -219,14 +219,14 @@ namespace Xdows_Security.Views
             if (!ShellContextMenuService.SetClassicMenuEnabled(enabled))
             {
                 ClassicMenuToggle.IsChecked = !enabled;
-                await ShowMessageAsync("切换失败", "无法修改经典右键菜单设置，可能是权限不足。");
+                await ShowMessageAsync("切换失败", "无法修改经典上下文菜单设置，可能是权限不足。");
                 return;
             }
 
             // 该设置需要重启资源管理器才生效，必须让用户知道。
-            await ShowMessageAsync("经典右键菜单", enabled
-                ? "已启用 Windows 11 经典右键菜单。\r\n重启资源管理器或重新登录后生效。"
-                : "已恢复 Windows 11 新式右键菜单。\r\n重启资源管理器或重新登录后生效。");
+            await ShowMessageAsync("经典上下文菜单", enabled
+                ? "已启用 Windows 11 经典上下文菜单。\r\n重启资源管理器或重新登录后生效。"
+                : "已恢复 Windows 11 新式上下文菜单。\r\n重启资源管理器或重新登录后生效。");
         }
 
         private ContextMenuEntry? GetEntryFromSender(object sender)

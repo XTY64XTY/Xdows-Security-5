@@ -1,10 +1,10 @@
-﻿using static Protection.CallBack;
+﻿using static Protection.Callback;
 
 namespace Protection
 {
-    public static class CallBack
+    public static class Callback
     {
-        public delegate void InterceptCallBack(ProtectionInterceptEvent interceptEvent);
+        public delegate void InterceptCallback(ProtectionInterceptEvent interceptEvent);
     }
 
     public sealed record ProtectionInterceptEvent(
@@ -44,7 +44,7 @@ namespace Protection
     {
         string Name { get; }
         bool Stop() { return false; }
-        bool Run(InterceptCallBack interceptCallBack) { return false; }
+        bool Run(InterceptCallback interceptCallback) { return false; }
         bool IsRun() { return false; }
     }
 }

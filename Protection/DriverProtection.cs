@@ -7,7 +7,7 @@ using System.Threading.Channels;
 using TrustQuarantine;
 using Helper;
 using Xdows_Local;
-using static Protection.CallBack;
+using static Protection.Callback;
 
 namespace Protection;
 
@@ -91,7 +91,7 @@ public sealed class DriverProtection : IProtectionModel
     private DriverBridgeClient? _client;
     private BootFilterClient? _bootClient;
     private NativeModelScanner? _scanner;
-    private InterceptCallBack? _interceptCallBack;
+    private InterceptCallback? _interceptCallback;
 
     public const string DriverProtectionName = "Driver";
     public string Name => DriverProtectionName;
@@ -149,7 +149,7 @@ public sealed class DriverProtection : IProtectionModel
         };
     }
 
-    public bool Run(InterceptCallBack interceptCallBack)
+    public bool Run(InterceptCallback interceptCallback)
     {
         lock (StateLock)
         {
@@ -158,7 +158,7 @@ public sealed class DriverProtection : IProtectionModel
 
             try
             {
-                _interceptCallBack = interceptCallBack;
+                _interceptCallback = interceptCallback;
                 _cts = new CancellationTokenSource();
 
                 // Create the native model scanner BEFORE connecting to the
@@ -460,7 +460,7 @@ public sealed class DriverProtection : IProtectionModel
         _logTask = null;
         _quarantineTask = null;
         _quarantineChannel = null;
-        _interceptCallBack = null;
+        _interceptCallback = null;
     }
 
     public IReadOnlyList<DriverProcessInfo> GetProcesses()
@@ -1513,7 +1513,7 @@ else
             return decision;
         }
 
-        _interceptCallBack?.Invoke(new ProtectionInterceptEvent(
+        _interceptCallback?.Invoke(new ProtectionInterceptEvent(
             request.Path,
             true,
             request.DetectionName,

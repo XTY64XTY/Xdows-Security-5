@@ -142,7 +142,7 @@
     <value>先從選擇語言開始</value>
   </data>
   <data name="OOBE_Language_Content.Text" xml:space="preserve">
-    <value>請選擇您偏好的語言</value>
+    <value>請選擇你偏好的語言</value>
   </data>
   <data name="OOBE_Language_Option_English.Content" xml:space="preserve">
     <value>English</value>
@@ -154,7 +154,7 @@
     <value>繁體中文</value>
   </data>
   <data name="OOBE_Appearance_Title.Text" xml:space="preserve">
-    <value>自訂您的 Xdows Security</value>
+    <value>自訂你的 Xdows Security</value>
   </data>
   <data name="OOBE_Appearance_Content.Text" xml:space="preserve">
     <value>自訂外觀設定或使用預設配置</value>
@@ -223,7 +223,7 @@
     <value>讓我們開始！</value>
   </data>
   <data name="OOBE_Finish_Content.Text" xml:space="preserve">
-    <value>點擊 完成 以繼續</value>
+    <value>點選 完成 以繼續</value>
   </data>
   <data name="OOBE_Finish_Button.Content" xml:space="preserve">
     <value>完成</value>
@@ -250,7 +250,7 @@
     <value>內存進程</value>
   </data>
   <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
-    <value>啓動掃描</value>
+    <value>啟動掃描</value>
   </data>
   <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
     <value>用戶文檔</value>
@@ -280,13 +280,13 @@
     <value>快速掃描</value>
   </data>
   <data name="SecurityPage_ScanMenu_Full.Text" xml:space="preserve">
-    <value>全盤掃描</value>
+    <value>完整掃描</value>
   </data>
   <data name="SecurityPage_ScanMenu_File.Text" xml:space="preserve">
     <value>文件掃描</value>
   </data>
   <data name="SecurityPage_ScanMenu_Folder.Text" xml:space="preserve">
-    <value>目錄掃描</value>
+    <value>資料夾掃描</value>
   </data>
   <data name="SecurityPage_ScanMenu_More.Text" xml:space="preserve">
     <value>更多掃描</value>
@@ -307,7 +307,7 @@
     <value>取消</value>
   </data>
   <data name="SecurityPage_More_BrowseFolder" xml:space="preserve">
-    <value>瀏覽目錄</value>
+    <value>瀏覽資料夾</value>
   </data>
   <data name="SecurityPage_More_BrowseFile" xml:space="preserve">
     <value>瀏覽文件</value>
@@ -334,7 +334,7 @@
     <value>請轉到 設置 - 掃描引擎 取消這個引擎的選中。</value>
   </data>
   <data name="SecurityPage_Status_Cancelled" xml:space="preserve">
-    <value>取消選擇</value>
+    <value>已取消</value>
   </data>
   <data name="SecurityPage_Status_Waiting" xml:space="preserve">
     <value>等待掃描</value>
@@ -364,7 +364,7 @@
     <value>掃描失敗：{0}</value>
   </data>
   <data name="SecurityPage_Details_Title" xml:space="preserve">
-    <value>文件詳情</value>
+    <value>文件詳細信息</value>
   </data>
   <data name="SecurityPage_Details_FilePath" xml:space="preserve">
     <value>文件路徑：</value>
@@ -420,11 +420,11 @@
   <data name="SecurityPage_ThreatsFound_Format" xml:space="preserve">
     <value>{0} 個威脅</value>
   </data>
-  <data name="MainWindow_Nav_Xdows-Tools.Content" xml:space="preserve">
+  <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
     <value>Xdows Tools</value>
   </data>
   <data name="HomePage_TextBlock_Open" xml:space="preserve">
-    <value>您已受到我們的保護</value>
+    <value>你已受到保護</value>
   </data>
   <data name="SettingsPage_Other_CheckUpdate.Header" xml:space="preserve">
     <value>檢查更新</value>
@@ -454,19 +454,19 @@
     <value>打開配置位置失敗</value>
   </data>
   <data name="SettingsPage_Other_Config_Location_OpenFailed_Content" xml:space="preserve">
-    <value>無法打開配置目錄: {0}</value>
+    <value>無法打開配置資料夾：{0}</value>
   </data>
   <data name="SettingsPage_Other_Config_Reset_Confirm_Title" xml:space="preserve">
     <value>確認重置配置</value>
   </data>
   <data name="SettingsPage_Other_Config_Reset_Confirm_Content" xml:space="preserve">
-    <value>是否刪除配置文件所在目錄並重啓應用？此操作無法恢復。</value>
+    <value>是否刪除配置文件所在資料夾並重啟應用？此操作無法恢復。</value>
   </data>
   <data name="SettingsPage_Other_Config_Reset_DeleteFailed_Title" xml:space="preserve">
     <value>刪除配置失敗</value>
   </data>
   <data name="SettingsPage_Other_Config_Reset_DeleteFailed_Content" xml:space="preserve">
-    <value>刪除配置目錄時出錯: {0}</value>
+    <value>刪除配置資料夾時出錯：{0}</value>
   </data>
   <data name="SettingsPage_Appearance.Text" xml:space="preserve">
     <value>外觀</value>
@@ -481,10 +481,10 @@
     <value>跟隨系統</value>
   </data>
   <data name="SettingsPage_Appearance_Theme_ComboBox_Light.Content" xml:space="preserve">
-    <value>淺色模式</value>
+    <value>淺色</value>
   </data>
   <data name="SettingsPage_Appearance_Theme_ComboBox_Dark.Content" xml:space="preserve">
-    <value>深色模式</value>
+    <value>深色</value>
   </data>
   <data name="SettingsPage_Appearance_Theme_UseNotoSans.Header" xml:space="preserve">
     <value>使用 Noto Sans 作為預設字體</value>
@@ -501,22 +501,22 @@
   <data name="SettingsPage_Scan_Local.Description" xml:space="preserve">
     <value>本地綜合引擎速度相對較快，但是可能無法及時發現新的威脅</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model.Header" xml:space="preserve">
     <value>Xdows Model 本地引擎</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model.Description" xml:space="preserve">
     <value>基於機器學習的高精度掃描引擎</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_Mode.Header" xml:space="preserve">
     <value>模型模式</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_Mode.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_Mode.Description" xml:space="preserve">
     <value>選擇 Xdows Model 的運行模式</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_ModeForProtection.Header" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_ModeForProtection.Header" xml:space="preserve">
     <value>將模型模式應用到防護</value>
   </data>
-  <data name="SettingsPage_Scan_Xdows_Model_ModeForProtection.Description" xml:space="preserve">
+  <data name="SettingsPage_Scan_Model_ModeForProtection.Description" xml:space="preserve">
     <value>開啟後，防護模塊將使用選擇的模型模式運行；修改此設置需要重啟對應防護才能生效</value>
   </data>
   <data name="SettingsPage_Scan_Local_DeepScan.Header" xml:space="preserve">
@@ -535,10 +535,10 @@
     <value>適用於大部分系統的防護，但防護能力較弱</value>
   </data>
   <data name="SettingsPage_Protection_Process.Header" xml:space="preserve">
-    <value>程序掃描</value>
+    <value>進程防護</value>
   </data>
   <data name="SettingsPage_Protection_Files.Header" xml:space="preserve">
-    <value>文件掃描</value>
+    <value>文件防護</value>
   </data>
   <data name="SettingsPage_Protection_Boot.Header" xml:space="preserve">
     <value>引導防護</value>
@@ -577,7 +577,7 @@
     <value>創建引導備份</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Open.Header" xml:space="preserve">
-    <value>恢復引導備份</value>
+    <value>還原引導備份</value>
   </data>
   <data name="SettingsPage_Protection_Boot_Save.Description" xml:space="preserve">
     <value>將所選實體磁碟的第一個磁區儲存為 .bin 檔案</value>
@@ -589,7 +589,7 @@
     <value>選擇並還原</value>
   </data>
   <data name="SettingsPage_Other.Text" xml:space="preserve">
-    <value>其它</value>
+    <value>其他</value>
   </data>
   <data name="SettingsPage_Quarantine_Trust.Text" xml:space="preserve">
     <value>隔離與信任</value>
@@ -598,7 +598,7 @@
     <value>隔離區</value>
   </data>
   <data name="SettingsPage_Quarantine.Description" xml:space="preserve">
-    <value>管理被隔離的威脅文件，您可以查看、恢復或永久刪除這些文件</value>
+    <value>管理被隔離的威脅文件，你可以查看、恢復或永久刪除這些文件</value>
   </data>
   <data name="SettingsPage_Quarantine_ViewItems.Header" xml:space="preserve">
     <value>查看隔離項</value>
@@ -622,7 +622,7 @@
     <value>信任區</value>
   </data>
   <data name="SettingsPage_Trust.Description" xml:space="preserve">
-    <value>管理您信任的文件和應用程序，這些項目將被安全掃描排除</value>
+    <value>管理你信任的文件和應用程序，這些項目將被安全掃描排除</value>
   </data>
   <data name="SettingsPage_Trust_ViewItems.Header" xml:space="preserve">
     <value>查看信任項</value>
@@ -646,7 +646,7 @@
     <value>更改應用程序的顯示語言</value>
   </data>
   <data name="SettingsPage_Other_Language.Header" xml:space="preserve">
-    <value>語言（Language）</value>
+    <value>語言</value>
   </data>
   <data name="SettingsPage_Other_CheckUpdate_Button.Content" xml:space="preserve">
     <value>檢查更新</value>
@@ -700,10 +700,10 @@
     <value>純色</value>
   </data>
   <data name="SettingsPage_Appearance_Backdrop_MicaAlt.Content" xml:space="preserve">
-    <value>高透雲母</value>
+    <value>Mica Alt</value>
   </data>
   <data name="SettingsPage_Appearance_Backdrop_Mica.Content" xml:space="preserve">
-    <value>雲母</value>
+    <value>Mica</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode_ScanProgress.Header" xml:space="preserve">
     <value>顯示掃描進度</value>
@@ -756,36 +756,36 @@
   <data name="SettingsPage_Scan_BuiltInRuleEngine_ExactRule.Description" xml:space="preserve">
     <value>基於雲端哈希庫的精確匹配引擎，優先於其他引擎執行掃描</value>
   </data>
-  <data name="HomePage_Pomes" xml:space="preserve">
-    <value>光是宇宙的標點，黑洞是它故意留的省略號.
-現代人用濾鏡僞造光，就像用簡歷僞造人生.
-如果光是語言，彩虹就是它的方言.
-低谷不是深淵，是光學會拐彎的地方.
+  <data name="HomePage_Poems" xml:space="preserve">
+    <value>光是宇宙的標點，黑洞是它故意留的省略號。
+現代人用濾鏡僞造光，就像用簡歷僞造人生。
+如果光是語言，彩虹就是它的方言。
+低谷不是深淵，是光學會拐彎的地方。
 如果黑暗是光的盡頭，那麼盡頭之外是什麼？
-光是宇宙寄出的明信片，星星是沿途蓋的郵戳.
-城市把霓虹釘在夜空，像把心事釘進漂流瓶.
-如果光是信使，黃昏就是它的退信地址.
-孤獨不是深淵，是光在回聲裏練習繞口令.
+光是宇宙寄出的明信片，星星是沿途蓋的郵戳。
+城市把霓虹釘在夜空，像把心事釘進漂流瓶。
+如果光是信使，黃昏就是它的退信地址。
+孤獨不是深淵，是光在回聲裏練習繞口令。
 如果陰影是光的倒影，那麼倒影的盡頭是誰在照鏡子？
-光是時間的鉛筆，落日負責替它削尖.
-人類用電鍍的亮面冒充晨曦，如同用表情包冒充心跳.
-如果光是方言，極光就是它的古語.
-黑夜不是終點，是光在給自己留白的草稿紙.
+光是時間的鉛筆，落日負責替它削尖。
+人類用電鍍的亮面冒充晨曦，如同用表情包冒充心跳。
+如果光是方言，極光就是它的古語。
+黑夜不是終點，是光在給自己留白的草稿紙。
 如果寂靜是光的反義詞，那麼反義詞的盡頭是誰在朗讀？
-光是銀河的逗號，流星是它隨手點的着重號.
-現代人把光鎖進屏幕，像把鳥籠掛在雲端.
-如果光是密碼，螢火蟲就是它的摩爾斯.
-迷霧不是屏障，是光在練習隱身術.
+光是銀河的逗號，流星是它隨手點的着重號。
+現代人把光鎖進屏幕，像把鳥籠掛在雲端。
+如果光是密碼，螢火蟲就是它的摩爾斯。
+迷霧不是屏障，是光在練習隱身術。
 如果塵埃是光的碎片，那麼碎片的盡頭是誰在拼圖？
-光是歲月的橡皮，皺紋是它擦剩的鉛筆屑.
-我們用閃光燈僞造永恆，如同用截屏僞造眼淚.
-如果光是旋律，晨曦就是它的前奏.
-廢墟不是終結，是光在廢墟裏孵化回聲.
+光是歲月的橡皮，皺紋是它擦剩的鉛筆屑。
+我們用閃光燈僞造永恆，如同用截屏僞造眼淚。
+如果光是旋律，晨曦就是它的前奏。
+廢墟不是終結，是光在廢墟裏孵化回聲。
 如果回聲是光的影子，那麼影子的盡頭是誰在呼喊？
-光是宇宙的便籤，超新星是它隨手撕下的感嘆號.
-人類把光折進廣告牌，像把詩折進鈔票.
-如果光是暗語，月光就是它的脣語.
-雨天不是漏洞，是光在給自己加濾鏡.
+光是宇宙的便籤，超新星是它隨手撕下的感嘆號。
+人類把光折進廣告牌，像把詩折進鈔票。
+如果光是暗語，月光就是它的脣語。
+雨天不是漏洞，是光在給自己加濾鏡。
 如果終點是光的謎面，那麼謎面的盡頭是誰在出題？
 爲什麼不試試西瓜殺毒？</value>
   </data>
@@ -796,13 +796,13 @@
     <value>系統信息</value>
   </data>
   <data name="HomePage_OSName.Text" xml:space="preserve">
-    <value>操作系統: </value>
+    <value>操作系統：</value>
   </data>
   <data name="HomePage_OSVersion.Text" xml:space="preserve">
-    <value>系統版本: </value>
+    <value>系統版本：</value>
   </data>
   <data name="HomePage_OSMemory.Text" xml:space="preserve">
-    <value>使用內存: </value>
+    <value>使用內存：</value>
   </data>
   <data name="AllPage_Loading" xml:space="preserve">
     <value>正在加載...</value>
@@ -811,13 +811,13 @@
     <value>防護狀態</value>
   </data>
   <data name="HomePage_Protection.Text" xml:space="preserve">
-    <value>實時防護: </value>
+    <value>實時防護：</value>
   </data>
   <data name="HomePage_LastScan.Text" xml:space="preserve">
-    <value>上次掃描: </value>
+    <value>上次掃描：</value>
   </data>
   <data name="HomePage_NumberOfThreats.Text" xml:space="preserve">
-    <value>威脅數量: </value>
+    <value>威脅數量：</value>
   </data>
   <data name="AllPage_Undefined" xml:space="preserve">
     <value>未定義</value>
@@ -832,7 +832,7 @@
     <value>自動上報</value>
   </data>
   <data name="SettingsPage_Scan_Cloud.Description" xml:space="preserve">
-    <value>雲端引擎需要連接至互聯網，但是能及時最新的威脅並採取措施</value>
+    <value>雲端引擎需要連接至互聯網，但能及時獲取最新的威脅並採取措施</value>
   </data>
   <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
     <value>在測試階段中，這個選項爲必選項</value>
@@ -889,7 +889,7 @@
     <value>錯誤</value>
   </data>
   <data name="HomePage_LogFilter_Fatal.Text" xml:space="preserve">
-    <value>失敗</value>
+    <value>致命</value>
   </data>
   <data name="HomePage_GetFailed.Text" xml:space="preserve">
     <value>獲取失敗</value>
@@ -904,7 +904,7 @@
     <value>設置導航欄的位置方向</value>
   </data>
   <data name="SettingsPage_Appearance_Nav_Top.Content" xml:space="preserve">
-    <value>頂端</value>
+    <value>頂部</value>
   </data>
   <data name="SettingsPage_Appearance_Nav_Left.Content" xml:space="preserve">
     <value>左側</value>
@@ -916,10 +916,10 @@
     <value>不透明度</value>
   </data>
   <data name="SettingsPage_Scan_Cloud_Disclaimer_Title" xml:space="preserve">
-    <value>免責申明</value>
+    <value>免責聲明</value>
   </data>
   <data name="SettingsPage_Scan_Cloud_Disclaimer_Text" xml:space="preserve">
-    <value>當您啓用此引擎後，
+    <value>當你啟用此引擎後，
 使用該引擎進行掃描文件時會將文件數據或其信息發送對應雲服務提供商服務器。
 用戶應自覺遵守相關服務協議、條約或聲明，不發送涉及相關法律和隱私文件。
 任何由此引擎引發的文件泄露等問題或損失均由雲服務提供商承擔，此軟件開發者不承擔任何責任。
@@ -927,7 +927,7 @@
 本聲明或雲服務提供協議、條約或聲明會因軟件更新等多種因素進行修改、刪除、補充其內容，當發生糾紛時，請以最新版本爲準，
 本軟件開發者具有對此聲明進行修改、刪除、補充而不經用戶同意的權力，該聲明最終解釋權歸本軟件開發者所有。
 對於此軟件的分支產生的問題，此軟件的源開發者（Xdows Software）不承擔任何責任。
-當您通過任何方式使用該引擎時則表示同意並接受該聲明，如果您不接受請自行關閉此引擎或停止使用並刪除該軟件。</value>
+當你通過任何方式使用該引擎時則表示同意並接受該聲明，如果你不接受請自行關閉此引擎或停止使用並刪除該軟件。</value>
   </data>
   <data name="SecurityPage_MenuItem_Trust.Text" xml:space="preserve">
     <value>信任文件</value>
@@ -991,10 +991,10 @@
     <value>處理失敗</value>
   </data>
   <data name="SecurityPage_HandleAllButtonText.Text" xml:space="preserve">
-    <value>一鍵處理</value>
+    <value>全部處理</value>
   </data>
   <data name="SecurityPage_HandleAllConfirm_Title" xml:space="preserve">
-    <value>一鍵處理確認</value>
+    <value>全部處理確認</value>
   </data>
   <data name="SecurityPage_HandleAllConfirm_Content" xml:space="preserve">
     <value>確定要處理所有 {0} 個威脅文件嗎？
@@ -1003,7 +1003,7 @@
   <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
     <value>處理</value>
   </data>
-  <data name="SecurityPage_HandleAllProgress" xml:space="preserve">
+  <data name="SecurityPage_HandleProcessing" xml:space="preserve">
     <value>正在處理威脅文件...</value>
   </data>
   <data name="SecurityPage_HandleAllResult_Title" xml:space="preserve">
@@ -1031,13 +1031,13 @@
     <value>取消</value>
   </data>
   <data name="AllPage_Status" xml:space="preserve">
-    <value>已啓用,已禁用</value>
+    <value>已啟用、已禁用</value>
   </data>
   <data name="SettingsPage_Other_Tray.Header" xml:space="preserve">
-    <value>託盤圖標</value>
+    <value>通知區域圖標</value>
   </data>
   <data name="SettingsPage_Other_Tray.Description" xml:space="preserve">
-    <value>在任務欄中顯示託盤圖標</value>
+    <value>在通知區域顯示圖標</value>
   </data>
   <data name="SettingsPage_Other_Startup.Header" xml:space="preserve">
     <value>開機自啟</value>
@@ -1060,10 +1060,10 @@
   <data name="TrayMenu_Settings" xml:space="preserve">
     <value>設置</value>
   </data>
-  <data name="SettingsPage_Other_DisabledVerify.Header" xml:space="preserve">
+  <data name="SettingsPage_Other_DisableVerify.Header" xml:space="preserve">
     <value>禁用驗證</value>
   </data>
-  <data name="SettingsPage_Other_DisabledVerify.Description" xml:space="preserve">
+  <data name="SettingsPage_Other_DisableVerify.Description" xml:space="preserve">
     <value>禁用執行高危操作的驗證</value>
   </data>
   <data name="SettingsPage_Quarantine_Empty_Title" xml:space="preserve">
@@ -1079,7 +1079,7 @@
     <value>確定要永久刪除隔離區中的所有 {0} 個文件嗎？此操作不可撤銷。</value>
   </data>
   <data name="SettingsPage_Quarantine_ClearConfirm_PrimaryButton" xml:space="preserve">
-    <value>清空所有</value>
+    <value>清空全部</value>
   </data>
   <data name="SettingsPage_Quarantine_ClearSuccess_Title" xml:space="preserve">
     <value>隔離區已清空</value>
@@ -1106,19 +1106,19 @@
     <value>選擇</value>
   </data>
   <data name="SettingsPage_Appearance_BackgroundImageOpacity.Header" xml:space="preserve">
-    <value>圖片透明</value>
+    <value>圖片不透明度</value>
   </data>
   <data name="SettingsPage_Appearance_BackgroundImageOpacity.Description" xml:space="preserve">
-    <value>設置背景圖片的不透明</value>
+    <value>設置背景圖片的不透明度</value>
   </data>
   <data name="SettingsPage_BackgroundImage_Error_Title" xml:space="preserve">
     <value>錯誤</value>
   </data>
   <data name="SettingsPage_BackgroundImage_SelectError_Content" xml:space="preserve">
-    <value>無法設置背景圖片: {0}</value>
+    <value>無法設置背景圖片：{0}</value>
   </data>
   <data name="SettingsPage_BackgroundImage_ClearError_Content" xml:space="preserve">
-    <value>無法清空背景圖片: {0}</value>
+    <value>無法清空背景圖片：{0}</value>
   </data>
   <data name="Button_Close" xml:space="preserve">
     <value>關閉</value>
@@ -1175,7 +1175,7 @@
     <value>暫無隔離文件</value>
   </data>
   <data name="TrustDialog_EmptyState" xml:space="preserve">
-    <value>暫無信任項，點擊「添加」將文件加入信任列表</value>
+    <value>暫無信任項，點選「添加」將文件加入信任列表</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode.Header" xml:space="preserve">
     <value>索引模式</value>
@@ -1195,7 +1195,7 @@
   <data name="SettingsPage_Scan_IndexMode_FastIndex.Description" xml:space="preserve">
     <value>在支援的分割區格式上嘗試使用更快的索引方式</value>
   </data>
-  <data name="SettingsPage_Protection_Boot_Save_Buttong_SaveDialog_Title" xml:space="preserve">
+  <data name="SettingsPage_Protection_Boot_Save_Button_SaveDialog_Title" xml:space="preserve">
     <value>另存爲</value>
   </data>
   <data name="InterceptWindow_Title.Title" xml:space="preserve">
@@ -1349,13 +1349,13 @@
     <value>控件音效</value>
   </data>
   <data name="SettingsPage_Appearance_Sound.Description" xml:space="preserve">
-    <value>啓用控件交互時的音效反饋</value>
+    <value>啟用控件交互時的音效反饋</value>
   </data>
   <data name="SettingsPage_Appearance_Sound_SpatialAudio.Header" xml:space="preserve">
     <value>空間音頻</value>
   </data>
   <data name="SettingsPage_Appearance_Sound_SpatialAudio.Description" xml:space="preserve">
-    <value>啓用 3D 空間音效效果</value>
+    <value>啟用 3D 空間音效效果</value>
   </data>
   <data name="TitleBarMenu_Restore.Text" xml:space="preserve">
     <value>還原</value>
@@ -1382,10 +1382,10 @@
     <value>Xdows Software</value>
   </data>
   <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
-    <value>右鍵選單掃描</value>
+    <value>操作功能表掃描</value>
   </data>
   <data name="SettingsPage_Other_ContextMenuScan.Description" xml:space="preserve">
-    <value>在文件和資料夾的右鍵選單中添加掃描選項</value>
+    <value>在文件和資料夾的操作功能表中添加掃描選項</value>
   </data>
   <data name="ContextMenu_ScanWith" xml:space="preserve">
     <value>使用 Xdows Security 掃描</value>
@@ -1472,7 +1472,7 @@
     <value>發現 {0} 個威脅</value>
   </data>
   <data name="UsbScanWindow_Result_ThreatsDetail.Text" xml:space="preserve">
-    <value>點擊「查看威脅」處理</value>
+    <value>點選「查看威脅」處理</value>
   </data>
   <data name="UsbScanWindow_Result_Cancelled.Text" xml:space="preserve">
     <value>掃描已取消</value>
@@ -1600,31 +1600,31 @@
   <data name="DriverEnvironmentDialog_Group_Runtime_Title" xml:space="preserve">
     <value>雙驅動通信與模型資源</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_admin_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Admin_Title" xml:space="preserve">
     <value>管理員權限</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_testsigning_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Testsigning_Title" xml:space="preserve">
     <value>驅動簽名</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_package_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Package_Title" xml:space="preserve">
     <value>主驅動包</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_service_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Service_Title" xml:space="preserve">
     <value>主驅動服務</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_bootfilter-package_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_BootfilterPackage_Title" xml:space="preserve">
     <value>引導過濾驅動包</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_bootfilter-service_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_BootfilterService_Title" xml:space="preserve">
     <value>引導過濾驅動服務</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_communication_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Communication_Title" xml:space="preserve">
     <value>主驅動通信</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_bootfilter-communication_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_BootfilterCommunication_Title" xml:space="preserve">
     <value>引導過濾驅動通信</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_model_Title" xml:space="preserve">
+  <data name="DriverEnvironmentDialog_Item_Model_Title" xml:space="preserve">
     <value>原生模型資源</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
@@ -1687,15 +1687,15 @@
   <data name="SecurityPage_Risk_ArchiveContent" xml:space="preserve">
     <value>是否使用此設備預設程式打開此檔案：
 {0}
-該操作可能會導致您意外運行威脅檔案</value>
+該操作可能會導致你意外運行威脅檔案</value>
   </data>
   <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
     <value>是否使用 檔案總管 選中此檔案：
 {0}
-該操作可能會導致您意外運行威脅檔案</value>
+該操作可能會導致你意外運行威脅檔案</value>
   </data>
   <data name="SecurityPage_Risk_Allow" xml:space="preserve">
-    <value>允許</value>
+    <value>放行</value>
   </data>
   <data name="ProcessManager_DriverModeToggle.OffContent" xml:space="preserve">
     <value>驅動模式</value>
@@ -1767,19 +1767,19 @@
     <value>瀏覽器防護</value>
   </data>
   <data name="SettingsPage_Feature_BrowserProtection.Description" xml:space="preserve">
-    <value>攔截已知的銀狐病毒釣魚網站和惡意網域</value>
+    <value>封鎖已知的銀狐病毒釣魚網站和惡意網域</value>
   </data>
   <data name="SettingsPage_Feature_BrowserProtection_OpenFolder.Header" xml:space="preserve">
-    <value>擴充功能目錄</value>
+    <value>擴充功能資料夾</value>
   </data>
   <data name="SettingsPage_Feature_BrowserProtection_OpenFolder.Description" xml:space="preserve">
-    <value>開啟瀏覽器防護擴充功能所在目錄</value>
+    <value>開啟瀏覽器防護擴充功能所在資料夾</value>
   </data>
   <data name="SettingsPage_Feature_BrowserProtection_OpenFailed_Title" xml:space="preserve">
-    <value>開啟擴充功能目錄失敗</value>
+    <value>開啟擴充功能資料夾失敗</value>
   </data>
   <data name="SettingsPage_Feature_BrowserProtection_OpenFailed_Content" xml:space="preserve">
-    <value>無法開啟擴充功能目錄: {0}</value>
+    <value>無法開啟擴充功能資料夾：{0}</value>
   </data>
   <data name="SettingsPage_Feature_ThreatNotificationMode.Header" xml:space="preserve">
     <value>通知模式</value>
@@ -1815,7 +1815,7 @@
     <value>刪除</value>
   </data>
   <data name="GamePathsDialog_ClearButton.Label" xml:space="preserve">
-    <value>全部清除</value>
+    <value>清空</value>
   </data>
   <data name="GamePathsDialog_AddMenuItem.Text" xml:space="preserve">
     <value>新增遊戲檔案</value>
@@ -1824,10 +1824,10 @@
     <value>刪除所選</value>
   </data>
   <data name="GamePathsDialog_ClearMenuItem.Text" xml:space="preserve">
-    <value>全部清除</value>
+    <value>清空全部</value>
   </data>
   <data name="GamePathsDialog_EmptyState" xml:space="preserve">
-    <value>尚無遊戲檔案，點擊「新增」將遊戲程式加入清單</value>
+    <value>尚無遊戲檔案，點選「新增」將遊戲程式加入清單</value>
   </data>
   <data name="SmallThreatNotification_Handled_Title" xml:space="preserve">
     <value>已自動處理威脅</value>

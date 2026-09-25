@@ -325,7 +325,7 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    await ShowDialogAsync("切换失败", $"无法加载树状图: {ex.Message}");
+                    await ShowDialogAsync("切换失败", $"无法加载树状图：{ex.Message}");
                     ViewModeToggle.IsOn = false;
                     IsTreeView = false;
                     ApplyFilterAndSort();
@@ -967,7 +967,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                messages.Add($"Process.Kill 失败: {ex.Message}");
+                messages.Add($"Process.Kill 失败：{ex.Message}");
             }
 
             var native = TryTerminateProcessNative(processId);
@@ -979,7 +979,7 @@ namespace Xdows_Security.Views
                 return (true, $"{native.Message}；{string.Join("；", messages)}");
             }
 
-            messages.Add($"TerminateProcess 失败: {native.Message}");
+            messages.Add($"TerminateProcess 失败：{native.Message}");
             return (false, string.Join("；", messages));
         }
 
@@ -1030,7 +1030,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                return (false, $"无法枚举线程: {ex.Message}");
+                return (false, $"无法枚举线程：{ex.Message}");
             }
 
             if (threadIds.Count == 0)
@@ -1046,7 +1046,7 @@ namespace Xdows_Security.Views
                 if (hThread == 0)
                 {
                     failed++;
-                    firstError ??= $"线程 {threadId}: {GetLastSystemError()}";
+                    firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
                     continue;
                 }
 
@@ -1059,7 +1059,7 @@ namespace Xdows_Security.Views
                     else
                     {
                         failed++;
-                        firstError ??= $"线程 {threadId}: {GetLastSystemError()}";
+                        firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
                     }
                 }
                 finally
@@ -1084,7 +1084,7 @@ namespace Xdows_Security.Views
         private static (bool Success, string Message) TryDebugExceptionKill(int processId)
         {
             if (!NativeMethods.DebugActiveProcess(processId))
-                return (false, $"DebugActiveProcess 失败: {GetLastSystemError()}");
+                return (false, $"DebugActiveProcess 失败：{GetLastSystemError()}");
 
             var sawException = false;
             var attached = true;
@@ -1195,7 +1195,7 @@ namespace Xdows_Security.Views
             {
                 var (hThread, threadId, threadError) = StartRemoteThread(hProcess, fatalExit, (nint)NativeMethods.FORCED_TERMINATION_EXIT_CODE);
                 if (hThread == 0)
-                    return (false, $"CreateRemoteThread(FatalExit) 失败: {threadError}");
+                    return (false, $"CreateRemoteThread(FatalExit) 失败：{threadError}");
 
                 try
                 {
@@ -1205,7 +1205,7 @@ namespace Xdows_Security.Views
 
                     var exitText = NativeMethods.GetExitCodeThread(hThread, out var exitCode)
                         ? $"远程线程退出码 0x{exitCode:X}。"
-                        : $"无法读取远程线程退出码: {GetLastSystemError()}";
+                        : $"无法读取远程线程退出码：{GetLastSystemError()}";
 
                     return (false, $"FatalExit 远程线程已创建，但目标进程仍在运行。{exitText}");
                 }
@@ -1277,12 +1277,12 @@ namespace Xdows_Security.Views
 
                 var textRemote = RemoteAllocAndWrite(hProcess, text, NativeMethods.PAGE_READWRITE);
                 if (textRemote.Address == 0)
-                    return (false, $"写入远程消息文本失败: {textRemote.Error}");
+                    return (false, $"写入远程消息文本失败：{textRemote.Error}");
                 remoteAllocations.Add(textRemote.Address);
 
                 var captionRemote = RemoteAllocAndWrite(hProcess, caption, NativeMethods.PAGE_READWRITE);
                 if (captionRemote.Address == 0)
-                    return (false, $"写入远程标题失败: {captionRemote.Error}");
+                    return (false, $"写入远程标题失败：{captionRemote.Error}");
                 remoteAllocations.Add(captionRemote.Address);
 
                 var parameters = new NativeMethods.MSGBOXPARAMSW
@@ -1296,12 +1296,12 @@ namespace Xdows_Security.Views
                 var parameterBytes = StructureToBytes(parameters);
                 var parameterRemote = RemoteAllocAndWrite(hProcess, parameterBytes, NativeMethods.PAGE_READWRITE);
                 if (parameterRemote.Address == 0)
-                    return (false, $"写入 MessageBoxIndirectW 参数失败: {parameterRemote.Error}");
+                    return (false, $"写入 MessageBoxIndirectW 参数失败：{parameterRemote.Error}");
                 remoteAllocations.Add(parameterRemote.Address);
 
                 var thread = StartRemoteThread(hProcess, messageBoxIndirect, parameterRemote.Address);
                 if (thread.Handle == 0)
-                    return (false, $"CreateRemoteThread(MessageBoxIndirectW) 失败: {thread.Error}");
+                    return (false, $"CreateRemoteThread(MessageBoxIndirectW) 失败：{thread.Error}");
 
                 hThread = thread.Handle;
                 NativeMethods.WaitForSingleObject(hThread, 750);
@@ -1348,7 +1348,7 @@ namespace Xdows_Security.Views
                 var garbage = Encoding.ASCII.GetBytes("Xdows_APC_GARBAGE_TARGET_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789");
                 var allocation = RemoteAllocAndWrite(hProcess, garbage, NativeMethods.PAGE_READWRITE);
                 if (allocation.Address == 0)
-                    return (false, $"写入远程垃圾指令失败: {allocation.Error}");
+                    return (false, $"写入远程垃圾指令失败：{allocation.Error}");
 
                 remoteGarbage = allocation.Address;
 
@@ -1367,7 +1367,7 @@ namespace Xdows_Security.Views
                     if (hThread == 0)
                     {
                         failed++;
-                        firstError ??= $"线程 {threadId}: {GetLastSystemError()}";
+                        firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
                         continue;
                     }
 
@@ -1376,7 +1376,7 @@ namespace Xdows_Security.Views
                         if (NativeMethods.QueueUserAPC(remoteGarbage, hThread, 0) == 0)
                         {
                             failed++;
-                            firstError ??= $"线程 {threadId}: QueueUserAPC 失败: {GetLastSystemError()}";
+                            firstError ??= $"线程 {threadId}：QueueUserAPC 失败：{GetLastSystemError()}";
                             continue;
                         }
 
@@ -1453,7 +1453,7 @@ namespace Xdows_Security.Views
             var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
             if (hProcess == 0)
             {
-                reason = $"无法查询目标进程架构: {GetLastSystemError()}";
+                reason = $"无法查询目标进程架构：{GetLastSystemError()}";
                 return false;
             }
 
@@ -1461,7 +1461,7 @@ namespace Xdows_Security.Views
             {
                 if (!NativeMethods.IsWow64Process(hProcess, out var targetIsWow64))
                 {
-                    reason = $"IsWow64Process 失败: {GetLastSystemError()}";
+                    reason = $"IsWow64Process 失败：{GetLastSystemError()}";
                     return false;
                 }
 
@@ -1495,14 +1495,14 @@ namespace Xdows_Security.Views
 
             if (module == 0)
             {
-                error = $"加载本地模块 {moduleName} 失败: {GetLastSystemError()}";
+                error = $"加载本地模块 {moduleName} 失败：{GetLastSystemError()}";
                 return 0;
             }
 
             var proc = NativeMethods.GetProcAddress(module, procName);
             if (proc == 0)
             {
-                error = $"解析 {moduleName}!{procName} 失败: {GetLastSystemError()}";
+                error = $"解析 {moduleName}!{procName} 失败：{GetLastSystemError()}";
                 return 0;
             }
 
@@ -1518,7 +1518,7 @@ namespace Xdows_Security.Views
             var moduleNameBytes = Encoding.Unicode.GetBytes(moduleName + "\0");
             var remoteModuleName = RemoteAllocAndWrite(hProcess, moduleNameBytes, NativeMethods.PAGE_READWRITE);
             if (remoteModuleName.Address == 0)
-                return (false, $"写入远程模块名失败: {remoteModuleName.Error}");
+                return (false, $"写入远程模块名失败：{remoteModuleName.Error}");
 
             nint hThread = 0;
 
@@ -1526,7 +1526,7 @@ namespace Xdows_Security.Views
             {
                 var thread = StartRemoteThread(hProcess, loadLibrary, remoteModuleName.Address);
                 if (thread.Handle == 0)
-                    return (false, $"CreateRemoteThread(LoadLibraryW) 失败: {thread.Error}");
+                    return (false, $"CreateRemoteThread(LoadLibraryW) 失败：{thread.Error}");
 
                 hThread = thread.Handle;
                 var wait = NativeMethods.WaitForSingleObject(hThread, 5000);
@@ -1620,7 +1620,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                error = $"无法枚举线程: {ex.Message}";
+                error = $"无法枚举线程：{ex.Message}";
                 return [];
             }
         }

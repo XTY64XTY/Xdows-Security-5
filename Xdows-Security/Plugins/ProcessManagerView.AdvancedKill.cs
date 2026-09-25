@@ -242,13 +242,13 @@ namespace Xdows_Security.Views
                 NativeMethods.TOKEN_ADJUST_PRIVILEGES | NativeMethods.TOKEN_QUERY,
                 out var tokenHandle))
             {
-                return (false, $"OpenProcessToken 失败: {GetLastSystemError()}");
+                return (false, $"OpenProcessToken 失败：{GetLastSystemError()}");
             }
 
             try
             {
                 if (!NativeMethods.LookupPrivilegeValueW(null, "SeDebugPrivilege", out var luid))
-                    return (false, $"LookupPrivilegeValue(SeDebugPrivilege) 失败: {GetLastSystemError()}");
+                    return (false, $"LookupPrivilegeValue(SeDebugPrivilege) 失败：{GetLastSystemError()}");
 
                 var privileges = new NativeMethods.TOKEN_PRIVILEGES
                 {
@@ -258,7 +258,7 @@ namespace Xdows_Security.Views
                 };
 
                 if (!NativeMethods.AdjustTokenPrivileges(tokenHandle, false, ref privileges, 0, 0, 0))
-                    return (false, $"AdjustTokenPrivileges 失败: {GetLastSystemError()}");
+                    return (false, $"AdjustTokenPrivileges 失败：{GetLastSystemError()}");
 
                 var error = Marshal.GetLastWin32Error();
                 if (error == NativeMethods.ERROR_NOT_ALL_ASSIGNED)
@@ -366,7 +366,7 @@ namespace Xdows_Security.Views
                     return (true, $"helper 进程 {helper.Id} 已触发调试器 kill-on-exit。");
 
                 var exitCodeText = helper.HasExited ? helper.ExitCode.ToString() : "仍在运行";
-                return (false, $"helper 已启动但目标仍在运行，helper 状态: {exitCodeText}。");
+                return (false, $"helper 已启动但目标仍在运行，helper 状态：{exitCodeText}。");
             }
             catch (Exception ex)
             {
@@ -406,7 +406,7 @@ namespace Xdows_Security.Views
                 if (hThread == 0)
                 {
                     failed++;
-                    firstError ??= $"线程 {threadId}: {GetLastSystemError()}";
+                    firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
                     continue;
                 }
 
@@ -415,7 +415,7 @@ namespace Xdows_Security.Views
                     if (NativeMethods.SuspendThread(hThread) == uint.MaxValue)
                     {
                         failed++;
-                        firstError ??= $"线程 {threadId}: SuspendThread 失败。";
+                        firstError ??= $"线程 {threadId}：SuspendThread 失败。";
                         continue;
                     }
 
@@ -426,7 +426,7 @@ namespace Xdows_Security.Views
                         if (!NativeMethods.GetThreadContext(hThread, ref context))
                         {
                             failed++;
-                            firstError ??= $"线程 {threadId}: GetThreadContext 失败: {GetLastSystemError()}";
+                            firstError ??= $"线程 {threadId}：GetThreadContext 失败：{GetLastSystemError()}";
                             continue;
                         }
 
@@ -437,7 +437,7 @@ namespace Xdows_Security.Views
                         if (!NativeMethods.SetThreadContext(hThread, ref context))
                         {
                             failed++;
-                            firstError ??= $"线程 {threadId}: SetThreadContext 失败: {GetLastSystemError()}";
+                            firstError ??= $"线程 {threadId}：SetThreadContext 失败：{GetLastSystemError()}";
                             continue;
                         }
 
@@ -483,7 +483,7 @@ namespace Xdows_Security.Views
         private static (bool Success, string Message) TryConsoleCtrlEvent(int processId)
         {
             if (!NativeMethods.AttachConsole((uint)processId))
-                return (false, $"AttachConsole 失败: {GetLastSystemError()}");
+                return (false, $"AttachConsole 失败：{GetLastSystemError()}");
 
             try
             {
@@ -514,7 +514,7 @@ namespace Xdows_Security.Views
 
             var scm = NativeMethods.OpenSCManagerW(null, null, NativeMethods.SC_MANAGER_ENUMERATE_SERVICE);
             if (scm == 0)
-                return (false, $"OpenSCManager 失败: {GetLastSystemError()}");
+                return (false, $"OpenSCManager 失败：{GetLastSystemError()}");
 
             try
             {
@@ -532,7 +532,7 @@ namespace Xdows_Security.Views
                     if (service == 0)
                     {
                         failed++;
-                        firstError ??= $"{serviceName}: OpenService 失败: {GetLastSystemError()}";
+                        firstError ??= $"{serviceName}：OpenService 失败：{GetLastSystemError()}";
                         continue;
                     }
 
@@ -546,7 +546,7 @@ namespace Xdows_Security.Views
                         else
                         {
                             failed++;
-                            firstError ??= $"{serviceName}: ControlService(STOP) 失败: {GetLastSystemError()}";
+                            firstError ??= $"{serviceName}：ControlService(STOP) 失败：{GetLastSystemError()}";
                         }
                     }
                     finally
@@ -586,7 +586,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                return (false, $"无法构造 Restart Manager 进程标识: {ex.Message}");
+                return (false, $"无法构造 Restart Manager 进程标识：{ex.Message}");
             }
 
             var sessionKey = new StringBuilder(64);
@@ -619,11 +619,11 @@ namespace Xdows_Security.Views
         private static (bool Success, string Message) TryStartRemoteExitRoutine(nint hProcess, int processId, string routineName, nint address, nint parameter)
         {
             if (address == 0)
-                return (false, $"{routineName}: 函数地址无效。");
+                return (false, $"{routineName}：函数地址无效。");
 
             var thread = StartRemoteThread(hProcess, address, parameter);
             if (thread.Handle == 0)
-                return (false, $"{routineName}: CreateRemoteThread 失败: {thread.Error}");
+                return (false, $"{routineName}：CreateRemoteThread 失败：{thread.Error}");
 
             try
             {
@@ -631,7 +631,7 @@ namespace Xdows_Security.Views
                 if (WaitForProcessExit(processId, 2500))
                     return (true, $"远程线程 {thread.ThreadId} 调用 {routineName} 后目标进程已退出。");
 
-                return (false, $"{routineName}: 远程线程已创建，但目标仍在运行。");
+                return (false, $"{routineName}：远程线程已创建，但目标仍在运行。");
             }
             finally
             {
@@ -657,13 +657,13 @@ namespace Xdows_Security.Views
 
             var remoteCode = RemoteAllocAndWrite(hProcess, [.. code], NativeMethods.PAGE_EXECUTE_READWRITE);
             if (remoteCode.Address == 0)
-                return (false, $"RaiseFailFastException: 写入远程代码失败: {remoteCode.Error}");
+                return (false, $"RaiseFailFastException: 写入远程代码失败：{remoteCode.Error}");
 
             var thread = StartRemoteThread(hProcess, remoteCode.Address, 0);
             if (thread.Handle == 0)
             {
                 TryFreeRemoteMemory(hProcess, remoteCode.Address);
-                return (false, $"RaiseFailFastException: CreateRemoteThread 失败: {thread.Error}");
+                return (false, $"RaiseFailFastException: CreateRemoteThread 失败：{thread.Error}");
             }
 
             try
@@ -684,7 +684,7 @@ namespace Xdows_Security.Views
         private static (bool Success, string Message) TryQueueApcRoutine(int processId, string routineName, nint routineAddress, nint parameter)
         {
             if (routineAddress == 0)
-                return (false, $"{routineName}: 函数地址无效。");
+                return (false, $"{routineName}：函数地址无效。");
 
             var threadIds = GetProcessThreadIds(processId, out var threadError);
             if (threadIds.Count == 0)
@@ -705,7 +705,7 @@ namespace Xdows_Security.Views
                 if (hThread == 0)
                 {
                     failed++;
-                    firstError ??= $"线程 {threadId}: {GetLastSystemError()}";
+                    firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
                     continue;
                 }
 
@@ -714,7 +714,7 @@ namespace Xdows_Security.Views
                     if (NativeMethods.QueueUserAPC(routineAddress, hThread, parameter) == 0)
                     {
                         failed++;
-                        firstError ??= $"线程 {threadId}: QueueUserAPC 失败: {GetLastSystemError()}";
+                        firstError ??= $"线程 {threadId}：QueueUserAPC 失败：{GetLastSystemError()}";
                         continue;
                     }
 
@@ -729,9 +729,9 @@ namespace Xdows_Security.Views
             }
 
             if (WaitForProcessExit(processId, 5000))
-                return (true, $"APC 调用 {routineName}: 已排队 {queued}/{threadIds.Count} 个线程，alert {alerted} 个线程，目标进程已退出。");
+                return (true, $"APC 调用 {routineName}：已排队 {queued}/{threadIds.Count} 个线程，alert {alerted} 个线程，目标进程已退出。");
 
-            return (false, $"APC 调用 {routineName}: 已排队 {queued}/{threadIds.Count} 个线程，alert {alerted} 个线程，目标仍在运行。失败 {failed} 个。{firstError ?? ""}");
+            return (false, $"APC 调用 {routineName}：已排队 {queued}/{threadIds.Count} 个线程，alert {alerted} 个线程，目标仍在运行。失败 {failed} 个。{firstError ?? ""}");
         }
 
         private static List<string> FindServiceNamesByProcessId(uint processId, out string? error)
@@ -741,7 +741,7 @@ namespace Xdows_Security.Views
             var scm = NativeMethods.OpenSCManagerW(null, null, NativeMethods.SC_MANAGER_ENUMERATE_SERVICE);
             if (scm == 0)
             {
-                error = $"OpenSCManager 失败: {GetLastSystemError()}";
+                error = $"OpenSCManager 失败：{GetLastSystemError()}";
                 return [];
             }
 
@@ -765,7 +765,7 @@ namespace Xdows_Security.Views
 
                 if (bytesNeeded == 0)
                 {
-                    error = $"EnumServicesStatusEx 查询缓冲区失败: {GetLastSystemError()}";
+                    error = $"EnumServicesStatusEx 查询缓冲区失败：{GetLastSystemError()}";
                     return [];
                 }
 
@@ -784,7 +784,7 @@ namespace Xdows_Security.Views
                     ref resumeHandle,
                     null))
                 {
-                    error = $"EnumServicesStatusEx 失败: {GetLastSystemError()}";
+                    error = $"EnumServicesStatusEx 失败：{GetLastSystemError()}";
                     return [];
                 }
 

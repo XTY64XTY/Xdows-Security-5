@@ -35,16 +35,16 @@ namespace Xdows_Local
         private static readonly Regex RxPyRequests = new(@"requests.", RegexOptions.IgnoreCase);
         private static readonly Regex RxShDownload = new(@"(wget|curl)\s+", RegexOptions.IgnoreCase);
         private static readonly Regex RxShChmod = new(@"chmod\s+", RegexOptions.IgnoreCase);
-        public static (Int32 score, String extra) ScanScriptFile(String filePath, Byte[] fileContent)
+        public static (int score, string extra) ScanScriptFile(string filePath, Byte[] fileContent)
         {
             return ScanScriptFileManaged(filePath, fileContent);
         }
 
-        private static (Int32 score, String extra) ScanScriptFileManaged(String filePath, Byte[] fileContent)
+        private static (int score, string extra) ScanScriptFileManaged(string filePath, Byte[] fileContent)
         {
-            Int32 score = 0;
-            List<String> extra = [];
-            String fileExtension = GetExtString(filePath);
+            int score = 0;
+            List<string> extra = [];
+            string fileExtension = GetExtString(filePath);
 
             if (IsSuspiciousBat(fileContent))
             {
@@ -54,25 +54,25 @@ namespace Xdows_Local
 
             if (fileExtension == ".lnk")
             {
-                (Int32 score, String extra) lnkResult = CheckShortcutFile(filePath, fileContent);
+                (int score, string extra) lnkResult = CheckShortcutFile(filePath, fileContent);
                 score += lnkResult.score;
-                if (!String.IsNullOrEmpty(lnkResult.extra))
+                if (!string.IsNullOrEmpty(lnkResult.extra))
                     extra.Add(lnkResult.extra);
             }
             else if (IsScriptFile(fileExtension))
             {
-                (Int32 score, String extra) scriptResult = CheckScriptFile(fileExtension, fileContent);
+                (int score, string extra) scriptResult = CheckScriptFile(fileExtension, fileContent);
                 score += scriptResult.score;
-                if (!String.IsNullOrEmpty(scriptResult.extra))
+                if (!string.IsNullOrEmpty(scriptResult.extra))
                     extra.Add(scriptResult.extra);
             }
 
-            return (score, String.Join(" ", extra));
+            return (score, string.Join(" ", extra));
         }
 
-        private static unsafe String GetExtString(String path)
+        private static unsafe string GetExtString(string path)
         {
-            if (String.IsNullOrEmpty(path)) return String.Empty;
+            if (string.IsNullOrEmpty(path)) return string.Empty;
 
             fixed (Char* p = path)
             {
@@ -82,9 +82,9 @@ namespace Xdows_Local
                     if (*c == '.') { dot = c; break; }
                     if (*c is '\\' or '/') slash = c;
                 }
-                if (dot == null || dot < slash) return String.Empty;
+                if (dot == null || dot < slash) return string.Empty;
 
-                Int32 len = (Int32)(p + path.Length - dot);
+                int len = (int)(p + path.Length - dot);
                 Span<Char> buf = stackalloc Char[len];
                 ReadOnlySpan<Char> src = new(dot, len);
                 src.ToLowerInvariant(buf);
@@ -92,7 +92,7 @@ namespace Xdows_Local
             }
         }
 
-        private static Boolean IsSuspiciousBat(Byte[] fileContent)
+        private static bool IsSuspiciousBat(Byte[] fileContent)
         {
             if (fileContent.Length == 0) return false;
             ReadOnlySpan<Byte> data = fileContent.AsSpan();
@@ -110,10 +110,10 @@ namespace Xdows_Local
             return false;
         }
 
-        private static (Int32 score, String extra) CheckShortcutFile(String filePath, Byte[] fileContent)
+        private static (int score, string extra) CheckShortcutFile(string filePath, Byte[] fileContent)
         {
-            Int32 score = 0;
-            List<String> extra = [];
+            int score = 0;
+            List<string> extra = [];
 
             try
             {
@@ -123,7 +123,7 @@ namespace Xdows_Local
                     extra.Add("LargeShortcut");
                 }
 
-                String content = Encoding.ASCII.GetString(fileContent);
+                string content = Encoding.ASCII.GetString(fileContent);
 
                 if (content.Contains(".exe") &&
                     (!content.Contains("System32", StringComparison.OrdinalIgnoreCase) &&
@@ -171,17 +171,17 @@ namespace Xdows_Local
                 extra.Add("CorruptedShortcut");
             }
 
-            return (score, String.Join(" ", extra));
+            return (score, string.Join(" ", extra));
         }
 
-        private static (Int32 score, String extra) CheckScriptFile(String extension, Byte[] fileContent)
+        private static (int score, string extra) CheckScriptFile(string extension, Byte[] fileContent)
         {
-            Int32 score = 0;
-            List<String> extra = [];
+            int score = 0;
+            List<string> extra = [];
 
             try
             {
-                String content = Encoding.UTF8.GetString(fileContent);
+                string content = Encoding.UTF8.GetString(fileContent);
 
                 score += CheckGenericScript(content, extra);
 
@@ -202,12 +202,12 @@ namespace Xdows_Local
                 extra.Add("CorruptedScript");
             }
 
-            return (score, String.Join(" ", extra));
+            return (score, string.Join(" ", extra));
         }
 
-        private static Int32 CheckGenericScript(String content, List<String> extra)
+        private static int CheckGenericScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (content.Contains("eval(") || content.Contains("Invoke-Expression") ||
                 content.Contains("Execute(") || content.Contains("exec("))
@@ -274,9 +274,9 @@ namespace Xdows_Local
             return score;
         }
 
-        private static Int32 CheckPowerShellScript(String content, List<String> extra)
+        private static int CheckPowerShellScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (RxPsBypass.IsMatch(content))
             {
@@ -311,9 +311,9 @@ namespace Xdows_Local
             return score;
         }
 
-        private static Int32 CheckVBScript(String content, List<String> extra)
+        private static int CheckVBScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (RxVbWscript.IsMatch(content))
             {
@@ -336,9 +336,9 @@ namespace Xdows_Local
             return score;
         }
 
-        private static Int32 CheckJavaScript(String content, List<String> extra)
+        private static int CheckJavaScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (RxJsActiveX.IsMatch(content))
             {
@@ -355,9 +355,9 @@ namespace Xdows_Local
             return score;
         }
 
-        private static Int32 CheckBatchScript(String content, List<String> extra)
+        private static int CheckBatchScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (RxBatEchoOff.IsMatch(content))
             {
@@ -398,9 +398,9 @@ namespace Xdows_Local
             return score;
         }
 
-        private static Int32 CheckPythonScript(String content, List<String> extra)
+        private static int CheckPythonScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (RxPyOs.IsMatch(content))
             {
@@ -429,9 +429,9 @@ namespace Xdows_Local
             return score;
         }
 
-        private static Int32 CheckShellScript(String content, List<String> extra)
+        private static int CheckShellScript(string content, List<string> extra)
         {
-            Int32 score = 0;
+            int score = 0;
 
             if (RxShDownload.IsMatch(content))
             {
@@ -448,7 +448,7 @@ namespace Xdows_Local
             return score;
         }
 
-        private static readonly HashSet<String> _scriptExtensions = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> _scriptExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".ps1", ".psm1", ".psd1",
             ".vbs", ".vbe",
@@ -461,7 +461,7 @@ namespace Xdows_Local
             ".php", ".phtml", ".php3", ".php4", ".php5"
         };
 
-        private static Boolean IsScriptFile(String extension)
+        private static bool IsScriptFile(string extension)
         {
             return _scriptExtensions.Contains(extension);
         }

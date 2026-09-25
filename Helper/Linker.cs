@@ -3,31 +3,31 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Web;
-using static Helper.Linker.CallBack;
+using static Helper.Linker.Callback;
 
 namespace Helper
 {
     public class Linker
     {
-        public static class CallBack
+        public static class Callback
         {
-            public delegate Task<string> TcpInterceptCallBack(InterceptWindowHelper.InterceptWindowSetting interceptWindowSetting);
+            public delegate Task<string> TcpInterceptCallback(InterceptWindowHelper.InterceptWindowSetting interceptWindowSetting);
         }
 
-        private static TcpListener? s_listener;
-        private static CancellationTokenSource? s_cts;
+        private static TcpListener? _listener;
+        private static CancellationTokenSource? _cts;
 
-        public static async Task Start(TcpInterceptCallBack interceptCallBack)
+        public static async Task Start(TcpInterceptCallback interceptCallback)
         {
-            s_cts = new CancellationTokenSource();
-            s_listener = new TcpListener(IPAddress.Any, 20000);
-            s_listener.Start();
+            _cts = new CancellationTokenSource();
+            _listener = new TcpListener(IPAddress.Any, 20000);
+            _listener.Start();
             try
             {
-                while (!s_cts.IsCancellationRequested)
+                while (!_cts.IsCancellationRequested)
                 {
-                    var client = await s_listener.AcceptTcpClientAsync(s_cts.Token);
-                    _ = HandleClientAsync(client, interceptCallBack);
+                    var client = await _listener.AcceptTcpClientAsync(_cts.Token);
+                    _ = HandleClientAsync(client, interceptCallback);
                 }
             }
             catch (OperationCanceledException) { }
@@ -35,11 +35,11 @@ namespace Helper
 
         public static void Stop()
         {
-            s_cts?.Cancel();
-            s_listener?.Stop();
+            _cts?.Cancel();
+            _listener?.Stop();
         }
 
-        private static async Task HandleClientAsync(TcpClient client, TcpInterceptCallBack interceptCallBack)
+        private static async Task HandleClientAsync(TcpClient client, TcpInterceptCallback interceptCallback)
         {
             using (client)
             using (var stream = client.GetStream())
@@ -49,7 +49,7 @@ namespace Helper
                 if (string.IsNullOrEmpty(requestLine)) return;
 
                 string line;
-                while (!string.IsNullOrEmpty(line = (await reader.ReadLineAsync()) ?? String.Empty)) { }
+                while (!string.IsNullOrEmpty(line = (await reader.ReadLineAsync()) ?? string.Empty)) { }
 
                 var parts = requestLine.Split(' ');
                 if (parts.Length == 0) return;
@@ -79,7 +79,7 @@ namespace Helper
                     var queryParams = HttpUtility.ParseQueryString(queryString);
                     string? pathParam = queryParams["path"];
 
-                    if (String.IsNullOrEmpty(pathParam) || pathParam.Contains(".."))
+                    if (string.IsNullOrEmpty(pathParam) || pathParam.Contains(".."))
                     {
                         statusCode = 400;
                         statusText = "Invalid path parameter";
@@ -88,7 +88,7 @@ namespace Helper
                     {
                         statusCode = 200;
                         statusText = "OK";
-                        buttonName = await interceptCallBack.Invoke(new InterceptWindowHelper.InterceptWindowSetting
+                        buttonName = await interceptCallback.Invoke(new InterceptWindowHelper.InterceptWindowSetting
                         {
                             Path = pathParam,
                             IsSucceed = true,

@@ -16,10 +16,10 @@ namespace TrustQuarantine
     {
         // 缓存路径，避免每次访问都调用 ApplicationData.GetForUnpackaged
         // PublicationOnly 模式：失败不缓存异常，避免单次失败导致整个类永久不可用
-        private static readonly Lazy<string> s_quarantineFolderPathLazy = new(
+        private static readonly Lazy<string> _quarantineFolderPathLazy = new(
             () => Path.Combine(ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalPath, "Quarantine"),
             LazyThreadSafetyMode.PublicationOnly);
-        private static string QuarantineFolderPath => s_quarantineFolderPathLazy.Value;
+        private static string QuarantineFolderPath => _quarantineFolderPathLazy.Value;
 
         private static void EnsureQuarantineFolderExists()
         {

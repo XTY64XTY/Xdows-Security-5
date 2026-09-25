@@ -21,26 +21,26 @@ namespace Xdows_Security.Services
     internal static class FontService
     {
         /// <summary>设置项键名，存储于 App.LocalSettings，缺省为启用。</summary>
-        public const String UseNotoSansSettingKey = "UseNotoSansFont";
+        public const string UseNotoSansSettingKey = "UseNotoSansFont";
 
         /// <summary>随应用分发的拉丁字形字体（可变字重，覆盖 Regular 到 Black）。</summary>
-        public const String LatinFontAssetRelativePath = "Assets/Fonts/NotoSans-Variable.ttf";
+        public const string LatinFontAssetRelativePath = "Assets/Fonts/NotoSans-Variable.ttf";
 
         /// <summary>随应用分发的简体中文字形字体（可变字重，覆盖 Thin 到 Black）。</summary>
-        public const String CjkFontAssetRelativePath = "Assets/Fonts/NotoSansSC-Variable.ttf";
+        public const string CjkFontAssetRelativePath = "Assets/Fonts/NotoSansSC-Variable.ttf";
 
         /// <summary>字体族名称，取自字体文件 name 表的 nameID 1。</summary>
-        public const String LatinFontFamilyName = "Noto Sans";
+        public const string LatinFontFamilyName = "Noto Sans";
 
         /// <summary>字体族名称，取自字体文件 name 表的 nameID 16（Typographic Family）。</summary>
-        public const String CjkFontFamilyName = "Noto Sans SC";
+        public const string CjkFontFamilyName = "Noto Sans SC";
 
         /// <summary>
         /// 需要覆盖的 WinUI 字体资源键。除了主键，还包含日历控件（DatePicker 的
         /// CalendarView）与旧版兼容键，保证字体切换在各处表现一致。
         /// 刻意不包含 SymbolThemeFontFamily，以免把图标字体一并替换掉。
         /// </summary>
-        private static readonly String[] FontResourceKeys =
+        private static readonly string[] FontResourceKeys =
         {
             "ContentControlThemeFontFamily",
             "XamlAutoFontFamily",
@@ -54,17 +54,17 @@ namespace Xdows_Security.Services
         private static FontFamily? _notoSansFontFamily;
 
         /// <summary>当前是否已应用 Noto Sans 作为默认字体。</summary>
-        public static Boolean IsEnabled { get; private set; }
+        public static bool IsEnabled { get; private set; }
 
         /// <summary>
         /// 读取设置。未写入过该设置时视为启用，以满足“默认启用该设置”的需求。
         /// </summary>
-        public static Boolean ReadSetting()
+        public static bool ReadSetting()
         {
-            if (!App.LocalSettings.Values.TryGetValue(UseNotoSansSettingKey, out Object? raw))
+            if (!App.LocalSettings.Values.TryGetValue(UseNotoSansSettingKey, out object? raw))
                 return true;
 
-            return raw is Boolean value ? value : true;
+            return raw is bool value ? value : true;
         }
 
         /// <summary>按当前设置应用字体，用于应用启动阶段。</summary>
@@ -76,7 +76,7 @@ namespace Xdows_Security.Services
         /// 重新求值，调用方需要在变更后重载受影响的页面（见 SettingsPage 的开关逻辑）。
         /// </summary>
         /// <param name="enabled">是否使用 Noto Sans。</param>
-        public static void SetEnabled(Boolean enabled)
+        public static void SetEnabled(bool enabled)
         {
             IsEnabled = enabled;
 
@@ -86,13 +86,13 @@ namespace Xdows_Security.Services
             if (enabled)
             {
                 FontFamily fontFamily = _notoSansFontFamily ??= CreateNotoSansFontFamily();
-                foreach (String key in FontResourceKeys)
+                foreach (string key in FontResourceKeys)
                     resources[key] = fontFamily;
             }
             else
             {
                 // 移除本地覆盖后，资源查找回落至 XamlControlsResources 提供的系统默认字体。
-                foreach (String key in FontResourceKeys)
+                foreach (string key in FontResourceKeys)
                     resources.Remove(key);
             }
         }
@@ -101,7 +101,7 @@ namespace Xdows_Security.Services
         {
             // ms-appx 指向应用目录，打包与未打包（WindowsPackageType=None）两种形态均适用。
             // 逗号分隔即回退列表：单个字符在前一个字体里找不到字形时，会继续往后找。
-            String source = String.Concat(
+            string source = string.Concat(
                 "ms-appx:///", LatinFontAssetRelativePath, "#", LatinFontFamilyName,
                 ",ms-appx:///", CjkFontAssetRelativePath, "#", CjkFontFamilyName);
 

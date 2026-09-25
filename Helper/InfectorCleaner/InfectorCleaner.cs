@@ -2,46 +2,46 @@ namespace Helper.InfectorCleaner
 {
     public sealed class CleaningResult
     {
-        public Boolean Success { get; set; }
-        public String Message { get; set; } = String.Empty;
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
         public UInt32? OriginalEntryPoint { get; set; }
-        public String? MaliciousSection { get; set; }
-        public String? BackupPath { get; set; }
-        public String? QuarantineId { get; set; }
+        public string? MaliciousSection { get; set; }
+        public string? BackupPath { get; set; }
+        public string? QuarantineId { get; set; }
         public Byte[]? OriginalFileData { get; set; }
-        public List<String> CleaningLog { get; set; } = [];
+        public List<string> CleaningLog { get; set; } = [];
 
-        public static CleaningResult Succeed(String message) => new() { Success = true, Message = message };
-        public static CleaningResult Fail(String message) => new() { Success = false, Message = message };
+        public static CleaningResult Succeed(string message) => new() { Success = true, Message = message };
+        public static CleaningResult Fail(string message) => new() { Success = false, Message = message };
     }
 
     public sealed class PEFileInfo
     {
         public Byte[] Data { get; set; } = [];
-        public Int32 PeOffset { get; set; }
-        public Int32 CoffHeaderOffset { get; set; }
-        public Int32 OptionalHeaderOffset { get; set; }
-        public Int32 SectionTableOffset { get; set; }
+        public int PeOffset { get; set; }
+        public int CoffHeaderOffset { get; set; }
+        public int OptionalHeaderOffset { get; set; }
+        public int SectionTableOffset { get; set; }
         public UInt16 NumSections { get; set; }
         public UInt16 OptionalHeaderSize { get; set; }
         public UInt32 EntryPoint { get; set; }
         public UInt64 ImageBase { get; set; }
-        public Boolean Is64Bit { get; set; }
+        public bool Is64Bit { get; set; }
         public List<SectionInfoRaw> Sections { get; set; } = [];
     }
 
     public sealed class InfectionAnalysis
     {
-        public Boolean IsInfected { get; set; }
-        public Int32? MaliciousSectionIndex { get; set; }
-        public String? MaliciousSectionName { get; set; }
+        public bool IsInfected { get; set; }
+        public int? MaliciousSectionIndex { get; set; }
+        public string? MaliciousSectionName { get; set; }
         public UInt32? OriginalEntryPoint { get; set; }
-        public List<String> Indicators { get; set; } = [];
+        public List<string> Indicators { get; set; } = [];
     }
 
     public static class InfectorCleaner
     {
-        public static PEFileInfo? AnalyzePeStructure(String filePath)
+        public static PEFileInfo? AnalyzePeStructure(string filePath)
         {
             try
             {
@@ -62,20 +62,20 @@ namespace Helper.InfectorCleaner
             if (data[0] != 0x4D || data[1] != 0x5A)
                 return null;
 
-            Int32 peOffset = BitConverter.ToInt32(data, 60);
+            int peOffset = BitConverter.ToInt32(data, 60);
             if (peOffset + 24 > data.Length)
                 return null;
 
             if (data[peOffset] != 0x50 || data[peOffset + 1] != 0x45)
                 return null;
 
-            Int32 coffHeaderOffset = peOffset + 4;
+            int coffHeaderOffset = peOffset + 4;
             UInt16 numSections = BitConverter.ToUInt16(data, coffHeaderOffset + 2);
             UInt16 optionalHeaderSize = BitConverter.ToUInt16(data, coffHeaderOffset + 16);
-            Int32 optionalHeaderOffset = coffHeaderOffset + 20;
+            int optionalHeaderOffset = coffHeaderOffset + 20;
 
             UInt16 peType = BitConverter.ToUInt16(data, optionalHeaderOffset);
-            Boolean is64Bit = peType == 0x20B;
+            bool is64Bit = peType == 0x20B;
 
             UInt32 entryPoint = BitConverter.ToUInt32(data, optionalHeaderOffset + 16);
 
@@ -89,16 +89,16 @@ namespace Helper.InfectorCleaner
                 imageBase = BitConverter.ToUInt32(data, optionalHeaderOffset + 28);
             }
 
-            Int32 sectionTableOffset = optionalHeaderOffset + optionalHeaderSize;
+            int sectionTableOffset = optionalHeaderOffset + optionalHeaderSize;
 
             var sections = new List<SectionInfoRaw>();
-            for (Int32 i = 0; i < numSections; i++)
+            for (int i = 0; i < numSections; i++)
             {
-                Int32 sectionOffset = sectionTableOffset + (i * 40);
+                int sectionOffset = sectionTableOffset + (i * 40);
                 if (sectionOffset + 40 > data.Length)
                     break;
 
-                String name = System.Text.Encoding.ASCII.GetString(data, sectionOffset, 8).TrimEnd('\0');
+                string name = System.Text.Encoding.ASCII.GetString(data, sectionOffset, 8).TrimEnd('\0');
                 UInt32 virtualSize = BitConverter.ToUInt32(data, sectionOffset + 8);
                 UInt32 virtualAddress = BitConverter.ToUInt32(data, sectionOffset + 12);
                 UInt32 rawSize = BitConverter.ToUInt32(data, sectionOffset + 16);
@@ -132,20 +132,20 @@ namespace Helper.InfectorCleaner
                 return analysis;
 
             var lastSection = peInfo.Sections[^1];
-            Int32 lastSectionIndex = peInfo.Sections.Count - 1;
+            int lastSectionIndex = peInfo.Sections.Count - 1;
 
             UInt32 lastSectionStart = lastSection.VirtualAddress;
             UInt32 lastSectionEnd = lastSection.VirtualAddress + lastSection.VirtualSize;
-            Boolean entryPointInLastSection = peInfo.EntryPoint >= lastSectionStart && peInfo.EntryPoint < lastSectionEnd;
+            bool entryPointInLastSection = peInfo.EntryPoint >= lastSectionStart && peInfo.EntryPoint < lastSectionEnd;
 
-            Boolean isStandardCodeSection = lastSection.Name == ".text" ||
+            bool isStandardCodeSection = lastSection.Name == ".text" ||
                 lastSection.Name.StartsWith(".text") ||
                 (lastSection.Characteristics & 0x00000020) != 0;
 
-            Boolean isExecutable = (lastSection.Characteristics & 0x20000000) != 0;
-            Boolean isRwe = (lastSection.Characteristics & 0xE0000000) == 0xE0000000;
+            bool isExecutable = (lastSection.Characteristics & 0x20000000) != 0;
+            bool isRwe = (lastSection.Characteristics & 0xE0000000) == 0xE0000000;
 
-            Boolean entryPointInText = false;
+            bool entryPointInText = false;
             foreach (var section in peInfo.Sections)
             {
                 if (section.Name == ".text" || section.Name.StartsWith(".text"))
@@ -160,7 +160,7 @@ namespace Helper.InfectorCleaner
                 }
             }
 
-            Int32 score = 0;
+            int score = 0;
 
             if (entryPointInLastSection && !isStandardCodeSection)
             {
@@ -170,8 +170,8 @@ namespace Helper.InfectorCleaner
 
             if (isExecutable && lastSection.RawSize > 0)
             {
-                Int32 rawDataStart = (Int32)lastSection.RawAddress;
-                Int32 rawDataEnd = rawDataStart + (Int32)lastSection.RawSize;
+                int rawDataStart = (int)lastSection.RawAddress;
+                int rawDataEnd = rawDataStart + (int)lastSection.RawSize;
                 if (rawDataStart >= 0 && rawDataEnd <= peInfo.Data.Length)
                 {
                     Single entropy = InfectorDetector.CalculateEntropy(peInfo.Data, rawDataStart, rawDataEnd);
@@ -205,8 +205,8 @@ namespace Helper.InfectorCleaner
                 score += 25;
             }
 
-            Int32 threshold = 50;
-            Boolean hasMultipleIndicators = analysis.Indicators.Count >= 2;
+            int threshold = 50;
+            bool hasMultipleIndicators = analysis.Indicators.Count >= 2;
 
             if (score >= threshold && hasMultipleIndicators)
             {
@@ -226,7 +226,7 @@ namespace Helper.InfectorCleaner
             return analysis;
         }
 
-        public static UInt32? ExtractOriginalEntryPoint(PEFileInfo peInfo, Int32 maliciousSectionIndex)
+        public static UInt32? ExtractOriginalEntryPoint(PEFileInfo peInfo, int maliciousSectionIndex)
         {
             if (maliciousSectionIndex < 0 || maliciousSectionIndex >= peInfo.Sections.Count)
                 return null;
@@ -236,21 +236,21 @@ namespace Helper.InfectorCleaner
             if (section.RawAddress == 0 || section.RawSize == 0)
                 return null;
 
-            Int32 start = (Int32)section.RawAddress;
-            Int32 end = start + (Int32)section.RawSize;
+            int start = (int)section.RawAddress;
+            int end = start + (int)section.RawSize;
 
             if (end > peInfo.Data.Length)
                 return null;
 
             Byte[] code = peInfo.Data;
 
-            for (Int32 i = 0; i < end - 10; i++)
+            for (int i = 0; i < end - 10; i++)
             {
                 if (code[i] == 0x49 && code[i + 1] == 0xFF && code[i + 2] == 0xE7)
                 {
                     if (i >= 10)
                     {
-                        for (Int32 j = i - 1; j >= 0; j--)
+                        for (int j = i - 1; j >= 0; j--)
                         {
                             if (code[j] == 0x49 && code[j + 1] == 0xBF && j + 10 <= i)
                             {
@@ -275,7 +275,7 @@ namespace Helper.InfectorCleaner
 
             if (end - start >= 20)
             {
-                for (Int32 i = start; i < end - 4; i++)
+                for (int i = start; i < end - 4; i++)
                 {
                     UInt32 val = BitConverter.ToUInt32(code, i);
                     if (val >= 0x1000 && val < 0x10000000)
@@ -297,9 +297,9 @@ namespace Helper.InfectorCleaner
             return null;
         }
 
-        public static Boolean RestoreEntryPoint(PEFileInfo peInfo, UInt32 originalEp)
+        public static bool RestoreEntryPoint(PEFileInfo peInfo, UInt32 originalEp)
         {
-            Int32 offset = peInfo.OptionalHeaderOffset + 16;
+            int offset = peInfo.OptionalHeaderOffset + 16;
 
             if (offset + 4 > peInfo.Data.Length)
                 return false;
@@ -313,7 +313,7 @@ namespace Helper.InfectorCleaner
             return true;
         }
 
-        public static Boolean RemoveMaliciousSection(PEFileInfo peInfo, Int32 maliciousIndex)
+        public static bool RemoveMaliciousSection(PEFileInfo peInfo, int maliciousIndex)
         {
             if (maliciousIndex < 0 || maliciousIndex >= peInfo.Sections.Count)
                 return false;
@@ -322,19 +322,19 @@ namespace Helper.InfectorCleaner
 
             peInfo.NumSections = (UInt16)peInfo.Sections.Count;
 
-            Int32 numSectionsOffset = peInfo.CoffHeaderOffset + 2;
+            int numSectionsOffset = peInfo.CoffHeaderOffset + 2;
             peInfo.Data[numSectionsOffset] = (Byte)(peInfo.NumSections & 0xFF);
             peInfo.Data[numSectionsOffset + 1] = (Byte)((peInfo.NumSections >> 8) & 0xFF);
 
-            for (Int32 i = 0; i < peInfo.Sections.Count; i++)
+            for (int i = 0; i < peInfo.Sections.Count; i++)
             {
                 peInfo.Sections[i].Index = i;
             }
 
-            for (Int32 i = maliciousIndex; i < peInfo.Sections.Count; i++)
+            for (int i = maliciousIndex; i < peInfo.Sections.Count; i++)
             {
-                Int32 srcOffset = peInfo.SectionTableOffset + ((i + 1) * 40);
-                Int32 dstOffset = peInfo.SectionTableOffset + (i * 40);
+                int srcOffset = peInfo.SectionTableOffset + ((i + 1) * 40);
+                int dstOffset = peInfo.SectionTableOffset + (i * 40);
 
                 if (srcOffset + 40 <= peInfo.Data.Length && dstOffset + 40 <= peInfo.Data.Length)
                 {
@@ -342,7 +342,7 @@ namespace Helper.InfectorCleaner
                 }
             }
 
-            Int32 lastEntryOffset = peInfo.SectionTableOffset + (peInfo.Sections.Count * 40);
+            int lastEntryOffset = peInfo.SectionTableOffset + (peInfo.Sections.Count * 40);
             if (lastEntryOffset + 40 <= peInfo.Data.Length)
             {
                 Array.Clear(peInfo.Data, lastEntryOffset, 40);
@@ -351,9 +351,9 @@ namespace Helper.InfectorCleaner
             return true;
         }
 
-        public static Boolean RepairFileStructure(PEFileInfo peInfo)
+        public static bool RepairFileStructure(PEFileInfo peInfo)
         {
-            Int32 sizeOfImageOffset = peInfo.OptionalHeaderOffset + 56;
+            int sizeOfImageOffset = peInfo.OptionalHeaderOffset + 56;
 
             if (sizeOfImageOffset + 4 <= peInfo.Data.Length)
             {
@@ -386,16 +386,16 @@ namespace Helper.InfectorCleaner
             if (truncatePos > 0 && truncatePos < peInfo.Data.Length)
             {
                 Byte[] newData = new Byte[truncatePos];
-                Array.Copy(peInfo.Data, newData, (Int32)truncatePos);
+                Array.Copy(peInfo.Data, newData, (int)truncatePos);
                 peInfo.Data = newData;
             }
 
             return true;
         }
 
-        public static CleaningResult CleanInfectedFile(String filePath)
+        public static CleaningResult CleanInfectedFile(string filePath)
         {
-            var cleaningLog = new List<String>();
+            var cleaningLog = new List<string>();
 
             cleaningLog.Add($"[1/6] Start processing infector: {filePath}");
 
@@ -424,7 +424,7 @@ namespace Helper.InfectorCleaner
 
             var analysis = AnalyzeInfection(peInfo);
 
-            Int32 maliciousIndex;
+            int maliciousIndex;
             if (analysis.IsInfected && analysis.MaliciousSectionIndex.HasValue)
             {
                 maliciousIndex = analysis.MaliciousSectionIndex.Value;

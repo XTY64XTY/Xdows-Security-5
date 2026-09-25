@@ -9,10 +9,10 @@ namespace Helper
     {
         // 缓存 LocalSettings，避免每次读取配置都调用 ApplicationData.GetForUnpackaged
         // PublicationOnly 模式：失败不缓存异常，避免单次失败导致整个类永久不可用
-        private static readonly Lazy<ApplicationDataContainer> s_settingsLazy = new(
+        private static readonly Lazy<ApplicationDataContainer> _settingsLazy = new(
             () => ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings,
             LazyThreadSafetyMode.PublicationOnly);
-        private static ApplicationDataContainer Settings => s_settingsLazy.Value;
+        private static ApplicationDataContainer Settings => _settingsLazy.Value;
 
         private const string DefaultCloudScanBaseUrl = "http://103.118.245.82:5000";
         private const string DefaultCloudScanApiKey = "my_virus_key_2024";
@@ -81,10 +81,10 @@ namespace Helper
         {
             // 缓存 LocalSettings，避免每次 SyncModeFromSettings 都调用 ApplicationData.GetForUnpackaged
             // PublicationOnly 模式：失败不缓存异常，避免单次失败导致整个类永久不可用
-            private static readonly Lazy<ApplicationDataContainer> s_settingsLazy = new(
+            private static readonly Lazy<ApplicationDataContainer> _settingsLazy = new(
                 () => ApplicationData.GetForUnpackaged("Xdows-Software", "Xdows-Security").LocalSettings,
                 LazyThreadSafetyMode.PublicationOnly);
-            private static ApplicationDataContainer Settings => s_settingsLazy.Value;
+            private static ApplicationDataContainer Settings => _settingsLazy.Value;
 
             private static Xdows_Model_Invoker.ModelMode _mode = Xdows_Model_Invoker.ModelMode.Standard;
 
@@ -106,9 +106,9 @@ namespace Helper
                 try
                 {
                     var settings = Settings;
-                    if (settings.Values.TryGetValue("ModelMode", out var raw) && raw is string modeStr)
+                    if (settings.Values.TryGetValue("ModelMode", out var raw) && raw is string mode)
                     {
-                        _mode = modeStr switch
+                        _mode = mode switch
                         {
                             "Flash" => Xdows_Model_Invoker.ModelMode.Flash,
                             "Adaptive" => Xdows_Model_Invoker.ModelMode.Adaptive,
@@ -218,7 +218,7 @@ namespace Helper
         // - MaxConnectionsPerServer: 单服务器最大并发连接数，防止突发请求耗尽端口
         // - AutomaticDecompression: 自动解压响应（gzip/deflate/br），减少带宽消耗
         // 注：自建服务（103.118.245.82）走 HTTP 明文，保持 HTTP/1.1 以兼容未知的服务端 h2c 支持情况
-        private static readonly System.Net.Http.HttpClient s_httpClient = BuildHttpClient(TimeSpan.FromSeconds(30));
+        private static readonly System.Net.Http.HttpClient _httpClient = BuildHttpClient(TimeSpan.FromSeconds(30));
 
         private static System.Net.Http.HttpClient BuildHttpClient(TimeSpan timeout)
         {
@@ -239,7 +239,7 @@ namespace Helper
 
         public static async Task<(int statusCode, string? result)> CloudScanWithHashAsync(string hash)
         {
-            var client = s_httpClient;
+            var client = _httpClient;
             string url = $"{CloudScanBaseUrl}/scan/md5?key={CloudScanApiKey}&md5={hash}";
             try
             {
@@ -320,7 +320,7 @@ namespace Helper
             var results = new Dictionary<string, (string? result, string? family)>(StringComparer.OrdinalIgnoreCase);
             if (hashEntries.Count == 0) return results;
 
-            var client = s_httpClient;
+            var client = _httpClient;
             string url = $"{ExactRuleBaseUrl}/api/batch_check";
             try
             {
@@ -344,7 +344,7 @@ namespace Helper
                 var resp = await client.PostAsync(url, content, token);
                 resp.EnsureSuccessStatusCode();
                 string json = await resp.Content.ReadAsStringAsync(token);
-                if (String.IsNullOrWhiteSpace(json)) return results;
+                if (string.IsNullOrWhiteSpace(json)) return results;
                 using JsonDocument doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("results", out JsonElement resultsArray) && resultsArray.ValueKind == JsonValueKind.Array)
                 {

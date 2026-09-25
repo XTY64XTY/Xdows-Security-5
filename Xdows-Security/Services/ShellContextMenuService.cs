@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Xdows_Security.Services
 {
-    /// <summary>右键菜单项所在的注册表配置单元。</summary>
+    /// <summary>上下文菜单项所在的注册表配置单元。</summary>
     public enum ContextMenuHive
     {
         LocalMachine,
@@ -18,7 +18,7 @@ namespace Xdows_Security.Services
     }
 
     /// <summary>
-    /// 右键菜单中的一条菜单项：静态 verb（<c>shell</c> 下的子键）或 COM 外壳扩展
+    /// 上下文菜单中的一条菜单项：静态 verb（<c>shell</c> 下的子键）或 COM 外壳扩展
     /// （<c>shellex\ContextMenuHandlers</c> 下的子键）。
     /// </summary>
     public sealed class ContextMenuEntry : INotifyPropertyChanged
@@ -116,7 +116,7 @@ namespace Xdows_Security.Services
     }
 
     /// <summary>
-    /// 枚举并修改资源管理器右键菜单项。菜单项来自注册表的
+    /// 枚举并修改资源管理器上下文菜单项。菜单项来自注册表的
     /// <c>Software\Classes\&lt;作用域&gt;\shell</c> 与
     /// <c>Software\Classes\&lt;作用域&gt;\shellex\ContextMenuHandlers</c>。
     /// 静态菜单项通过 <c>LegacyDisable</c> 值开关，外壳扩展通过给子键加/去后缀开关，
@@ -180,7 +180,7 @@ namespace Xdows_Security.Services
             return names;
         }
 
-        /// <summary>扫描全部作用域下的右键菜单项。耗时操作，应在后台线程调用。</summary>
+        /// <summary>扫描全部作用域下的上下文菜单项。耗时操作，应在后台线程调用。</summary>
         public static List<ContextMenuEntry> Enumerate()
         {
             var sink = new List<ContextMenuEntry>();
@@ -294,7 +294,7 @@ namespace Xdows_Security.Services
             }
         }
 
-        /// <summary>当前是否已启用 Windows 11 经典右键菜单。</summary>
+        /// <summary>当前是否已启用 Windows 11 经典上下文菜单。</summary>
         public static bool IsClassicMenuEnabled()
         {
             try
@@ -308,7 +308,7 @@ namespace Xdows_Security.Services
             }
         }
 
-        /// <summary>切换 Windows 11 经典右键菜单（需重启资源管理器或重新登录后生效）。</summary>
+        /// <summary>切换 Windows 11 经典上下文菜单（需重启资源管理器或重新登录后生效）。</summary>
         public static bool SetClassicMenuEnabled(bool enabled)
         {
             try

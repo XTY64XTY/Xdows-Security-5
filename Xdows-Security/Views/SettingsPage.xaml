@@ -188,14 +188,14 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <controls:SettingsExpander
-                   l:Uids.Uid="SettingsPage_Scan_Xdows_Model"
-                   x:Name="SettingsPage_Scan_Xdows_Model"
+                   l:Uids.Uid="SettingsPage_Scan_Model"
+                   x:Name="SettingsPage_Scan_Model"
                    HeaderIcon="{ui:FontIcon Glyph=&#xEC26;}"
                    Margin="0,0,0,4">
                     <ToggleSwitch x:Name="ModelScanToggle" Tag="ModelScan" Toggled="Toggled_SaveToggleData" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_Xdows_Model_Mode"
+                           l:Uids.Uid="SettingsPage_Scan_Model_Mode"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8F9;}">
                             <ComboBox x:Name="ModelModeComboBox" SelectionChanged="ModelModeComboBox_SelectionChanged">
                                 <ComboBoxItem Content="Flash" Tag="Flash" />
@@ -205,7 +205,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                             </ComboBox>
                         </controls:SettingsCard>
                         <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_Xdows_Model_ModeForProtection"
+                           l:Uids.Uid="SettingsPage_Scan_Model_ModeForProtection"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF7ED;}">
                             <ToggleSwitch x:Name="ModelModeForProtectionToggle" Tag="ModelModeForProtection" Toggled="ModelModeForProtectionToggle_Toggled" />
                         </controls:SettingsCard>
@@ -448,7 +448,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                     <ToggleSwitch x:Name="ContextMenuScanToggle" Tag="ContextMenuScan" Toggled="ContextMenuScanToggle_Toggled" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Other_DisabledVerify"
+                           l:Uids.Uid="SettingsPage_Other_DisableVerify"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE72E;}"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="DisabledVerifyToggle" Tag="DisabledVerify" Toggled="DisabledVerifyToggle_Toggled" />

@@ -23,7 +23,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="右键菜单管理"
+                    <TextBlock Text="上下文菜单管理"
                                Style="{StaticResource CaptionTextBlockStyle}"
                                Margin="12,16,0,0"
                                FontSize="16"/>
@@ -55,7 +55,7 @@
             <AppBarButton AutomationProperties.AutomationId="ContextMenuRefreshButton" Icon="Refresh" Label="刷新列表" Click="Refresh_Click"/>
             <AppBarToggleButton x:Name="ClassicMenuToggle"
                                 AutomationProperties.AutomationId="ContextMenuClassicToggle"
-                                Label="经典右键菜单"
+                                Label="经典上下文菜单"
                                 Click="ClassicMenuToggle_Click">
                 <AppBarToggleButton.Icon>
                     <FontIcon Glyph="&#xE8A9;"/>
