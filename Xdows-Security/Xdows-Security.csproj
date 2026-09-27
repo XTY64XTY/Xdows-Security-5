@@ -182,10 +182,8 @@
 
 	<Target Name="CollectXdowsDriverAndModelAssets" AfterTargets="Build" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
 		<ItemGroup>
-			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
-			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Flash.onnx" />
-			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro.onnx" />
-			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro-*.onnx" />
+			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.onnx" />
+			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.json" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
 			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
@@ -202,8 +200,9 @@
 		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsBootFilterPackageOutput)\Xdows-Security-BootFilter.inf')" Text="Boot filter INF was not found in $(XdowsBootFilterPackageOutput)." />
 		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsBootFilterPackageOutput)\Xdows-Security-BootFilter.sys')" Text="Boot filter SYS was not found in $(XdowsBootFilterPackageOutput)." />
 		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsBootFilterPackageOutput)\xdows-security-bootfilter.cat') AND !Exists('$(XdowsBootFilterPackageOutput)\Xdows-Security-BootFilter.cat')" Text="Boot filter CAT was not found in $(XdowsBootFilterPackageOutput)." />
+		<Error Condition="!Exists('$(XdowsModelInvokerRoot)\Models\Xdows-Model.onnx')" Text="Model assets were not found in $(XdowsModelInvokerRoot)\Models. Build Xdows-Model with MSBuild for $(Configuration)|$(Platform)." />
 
-		<Copy SourceFiles="@(XdowsModelFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(XdowsModelFiles)" DestinationFolder="$(OutDir)Models" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsNativeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFiles="@(XdowsDriverFiles->'$(OutDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
@@ -264,10 +263,8 @@
 
 	<Target Name="PublishXdowsDriverAndModelAssets" AfterTargets="Publish" Condition="'$(PublishDir)' != '' AND ('$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64')">
 		<ItemGroup>
-			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model.onnx" />
-			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Flash.onnx" />
-			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro.onnx" />
-			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Xdows-Model-Pro-*.onnx" />
+			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.onnx" />
+			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.json" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
 			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
@@ -275,7 +272,7 @@
 			<XdowsPublishBootFilterFiles Include="$(XdowsBootFilterPackageOutput)\**\*" Condition="Exists('$(XdowsBootFilterPackageOutput)')" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(XdowsPublishModelFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishModelFiles.Identity)')" />
+		<Copy SourceFiles="@(XdowsPublishModelFiles)" DestinationFolder="$(PublishDir)Models" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishModelFiles.Identity)')" />
 		<Copy SourceFiles="@(XdowsPublishNativeFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishNativeFiles.Identity)')" />
 		<Copy SourceFiles="@(XdowsPublishDriverFiles)" DestinationFiles="@(XdowsPublishDriverFiles->'$(PublishDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 		<Copy SourceFiles="@(XdowsPublishDriverFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />

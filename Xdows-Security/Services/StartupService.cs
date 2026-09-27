@@ -10,6 +10,25 @@ namespace Xdows_Security.Services
         private const string RegistryKeyPath = "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run";
         public const string MinimizedArg = "--minimized";
 
+        /// <summary>用户在设置里选择的开机自启偏好（持久化在 LocalSettings）。</summary>
+        public const string AutoStartPreferredKey = "AutoEnableStartup";
+
+        /// <summary>
+        /// 读取用户的开机自启偏好。键不存在（老用户升级）时回落到注册表里的实际注册状态，
+        /// 避免开关显示成与现状相反。注意：注册表仍是「是否真的注册了自启」的权威来源，
+        /// 本方法只用于呈现用户的选择。
+        /// </summary>
+        public static bool IsAutoStartPreferred()
+        {
+            try
+            {
+                if (App.LocalSettings.Values.TryGetValue(AutoStartPreferredKey, out object? raw) && raw is bool value)
+                    return value;
+            }
+            catch { }
+            return IsStartupEnabled();
+        }
+
         public static bool IsStartupEnabled()
         {
             try

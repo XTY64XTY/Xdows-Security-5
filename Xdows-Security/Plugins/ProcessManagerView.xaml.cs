@@ -325,7 +325,7 @@ namespace Xdows_Security.Views
                 }
                 catch (Exception ex)
                 {
-                    await ShowDialogAsync("切换失败", $"无法加载树状图：{ex.Message}");
+                    await ShowDialogAsync(Localize("ProcessManager_SwitchFailed_Title"), FormatLocalized("ProcessManager_TreeLoadFailed_Text", ex.Message));
                     ViewModeToggle.IsOn = false;
                     IsTreeView = false;
                     ApplyFilterAndSort();
@@ -579,9 +579,9 @@ namespace Xdows_Security.Views
             var result = await Task.Run(() => KillProcessWithFallbacks((int)info.Id));
 
             if (result.Success)
-                await ShowDialogAsync("结束成功", $"进程 {info.Name} 已结束。\n\n{result.ToDisplayText()}");
+                await ShowDialogAsync(Localize("ProcessManager_Kill_Success_Title"), FormatLocalized("ProcessManager_Kill_Success_Text", info.Name, result.ToDisplayText()));
             else
-                await ShowDialogAsync("结束失败", $"无法结束进程 {info.Name}。\n\n{result.ToDisplayText()}");
+                await ShowDialogAsync(Localize("ProcessManager_Kill_Failed_Title"), FormatLocalized("ProcessManager_Kill_Failed_Text", info.Name, result.ToDisplayText()));
 
             await RefreshProcesses();
         }
@@ -659,48 +659,48 @@ namespace Xdows_Security.Views
 
             var items = new List<(string Key, string Value)>
             {
-                ("进程名称", info.Name),
-                ("进程编号", info.Id.ToString()),
-                ("父进程ID", info.ParentId.ToString()),
-                ("会话ID", info.SessionId.ToString()),
-                ("使用内存", info.Memory),
-                ("私有内存", info.PrivateMemory),
-                ("线程数", info.ThreadCount.ToString()),
-                ("句柄数", info.HandleCount.ToString()),
-                ("优先级", info.PriorityClass.ToString()),
-                ("架构", info.IsWow64 ? "32位 (WOW64)" : "64位")
+                (Localize("ProcessManager_Details_ProcessName"), info.Name),
+                (Localize("ProcessManager_Details_ProcessId"), info.Id.ToString()),
+                (Localize("ProcessManager_Details_ParentId"), info.ParentId.ToString()),
+                (Localize("ProcessManager_Details_SessionId"), info.SessionId.ToString()),
+                (Localize("ProcessManager_Details_MemoryUsage"), info.Memory),
+                (Localize("ProcessManager_Details_PrivateMemory"), info.PrivateMemory),
+                (Localize("ProcessManager_Details_ThreadCount"), info.ThreadCount.ToString()),
+                (Localize("ProcessManager_Details_HandleCount"), info.HandleCount.ToString()),
+                (Localize("ProcessManager_Details_Priority"), info.PriorityClass.ToString()),
+                (Localize("ProcessManager_Details_Architecture"), info.IsWow64 ? Localize("ProcessManager_Details_ArchWow64") : Localize("ProcessManager_Details_ArchX64"))
             };
 
             if (!string.IsNullOrEmpty(info.ImagePath))
             {
-                items.Add(("文件路径", info.ImagePath));
+                items.Add((Localize("ProcessManager_Details_FilePath"), info.ImagePath));
 
                 try
                 {
                     var fi = new FileInfo(info.ImagePath);
                     if (fi.Exists)
                     {
-                        items.Add(("创建时间", fi.CreationTime.ToString("yyyy-MM-dd HH:mm:ss")));
-                        items.Add(("修改时间", fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")));
-                        items.Add(("文件大小", $"{fi.Length / 1024.0 / 1024.0:F2} MB"));
+                        items.Add((Localize("ProcessManager_Details_CreationTime"), fi.CreationTime.ToString("yyyy-MM-dd HH:mm:ss")));
+                        items.Add((Localize("ProcessManager_Details_ModifyTime"), fi.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss")));
+                        items.Add((Localize("ProcessManager_Details_FileSize"), $"{fi.Length / 1024.0 / 1024.0:F2} MB"));
 
                         var versionInfo = FileVersionInfo.GetVersionInfo(fi.FullName);
-                        items.Add(("文件版本", versionInfo.FileVersion ?? "-"));
-                        items.Add(("产品版本", versionInfo.ProductVersion ?? "-"));
-                        items.Add(("公司名称", versionInfo.CompanyName ?? "-"));
-                        items.Add(("产品名称", versionInfo.ProductName ?? "-"));
-                        items.Add(("文件描述", versionInfo.FileDescription ?? "-"));
+                        items.Add((Localize("ProcessManager_Details_FileVersion"), versionInfo.FileVersion ?? "-"));
+                        items.Add((Localize("ProcessManager_Details_ProductVersion"), versionInfo.ProductVersion ?? "-"));
+                        items.Add((Localize("ProcessManager_Details_CompanyName"), versionInfo.CompanyName ?? "-"));
+                        items.Add((Localize("ProcessManager_Details_ProductName"), versionInfo.ProductName ?? "-"));
+                        items.Add((Localize("ProcessManager_Details_FileDescription"), versionInfo.FileDescription ?? "-"));
                     }
                 }
                 catch { }
             }
             else
             {
-                items.Add(("文件路径", "拒绝访问或已退出"));
+                items.Add((Localize("ProcessManager_Details_FilePath"), Localize("ProcessManager_Details_AccessDenied")));
             }
 
             if (!string.IsNullOrEmpty(info.CommandLine))
-                items.Add(("命令行", info.CommandLine));
+                items.Add((Localize("ProcessManager_Details_CommandLine"), info.CommandLine));
 
             var listView = new ListView
             {
@@ -756,12 +756,12 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
-                Title = "详细信息",
+                Title = Localize("ProcessManager_Details_Title"),
                 Content = listView,
-                CloseButtonText = "关闭",
+                CloseButtonText = Localize("ProcessManager_Close"),
                 XamlRoot = this.XamlRoot,
-                PrimaryButtonText = "定位文件",
-                SecondaryButtonText = "结束进程",
+                PrimaryButtonText = Localize("ProcessManager_LocateFile"),
+                SecondaryButtonText = Localize("ProcessManager_KillProcess"),
                 RequestedTheme = GetDialogTheme(),
                 DefaultButton = ContentDialogButton.Close
             };
@@ -772,7 +772,7 @@ namespace Xdows_Security.Views
             {
                 if (string.IsNullOrEmpty(info.ImagePath))
                 {
-                    await ShowDialogAsync("无法定位文件", "无法访问此进程的文件路径。");
+                    await ShowDialogAsync(Localize("ProcessManager_LocateFileFailed_Title"), Localize("ProcessManager_LocateFileFailed_NoPath"));
                 }
                 else
                 {
@@ -788,7 +788,7 @@ namespace Xdows_Security.Views
                     }
                     catch (Exception ex)
                     {
-                        await ShowDialogAsync("无法定位文件", $"无法定位文件，因为{ex.Message}");
+                        await ShowDialogAsync(Localize("ProcessManager_LocateFileFailed_Title"), FormatLocalized("ProcessManager_LocateFileFailed_Text", ex.Message));
                     }
                 }
             }
@@ -804,7 +804,7 @@ namespace Xdows_Security.Views
             {
                 Title = title,
                 Content = content,
-                CloseButtonText = "确定",
+                CloseButtonText = Localize("ProcessManager_OK"),
                 XamlRoot = this.XamlRoot,
                 RequestedTheme = GetDialogTheme(),
                 DefaultButton = ContentDialogButton.Close
@@ -857,72 +857,72 @@ namespace Xdows_Security.Views
 
             if (processId == Environment.ProcessId)
             {
-                result.Add("保护当前进程", false, "不会结束 Xdows Security 自身。");
+                result.Add(Localize("ProcessManager_Attempt_ProtectSelf"), false, Localize("ProcessManager_Attempt_ProtectSelf_Message"));
                 return result;
             }
 
             if (HasProcessExited(processId))
             {
                 result.Success = true;
-                result.Add("检查进程状态", true, "目标进程已经退出。");
+                result.Add(Localize("ProcessManager_Attempt_CheckStatus"), true, Localize("ProcessManager_Attempt_CheckStatus_Message"));
                 return result;
             }
 
-            AddAttempt(result, "启用 SeDebugPrivilege", TryEnableDebugPrivilege);
+            AddAttempt(result, Localize("ProcessManager_Attempt_EnableSeDebugPrivilege"), TryEnableDebugPrivilege);
 
-            AddAttempt(result, "Restart Manager 强制关闭注册进程", () => TryRestartManagerShutdown(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_RestartManager"), () => TryRestartManagerShutdown(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "服务控制管理器停止服务进程", () => TryStopServiceProcess(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_StopService"), () => TryStopServiceProcess(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "控制台 Ctrl 事件结束进程", () => TryConsoleCtrlEvent(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_ConsoleCtrlEvent"), () => TryConsoleCtrlEvent(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "直接结束目标进程", () => TryTerminateDirectly(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_TerminateDirectly"), () => TryTerminateDirectly(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "NtTerminateProcess/ZwTerminateProcess 直接终止", () => TryNtTerminateProcess(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_NtTerminateProcess"), () => TryNtTerminateProcess(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "销毁目标所有线程使进程退出", () => TryTerminateThreads(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_TerminateThreads"), () => TryTerminateThreads(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "调试器 / 异常控制路径强制结束", () => TryDebugExceptionKill(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_DebugExceptionKill"), () => TryDebugExceptionKill(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "调试器 kill-on-exit 强制结束", () => TryDebugKillOnExit(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_DebugKillOnExit"), () => TryDebugKillOnExit(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "远程线程调用退出函数", () => TryRemoteExitRoutines(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_RemoteExitRoutines"), () => TryRemoteExitRoutines(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "线程上下文劫持到退出函数", () => TryHijackThreadContextToExit(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_HijackThreadContext"), () => TryHijackThreadContextToExit(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "制造目标进程不可恢复异常 / 崩溃", () => TryCrashWithRemoteFatalExit(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_RemoteFatalExit"), () => TryCrashWithRemoteFatalExit(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "EndTask(fForce=TRUE) 结束窗口任务", () => TryEndTaskForProcess(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_EndTask"), () => TryEndTaskForProcess(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "注入使其弹出窗口，再用 EndTask", () => TryInjectMessageBoxThenEndTask(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_InjectMessageBoxEndTask"), () => TryInjectMessageBoxThenEndTask(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "APC 注入调用退出函数", () => TryApcExitRoutines(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_ApcExitRoutines"), () => TryApcExitRoutines(processId));
             if (CompleteIfExited(result, processId)) return result;
 
-            AddAttempt(result, "APC 注入指向无效地址直接崩溃", () => TryCrashWithApcGarbage(processId));
+            AddAttempt(result, Localize("ProcessManager_Attempt_ApcGarbage"), () => TryCrashWithApcGarbage(processId));
             if (CompleteIfExited(result, processId)) return result;
 
             if (HasProcessExited(processId))
             {
                 result.Success = true;
-                result.Add("退出确认", true, "目标进程已退出。");
+                result.Add(Localize("ProcessManager_Attempt_ExitConfirmed"), true, Localize("ProcessManager_Attempt_ExitConfirmed_Message"));
             }
             else
             {
-                result.Add("最终状态", false, "进程仍在运行。");
+                result.Add(Localize("ProcessManager_Attempt_FinalStatus"), false, Localize("ProcessManager_Attempt_FinalStatus_Message"));
             }
 
             return result;
@@ -947,7 +947,7 @@ namespace Xdows_Security.Views
                 return false;
 
             result.Success = true;
-            result.Add("退出确认", true, "目标进程已退出。");
+            result.Add(Localize("ProcessManager_Attempt_ExitConfirmed"), true, Localize("ProcessManager_Attempt_ExitConfirmed_Message"));
             return true;
         }
 
@@ -961,13 +961,13 @@ namespace Xdows_Security.Views
                 process.Kill();
 
                 if (process.WaitForExit(3000))
-                    return (true, "Process.Kill 已结束目标进程。");
+                    return (true, Localize("ProcessManager_ProcessKill_Succeeded"));
 
-                messages.Add("Process.Kill 已发送终止请求，但等待退出超时");
+                messages.Add(Localize("ProcessManager_ProcessKill_Timeout"));
             }
             catch (Exception ex)
             {
-                messages.Add($"Process.Kill 失败：{ex.Message}");
+                messages.Add(FormatLocalized("ProcessManager_ProcessKill_Failed", ex.Message));
             }
 
             var native = TryTerminateProcessNative(processId);
@@ -979,7 +979,7 @@ namespace Xdows_Security.Views
                 return (true, $"{native.Message}；{string.Join("；", messages)}");
             }
 
-            messages.Add($"TerminateProcess 失败：{native.Message}");
+            messages.Add(FormatLocalized("ProcessManager_TerminateProcess_Failed", native.Message));
             return (false, string.Join("；", messages));
         }
 
@@ -1000,15 +1000,15 @@ namespace Xdows_Security.Views
 
                 var wait = NativeMethods.WaitForSingleObject(hProcess, 3000);
                 if (wait == NativeMethods.WAIT_OBJECT_0)
-                    return (true, "TerminateProcess 已结束目标进程。");
+                    return (true, Localize("ProcessManager_TerminateProcess_Succeeded"));
 
                 if (NativeMethods.GetExitCodeProcess(hProcess, out var exitCode) && exitCode != NativeMethods.STILL_ACTIVE)
-                    return (true, $"TerminateProcess 已结束目标进程，退出码 0x{exitCode:X}。");
+                    return (true, FormatLocalized("ProcessManager_TerminateProcess_Succeeded_ExitCode", exitCode));
 
                 if (wait == NativeMethods.WAIT_TIMEOUT)
-                    return (false, "TerminateProcess 已调用，但等待退出超时。");
+                    return (false, Localize("ProcessManager_TerminateProcess_WaitTimeout"));
 
-                return (false, $"TerminateProcess 已调用，但等待返回 0x{wait:X}。");
+                return (false, FormatLocalized("ProcessManager_TerminateProcess_WaitReturn", wait));
             }
             finally
             {
@@ -1030,11 +1030,11 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                return (false, $"无法枚举线程：{ex.Message}");
+                return (false, FormatLocalized("ProcessManager_EnumerateThreads_Failed", ex.Message));
             }
 
             if (threadIds.Count == 0)
-                return (false, "目标进程没有可枚举线程。");
+                return (false, Localize("ProcessManager_NoEnumerableThreads"));
 
             var terminated = 0;
             var failed = 0;
@@ -1046,7 +1046,7 @@ namespace Xdows_Security.Views
                 if (hThread == 0)
                 {
                     failed++;
-                    firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
+                    firstError ??= FormatLocalized("ProcessManager_Thread_Error", threadId, GetLastSystemError());
                     continue;
                 }
 
@@ -1059,7 +1059,7 @@ namespace Xdows_Security.Views
                     else
                     {
                         failed++;
-                        firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
+                        firstError ??= FormatLocalized("ProcessManager_Thread_Error", threadId, GetLastSystemError());
                     }
                 }
                 finally
@@ -1069,14 +1069,14 @@ namespace Xdows_Security.Views
             }
 
             if (terminated == 0)
-                return (false, $"未能结束任何线程。{firstError ?? "无详细错误。"}");
+                return (false, FormatLocalized("ProcessManager_TerminateThreads_None", firstError ?? Localize("ProcessManager_NoDetailError")));
 
             if (WaitForProcessExit(processId, 3000))
-                return (true, $"已结束 {terminated}/{threadIds.Count} 个线程，进程已退出。");
+                return (true, FormatLocalized("ProcessManager_TerminateThreads_Success", terminated, threadIds.Count));
 
-            var message = $"已结束 {terminated}/{threadIds.Count} 个线程，但进程仍在运行。";
+            var message = FormatLocalized("ProcessManager_TerminateThreads_Partial", terminated, threadIds.Count);
             if (failed > 0)
-                message += $" {failed} 个线程失败。{firstError}";
+                message += FormatLocalized("ProcessManager_TerminateThreads_FailedDetail", failed, firstError ?? string.Empty);
 
             return (false, message);
         }
@@ -1084,7 +1084,7 @@ namespace Xdows_Security.Views
         private static (bool Success, string Message) TryDebugExceptionKill(int processId)
         {
             if (!NativeMethods.DebugActiveProcess(processId))
-                return (false, $"DebugActiveProcess 失败：{GetLastSystemError()}");
+                return (false, FormatLocalized("ProcessManager_DebugAttach_Failed", GetLastSystemError()));
 
             var sawException = false;
             var attached = true;
@@ -1130,7 +1130,7 @@ namespace Xdows_Security.Views
                     if (!NativeMethods.WaitForDebugEvent(ref debugEvent, 500))
                     {
                         if (HasProcessExited(processId))
-                            return (true, "调试器已接管目标，进程已退出。");
+                            return (true, Localize("ProcessManager_Debug_TakeoverExited"));
 
                         continue;
                     }
@@ -1139,7 +1139,7 @@ namespace Xdows_Security.Views
                     {
                         attached = false;
                         NativeMethods.ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, NativeMethods.DBG_CONTINUE);
-                        return (true, "调试事件报告目标进程已退出。");
+                        return (true, Localize("ProcessManager_Debug_EventExited"));
                     }
 
                     if (debugEvent.dwDebugEventCode == NativeMethods.EXCEPTION_DEBUG_EVENT)
@@ -1151,9 +1151,9 @@ namespace Xdows_Security.Views
                         {
                             attached = false;
                             var exceptionText = debugEvent.u.ExceptionCode == NativeMethods.EXCEPTION_BREAKPOINT
-                                ? "断点异常"
-                                : $"异常 0x{debugEvent.u.ExceptionCode:X}";
-                            return (true, $"已通过调试器传递 {exceptionText}，目标进程已退出。");
+                                ? Localize("ProcessManager_Exception_Breakpoint")
+                                : FormatLocalized("ProcessManager_Exception_Code", debugEvent.u.ExceptionCode);
+                            return (true, FormatLocalized("ProcessManager_Debug_PassedExceptionExited", exceptionText));
                         }
 
                         continue;
@@ -1163,11 +1163,11 @@ namespace Xdows_Security.Views
                 }
 
                 var message = breakRequested
-                    ? "已附加调试器并请求 DebugBreakProcess，但目标未退出。"
-                    : $"已附加调试器，但无法请求 DebugBreakProcess: {breakError ?? "未知错误"}。";
+                    ? Localize("ProcessManager_Debug_BreakNoExit")
+                    : FormatLocalized("ProcessManager_Debug_BreakFailed", breakError ?? Localize("ProcessManager_UnknownError"));
 
                 if (sawException)
-                    message += " 已观察到异常事件但目标仍在运行。";
+                    message += Localize("ProcessManager_Debug_ExceptionObserved");
 
                 return (false, message);
             }
@@ -1195,19 +1195,19 @@ namespace Xdows_Security.Views
             {
                 var (hThread, threadId, threadError) = StartRemoteThread(hProcess, fatalExit, (nint)NativeMethods.FORCED_TERMINATION_EXIT_CODE);
                 if (hThread == 0)
-                    return (false, $"CreateRemoteThread(FatalExit) 失败：{threadError}");
+                    return (false, FormatLocalized("ProcessManager_RemoteThread_FatalExit_Failed", threadError));
 
                 try
                 {
                     NativeMethods.WaitForSingleObject(hThread, 3000);
                     if (WaitForProcessExit(processId, 3000))
-                        return (true, $"已在目标进程创建 FatalExit 线程 {threadId}，目标进程已退出。");
+                        return (true, FormatLocalized("ProcessManager_FatalExit_ThreadExited", threadId));
 
                     var exitText = NativeMethods.GetExitCodeThread(hThread, out var exitCode)
-                        ? $"远程线程退出码 0x{exitCode:X}。"
-                        : $"无法读取远程线程退出码：{GetLastSystemError()}";
+                        ? FormatLocalized("ProcessManager_RemoteThread_ExitCode", exitCode)
+                        : FormatLocalized("ProcessManager_RemoteThread_ExitCodeReadFailed", GetLastSystemError());
 
-                    return (false, $"FatalExit 远程线程已创建，但目标进程仍在运行。{exitText}");
+                    return (false, FormatLocalized("ProcessManager_FatalExit_StillRunning", exitText));
                 }
                 finally
                 {
@@ -1224,7 +1224,7 @@ namespace Xdows_Security.Views
         {
             var windows = FindTopLevelWindowsForProcess((uint)processId);
             if (windows.Count == 0)
-                return (false, "未找到该进程的可见顶层窗口。");
+                return (false, Localize("ProcessManager_EndTask_NoWindows"));
 
             var successCount = 0;
             string? firstError = null;
@@ -1242,12 +1242,12 @@ namespace Xdows_Security.Views
             }
 
             if (WaitForProcessExit(processId, 3000))
-                return (true, $"EndTask 已处理 {successCount}/{windows.Count} 个窗口，进程已退出。");
+                return (true, FormatLocalized("ProcessManager_EndTask_Success", successCount, windows.Count));
 
             if (successCount > 0)
-                return (false, $"EndTask 已处理 {successCount}/{windows.Count} 个窗口，但进程仍在运行。");
+                return (false, FormatLocalized("ProcessManager_EndTask_Partial", successCount, windows.Count));
 
-            return (false, $"EndTask 未成功处理窗口。{firstError ?? "无详细错误。"}");
+            return (false, FormatLocalized("ProcessManager_EndTask_NoSuccess", firstError ?? Localize("ProcessManager_NoDetailError")));
         }
 
         private static (bool Success, string Message) TryInjectMessageBoxThenEndTask(int processId)
@@ -1272,17 +1272,17 @@ namespace Xdows_Security.Views
                 if (messageBoxIndirect == 0)
                     return (false, procError);
 
-                var text = Encoding.Unicode.GetBytes("Xdows Security 正在结束此进程。\0");
+                var text = Encoding.Unicode.GetBytes(FormatLocalized("ProcessManager_Mbox_Text") + "\0");
                 var caption = Encoding.Unicode.GetBytes("Xdows Security\0");
 
                 var textRemote = RemoteAllocAndWrite(hProcess, text, NativeMethods.PAGE_READWRITE);
                 if (textRemote.Address == 0)
-                    return (false, $"写入远程消息文本失败：{textRemote.Error}");
+                    return (false, FormatLocalized("ProcessManager_WriteRemote_TextFailed", textRemote.Error));
                 remoteAllocations.Add(textRemote.Address);
 
                 var captionRemote = RemoteAllocAndWrite(hProcess, caption, NativeMethods.PAGE_READWRITE);
                 if (captionRemote.Address == 0)
-                    return (false, $"写入远程标题失败：{captionRemote.Error}");
+                    return (false, FormatLocalized("ProcessManager_WriteRemote_CaptionFailed", captionRemote.Error));
                 remoteAllocations.Add(captionRemote.Address);
 
                 var parameters = new NativeMethods.MSGBOXPARAMSW
@@ -1296,21 +1296,21 @@ namespace Xdows_Security.Views
                 var parameterBytes = StructureToBytes(parameters);
                 var parameterRemote = RemoteAllocAndWrite(hProcess, parameterBytes, NativeMethods.PAGE_READWRITE);
                 if (parameterRemote.Address == 0)
-                    return (false, $"写入 MessageBoxIndirectW 参数失败：{parameterRemote.Error}");
+                    return (false, FormatLocalized("ProcessManager_WriteRemote_ParamsFailed", parameterRemote.Error));
                 remoteAllocations.Add(parameterRemote.Address);
 
                 var thread = StartRemoteThread(hProcess, messageBoxIndirect, parameterRemote.Address);
                 if (thread.Handle == 0)
-                    return (false, $"CreateRemoteThread(MessageBoxIndirectW) 失败：{thread.Error}");
+                    return (false, FormatLocalized("ProcessManager_RemoteThread_MsgBox_Failed", thread.Error));
 
                 hThread = thread.Handle;
                 NativeMethods.WaitForSingleObject(hThread, 750);
 
                 var endTaskResult = TryEndTaskForProcess(processId);
                 if (WaitForProcessExit(processId, 3000))
-                    return (true, $"已注入 MessageBoxIndirectW 线程 {thread.ThreadId} 并调用 EndTask，目标进程已退出。{endTaskResult.Message}");
+                    return (true, FormatLocalized("ProcessManager_MsgBox_EndTask_Success", thread.ThreadId, endTaskResult.Message));
 
-                return (false, $"已注入 MessageBoxIndirectW 线程 {thread.ThreadId}，但 EndTask 后目标仍在运行。{endTaskResult.Message}");
+                return (false, FormatLocalized("ProcessManager_MsgBox_EndTask_StillRunning", thread.ThreadId, endTaskResult.Message));
             }
             finally
             {
@@ -1335,7 +1335,7 @@ namespace Xdows_Security.Views
 
             var threadIds = GetProcessThreadIds(processId, out var threadError);
             if (threadIds.Count == 0)
-                return (false, threadError ?? "目标进程没有可枚举线程。");
+                return (false, threadError ?? Localize("ProcessManager_NoEnumerableThreads"));
 
             nint hProcess = OpenProcessForRemoteExecution(processId, out var openError);
             if (hProcess == 0)
@@ -1348,7 +1348,7 @@ namespace Xdows_Security.Views
                 var garbage = Encoding.ASCII.GetBytes("Xdows_APC_GARBAGE_TARGET_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789");
                 var allocation = RemoteAllocAndWrite(hProcess, garbage, NativeMethods.PAGE_READWRITE);
                 if (allocation.Address == 0)
-                    return (false, $"写入远程垃圾指令失败：{allocation.Error}");
+                    return (false, FormatLocalized("ProcessManager_WriteRemote_GarbageFailed", allocation.Error));
 
                 remoteGarbage = allocation.Address;
 
@@ -1367,7 +1367,7 @@ namespace Xdows_Security.Views
                     if (hThread == 0)
                     {
                         failed++;
-                        firstError ??= $"线程 {threadId}：{GetLastSystemError()}";
+                        firstError ??= FormatLocalized("ProcessManager_Thread_Error", threadId, GetLastSystemError());
                         continue;
                     }
 
@@ -1376,7 +1376,7 @@ namespace Xdows_Security.Views
                         if (NativeMethods.QueueUserAPC(remoteGarbage, hThread, 0) == 0)
                         {
                             failed++;
-                            firstError ??= $"线程 {threadId}：QueueUserAPC 失败：{GetLastSystemError()}";
+                            firstError ??= FormatLocalized("ProcessManager_Apc_QueueFailed", threadId, GetLastSystemError());
                             continue;
                         }
 
@@ -1392,9 +1392,9 @@ namespace Xdows_Security.Views
                 }
 
                 if (WaitForProcessExit(processId, 5000))
-                    return (true, $"已向 {queued}/{threadIds.Count} 个线程注入 APC 垃圾入口并 alert {alerted} 个线程，目标进程已退出。");
+                    return (true, FormatLocalized("ProcessManager_ApcGarbage_Success", queued, threadIds.Count, alerted));
 
-                return (false, $"已向 {queued}/{threadIds.Count} 个线程排队 APC，alert {alerted} 个线程，目标仍在运行。失败 {failed} 个。{firstError ?? ""}");
+                return (false, FormatLocalized("ProcessManager_ApcGarbage_StillRunning", queued, threadIds.Count, alerted, failed, firstError ?? ""));
             }
             finally
             {
@@ -1453,7 +1453,7 @@ namespace Xdows_Security.Views
             var hProcess = NativeMethods.OpenProcess(NativeMethods.PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
             if (hProcess == 0)
             {
-                reason = $"无法查询目标进程架构：{GetLastSystemError()}";
+                reason = FormatLocalized("ProcessManager_QueryArch_Failed", GetLastSystemError());
                 return false;
             }
 
@@ -1461,19 +1461,19 @@ namespace Xdows_Security.Views
             {
                 if (!NativeMethods.IsWow64Process(hProcess, out var targetIsWow64))
                 {
-                    reason = $"IsWow64Process 失败：{GetLastSystemError()}";
+                    reason = FormatLocalized("ProcessManager_IsWow64_Failed", GetLastSystemError());
                     return false;
                 }
 
                 if (Environment.Is64BitProcess && targetIsWow64)
                 {
-                    reason = "目标进程是 32 位 WOW64，当前进程是 64 位，远程函数地址和 APC 指针不兼容。";
+                    reason = Localize("ProcessManager_Incompatible_Wow64Target");
                     return false;
                 }
 
                 if (!Environment.Is64BitProcess && !targetIsWow64)
                 {
-                    reason = "目标进程是 64 位，当前进程是 32 位，远程函数地址和 APC 指针不兼容。";
+                    reason = Localize("ProcessManager_Incompatible_X64Target");
                     return false;
                 }
 
@@ -1495,14 +1495,14 @@ namespace Xdows_Security.Views
 
             if (module == 0)
             {
-                error = $"加载本地模块 {moduleName} 失败：{GetLastSystemError()}";
+                error = FormatLocalized("ProcessManager_LoadModule_Failed", moduleName, GetLastSystemError());
                 return 0;
             }
 
             var proc = NativeMethods.GetProcAddress(module, procName);
             if (proc == 0)
             {
-                error = $"解析 {moduleName}!{procName} 失败：{GetLastSystemError()}";
+                error = FormatLocalized("ProcessManager_ResolveProc_Failed", moduleName, procName, GetLastSystemError());
                 return 0;
             }
 
@@ -1518,7 +1518,7 @@ namespace Xdows_Security.Views
             var moduleNameBytes = Encoding.Unicode.GetBytes(moduleName + "\0");
             var remoteModuleName = RemoteAllocAndWrite(hProcess, moduleNameBytes, NativeMethods.PAGE_READWRITE);
             if (remoteModuleName.Address == 0)
-                return (false, $"写入远程模块名失败：{remoteModuleName.Error}");
+                return (false, FormatLocalized("ProcessManager_WriteRemote_ModuleNameFailed", remoteModuleName.Error));
 
             nint hThread = 0;
 
@@ -1526,18 +1526,18 @@ namespace Xdows_Security.Views
             {
                 var thread = StartRemoteThread(hProcess, loadLibrary, remoteModuleName.Address);
                 if (thread.Handle == 0)
-                    return (false, $"CreateRemoteThread(LoadLibraryW) 失败：{thread.Error}");
+                    return (false, FormatLocalized("ProcessManager_RemoteThread_LoadLibrary_Failed", thread.Error));
 
                 hThread = thread.Handle;
                 var wait = NativeMethods.WaitForSingleObject(hThread, 5000);
 
                 if (wait == NativeMethods.WAIT_OBJECT_0)
-                    return (true, $"已通过 LoadLibraryW 加载 {moduleName}。");
+                    return (true, FormatLocalized("ProcessManager_LoadLibrary_Loaded", moduleName));
 
                 if (wait == NativeMethods.WAIT_TIMEOUT)
-                    return (false, $"LoadLibraryW({moduleName}) 等待超时。");
+                    return (false, FormatLocalized("ProcessManager_LoadLibrary_Timeout", moduleName));
 
-                return (false, $"LoadLibraryW({moduleName}) 等待返回 0x{wait:X}。");
+                return (false, FormatLocalized("ProcessManager_LoadLibrary_WaitReturn", moduleName, wait));
             }
             finally
             {
@@ -1620,7 +1620,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                error = $"无法枚举线程：{ex.Message}";
+                error = FormatLocalized("ProcessManager_EnumerateThreads_Failed", ex.Message);
                 return [];
             }
         }
@@ -1669,7 +1669,7 @@ namespace Xdows_Security.Views
                 error = Marshal.GetLastWin32Error();
 
             return error == 0
-                ? "未知错误"
+                ? Localize("ProcessManager_UnknownError")
                 : $"{new Win32Exception(error).Message} (0x{error:X})";
         }
 
@@ -1690,7 +1690,7 @@ namespace Xdows_Security.Views
         {
             public string ToDisplayText()
             {
-                var status = skipped ? "跳过" : success ? "成功" : "失败";
+                var status = skipped ? Localize("ProcessManager_Result_Skipped") : success ? Localize("ProcessManager_Result_Success") : Localize("ProcessManager_Result_Failed");
                 return $"{status}: {name} - {message}";
             }
         }

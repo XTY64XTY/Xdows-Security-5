@@ -1031,7 +1031,7 @@
     <value>取消</value>
   </data>
   <data name="AllPage_Status" xml:space="preserve">
-    <value>已启用、已禁用</value>
+    <value>已启用,已禁用</value>
   </data>
   <data name="SettingsPage_Other_Tray.Header" xml:space="preserve">
     <value>通知区域图标</value>
@@ -1065,33 +1065,6 @@
   </data>
   <data name="SettingsPage_Other_DisableVerify.Description" xml:space="preserve">
     <value>禁用执行高危操作的验证</value>
-  </data>
-  <data name="SettingsPage_Quarantine_Empty_Title" xml:space="preserve">
-    <value>隔离区为空</value>
-  </data>
-  <data name="SettingsPage_Quarantine_Empty_Content" xml:space="preserve">
-    <value>隔离区中没有文件需要清空。</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearConfirm_Title" xml:space="preserve">
-    <value>确认清空</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearConfirm_Content" xml:space="preserve">
-    <value>确定要永久删除隔离区中的所有 {0} 个文件吗？此操作不可撤销。</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearConfirm_PrimaryButton" xml:space="preserve">
-    <value>清空全部</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearSuccess_Title" xml:space="preserve">
-    <value>隔离区已清空</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearSuccess_Content" xml:space="preserve">
-    <value>所有文件已从隔离区永久删除。</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearFailed_Title" xml:space="preserve">
-    <value>清空失败</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearFailed_Content" xml:space="preserve">
-    <value>清空隔离区时发生错误，请重试。</value>
   </data>
   <data name="SettingsPage_Appearance_BackgroundImage.Header" xml:space="preserve">
     <value>背景图片</value>
@@ -1998,5 +1971,809 @@
   </data>
   <data name="SettingsPage_Protection_Boot_Detection_AllowChange" xml:space="preserve">
     <value>放行并更新基线</value>
+  </data>
+  <data name="ContextMenuManager_Title.Text" xml:space="preserve">
+    <value>上下文菜单管理</value>
+  </data>
+  <data name="ContextMenuManager_ThirdPartyToggle.OffContent" xml:space="preserve">
+    <value>全部项</value>
+  </data>
+  <data name="ContextMenuManager_ThirdPartyToggle.OnContent" xml:space="preserve">
+    <value>仅第三方</value>
+  </data>
+  <data name="ContextMenuManager_SearchBox.PlaceholderText" xml:space="preserve">
+    <value>搜索名称、命令行或注册表路径...</value>
+  </data>
+  <data name="ContextMenuManager_RefreshButton.Label" xml:space="preserve">
+    <value>刷新列表</value>
+  </data>
+  <data name="ContextMenuManager_ClassicMenuToggle.Label" xml:space="preserve">
+    <value>经典上下文菜单</value>
+  </data>
+  <data name="ContextMenuManager_OpenRegeditButton.Label" xml:space="preserve">
+    <value>打开注册表位置</value>
+  </data>
+  <data name="ContextMenuManager_DeleteButton.Label" xml:space="preserve">
+    <value>删除菜单项</value>
+  </data>
+  <data name="ContextMenuManager_Header_Name.Text" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="ContextMenuManager_Header_Location.Text" xml:space="preserve">
+    <value>位置</value>
+  </data>
+  <data name="ContextMenuManager_Header_Kind.Text" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="ContextMenuManager_Header_Target.Text" xml:space="preserve">
+    <value>命令行 / 模块</value>
+  </data>
+  <data name="ContextMenuManager_Header_Source.Text" xml:space="preserve">
+    <value>来源</value>
+  </data>
+  <data name="ContextMenuManager_Header_Enabled.Text" xml:space="preserve">
+    <value>启用</value>
+  </data>
+  <data name="ContextMenuManager_Flyout_Toggle.Text" xml:space="preserve">
+    <value>启用 / 禁用</value>
+  </data>
+  <data name="ContextMenuManager_Flyout_OpenRegedit.Text" xml:space="preserve">
+    <value>打开注册表位置</value>
+  </data>
+  <data name="ContextMenuManager_Flyout_CopyTarget.Text" xml:space="preserve">
+    <value>复制命令行</value>
+  </data>
+  <data name="ContextMenuManager_Flyout_Delete.Text" xml:space="preserve">
+    <value>删除菜单项</value>
+  </data>
+  <data name="ContextMenuManager_ScanFailed_Title" xml:space="preserve">
+    <value>扫描上下文菜单失败</value>
+  </data>
+  <data name="ContextMenuManager_Scope_All" xml:space="preserve">
+    <value>全部</value>
+  </data>
+  <data name="ContextMenuManager_ToggleFailed_Title" xml:space="preserve">
+    <value>无法修改上下文菜单项</value>
+  </data>
+  <data name="ContextMenuManager_ToggleFailed_Text" xml:space="preserve">
+    <value>“{0}”修改失败，可能是权限不足或该项已不存在。
+
+{1}</value>
+  </data>
+  <data name="ContextMenuManager_DeleteConfirm_Title" xml:space="preserve">
+    <value>删除上下文菜单项</value>
+  </data>
+  <data name="ContextMenuManager_DeleteConfirm_Text" xml:space="preserve">
+    <value>确定要删除“{0}”吗？</value>
+  </data>
+  <data name="ContextMenuManager_DeleteBackup_Text" xml:space="preserve">
+    <value>删除前会自动导出一份 .reg 备份，需要恢复时双击备份文件即可。
+备份目录：{0}</value>
+  </data>
+  <data name="ContextMenuManager_DeleteConfirm_Primary" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="ContextMenuManager_Cancel" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="ContextMenuManager_DeleteFailed_Title" xml:space="preserve">
+    <value>删除失败</value>
+  </data>
+  <data name="ContextMenuManager_OpenRegeditFailed_Title" xml:space="preserve">
+    <value>打开注册表失败</value>
+  </data>
+  <data name="ContextMenuManager_OpenRegeditFailed_Text" xml:space="preserve">
+    <value>无法启动注册表编辑器。</value>
+  </data>
+  <data name="ContextMenuManager_ToggleClassicFailed_Title" xml:space="preserve">
+    <value>切换失败</value>
+  </data>
+  <data name="ContextMenuManager_ToggleClassicFailed_Text" xml:space="preserve">
+    <value>无法修改经典上下文菜单设置，可能是权限不足。</value>
+  </data>
+  <data name="ContextMenuManager_ClassicMenu_Title" xml:space="preserve">
+    <value>经典上下文菜单</value>
+  </data>
+  <data name="ContextMenuManager_ClassicEnabled_Text" xml:space="preserve">
+    <value>已启用 Windows 11 经典上下文菜单。
+重启资源管理器或重新登录后生效。</value>
+  </data>
+  <data name="ContextMenuManager_ClassicDisabled_Text" xml:space="preserve">
+    <value>已恢复 Windows 11 新式上下文菜单。
+重启资源管理器或重新登录后生效。</value>
+  </data>
+  <data name="ContextMenuManager_OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="ProcessManagerKill_OpenProcessTokenFailed" xml:space="preserve">
+    <value>OpenProcessToken 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_LookupPrivilegeValueFailed" xml:space="preserve">
+    <value>LookupPrivilegeValue(SeDebugPrivilege) 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_AdjustTokenPrivilegesFailed" xml:space="preserve">
+    <value>AdjustTokenPrivileges 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_SeDebugPrivilegeNotAssigned" xml:space="preserve">
+    <value>当前令牌未分配 SeDebugPrivilege。</value>
+  </data>
+  <data name="ProcessManagerKill_SeDebugPrivilegeEnabled" xml:space="preserve">
+    <value>SeDebugPrivilege 已启用。</value>
+  </data>
+  <data name="ProcessManagerKill_NtTerminateProcessStatus" xml:space="preserve">
+    <value>NtTerminateProcess 返回 NTSTATUS 0x{0:X8}。</value>
+  </data>
+  <data name="ProcessManagerKill_NtTerminateProcessSuccess" xml:space="preserve">
+    <value>NtTerminateProcess 已结束目标进程。</value>
+  </data>
+  <data name="ProcessManagerKill_NtTerminateProcessWaitReturned" xml:space="preserve">
+    <value>NtTerminateProcess 已调用，但等待返回 0x{0:X}。</value>
+  </data>
+  <data name="ProcessManagerKill_CannotLocateExecutable" xml:space="preserve">
+    <value>无法定位当前可执行文件路径。</value>
+  </data>
+  <data name="ProcessManagerKill_CannotStartHelper" xml:space="preserve">
+    <value>无法启动 kill-on-exit helper。</value>
+  </data>
+  <data name="ProcessManagerKill_HelperTriggeredKillOnExit" xml:space="preserve">
+    <value>helper 进程 {0} 已触发调试器 kill-on-exit。</value>
+  </data>
+  <data name="ProcessManagerKill_HelperStillRunning" xml:space="preserve">
+    <value>仍在运行</value>
+  </data>
+  <data name="ProcessManagerKill_HelperStartedTargetRunning" xml:space="preserve">
+    <value>helper 已启动但目标仍在运行，helper 状态：{0}。</value>
+  </data>
+  <data name="ProcessManagerKill_ContextHijackX64Only" xml:space="preserve">
+    <value>线程上下文劫持当前仅支持 x64 进程。</value>
+  </data>
+  <data name="ProcessManagerKill_NoEnumerableThreads" xml:space="preserve">
+    <value>目标进程没有可枚举线程。</value>
+  </data>
+  <data name="ProcessManagerKill_ThreadOpenFailed" xml:space="preserve">
+    <value>线程 {0}：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_ThreadSuspendFailed" xml:space="preserve">
+    <value>线程 {0}：SuspendThread 失败。</value>
+  </data>
+  <data name="ProcessManagerKill_ThreadGetContextFailed" xml:space="preserve">
+    <value>线程 {0}：GetThreadContext 失败：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_ThreadSetContextFailed" xml:space="preserve">
+    <value>线程 {0}：SetThreadContext 失败：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_ThreadHijackSuccess" xml:space="preserve">
+    <value>已劫持线程 {0} 到 RtlExitUserProcess，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_ThreadHijackIncomplete" xml:space="preserve">
+    <value>已尝试劫持 {0} 个线程，目标仍在运行。失败 {1} 个。{2}</value>
+  </data>
+  <data name="ProcessManagerKill_AttachConsoleFailed" xml:space="preserve">
+    <value>AttachConsole 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_CtrlBreakSent" xml:space="preserve">
+    <value>已发送 CTRL_BREAK_EVENT 到目标进程组，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_CtrlCSent" xml:space="preserve">
+    <value>已发送 CTRL_C_EVENT 到目标控制台，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_ConsoleEventsIncomplete" xml:space="preserve">
+    <value>控制台事件已尝试，目标仍在运行。CTRL_BREAK={0}, CTRL_C={1}。</value>
+  </data>
+  <data name="ProcessManagerKill_NoServiceForPid" xml:space="preserve">
+    <value>未找到该 PID 对应的 Windows 服务。</value>
+  </data>
+  <data name="ProcessManagerKill_OpenSCManagerFailed" xml:space="preserve">
+    <value>OpenSCManager 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_OpenServiceFailed" xml:space="preserve">
+    <value>{0}：OpenService 失败：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_ControlServiceStopFailed" xml:space="preserve">
+    <value>{0}：ControlService(STOP) 失败：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_ServiceStopSuccess" xml:space="preserve">
+    <value>已向 {0}/{1} 个服务发送停止请求，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_ServiceStopIncomplete" xml:space="preserve">
+    <value>已停止请求 {0}/{1} 个服务，目标仍在运行。失败 {2} 个。{3}</value>
+  </data>
+  <data name="ProcessManagerKill_CannotBuildRmIdentity" xml:space="preserve">
+    <value>无法构造 Restart Manager 进程标识：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_RmStartSessionFailed" xml:space="preserve">
+    <value>RmStartSession 返回 {0}。</value>
+  </data>
+  <data name="ProcessManagerKill_RmRegisterResourcesFailed" xml:space="preserve">
+    <value>RmRegisterResources 返回 {0}。</value>
+  </data>
+  <data name="ProcessManagerKill_RmShutdownSuccess" xml:space="preserve">
+    <value>Restart Manager 已关闭目标进程，RmShutdown 返回 {0}。</value>
+  </data>
+  <data name="ProcessManagerKill_RmShutdownTargetRunning" xml:space="preserve">
+    <value>RmShutdown 返回 {0}，但目标仍在运行。</value>
+  </data>
+  <data name="ProcessManagerKill_ProcAddressInvalid" xml:space="preserve">
+    <value>{0}：函数地址无效。</value>
+  </data>
+  <data name="ProcessManagerKill_CreateRemoteThreadFailed" xml:space="preserve">
+    <value>{0}：CreateRemoteThread 失败：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_RemoteThreadExitSuccess" xml:space="preserve">
+    <value>远程线程 {0} 调用 {1} 后目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_RemoteThreadTargetRunning" xml:space="preserve">
+    <value>{0}：远程线程已创建，但目标仍在运行。</value>
+  </data>
+  <data name="ProcessManagerKill_FailFastStubX64Only" xml:space="preserve">
+    <value>RaiseFailFastException 远程桩当前仅支持 x64。</value>
+  </data>
+  <data name="ProcessManagerKill_FailFastWriteRemoteCodeFailed" xml:space="preserve">
+    <value>RaiseFailFastException: 写入远程代码失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_FailFastCreateRemoteThreadFailed" xml:space="preserve">
+    <value>RaiseFailFastException: CreateRemoteThread 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_FailFastThreadExitSuccess" xml:space="preserve">
+    <value>远程线程 {0} 调用 RaiseFailFastException 后目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_FailFastThreadTargetRunning" xml:space="preserve">
+    <value>RaiseFailFastException 远程线程已创建，但目标仍在运行。</value>
+  </data>
+  <data name="ProcessManagerKill_QueueUserAPCFailed" xml:space="preserve">
+    <value>线程 {0}：QueueUserAPC 失败：{1}</value>
+  </data>
+  <data name="ProcessManagerKill_ApcExitSuccess" xml:space="preserve">
+    <value>APC 调用 {0}：已排队 {1}/{2} 个线程，alert {3} 个线程，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManagerKill_ApcExitIncomplete" xml:space="preserve">
+    <value>APC 调用 {0}：已排队 {1}/{2} 个线程，alert {3} 个线程，目标仍在运行。失败 {4} 个。{5}</value>
+  </data>
+  <data name="ProcessManagerKill_EnumServicesBufferQueryFailed" xml:space="preserve">
+    <value>EnumServicesStatusEx 查询缓冲区失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_EnumServicesFailed" xml:space="preserve">
+    <value>EnumServicesStatusEx 失败：{0}</value>
+  </data>
+  <data name="ProcessManagerKill_AttemptsSeparator" xml:space="preserve">
+    <value>；</value>
+  </data>
+  <data name="ProcessManager_SwitchFailed_Title" xml:space="preserve">
+    <value>切换失败</value>
+  </data>
+  <data name="ProcessManager_TreeLoadFailed_Text" xml:space="preserve">
+    <value>无法加载树状图：{0}</value>
+  </data>
+  <data name="ProcessManager_Kill_Success_Title" xml:space="preserve">
+    <value>结束成功</value>
+  </data>
+  <data name="ProcessManager_Kill_Success_Text" xml:space="preserve">
+    <value>进程 {0} 已结束。
+
+{1}</value>
+  </data>
+  <data name="ProcessManager_Kill_Failed_Title" xml:space="preserve">
+    <value>结束失败</value>
+  </data>
+  <data name="ProcessManager_Kill_Failed_Text" xml:space="preserve">
+    <value>无法结束进程 {0}。
+
+{1}</value>
+  </data>
+  <data name="ProcessManager_Details_ProcessName" xml:space="preserve">
+    <value>进程名称</value>
+  </data>
+  <data name="ProcessManager_Details_ProcessId" xml:space="preserve">
+    <value>进程编号</value>
+  </data>
+  <data name="ProcessManager_Details_ParentId" xml:space="preserve">
+    <value>父进程ID</value>
+  </data>
+  <data name="ProcessManager_Details_SessionId" xml:space="preserve">
+    <value>会话ID</value>
+  </data>
+  <data name="ProcessManager_Details_MemoryUsage" xml:space="preserve">
+    <value>使用内存</value>
+  </data>
+  <data name="ProcessManager_Details_PrivateMemory" xml:space="preserve">
+    <value>私有内存</value>
+  </data>
+  <data name="ProcessManager_Details_ThreadCount" xml:space="preserve">
+    <value>线程数</value>
+  </data>
+  <data name="ProcessManager_Details_HandleCount" xml:space="preserve">
+    <value>句柄数</value>
+  </data>
+  <data name="ProcessManager_Details_Priority" xml:space="preserve">
+    <value>优先级</value>
+  </data>
+  <data name="ProcessManager_Details_Architecture" xml:space="preserve">
+    <value>架构</value>
+  </data>
+  <data name="ProcessManager_Details_ArchWow64" xml:space="preserve">
+    <value>32位 (WOW64)</value>
+  </data>
+  <data name="ProcessManager_Details_ArchX64" xml:space="preserve">
+    <value>64位</value>
+  </data>
+  <data name="ProcessManager_Details_FilePath" xml:space="preserve">
+    <value>文件路径</value>
+  </data>
+  <data name="ProcessManager_Details_CreationTime" xml:space="preserve">
+    <value>创建时间</value>
+  </data>
+  <data name="ProcessManager_Details_ModifyTime" xml:space="preserve">
+    <value>修改时间</value>
+  </data>
+  <data name="ProcessManager_Details_FileSize" xml:space="preserve">
+    <value>文件大小</value>
+  </data>
+  <data name="ProcessManager_Details_FileVersion" xml:space="preserve">
+    <value>文件版本</value>
+  </data>
+  <data name="ProcessManager_Details_ProductVersion" xml:space="preserve">
+    <value>产品版本</value>
+  </data>
+  <data name="ProcessManager_Details_CompanyName" xml:space="preserve">
+    <value>公司名称</value>
+  </data>
+  <data name="ProcessManager_Details_ProductName" xml:space="preserve">
+    <value>产品名称</value>
+  </data>
+  <data name="ProcessManager_Details_FileDescription" xml:space="preserve">
+    <value>文件描述</value>
+  </data>
+  <data name="ProcessManager_Details_AccessDenied" xml:space="preserve">
+    <value>拒绝访问或已退出</value>
+  </data>
+  <data name="ProcessManager_Details_CommandLine" xml:space="preserve">
+    <value>命令行</value>
+  </data>
+  <data name="ProcessManager_Details_Title" xml:space="preserve">
+    <value>详细信息</value>
+  </data>
+  <data name="ProcessManager_Close" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="ProcessManager_LocateFile" xml:space="preserve">
+    <value>定位文件</value>
+  </data>
+  <data name="ProcessManager_KillProcess" xml:space="preserve">
+    <value>结束进程</value>
+  </data>
+  <data name="ProcessManager_LocateFileFailed_Title" xml:space="preserve">
+    <value>无法定位文件</value>
+  </data>
+  <data name="ProcessManager_LocateFileFailed_NoPath" xml:space="preserve">
+    <value>无法访问此进程的文件路径。</value>
+  </data>
+  <data name="ProcessManager_LocateFileFailed_Text" xml:space="preserve">
+    <value>无法定位文件，因为{0}</value>
+  </data>
+  <data name="ProcessManager_OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="ProcessManager_Attempt_ProtectSelf" xml:space="preserve">
+    <value>保护当前进程</value>
+  </data>
+  <data name="ProcessManager_Attempt_ProtectSelf_Message" xml:space="preserve">
+    <value>不会结束 Xdows Security 自身。</value>
+  </data>
+  <data name="ProcessManager_Attempt_CheckStatus" xml:space="preserve">
+    <value>检查进程状态</value>
+  </data>
+  <data name="ProcessManager_Attempt_CheckStatus_Message" xml:space="preserve">
+    <value>目标进程已经退出。</value>
+  </data>
+  <data name="ProcessManager_Attempt_EnableSeDebugPrivilege" xml:space="preserve">
+    <value>启用 SeDebugPrivilege</value>
+  </data>
+  <data name="ProcessManager_Attempt_RestartManager" xml:space="preserve">
+    <value>Restart Manager 强制关闭注册进程</value>
+  </data>
+  <data name="ProcessManager_Attempt_StopService" xml:space="preserve">
+    <value>服务控制管理器停止服务进程</value>
+  </data>
+  <data name="ProcessManager_Attempt_ConsoleCtrlEvent" xml:space="preserve">
+    <value>控制台 Ctrl 事件结束进程</value>
+  </data>
+  <data name="ProcessManager_Attempt_TerminateDirectly" xml:space="preserve">
+    <value>直接结束目标进程</value>
+  </data>
+  <data name="ProcessManager_Attempt_NtTerminateProcess" xml:space="preserve">
+    <value>NtTerminateProcess/ZwTerminateProcess 直接终止</value>
+  </data>
+  <data name="ProcessManager_Attempt_TerminateThreads" xml:space="preserve">
+    <value>销毁目标所有线程使进程退出</value>
+  </data>
+  <data name="ProcessManager_Attempt_DebugExceptionKill" xml:space="preserve">
+    <value>调试器 / 异常控制路径强制结束</value>
+  </data>
+  <data name="ProcessManager_Attempt_DebugKillOnExit" xml:space="preserve">
+    <value>调试器 kill-on-exit 强制结束</value>
+  </data>
+  <data name="ProcessManager_Attempt_RemoteExitRoutines" xml:space="preserve">
+    <value>远程线程调用退出函数</value>
+  </data>
+  <data name="ProcessManager_Attempt_HijackThreadContext" xml:space="preserve">
+    <value>线程上下文劫持到退出函数</value>
+  </data>
+  <data name="ProcessManager_Attempt_RemoteFatalExit" xml:space="preserve">
+    <value>制造目标进程不可恢复异常 / 崩溃</value>
+  </data>
+  <data name="ProcessManager_Attempt_EndTask" xml:space="preserve">
+    <value>EndTask(fForce=TRUE) 结束窗口任务</value>
+  </data>
+  <data name="ProcessManager_Attempt_InjectMessageBoxEndTask" xml:space="preserve">
+    <value>注入使其弹出窗口，再用 EndTask</value>
+  </data>
+  <data name="ProcessManager_Attempt_ApcExitRoutines" xml:space="preserve">
+    <value>APC 注入调用退出函数</value>
+  </data>
+  <data name="ProcessManager_Attempt_ApcGarbage" xml:space="preserve">
+    <value>APC 注入指向无效地址直接崩溃</value>
+  </data>
+  <data name="ProcessManager_Attempt_ExitConfirmed" xml:space="preserve">
+    <value>退出确认</value>
+  </data>
+  <data name="ProcessManager_Attempt_ExitConfirmed_Message" xml:space="preserve">
+    <value>目标进程已退出。</value>
+  </data>
+  <data name="ProcessManager_Attempt_FinalStatus" xml:space="preserve">
+    <value>最终状态</value>
+  </data>
+  <data name="ProcessManager_Attempt_FinalStatus_Message" xml:space="preserve">
+    <value>进程仍在运行。</value>
+  </data>
+  <data name="ProcessManager_ProcessKill_Succeeded" xml:space="preserve">
+    <value>Process.Kill 已结束目标进程。</value>
+  </data>
+  <data name="ProcessManager_ProcessKill_Timeout" xml:space="preserve">
+    <value>Process.Kill 已发送终止请求，但等待退出超时</value>
+  </data>
+  <data name="ProcessManager_ProcessKill_Failed" xml:space="preserve">
+    <value>Process.Kill 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_TerminateProcess_Failed" xml:space="preserve">
+    <value>TerminateProcess 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_TerminateProcess_Succeeded" xml:space="preserve">
+    <value>TerminateProcess 已结束目标进程。</value>
+  </data>
+  <data name="ProcessManager_TerminateProcess_Succeeded_ExitCode" xml:space="preserve">
+    <value>TerminateProcess 已结束目标进程，退出码 0x{0:X}。</value>
+  </data>
+  <data name="ProcessManager_TerminateProcess_WaitTimeout" xml:space="preserve">
+    <value>TerminateProcess 已调用，但等待退出超时。</value>
+  </data>
+  <data name="ProcessManager_TerminateProcess_WaitReturn" xml:space="preserve">
+    <value>TerminateProcess 已调用，但等待返回 0x{0:X}。</value>
+  </data>
+  <data name="ProcessManager_EnumerateThreads_Failed" xml:space="preserve">
+    <value>无法枚举线程：{0}</value>
+  </data>
+  <data name="ProcessManager_NoEnumerableThreads" xml:space="preserve">
+    <value>目标进程没有可枚举线程。</value>
+  </data>
+  <data name="ProcessManager_Thread_Error" xml:space="preserve">
+    <value>线程 {0}：{1}</value>
+  </data>
+  <data name="ProcessManager_TerminateThreads_None" xml:space="preserve">
+    <value>未能结束任何线程。{0}</value>
+  </data>
+  <data name="ProcessManager_TerminateThreads_Success" xml:space="preserve">
+    <value>已结束 {0}/{1} 个线程，进程已退出。</value>
+  </data>
+  <data name="ProcessManager_TerminateThreads_Partial" xml:space="preserve">
+    <value>已结束 {0}/{1} 个线程，但进程仍在运行。</value>
+  </data>
+  <data name="ProcessManager_TerminateThreads_FailedDetail" xml:space="preserve">
+    <value> {0} 个线程失败。{1}</value>
+  </data>
+  <data name="ProcessManager_NoDetailError" xml:space="preserve">
+    <value>无详细错误。</value>
+  </data>
+  <data name="ProcessManager_DebugAttach_Failed" xml:space="preserve">
+    <value>DebugActiveProcess 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_Debug_TakeoverExited" xml:space="preserve">
+    <value>调试器已接管目标，进程已退出。</value>
+  </data>
+  <data name="ProcessManager_Debug_EventExited" xml:space="preserve">
+    <value>调试事件报告目标进程已退出。</value>
+  </data>
+  <data name="ProcessManager_Exception_Breakpoint" xml:space="preserve">
+    <value>断点异常</value>
+  </data>
+  <data name="ProcessManager_Exception_Code" xml:space="preserve">
+    <value>异常 0x{0:X}</value>
+  </data>
+  <data name="ProcessManager_Debug_PassedExceptionExited" xml:space="preserve">
+    <value>已通过调试器传递 {0}，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManager_Debug_BreakNoExit" xml:space="preserve">
+    <value>已附加调试器并请求 DebugBreakProcess，但目标未退出。</value>
+  </data>
+  <data name="ProcessManager_Debug_BreakFailed" xml:space="preserve">
+    <value>已附加调试器，但无法请求 DebugBreakProcess: {0}。</value>
+  </data>
+  <data name="ProcessManager_Debug_ExceptionObserved" xml:space="preserve">
+    <value> 已观察到异常事件但目标仍在运行。</value>
+  </data>
+  <data name="ProcessManager_RemoteThread_FatalExit_Failed" xml:space="preserve">
+    <value>CreateRemoteThread(FatalExit) 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_FatalExit_ThreadExited" xml:space="preserve">
+    <value>已在目标进程创建 FatalExit 线程 {0}，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManager_RemoteThread_ExitCode" xml:space="preserve">
+    <value>远程线程退出码 0x{0:X}。</value>
+  </data>
+  <data name="ProcessManager_RemoteThread_ExitCodeReadFailed" xml:space="preserve">
+    <value>无法读取远程线程退出码：{0}</value>
+  </data>
+  <data name="ProcessManager_FatalExit_StillRunning" xml:space="preserve">
+    <value>FatalExit 远程线程已创建，但目标进程仍在运行。{0}</value>
+  </data>
+  <data name="ProcessManager_EndTask_NoWindows" xml:space="preserve">
+    <value>未找到该进程的可见顶层窗口。</value>
+  </data>
+  <data name="ProcessManager_EndTask_Success" xml:space="preserve">
+    <value>EndTask 已处理 {0}/{1} 个窗口，进程已退出。</value>
+  </data>
+  <data name="ProcessManager_EndTask_Partial" xml:space="preserve">
+    <value>EndTask 已处理 {0}/{1} 个窗口，但进程仍在运行。</value>
+  </data>
+  <data name="ProcessManager_EndTask_NoSuccess" xml:space="preserve">
+    <value>EndTask 未成功处理窗口。{0}</value>
+  </data>
+  <data name="ProcessManager_Mbox_Text" xml:space="preserve">
+    <value>Xdows Security 正在结束此进程。</value>
+  </data>
+  <data name="ProcessManager_WriteRemote_TextFailed" xml:space="preserve">
+    <value>写入远程消息文本失败：{0}</value>
+  </data>
+  <data name="ProcessManager_WriteRemote_CaptionFailed" xml:space="preserve">
+    <value>写入远程标题失败：{0}</value>
+  </data>
+  <data name="ProcessManager_WriteRemote_ParamsFailed" xml:space="preserve">
+    <value>写入 MessageBoxIndirectW 参数失败：{0}</value>
+  </data>
+  <data name="ProcessManager_RemoteThread_MsgBox_Failed" xml:space="preserve">
+    <value>CreateRemoteThread(MessageBoxIndirectW) 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_MsgBox_EndTask_Success" xml:space="preserve">
+    <value>已注入 MessageBoxIndirectW 线程 {0} 并调用 EndTask，目标进程已退出。{1}</value>
+  </data>
+  <data name="ProcessManager_MsgBox_EndTask_StillRunning" xml:space="preserve">
+    <value>已注入 MessageBoxIndirectW 线程 {0}，但 EndTask 后目标仍在运行。{1}</value>
+  </data>
+  <data name="ProcessManager_WriteRemote_GarbageFailed" xml:space="preserve">
+    <value>写入远程垃圾指令失败：{0}</value>
+  </data>
+  <data name="ProcessManager_Apc_QueueFailed" xml:space="preserve">
+    <value>线程 {0}：QueueUserAPC 失败：{1}</value>
+  </data>
+  <data name="ProcessManager_ApcGarbage_Success" xml:space="preserve">
+    <value>已向 {0}/{1} 个线程注入 APC 垃圾入口并 alert {2} 个线程，目标进程已退出。</value>
+  </data>
+  <data name="ProcessManager_ApcGarbage_StillRunning" xml:space="preserve">
+    <value>已向 {0}/{1} 个线程排队 APC，alert {2} 个线程，目标仍在运行。失败 {3} 个。{4}</value>
+  </data>
+  <data name="ProcessManager_QueryArch_Failed" xml:space="preserve">
+    <value>无法查询目标进程架构：{0}</value>
+  </data>
+  <data name="ProcessManager_IsWow64_Failed" xml:space="preserve">
+    <value>IsWow64Process 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_Incompatible_Wow64Target" xml:space="preserve">
+    <value>目标进程是 32 位 WOW64，当前进程是 64 位，远程函数地址和 APC 指针不兼容。</value>
+  </data>
+  <data name="ProcessManager_Incompatible_X64Target" xml:space="preserve">
+    <value>目标进程是 64 位，当前进程是 32 位，远程函数地址和 APC 指针不兼容。</value>
+  </data>
+  <data name="ProcessManager_LoadModule_Failed" xml:space="preserve">
+    <value>加载本地模块 {0} 失败：{1}</value>
+  </data>
+  <data name="ProcessManager_ResolveProc_Failed" xml:space="preserve">
+    <value>解析 {0}!{1} 失败：{2}</value>
+  </data>
+  <data name="ProcessManager_WriteRemote_ModuleNameFailed" xml:space="preserve">
+    <value>写入远程模块名失败：{0}</value>
+  </data>
+  <data name="ProcessManager_RemoteThread_LoadLibrary_Failed" xml:space="preserve">
+    <value>CreateRemoteThread(LoadLibraryW) 失败：{0}</value>
+  </data>
+  <data name="ProcessManager_LoadLibrary_Loaded" xml:space="preserve">
+    <value>已通过 LoadLibraryW 加载 {0}。</value>
+  </data>
+  <data name="ProcessManager_LoadLibrary_Timeout" xml:space="preserve">
+    <value>LoadLibraryW({0}) 等待超时。</value>
+  </data>
+  <data name="ProcessManager_LoadLibrary_WaitReturn" xml:space="preserve">
+    <value>LoadLibraryW({0}) 等待返回 0x{1:X}。</value>
+  </data>
+  <data name="ProcessManager_UnknownError" xml:space="preserve">
+    <value>未知错误</value>
+  </data>
+  <data name="ProcessManager_Result_Skipped" xml:space="preserve">
+    <value>跳过</value>
+  </data>
+  <data name="ProcessManager_Result_Success" xml:space="preserve">
+    <value>成功</value>
+  </data>
+  <data name="ProcessManager_Result_Failed" xml:space="preserve">
+    <value>失败</value>
+  </data>
+  <data name="ProcessManager_Title.Text" xml:space="preserve">
+    <value>进程管理器</value>
+  </data>
+  <data name="ProcessManager_Name.Content" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="ProcessManager_Name.Text" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="ProcessManager_Memory.Content" xml:space="preserve">
+    <value>内存</value>
+  </data>
+  <data name="ProcessManager_Memory.Text" xml:space="preserve">
+    <value>内存</value>
+  </data>
+  <data name="ProcessManager_Threads.Content" xml:space="preserve">
+    <value>线程</value>
+  </data>
+  <data name="ProcessManager_Threads.Text" xml:space="preserve">
+    <value>线程</value>
+  </data>
+  <data name="ProcessManager_Handles.Content" xml:space="preserve">
+    <value>句柄</value>
+  </data>
+  <data name="ProcessManager_Handles.Text" xml:space="preserve">
+    <value>句柄</value>
+  </data>
+  <data name="ProcessManager_ViewModeToggle.OffContent" xml:space="preserve">
+    <value>列表</value>
+  </data>
+  <data name="ProcessManager_ViewModeToggle.OnContent" xml:space="preserve">
+    <value>树状</value>
+  </data>
+  <data name="ProcessManager_Search.PlaceholderText" xml:space="preserve">
+    <value>搜索进程名称或 PID...</value>
+  </data>
+  <data name="ProcessManager_Refresh.Label" xml:space="preserve">
+    <value>刷新列表</value>
+  </data>
+  <data name="ProcessManager_Refresh.Text" xml:space="preserve">
+    <value>刷新列表</value>
+  </data>
+  <data name="ProcessManager_Terminate.Label" xml:space="preserve">
+    <value>结束进程</value>
+  </data>
+  <data name="ProcessManager_Terminate.Text" xml:space="preserve">
+    <value>结束进程</value>
+  </data>
+  <data name="ProcessManager_Suspend.Label" xml:space="preserve">
+    <value>挂起</value>
+  </data>
+  <data name="ProcessManager_Resume.Label" xml:space="preserve">
+    <value>恢复</value>
+  </data>
+  <data name="ProcessManager_Details.Label" xml:space="preserve">
+    <value>详细信息</value>
+  </data>
+  <data name="ProcessManager_Details.Text" xml:space="preserve">
+    <value>详细信息</value>
+  </data>
+  <data name="ProcessManager_SuspendProcess.Text" xml:space="preserve">
+    <value>挂起进程</value>
+  </data>
+  <data name="ProcessManager_ResumeProcess.Text" xml:space="preserve">
+    <value>恢复进程</value>
+  </data>
+  <data name="ProcessManager_Loading.Text" xml:space="preserve">
+    <value>正在加载进程列表...</value>
+  </data>
+  <data name="XdowsTools_Tab_ProcessManager" xml:space="preserve">
+    <value>进程管理器</value>
+  </data>
+  <data name="XdowsTools_Tab_ContextMenuManager" xml:space="preserve">
+    <value>上下文菜单管理</value>
+  </data>
+  <data name="ShellContextMenu_StateEnabled" xml:space="preserve">
+    <value>已启用</value>
+  </data>
+  <data name="ShellContextMenu_StateDisabled" xml:space="preserve">
+    <value>已禁用</value>
+  </data>
+  <data name="ShellContextMenu_SourceSystem" xml:space="preserve">
+    <value>系统</value>
+  </data>
+  <data name="ShellContextMenu_SourceThirdParty" xml:space="preserve">
+    <value>第三方</value>
+  </data>
+  <data name="ShellContextMenu_ShiftHint" xml:space="preserve">
+    <value>（需按住 Shift）</value>
+  </data>
+  <data name="ShellContextMenu_ScopeAllFiles" xml:space="preserve">
+    <value>所有文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeAllFileSystemObjects" xml:space="preserve">
+    <value>所有文件系统对象</value>
+  </data>
+  <data name="ShellContextMenu_ScopeFolder" xml:space="preserve">
+    <value>文件夹</value>
+  </data>
+  <data name="ShellContextMenu_ScopeFolderBackground" xml:space="preserve">
+    <value>文件夹空白处</value>
+  </data>
+  <data name="ShellContextMenu_ScopeFolderWithVirtual" xml:space="preserve">
+    <value>文件夹（含虚拟文件夹）</value>
+  </data>
+  <data name="ShellContextMenu_ScopeDrive" xml:space="preserve">
+    <value>驱动器</value>
+  </data>
+  <data name="ShellContextMenu_ScopeDesktopBackground" xml:space="preserve">
+    <value>桌面背景</value>
+  </data>
+  <data name="ShellContextMenu_ScopeLibraryFolder" xml:space="preserve">
+    <value>库文件夹</value>
+  </data>
+  <data name="ShellContextMenu_ScopeShortcut" xml:space="preserve">
+    <value>快捷方式</value>
+  </data>
+  <data name="ShellContextMenu_ScopeExecutable" xml:space="preserve">
+    <value>可执行文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeBatchFile" xml:space="preserve">
+    <value>批处理文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeCommandScript" xml:space="preserve">
+    <value>命令脚本</value>
+  </data>
+  <data name="ShellContextMenu_ScopeRegistryFile" xml:space="preserve">
+    <value>注册表文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeTextDocument" xml:space="preserve">
+    <value>文本文档</value>
+  </data>
+  <data name="ShellContextMenu_ScopeImageFile" xml:space="preserve">
+    <value>图像文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeWebFile" xml:space="preserve">
+    <value>网页文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeDropHandler" xml:space="preserve">
+    <value>拖放</value>
+  </data>
+  <data name="ShellContextMenu_ScopeTextFiles" xml:space="preserve">
+    <value>文本类文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeImageFiles" xml:space="preserve">
+    <value>图像类文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeAudioFiles" xml:space="preserve">
+    <value>音频类文件</value>
+  </data>
+  <data name="ShellContextMenu_ScopeVideoFiles" xml:space="preserve">
+    <value>视频类文件</value>
+  </data>
+  <data name="ShellContextMenu_KindStatic" xml:space="preserve">
+    <value>静态菜单项</value>
+  </data>
+  <data name="ShellContextMenu_KindShellExtension" xml:space="preserve">
+    <value>外壳扩展</value>
+  </data>
+  <data name="ShellContextMenu_OpenRootFailed" xml:space="preserve">
+    <value>无法打开注册表根键，操作已取消。</value>
+  </data>
+  <data name="ShellContextMenu_Deleted" xml:space="preserve">
+    <value>已删除该菜单项。</value>
+  </data>
+  <data name="ShellContextMenu_DeletedWithBackup" xml:space="preserve">
+    <value>已删除该菜单项，备份文件：{0}</value>
+  </data>
+  <data name="ShellContextMenu_CascadeSuffix" xml:space="preserve">
+    <value>（级联子菜单）</value>
   </data>
 </root>

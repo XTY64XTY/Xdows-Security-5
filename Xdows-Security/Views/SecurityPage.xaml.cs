@@ -1467,49 +1467,26 @@ namespace Xdows_Security.Views
                 {
                     entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
                 }
-                catch (Exception ex)
+                catch (ArchivePasswordRequiredException)
                 {
-                    bool isPasswordError = ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("密码", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("encrypted", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("crypt", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("解密", StringComparison.OrdinalIgnoreCase) ||
-                                           ex.Message.Contains("加密", StringComparison.OrdinalIgnoreCase) ||
-                                           (ex.InnerException != null && (
-                                               ex.InnerException.Message.Contains("password", StringComparison.OrdinalIgnoreCase) ||
-                                               ex.InnerException.Message.Contains("密码", StringComparison.OrdinalIgnoreCase) ||
-                                               ex.InnerException.Message.Contains("encrypted", StringComparison.OrdinalIgnoreCase) ||
-                                               ex.InnerException.Message.Contains("encrypt", StringComparison.OrdinalIgnoreCase) ||
-                                               ex.InnerException.Message.Contains("crypt", StringComparison.OrdinalIgnoreCase) ||
-                                               ex.InnerException.Message.Contains("解密", StringComparison.OrdinalIgnoreCase) ||
-                                               ex.InnerException.Message.Contains("加密", StringComparison.OrdinalIgnoreCase)));
-
-                    if (isPasswordError)
+                    // 释放 scanGate，让其他扫描任务可以并行进行，不阻塞 Dialog 等待期间
+                    scanGate.Release();
+                    string? enteredPassword = null;
+                    try
                     {
-                        // 释放 scanGate，让其他扫描任务可以并行进行，不阻塞 Dialog 等待期间
-                        scanGate.Release();
-                        string? enteredPassword = null;
-                        try
-                        {
-                            enteredPassword = await AskArchivePasswordAsync(archivePath, scanId, token);
-                        }
-                        finally
-                        {
-                            // 无论用户输入密码、跳过还是扫描被取消，都必须重新获取 scanGate
-                            try { await scanGate.WaitAsync(CancellationToken.None); } catch { }
-                        }
-
-                        if (string.IsNullOrEmpty(enteredPassword))
-                            return;
-
-                        password = enteredPassword;
-                        entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
+                        enteredPassword = await AskArchivePasswordAsync(archivePath, scanId, token);
                     }
-                    else
+                    finally
                     {
-                        throw;
+                        // 无论用户输入密码、跳过还是扫描被取消，都必须重新获取 scanGate
+                        try { await scanGate.WaitAsync(CancellationToken.None); } catch { }
                     }
+
+                    if (string.IsNullOrEmpty(enteredPassword))
+                        return;
+
+                    password = enteredPassword;
+                    entries = await ArchiveScanner.ReadArchiveEntriesAsync(archivePath, true, password, token);
                 }
 
                 if (entries == null) return;

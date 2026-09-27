@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using WinUI3Localizer;
 
 namespace Xdows_Security.Services
 {
@@ -88,11 +89,15 @@ namespace Xdows_Security.Services
 
         public string HiveName => Hive == ContextMenuHive.LocalMachine ? "HKLM" : "HKCU";
 
-        public string Status => IsEnabled ? "已启用" : "已禁用";
+        public string Status => IsEnabled
+            ? ShellContextMenuService.L("ShellContextMenu_StateEnabled")
+            : ShellContextMenuService.L("ShellContextMenu_StateDisabled");
 
-        public string Source => IsSystem ? "系统" : "第三方";
+        public string Source => IsSystem
+            ? ShellContextMenuService.L("ShellContextMenu_SourceSystem")
+            : ShellContextMenuService.L("ShellContextMenu_SourceThirdParty");
 
-        public string ExtendedHint => ExtendedOnly ? "（需按住 Shift）" : "";
+        public string ExtendedHint => ExtendedOnly ? ShellContextMenuService.L("ShellContextMenu_ShiftHint") : "";
 
         /// <summary>
         /// 修改注册表失败时 <see cref="IsEnabled"/> 并没有变化，绑定不会自动刷新，
@@ -136,49 +141,57 @@ namespace Xdows_Security.Services
 
         private const string Win11ClassicMenuClsid = "{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}";
 
-        private sealed record ScopeDefinition(string Root, string Display);
+        private sealed record ScopeDefinition(string Root, string DisplayKey);
 
-        // 作用域顺序即界面中的排序顺序。
+        // 作用域顺序即界面中的排序顺序。DisplayKey 是资源键，取值时才解析，
+        // 这样切换语言后重新枚举即可得到新语言的名称。
         private static readonly ScopeDefinition[] Scopes =
         [
-            new("*", "所有文件"),
-            new("AllFilesystemObjects", "所有文件系统对象"),
-            new("Directory", "文件夹"),
-            new(@"Directory\Background", "文件夹空白处"),
-            new("Folder", "文件夹（含虚拟文件夹）"),
-            new("Drive", "驱动器"),
-            new("DesktopBackground", "桌面背景"),
-            new("LibraryFolder", "库文件夹"),
-            new("lnkfile", "快捷方式"),
-            new("exefile", "可执行文件"),
-            new("batfile", "批处理文件"),
-            new("cmdfile", "命令脚本"),
-            new("regfile", "注册表文件"),
-            new("txtfile", "文本文档"),
-            new("imagefile", "图像文件"),
-            new("htmlfile", "网页文件"),
-            new("msofiledrop", "拖放"),
-            new(@"SystemFileAssociations\text", "文本类文件"),
-            new(@"SystemFileAssociations\image", "图像类文件"),
-            new(@"SystemFileAssociations\audio", "音频类文件"),
-            new(@"SystemFileAssociations\video", "视频类文件")
+            new("*", "ShellContextMenu_ScopeAllFiles"),
+            new("AllFilesystemObjects", "ShellContextMenu_ScopeAllFileSystemObjects"),
+            new("Directory", "ShellContextMenu_ScopeFolder"),
+            new(@"Directory\Background", "ShellContextMenu_ScopeFolderBackground"),
+            new("Folder", "ShellContextMenu_ScopeFolderWithVirtual"),
+            new("Drive", "ShellContextMenu_ScopeDrive"),
+            new("DesktopBackground", "ShellContextMenu_ScopeDesktopBackground"),
+            new("LibraryFolder", "ShellContextMenu_ScopeLibraryFolder"),
+            new("lnkfile", "ShellContextMenu_ScopeShortcut"),
+            new("exefile", "ShellContextMenu_ScopeExecutable"),
+            new("batfile", "ShellContextMenu_ScopeBatchFile"),
+            new("cmdfile", "ShellContextMenu_ScopeCommandScript"),
+            new("regfile", "ShellContextMenu_ScopeRegistryFile"),
+            new("txtfile", "ShellContextMenu_ScopeTextDocument"),
+            new("imagefile", "ShellContextMenu_ScopeImageFile"),
+            new("htmlfile", "ShellContextMenu_ScopeWebFile"),
+            new("msofiledrop", "ShellContextMenu_ScopeDropHandler"),
+            new(@"SystemFileAssociations\text", "ShellContextMenu_ScopeTextFiles"),
+            new(@"SystemFileAssociations\image", "ShellContextMenu_ScopeImageFiles"),
+            new(@"SystemFileAssociations\audio", "ShellContextMenu_ScopeAudioFiles"),
+            new(@"SystemFileAssociations\video", "ShellContextMenu_ScopeVideoFiles")
         ];
 
         /// <summary>界面“位置”下拉框的选项，首项为“全部”。</summary>
-        public static IReadOnlyList<string> ScopeNames { get; } = BuildScopeNames();
+        /// <remarks>每次访问都重新解析：语言切换后不必重建类型。首项必须与
+        /// <see cref="L"/>("ContextMenuManager_Scope_All") 保持同一资源键，
+        /// ContextMenuManagerView 用它做「全部」的相等比较。</remarks>
+        public static IReadOnlyList<string> ScopeNames
+        {
+            get
+            {
+                var names = new List<string> { L("ContextMenuManager_Scope_All") };
+                names.AddRange(Scopes.Select(s => L(s.DisplayKey)));
+                return names;
+            }
+        }
+
+        /// <summary>本地化取值。查不到时返回键名本身，便于在界面上直接暴露缺键。</summary>
+        internal static string L(string key) => Localizer.Get().GetLocalizedString(key);
 
         /// <summary>删除菜单项前导出的 .reg 备份目录。</summary>
         public static string BackupDirectory { get; } = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Xdows-Security",
             "ContextMenuBackups");
-
-        private static List<string> BuildScopeNames()
-        {
-            var names = new List<string> { "全部" };
-            names.AddRange(Scopes.Select(s => s.Display));
-            return names;
-        }
 
         /// <summary>扫描全部作用域下的上下文菜单项。耗时操作，应在后台线程调用。</summary>
         public static List<ContextMenuEntry> Enumerate()
@@ -217,15 +230,15 @@ namespace Xdows_Security.Services
                 using var root = OpenBaseKey(entry.Hive);
                 if (root == null)
                 {
-                    message = "无法打开注册表根键，操作已取消。";
+                    message = L("ShellContextMenu_OpenRootFailed");
                     return false;
                 }
 
                 root.DeleteSubKeyTree(entry.RelativePath, throwOnMissingSubKey: false);
 
                 message = backup == null
-                    ? "已删除该菜单项。"
-                    : $"已删除该菜单项，备份文件：{backup}";
+                    ? L("ShellContextMenu_Deleted")
+                    : string.Format(L("ShellContextMenu_DeletedWithBackup"), backup);
 
                 LogText.AddNewLog(LogText.LogLevel.INFO, "ContextMenuManager",
                     $"Deleted context menu entry {entry.RegistryPath}");
@@ -362,8 +375,8 @@ namespace Xdows_Security.Services
                     {
                         Name = ResolveVerbName(verbKey, verbName),
                         KeyName = verbName,
-                        Scope = scope.Display,
-                        Kind = "静态菜单项",
+                        Scope = L(scope.DisplayKey),
+                        Kind = L("ShellContextMenu_KindStatic"),
                         Target = ResolveTarget(verbKey, command),
                         Hive = hive,
                         RelativePath = $@"{relative}\{verbName}",
@@ -405,8 +418,8 @@ namespace Xdows_Security.Services
                     {
                         Name = ResolveHandlerName(handlerName, module),
                         KeyName = handlerName,
-                        Scope = scope.Display,
-                        Kind = "外壳扩展",
+                        Scope = L(scope.DisplayKey),
+                        Kind = L("ShellContextMenu_KindShellExtension"),
                         Target = string.IsNullOrWhiteSpace(module)
                             ? (string.IsNullOrWhiteSpace(clsid) ? "—" : clsid)
                             : module,
@@ -556,7 +569,7 @@ namespace Xdows_Security.Services
         private static string ResolveTarget(RegistryKey verbKey, string command)
         {
             if (!string.IsNullOrWhiteSpace(command)) return command;
-            if (verbKey.GetValue("SubCommands") != null) return "（级联子菜单）";
+            if (verbKey.GetValue("SubCommands") != null) return L("ShellContextMenu_CascadeSuffix");
             return "—";
         }
 

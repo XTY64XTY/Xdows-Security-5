@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using System;
 using System.Numerics;
+using WinUI3Localizer;
 
 namespace Xdows_Security.Views
 {
@@ -17,7 +18,7 @@ namespace Xdows_Security.Views
 
             TabView.TabItems.Add(new TabViewItem
             {
-                Header = new TextBlock { Text = "进程管理器", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
+                Header = new TextBlock { Text = Localizer.Get().GetLocalizedString("XdowsTools_Tab_ProcessManager"), FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
                 IconSource = new FontIconSource { Glyph = "\uE9D9" },
                 IsClosable = false,
                 Content = new ProcessManagerView()
@@ -25,7 +26,7 @@ namespace Xdows_Security.Views
 
             TabView.TabItems.Add(new TabViewItem
             {
-                Header = new TextBlock { Text = "上下文菜单管理", FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
+                Header = new TextBlock { Text = Localizer.Get().GetLocalizedString("XdowsTools_Tab_ContextMenuManager"), FontSize = 14, Style = (Style)App.Current.Resources["CaptionTextBlockStyle"] },
                 IconSource = new FontIconSource { Glyph = "\uE8FD" },
                 IsClosable = false,
                 Content = new ContextMenuManagerView()

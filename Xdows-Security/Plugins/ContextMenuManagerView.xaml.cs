@@ -3,8 +3,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using WinUI3Localizer;
 using Xdows_Security.Services;
 
 namespace Xdows_Security.Views
@@ -43,7 +45,7 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                await ShowMessageAsync("扫描上下文菜单失败", ex.Message);
+                await ShowMessageAsync(Localizer.Get().GetLocalizedString("ContextMenuManager_ScanFailed_Title"), ex.Message);
             }
             finally
             {
@@ -54,12 +56,12 @@ namespace Xdows_Security.Views
         private void ApplyFilter()
         {
             string keyword = SearchBox.Text?.Trim() ?? "";
-            string scope = ScopeCombo.SelectedItem as string ?? "全部";
+            string scope = ScopeCombo.SelectedItem as string ?? Localizer.Get().GetLocalizedString("ContextMenuManager_Scope_All");
             bool thirdPartyOnly = ThirdPartyToggle.IsOn;
 
             IEnumerable<ContextMenuEntry> query = _all;
 
-            if (!string.Equals(scope, "全部", StringComparison.Ordinal))
+            if (!string.Equals(scope, Localizer.Get().GetLocalizedString("ContextMenuManager_Scope_All"), StringComparison.Ordinal))
                 query = query.Where(x => x.Scope == scope);
 
             if (thirdPartyOnly)
@@ -137,8 +139,8 @@ namespace Xdows_Security.Views
 
             entry.ResyncIsEnabled();
 
-            await ShowMessageAsync("无法修改上下文菜单项",
-                $"“{entry.Name}”修改失败，可能是权限不足或该项已不存在。\r\n\r\n{entry.RegistryPath}");
+            await ShowMessageAsync(Localizer.Get().GetLocalizedString("ContextMenuManager_ToggleFailed_Title"),
+                string.Format(CultureInfo.CurrentCulture, Localizer.Get().GetLocalizedString("ContextMenuManager_ToggleFailed_Text"), entry.Name, entry.RegistryPath));
         }
 
         private async void Delete_Click(object sender, RoutedEventArgs e)
@@ -148,7 +150,7 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
-                Title = "删除上下文菜单项",
+                Title = Localizer.Get().GetLocalizedString("ContextMenuManager_DeleteConfirm_Title"),
                 Content = new StackPanel
                 {
                     Spacing = 8,
@@ -156,7 +158,7 @@ namespace Xdows_Security.Views
                     {
                         new TextBlock
                         {
-                            Text = $"确定要删除“{entry.Name}”吗？",
+                            Text = string.Format(CultureInfo.CurrentCulture, Localizer.Get().GetLocalizedString("ContextMenuManager_DeleteConfirm_Text"), entry.Name),
                             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
                             TextWrapping = TextWrapping.Wrap
                         },
@@ -168,14 +170,13 @@ namespace Xdows_Security.Views
                         },
                         new TextBlock
                         {
-                            Text = "删除前会自动导出一份 .reg 备份，需要恢复时双击备份文件即可。\r\n" +
-                                   $"备份目录：{ShellContextMenuService.BackupDirectory}",
+                            Text = string.Format(CultureInfo.CurrentCulture, Localizer.Get().GetLocalizedString("ContextMenuManager_DeleteBackup_Text"), ShellContextMenuService.BackupDirectory),
                             TextWrapping = TextWrapping.Wrap
                         }
                     }
                 },
-                PrimaryButtonText = "删除",
-                CloseButtonText = "取消",
+                PrimaryButtonText = Localizer.Get().GetLocalizedString("ContextMenuManager_DeleteConfirm_Primary"),
+                CloseButtonText = Localizer.Get().GetLocalizedString("ContextMenuManager_Cancel"),
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot,
                 RequestedTheme = GetDialogTheme()
@@ -190,7 +191,7 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            await ShowMessageAsync("删除失败", message);
+            await ShowMessageAsync(Localizer.Get().GetLocalizedString("ContextMenuManager_DeleteFailed_Title"), message);
         }
 
         private async void OpenRegedit_Click(object sender, RoutedEventArgs e)
@@ -199,7 +200,8 @@ namespace Xdows_Security.Views
             if (entry == null) return;
 
             if (!ShellContextMenuService.OpenInRegedit(entry))
-                await ShowMessageAsync("打开注册表失败", "无法启动注册表编辑器。");
+                await ShowMessageAsync(Localizer.Get().GetLocalizedString("ContextMenuManager_OpenRegeditFailed_Title"),
+                    Localizer.Get().GetLocalizedString("ContextMenuManager_OpenRegeditFailed_Text"));
         }
 
         private void CopyTarget_Click(object sender, RoutedEventArgs e)
@@ -219,14 +221,15 @@ namespace Xdows_Security.Views
             if (!ShellContextMenuService.SetClassicMenuEnabled(enabled))
             {
                 ClassicMenuToggle.IsChecked = !enabled;
-                await ShowMessageAsync("切换失败", "无法修改经典上下文菜单设置，可能是权限不足。");
+                await ShowMessageAsync(Localizer.Get().GetLocalizedString("ContextMenuManager_ToggleClassicFailed_Title"),
+                    Localizer.Get().GetLocalizedString("ContextMenuManager_ToggleClassicFailed_Text"));
                 return;
             }
 
             // 该设置需要重启资源管理器才生效，必须让用户知道。
-            await ShowMessageAsync("经典上下文菜单", enabled
-                ? "已启用 Windows 11 经典上下文菜单。\r\n重启资源管理器或重新登录后生效。"
-                : "已恢复 Windows 11 新式上下文菜单。\r\n重启资源管理器或重新登录后生效。");
+            await ShowMessageAsync(Localizer.Get().GetLocalizedString("ContextMenuManager_ClassicMenu_Title"), enabled
+                ? Localizer.Get().GetLocalizedString("ContextMenuManager_ClassicEnabled_Text")
+                : Localizer.Get().GetLocalizedString("ContextMenuManager_ClassicDisabled_Text"));
         }
 
         private ContextMenuEntry? GetEntryFromSender(object sender)
@@ -243,7 +246,7 @@ namespace Xdows_Security.Views
             {
                 Title = title,
                 Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
-                CloseButtonText = "确定",
+                CloseButtonText = Localizer.Get().GetLocalizedString("ContextMenuManager_OK"),
                 XamlRoot = XamlRoot,
                 RequestedTheme = GetDialogTheme(),
                 DefaultButton = ContentDialogButton.Close

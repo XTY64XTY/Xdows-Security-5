@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
+using Xdows_Model_Config;
 
 namespace Protection;
 
@@ -242,28 +243,35 @@ public static class DriverEnvironmentChecker
     private static DriverEnvironmentCheckItem CheckModelAssets()
     {
         string baseDirectory = AppContext.BaseDirectory;
-        string[] models =
+        string modelsDirectory = ModelLayout.ResolveModelDirectory(baseDirectory);
+
+        // 模型与模型清单按 <程序集目录>\Models\ 分发（约定见 Xdows-Model 的 ModelLayout）；
+        // onnxruntime 那两个是原生 DLL 的运行时依赖，留在程序集目录。
+        string[] nativeRuntime =
         [
-            "Xdows-Model.onnx",
-            "Xdows-Model-Flash.onnx",
-            "Xdows-Model-Pro.onnx",
-            "Xdows-Model-Pro-Standard.onnx",
-            "Xdows-Model-Pro-Flash.onnx",
-            "Xdows-Model-Pro-RawStat.onnx",
-            "Xdows-Model-Pro-Structural.onnx",
             "onnxruntime.dll",
             "onnxruntime_providers_shared.dll"
         ];
 
-        int foundModels = models.Count(name => File.Exists(Path.Combine(baseDirectory, name)));
+        // 与推理端一致：优先 Models\，同时兼容旧部署里直接摊在程序集目录的模型。
+        int foundModels = ModelLayout.RequiredFileNames.Count(
+            name => ModelLayout.ResolveExistingModelPath(baseDirectory, name) is not null);
+        int foundRuntime = nativeRuntime.Count(name => File.Exists(Path.Combine(baseDirectory, name)));
         bool nativeFound = File.Exists(Path.Combine(baseDirectory, "Xdows-Model-Native.dll"));
-        bool modelOk = foundModels == models.Length;
 
-        DriverEnvironmentCheckStatus status = modelOk && nativeFound
+        bool modelsInSubdirectory = ModelLayout.RequiredFileNames.All(
+            name => File.Exists(Path.Combine(modelsDirectory, name)));
+        string layout = modelsInSubdirectory ? ModelLayout.ModelDirectoryName : "flat";
+        bool modelOk = foundModels == ModelLayout.RequiredFileNames.Count;
+        bool runtimeOk = foundRuntime == nativeRuntime.Length;
+
+        DriverEnvironmentCheckStatus status = modelOk && runtimeOk && nativeFound
             ? DriverEnvironmentCheckStatus.Passed
-            : modelOk ? DriverEnvironmentCheckStatus.Warning : DriverEnvironmentCheckStatus.Failed;
+            : modelOk && nativeFound ? DriverEnvironmentCheckStatus.Warning : DriverEnvironmentCheckStatus.Failed;
 
-        string detail = $"Models: {foundModels}/{models.Length}, native DLL: {nativeFound}.";
+        string detail =
+            $"Models: {foundModels}/{ModelLayout.RequiredFileNames.Count} ({layout}), " +
+            $"native runtime: {foundRuntime}/{nativeRuntime.Length}, native DLL: {nativeFound}.";
         return new DriverEnvironmentCheckItem(
             "model",
             "Native model assets",

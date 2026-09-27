@@ -141,7 +141,7 @@ namespace Helper
                                 if (data != null) lock (entries) entries.Add((entryPath, data));
                             }
                         }
-                        catch (InvalidOperationException ex) when (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                        catch (ArchivePasswordRequiredException)
                         {
                             // 密码异常需要向上传播，以便弹出密码对话框
                             throw;
@@ -155,7 +155,7 @@ namespace Helper
                     // 如果有加密条目但未提供密码，抛出异常以便上层弹出密码对话框
                     if (hasEncryptedEntries && entries.Count == 0 && string.IsNullOrEmpty(password))
                     {
-                        throw new InvalidOperationException("The archive contains encrypted entries. Please supply a password.");
+                        throw new ArchivePasswordRequiredException("The archive contains encrypted entries. Please supply a password.");
                     }
                 }
                 catch (OperationCanceledException) { throw; }
@@ -279,7 +279,7 @@ namespace Helper
             }
             catch (Exception ex) when (IsPasswordException(ex))
             {
-                throw new InvalidOperationException("The archive entry is encrypted. Please supply a password.", ex);
+                throw new ArchivePasswordRequiredException("The archive entry is encrypted. Please supply a password.", ex);
             }
             catch { return null; }
         }
@@ -320,7 +320,7 @@ namespace Helper
                                 var data = ReadSharpCompressEntryToBytes(entry);
                                 if (data != null) lock (entries) entries.Add((entryPath, data));
                             }
-                            catch (InvalidOperationException ex) when (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                            catch (ArchivePasswordRequiredException)
                             {
                                 throw;
                             }
@@ -360,7 +360,7 @@ namespace Helper
                                 var data = ReadSharpCompressEntryToBytes(entry);
                                 if (data != null) lock (entries) entries.Add((entryPath, data));
                             }
-                            catch (InvalidOperationException ex) when (ex.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                            catch (ArchivePasswordRequiredException)
                             {
                                 throw;
                             }
@@ -395,7 +395,7 @@ namespace Helper
             }
             catch (Exception ex) when (IsPasswordException(ex))
             {
-                throw new InvalidOperationException("The archive entry is encrypted. Please supply a password.", ex);
+                throw new ArchivePasswordRequiredException("The archive entry is encrypted. Please supply a password.", ex);
             }
             catch { return null; }
         }
@@ -721,6 +721,19 @@ namespace Helper
                     return null;
                 }
             });
+        }
+    }
+
+    /// <summary>压缩包受密码保护、需要用户提供密码后才能继续时抛出。</summary>
+    /// <remarks>
+    /// 由 <see cref="ArchiveScanner"/> 在检测到加密条目且未提供密码时抛出。
+    /// 调用方应按类型捕获——不要依赖异常消息文本判断，那是随系统语言变化的。
+    /// </remarks>
+    public sealed class ArchivePasswordRequiredException : InvalidOperationException
+    {
+        public ArchivePasswordRequiredException(string message, Exception? innerException = null)
+            : base(message, innerException)
+        {
         }
     }
 }

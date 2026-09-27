@@ -4,6 +4,7 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
+using Xdows_Model_Config;
 
 namespace Protection;
 
@@ -44,6 +45,8 @@ internal static class NativeModelLibraryLoader
     private static bool _searchPathRestricted;
     private static bool _systemDiagnosticsCollected;
 
+    // 原生 DLL 及其运行时依赖：与原生 DLL 同目录分发。
+    // 模型不在这个清单里，它们按 <目录>\Models\ 落位，见 StageAssets。
     private static readonly string[] NativeAssets =
     [
         "Xdows-Model-Native.dll",
@@ -52,14 +55,7 @@ internal static class NativeModelLibraryLoader
         "VCRUNTIME140.dll",
         "VCRUNTIME140_1.dll",
         "MSVCP140.dll",
-        "MSVCP140_1.dll",
-        "Xdows-Model.onnx",
-        "Xdows-Model-Flash.onnx",
-        "Xdows-Model-Pro.onnx",
-        "Xdows-Model-Pro-Standard.onnx",
-        "Xdows-Model-Pro-Flash.onnx",
-        "Xdows-Model-Pro-RawStat.onnx",
-        "Xdows-Model-Pro-Structural.onnx"
+        "MSVCP140_1.dll"
     ];
 
     private static readonly string[] RequiredAssets =
@@ -732,20 +728,18 @@ internal static class NativeModelLibraryLoader
             Directory.CreateDirectory(stagingDirectory);
 
             foreach (string asset in NativeAssets)
+                CopyAssetIfNewer(Path.Combine(sourceDirectory, asset), Path.Combine(stagingDirectory, asset));
+
+            // 模型必须按 <staging>\Models\ 落位，与程序集目录下的部署布局一致，
+            // 否则原生 ResolveModelPath 在 staging 目录里找不到模型。
+            // 源侧兼容模型直接摊在目录里的旧布局（ModelLayout.ResolveExistingModelPath）。
+            foreach (string model in ModelLayout.RequiredFileNames)
             {
-                string source = Path.Combine(sourceDirectory, asset);
-                string target = Path.Combine(stagingDirectory, asset);
-                if (!File.Exists(source))
+                string? source = ModelLayout.ResolveExistingModelPath(sourceDirectory, model);
+                if (source is null)
                     continue;
 
-                if (File.Exists(target) &&
-                    new FileInfo(target).Length == new FileInfo(source).Length &&
-                    File.GetLastWriteTimeUtc(target) >= File.GetLastWriteTimeUtc(source))
-                {
-                    continue;
-                }
-
-                File.Copy(source, target, overwrite: true);
+                CopyAssetIfNewer(source, Path.Combine(stagingDirectory, ModelLayout.RelativePath(model)));
             }
 
             foreach (string required in RequiredAssets)
@@ -764,6 +758,23 @@ internal static class NativeModelLibraryLoader
             attempts.Add($"{stagingDirectory}: staging failed: {ex.GetType().Name}: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>按"大小相同且目标不旧于源"跳过，否则覆盖复制；源不存在时静默跳过（与既有行为一致）。</summary>
+    private static void CopyAssetIfNewer(string source, string target)
+    {
+        if (!File.Exists(source))
+            return;
+
+        if (File.Exists(target) &&
+            new FileInfo(target).Length == new FileInfo(source).Length &&
+            File.GetLastWriteTimeUtc(target) >= File.GetLastWriteTimeUtc(source))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.Copy(source, target, overwrite: true);
     }
 
     /// <summary>

@@ -19,25 +19,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model.onnx')">
+    <!--
+      模型与阈值清单的布局约定见 Xdows-Model 的 ModelLayout.ModelDirectoryName：
+      源在 Xdows-Model-Invoker\Models\，推理端（托管 ModelInvoker.EnsureModelAvailable
+      与原生 ResolveModelPath）都按 <程序集目录>\Models\ 查找。
+      这里必须把同样的相对目录搬到输出目录，不能摊平到根目录，否则推理端找不到模型。
+    -->
+    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Models\*.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Models')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <Link>Xdows-Model.onnx</Link>
+      <Link>Models\%(Filename)%(Extension)</Link>
     </Content>
-    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Flash.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Flash.onnx')">
+    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Models\*.json" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Models')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <Link>Xdows-Model-Flash.onnx</Link>
-    </Content>
-    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Pro.onnx" Condition="Exists('..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Pro.onnx')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <Link>Xdows-Model-Pro.onnx</Link>
-    </Content>
-    <Content Include="..\..\Xdows-Model\Xdows-Model-Invoker\Xdows-Model-Pro-*.onnx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <Link>%(Filename)%(Extension)</Link>
+      <Link>Models\%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
 

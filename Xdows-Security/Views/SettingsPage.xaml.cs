@@ -129,15 +129,10 @@ namespace Xdows_Security.Views
             UpdateDriverProtectionState();
         }
 
-private void UpdateInjectionProtectionText()
+        private void UpdateInjectionProtectionText()
         {
             if (InjectionProtectionCard == null) return;
 
-            // Assigned from the localized value rather than appended, so a
-            // language change cannot accumulate repeated " (Beta)" suffixes.
-            // The header is read from the control: WinUI3Localizer splits
-            // "xxx.Header" resource keys at the '.', so GetLocalizedString()
-            // with the ".Header" suffix always returns empty.
             string? header = InjectionProtectionCard.Header as string;
             if (string.IsNullOrWhiteSpace(header)) return;
 
@@ -351,10 +346,6 @@ private void UpdateInjectionProtectionText()
             RunProtectionWithToggle(toggle, runId);
         }
 
-        private void RegistryCategoryToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            Toggled_SaveToggleData(sender, e);
-        }
 
         private async void BootProtectionToggle_Toggled(object sender, RoutedEventArgs e)
         {
@@ -712,7 +703,7 @@ private void UpdateInjectionProtectionText()
             UpdateDriverProtectionState();
             ApplyDriverProtectionControlState();
             ContextMenuScanToggle.IsOn = ContextMenuService.IsEnabled();
-            StartupToggle.IsOn = StartupService.IsStartupEnabled();
+            StartupToggle.IsOn = StartupService.IsAutoStartPreferred();
 
             // Load scan index mode setting (default Parallel) without direct XAML field access
             try
@@ -1224,7 +1215,7 @@ private void UpdateInjectionProtectionText()
             try
             {
                 var settings = App.LocalSettings;
-                settings.Values["AutoEnableStartup"] = toggle.IsOn;
+                settings.Values[StartupService.AutoStartPreferredKey] = toggle.IsOn;
             }
             catch { }
         }

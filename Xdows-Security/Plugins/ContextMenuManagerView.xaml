@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:svc="using:Xdows_Security.Services"
+    xmlns:l="using:WinUI3Localizer"
     mc:Ignorable="d">
     <Grid>
         <Grid.RowDefinitions>
@@ -23,7 +24,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="上下文菜单管理"
+                    <TextBlock l:Uids.Uid="ContextMenuManager_Title"
                                Style="{StaticResource CaptionTextBlockStyle}"
                                Margin="12,16,0,0"
                                FontSize="16"/>
@@ -38,13 +39,12 @@
                                   Grid.Column="2"
                                   Margin="16,8,0,0"
                                   MinWidth="0"
-                                  OffContent="全部项"
-                                  OnContent="仅第三方"
+                                  l:Uids.Uid="ContextMenuManager_ThirdPartyToggle"
                                   Toggled="ThirdPartyToggle_Toggled"/>
                     <AutoSuggestBox x:Name="SearchBox"
                                     AutomationProperties.AutomationId="ContextMenuSearchBox"
                                     Grid.Column="3"
-                                    PlaceholderText="搜索名称、命令行或注册表路径..."
+                                    l:Uids.Uid="ContextMenuManager_SearchBox"
                                     HorizontalAlignment="Center"
                                     MinWidth="260"
                                     Margin="16,12,0,8"
@@ -52,21 +52,21 @@
                                     QueryIcon="Find"/>
                 </Grid>
             </CommandBar.Content>
-            <AppBarButton AutomationProperties.AutomationId="ContextMenuRefreshButton" Icon="Refresh" Label="刷新列表" Click="Refresh_Click"/>
+            <AppBarButton l:Uids.Uid="ContextMenuManager_RefreshButton" AutomationProperties.AutomationId="ContextMenuRefreshButton" Icon="Refresh" Click="Refresh_Click"/>
             <AppBarToggleButton x:Name="ClassicMenuToggle"
                                 AutomationProperties.AutomationId="ContextMenuClassicToggle"
-                                Label="经典上下文菜单"
+                                l:Uids.Uid="ContextMenuManager_ClassicMenuToggle"
                                 Click="ClassicMenuToggle_Click">
                 <AppBarToggleButton.Icon>
                     <FontIcon Glyph="&#xE8A9;"/>
                 </AppBarToggleButton.Icon>
             </AppBarToggleButton>
-            <AppBarButton AutomationProperties.AutomationId="ContextMenuOpenRegeditButton" Label="打开注册表位置" Click="OpenRegedit_Click">
+            <AppBarButton l:Uids.Uid="ContextMenuManager_OpenRegeditButton" AutomationProperties.AutomationId="ContextMenuOpenRegeditButton" Click="OpenRegedit_Click">
                 <AppBarButton.Icon>
                     <FontIcon Glyph="&#xE8B7;"/>
                 </AppBarButton.Icon>
             </AppBarButton>
-            <AppBarButton AutomationProperties.AutomationId="ContextMenuDeleteButton" Label="删除菜单项" Click="Delete_Click">
+            <AppBarButton l:Uids.Uid="ContextMenuManager_DeleteButton" AutomationProperties.AutomationId="ContextMenuDeleteButton" Click="Delete_Click">
                 <AppBarButton.Icon>
                     <FontIcon Glyph="&#xE107;"/>
                 </AppBarButton.Icon>
@@ -88,12 +88,12 @@
                 <ColumnDefinition Width="70"/>
                 <ColumnDefinition Width="70"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="名称" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <TextBlock Grid.Column="1" Text="位置" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <TextBlock Grid.Column="2" Text="类型" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <TextBlock Grid.Column="3" Text="命令行 / 模块" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <TextBlock Grid.Column="4" Text="来源" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            <TextBlock Grid.Column="5" Text="启用" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
+            <TextBlock Grid.Column="0" l:Uids.Uid="ContextMenuManager_Header_Name" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="1" l:Uids.Uid="ContextMenuManager_Header_Location" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="2" l:Uids.Uid="ContextMenuManager_Header_Kind" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="3" l:Uids.Uid="ContextMenuManager_Header_Target" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="4" l:Uids.Uid="ContextMenuManager_Header_Source" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <TextBlock Grid.Column="5" l:Uids.Uid="ContextMenuManager_Header_Enabled" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Center"/>
         </Grid>
 
         <ListView x:Name="MenuList"
@@ -130,23 +130,23 @@
                                       Toggled="MenuToggle_Toggled"/>
                         <Grid.ContextFlyout>
                             <MenuFlyout>
-                                <MenuFlyoutItem Text="启用 / 禁用" Click="ToggleSelected_Click">
+                                <MenuFlyoutItem l:Uids.Uid="ContextMenuManager_Flyout_Toggle" Click="ToggleSelected_Click">
                                     <MenuFlyoutItem.Icon>
                                         <FontIcon Glyph="&#xE73E;"/>
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="打开注册表位置" Click="OpenRegedit_Click">
+                                <MenuFlyoutItem l:Uids.Uid="ContextMenuManager_Flyout_OpenRegedit" Click="OpenRegedit_Click">
                                     <MenuFlyoutItem.Icon>
                                         <FontIcon Glyph="&#xE8B7;"/>
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="复制命令行" Click="CopyTarget_Click">
+                                <MenuFlyoutItem l:Uids.Uid="ContextMenuManager_Flyout_CopyTarget" Click="CopyTarget_Click">
                                     <MenuFlyoutItem.Icon>
                                         <FontIcon Glyph="&#xE8C8;"/>
                                     </MenuFlyoutItem.Icon>
                                 </MenuFlyoutItem>
                                 <MenuFlyoutSeparator/>
-                                <MenuFlyoutItem Text="删除菜单项" Click="Delete_Click">
+                                <MenuFlyoutItem l:Uids.Uid="ContextMenuManager_Flyout_Delete" Click="Delete_Click">
                                     <MenuFlyoutItem.Icon>
                                         <FontIcon Glyph="&#xE107;"/>
                                     </MenuFlyoutItem.Icon>

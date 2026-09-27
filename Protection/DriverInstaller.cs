@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Windows.Storage;
+using Xdows_Model_Config;
 
 namespace Protection;
 
@@ -69,53 +70,54 @@ public static class DriverInstaller
             string outputDirectory = AppContext.BaseDirectory;
             Directory.CreateDirectory(outputDirectory);
 
-            string[] assets =
+            // 原生 DLL 与运行时依赖留在程序集目录；模型与模型清单按 <程序集目录>\Models\
+            // 分发（布局约定见 Xdows-Model 的 ModelLayout），不能摊平到根目录。
+            string[] flatAssets =
             [
-                "Xdows-Model.onnx",
-                "Xdows-Model-Flash.onnx",
-                "Xdows-Model-Pro.onnx",
-                "Xdows-Model-Pro-Standard.onnx",
-                "Xdows-Model-Pro-Flash.onnx",
-                "Xdows-Model-Pro-RawStat.onnx",
-                "Xdows-Model-Pro-Structural.onnx",
                 "Xdows-Model-Native.dll",
                 "onnxruntime.dll",
                 "onnxruntime_providers_shared.dll"
             ];
 
+            var targets = new List<string>(flatAssets.Length + ModelLayout.RequiredFileNames.Count);
+            targets.AddRange(flatAssets);
+            foreach (string model in ModelLayout.RequiredFileNames)
+                targets.Add(ModelLayout.RelativePath(model));
+
             var ready = new List<string>();
             var missing = new List<string>();
             var failed = new List<string>();
 
-            foreach (string asset in assets)
+            foreach (string relativePath in targets)
             {
                 token.ThrowIfCancellationRequested();
-                string targetPath = Path.Combine(outputDirectory, asset);
+                string targetPath = Path.Combine(outputDirectory, relativePath);
                 if (File.Exists(targetPath))
                 {
-                    ready.Add(asset);
+                    ready.Add(relativePath);
                     continue;
                 }
 
-                string? source = FindAsset(asset);
+                string? source = FindAsset(relativePath);
                 if (source is null)
                 {
-                    missing.Add(asset);
+                    missing.Add(relativePath);
                     continue;
                 }
 
                 try
                 {
+                    Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
                     File.Copy(source, targetPath, overwrite: false);
-                    ready.Add(asset);
+                    ready.Add(relativePath);
                 }
                 catch (IOException ex)
                 {
-                    failed.Add($"{asset}: {ex.Message}");
+                    failed.Add($"{relativePath}: {ex.Message}");
                 }
                 catch (UnauthorizedAccessException ex)
                 {
-                    failed.Add($"{asset}: {ex.Message}");
+                    failed.Add($"{relativePath}: {ex.Message}");
                 }
             }
 
@@ -156,14 +158,26 @@ public static class DriverInstaller
             "Enable test-signing with: bcdedit /set testsigning on, then restart Windows. Production builds need a valid driver signature instead."));
     }
 
-    private static string? FindAsset(string fileName)
+    /// <summary>
+    /// 查找待补齐的资产。<paramref name="relativePath"/> 是相对程序集目录的路径
+    /// （模型为 <c>Models\xxx.onnx</c>，原生 DLL 与运行时依赖就是文件名本身）。
+    /// 依次尝试：标准相对路径、程序集目录下的扁平旧位置、开发机 LocalSettings 里
+    /// 显式配置的 ModelSourceRoot 递归搜索。
+    /// </summary>
+    private static string? FindAsset(string relativePath)
     {
-        // 模型与驱动资产随解决方案构建复制到应用输出目录（AppContext.BaseDirectory），
-        // 无需猜测其他文件夹布局。开发机可经 LocalSettings 的 ModelSourceRoot 键显式
-        // 指定源码根目录用于递归搜索（未设置则跳过）。
-        string candidate = Path.Combine(AppContext.BaseDirectory, fileName);
-        if (File.Exists(candidate))
-            return candidate;
+        string standardCandidate = Path.Combine(AppContext.BaseDirectory, relativePath);
+        if (File.Exists(standardCandidate))
+            return standardCandidate;
+
+        // 兼容模型直接摊在程序集目录的旧部署。
+        string fileName = Path.GetFileName(relativePath);
+        string legacyCandidate = Path.Combine(AppContext.BaseDirectory, fileName);
+        if (!string.Equals(legacyCandidate, standardCandidate, StringComparison.OrdinalIgnoreCase) &&
+            File.Exists(legacyCandidate))
+        {
+            return legacyCandidate;
+        }
 
         try
         {
