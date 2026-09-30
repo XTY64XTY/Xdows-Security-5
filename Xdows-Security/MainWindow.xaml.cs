@@ -53,8 +53,8 @@ namespace Xdows_Security
 
             nav.SelectedItem = nav.MenuItems.OfType<NavigationViewItem>().First();
             Activated += MainWindow_Activated_FirstTime;
-            Title = AppInfo.AppName;
-            TitleText.Text = AppInfo.AppName;
+            Title = AppInfo.Name;
+            TitleText.Text = AppInfo.Name;
 
             Manager.AppWindow.Closing += MainWindow_Closing;
             Manager.MinWidth = 650;

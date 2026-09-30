@@ -1,7 +1,7 @@
+using Microsoft.Win32.SafeHandles;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using Microsoft.Win32.SafeHandles;
 using Xdows_Model_Config;
 
 namespace Protection;

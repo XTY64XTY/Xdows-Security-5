@@ -693,7 +693,7 @@ internal sealed class DriverBridgeClient : IDisposable
         var processes = new List<XdowsDriverProcessEntry>();
         uint cursor = 0;
 
-        for (;;)
+        for (; ; )
         {
             var request = new XdowsProcessQueryRequest
             {

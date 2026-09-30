@@ -1,12 +1,11 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.IO;
 using System.Globalization;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using TrustQuarantine;
-using Helper;
 using WinUI3Localizer;
 using static Helper.InterceptWindowHelper;
 
@@ -18,7 +17,7 @@ namespace Xdows_Security
         private readonly Helper.ProtectionModule _protectionModule;
         private readonly Helper.ProtectionBackend _protectionBackend;
         private readonly DateTimeOffset? _decisionDeadline;
-        private DispatcherTimer? _decisionTimer;
+        private readonly DispatcherTimer? _decisionTimer;
         private bool _decisionTimeoutHandled;
         public string? ButtonPressedName { get; private set; }
 
@@ -116,8 +115,7 @@ namespace Xdows_Security
         private void InterceptWindow_Closed(object sender, WindowEventArgs args)
         {
             _decisionTimer?.Stop();
-            if (_decisionTimer is not null)
-                _decisionTimer.Tick -= DecisionTimer_Tick;
+            _decisionTimer?.Tick -= DecisionTimer_Tick;
             WinUI3Localizer.Localizer.Get().LanguageChanged -= OnLanguageChanged;
             Closed -= InterceptWindow_Closed;
         }

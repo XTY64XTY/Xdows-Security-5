@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using System;
 
 namespace Xdows_Security.Services
 {
@@ -11,8 +10,8 @@ namespace Xdows_Security.Services
     /// 因此未显式指定 FontFamily 的控件与文本都会改用 Noto Sans；
     /// SymbolThemeFontFamily（Segoe Fluent Icons 等图标字体）刻意不改动，图标字形不受影响。
     ///
-    /// 字体族使用回退列表：拉丁、希腊、西里尔字形取自 Noto Sans，
-    /// 汉字等 CJK 字形由 Noto Sans SC 补足（Noto Sans 本体不含 CJK 字形）。
+    /// 字体族使用回退列表：拉丁、希腊、西里尔字形优先使用 Noto Sans，
+    /// 汉字等 CJK 字形由 Noto Sans SC 补足。
     ///
     /// 字体许可：两款字体均以 SIL Open Font License 1.1 发布，允许随软件一同分发。
     /// 许可证全文见 Assets/Fonts/NotoSans-OFL.txt 与 Assets/Fonts/NotoSansSC-OFL.txt，
@@ -64,7 +63,7 @@ namespace Xdows_Security.Services
             if (!App.LocalSettings.Values.TryGetValue(UseNotoSansSettingKey, out object? raw))
                 return true;
 
-            return raw is bool value ? value : true;
+            return raw is not bool value || value;
         }
 
         /// <summary>按当前设置应用字体，用于应用启动阶段。</summary>
@@ -100,10 +99,10 @@ namespace Xdows_Security.Services
         private static FontFamily CreateNotoSansFontFamily()
         {
             // ms-appx 指向应用目录，打包与未打包（WindowsPackageType=None）两种形态均适用。
-            // 逗号分隔即回退列表：单个字符在前一个字体里找不到字形时，会继续往后找。
+            // 每个字体都使用独立的完整 URI；空格是 FontFamily 回退项的分隔格式。
             string source = string.Concat(
                 "ms-appx:///", LatinFontAssetRelativePath, "#", LatinFontFamilyName,
-                ",ms-appx:///", CjkFontAssetRelativePath, "#", CjkFontFamilyName);
+                ", ms-appx:///", CjkFontAssetRelativePath, "#", CjkFontFamilyName);
 
             return new FontFamily(source);
         }

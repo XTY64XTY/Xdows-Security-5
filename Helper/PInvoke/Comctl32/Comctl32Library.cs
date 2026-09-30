@@ -1,5 +1,4 @@
 using Helper.PInvoke.User32;
-using System;
 using System.Runtime.InteropServices;
 
 namespace Helper.PInvoke.Comctl32

@@ -286,7 +286,7 @@
     <value>文件扫描</value>
   </data>
   <data name="SecurityPage_ScanMenu_Folder.Text" xml:space="preserve">
-    <value>文件夹扫描</value>
+    <value>目录扫描</value>
   </data>
   <data name="SecurityPage_ScanMenu_More.Text" xml:space="preserve">
     <value>更多扫描</value>
@@ -1350,9 +1350,6 @@
   </data>
   <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
     <value>开发团队</value>
-  </data>
-  <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
-    <value>Xdows Software</value>
   </data>
   <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
     <value>上下文菜单扫描</value>

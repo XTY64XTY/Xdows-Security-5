@@ -135,7 +135,7 @@ namespace Xdows_Security
                     var size = OwnerWindow.AppWindow.Size;
                     int x = pos.X + size.Width / 2;
                     int y = pos.Y + 24;
-                    nint lParam = (nint)((y << 16) | (x & 0xFFFF));
+                    nint lParam = (y << 16) | (x & 0xFFFF);
                     User32Library.SendMessage(hwnd, WindowMessage.WM_NCMOUSEMOVE, 2, lParam);
                 });
             }

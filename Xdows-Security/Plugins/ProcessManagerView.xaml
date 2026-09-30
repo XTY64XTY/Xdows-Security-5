@@ -11,6 +11,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -84,7 +85,13 @@
             </AppBarButton>
         </CommandBar>
 
-        <Grid x:Name="ListHeader" Grid.Row="1" Padding="16,8,16,4" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+        <StackPanel Grid.Row="1" Margin="16,8,16,0">
+            <ProgressBar x:Name="LoadingBar"
+                         IsIndeterminate="True"
+                         Visibility="Collapsed"/>
+        </StackPanel>
+
+        <Grid x:Name="ListHeader" Grid.Row="2" Padding="16,8,16,4" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="80"/>
@@ -99,69 +106,59 @@
             <TextBlock Grid.Column="4" l:Uids.Uid="ProcessManager_Memory" FontWeight="SemiBold" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" HorizontalAlignment="Right"/>
         </Grid>
 
-        <Grid Grid.Row="2">
-            <ListView x:Name="ProcessList" AutomationProperties.AutomationId="ProcessManagerList" SelectionMode="Single" DoubleTapped="ShowProcessDetail_Click">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="local:ProcessInfoEx">
-                        <Grid Padding="0,4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="100"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="{x:Bind Name}" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            <TextBlock Grid.Column="1" Text="{x:Bind Id}" FontSize="14" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="{x:Bind ThreadCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Grid.Column="3" Text="{x:Bind HandleCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Grid.Column="4" Text="{x:Bind Memory}" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                            <Grid.ContextFlyout>
-                                <MenuFlyout>
-                                    <MenuFlyoutItem l:Uids.Uid="ProcessManager_Refresh" Click="Refresh_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE72C;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutSeparator/>
-                                    <MenuFlyoutItem l:Uids.Uid="ProcessManager_Details" Click="ShowProcessDetail_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE946;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutItem l:Uids.Uid="ProcessManager_SuspendProcess" Click="Suspend_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE769;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutItem l:Uids.Uid="ProcessManager_ResumeProcess" Click="Resume_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE768;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                    <MenuFlyoutSeparator/>
-                                    <MenuFlyoutItem l:Uids.Uid="ProcessManager_Terminate" Click="Kill_Click">
-                                        <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xF140;"/>
-                                        </MenuFlyoutItem.Icon>
-                                    </MenuFlyoutItem>
-                                </MenuFlyout>
-                            </Grid.ContextFlyout>
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-
-            <TreeView x:Name="ProcessTree" AutomationProperties.AutomationId="ProcessManagerTree" Visibility="Collapsed" DoubleTapped="ShowProcessDetail_Click"/>
-
-            <StackPanel x:Name="LoadingPanel"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Spacing="12"
-                        Visibility="Visible">
-                <ProgressRing IsActive="True" Width="40" Height="40"/>
-                <TextBlock l:Uids.Uid="ProcessManager_Loading" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-            </StackPanel>
-        </Grid>
+        <Grid Grid.Row="3">
+                <ListView x:Name="ProcessList" AutomationProperties.AutomationId="ProcessManagerList" SelectionMode="Single" DoubleTapped="ShowProcessDetail_Click">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:ProcessInfoEx">
+                            <Grid Padding="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{x:Bind Name}" FontSize="14" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Grid.Column="1" Text="{x:Bind Id}" FontSize="14" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{x:Bind ThreadCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Column="3" Text="{x:Bind HandleCount}" FontSize="14" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                <TextBlock Grid.Column="4" Text="{x:Bind Memory}" FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                <Grid.ContextFlyout>
+                                    <MenuFlyout>
+                                        <MenuFlyoutItem l:Uids.Uid="ProcessManager_Refresh" Click="Refresh_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE72C;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutSeparator/>
+                                        <MenuFlyoutItem l:Uids.Uid="ProcessManager_Details" Click="ShowProcessDetail_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE946;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem l:Uids.Uid="ProcessManager_SuspendProcess" Click="Suspend_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE769;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutItem l:Uids.Uid="ProcessManager_ResumeProcess" Click="Resume_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xE768;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                        <MenuFlyoutSeparator/>
+                                        <MenuFlyoutItem l:Uids.Uid="ProcessManager_Terminate" Click="Kill_Click">
+                                            <MenuFlyoutItem.Icon>
+                                                <FontIcon Glyph="&#xF140;"/>
+                                            </MenuFlyoutItem.Icon>
+                                        </MenuFlyoutItem>
+                                    </MenuFlyout>
+                                </Grid.ContextFlyout>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <TreeView x:Name="ProcessTree" AutomationProperties.AutomationId="ProcessManagerTree" Visibility="Collapsed" DoubleTapped="ShowProcessDetail_Click"/>
+            </Grid>
     </Grid>
 </UserControl>

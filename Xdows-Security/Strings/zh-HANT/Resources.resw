@@ -286,7 +286,7 @@
     <value>文件掃描</value>
   </data>
   <data name="SecurityPage_ScanMenu_Folder.Text" xml:space="preserve">
-    <value>資料夾掃描</value>
+    <value>目錄掃描</value>
   </data>
   <data name="SecurityPage_ScanMenu_More.Text" xml:space="preserve">
     <value>更多掃描</value>
@@ -1350,9 +1350,6 @@
   </data>
   <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
     <value>開發團隊</value>
-  </data>
-  <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
-    <value>Xdows Software</value>
   </data>
   <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
     <value>操作功能表掃描</value>

@@ -1,5 +1,4 @@
 using Helper;
-using Microsoft.Windows.Storage;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TrustQuarantine;
-using WinUI3Localizer;
 using Xdows_Security.Views;
 
 namespace Xdows_Security.Services;

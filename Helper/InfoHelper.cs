@@ -1,5 +1,3 @@
-using System;
-using Windows.ApplicationModel;
 using Windows.System.Profile;
 
 namespace Helper

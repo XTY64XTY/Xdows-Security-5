@@ -230,6 +230,12 @@ namespace Xdows_Security.Views
         {
             InitializeComponent();
             SortCombo.SelectedIndex = 0;
+            Loaded += ProcessManagerView_Loaded;
+        }
+
+        private void ProcessManagerView_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= ProcessManagerView_Loaded;
             _ = RefreshProcesses();
         }
 
@@ -250,9 +256,7 @@ namespace Xdows_Security.Views
         {
             int refreshGeneration = Interlocked.Increment(ref _refreshGeneration);
             bool useDriverMode = _isDriverMode;
-            LoadingPanel.Visibility = Visibility.Visible;
-            ProcessList.Visibility = Visibility.Collapsed;
-            ProcessTree.Visibility = Visibility.Collapsed;
+            LoadingBar.Visibility = Visibility.Visible;
 
             try
             {
@@ -296,13 +300,7 @@ namespace Xdows_Security.Views
             finally
             {
                 if (refreshGeneration == Volatile.Read(ref _refreshGeneration))
-                {
-                    LoadingPanel.Visibility = Visibility.Collapsed;
-                    if (IsTreeView)
-                        ProcessTree.Visibility = Visibility.Visible;
-                    else
-                        ProcessList.Visibility = Visibility.Visible;
-                }
+                    LoadingBar.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -315,7 +313,6 @@ namespace Xdows_Security.Views
 
             if (IsTreeView)
             {
-                LoadingPanel.Visibility = Visibility.Visible;
                 ProcessTree.Visibility = Visibility.Collapsed;
 
                 try
@@ -332,7 +329,6 @@ namespace Xdows_Security.Views
                     return;
                 }
 
-                LoadingPanel.Visibility = Visibility.Collapsed;
                 ProcessTree.Visibility = Visibility.Visible;
             }
             else

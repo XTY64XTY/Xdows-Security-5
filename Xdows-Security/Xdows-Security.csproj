@@ -13,6 +13,7 @@
 		<SelfContained>true</SelfContained>
 		<PublishReadyToRun>true</PublishReadyToRun>
 		<WindowsPackageType>None</WindowsPackageType>
+		<StartupHookSupport>true</StartupHookSupport>
 		<LangVersion>preview</LangVersion>
 		<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
 		<PublishAot>True</PublishAot>

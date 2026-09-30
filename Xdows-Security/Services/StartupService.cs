@@ -36,7 +36,7 @@ namespace Xdows_Security.Services
                 using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, false);
                 if (key == null) return false;
 
-                return key.GetValue(AppInfo.AppId) != null;
+                return key.GetValue(AppInfo.Id) != null;
             }
             catch
             {
@@ -60,19 +60,19 @@ namespace Xdows_Security.Services
                     throw new InvalidOperationException("HKLM Run key is unavailable.");
 
                 object? previousValue = key.GetValue(
-                    AppInfo.AppId,
+                    AppInfo.Id,
                     null,
                     RegistryValueOptions.DoNotExpandEnvironmentNames);
                 RegistryValueKind previousKind = previousValue != null
-                    ? key.GetValueKind(AppInfo.AppId)
+                    ? key.GetValueKind(AppInfo.Id)
                     : RegistryValueKind.String;
-                key.SetValue(AppInfo.AppId, startupCommand, RegistryValueKind.String);
+                key.SetValue(AppInfo.Id, startupCommand, RegistryValueKind.String);
                 if (!global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(true))
                 {
                     if (previousValue == null)
-                        key.DeleteValue(AppInfo.AppId, false);
+                        key.DeleteValue(AppInfo.Id, false);
                     else
-                        key.SetValue(AppInfo.AppId, previousValue, previousKind);
+                        key.SetValue(AppInfo.Id, previousValue, previousKind);
 
                     _ = global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(wasEnabled);
                     return false;
@@ -97,7 +97,7 @@ namespace Xdows_Security.Services
             {
                 using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, false);
                 string? command = key?.GetValue(
-                    AppInfo.AppId,
+                    AppInfo.Id,
                     null,
                     RegistryValueOptions.DoNotExpandEnvironmentNames) as string;
                 if (!TryParseExecutablePath(command, out string configuredPath) ||
@@ -123,16 +123,16 @@ namespace Xdows_Security.Services
                 using RegistryKey? key = Registry.LocalMachine.OpenSubKey(RegistryKeyPath, true);
                 if (key == null) return false;
 
-                previousValue = key.GetValue(AppInfo.AppId, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                previousValue = key.GetValue(AppInfo.Id, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
                 if (previousValue != null)
-                    previousKind = key.GetValueKind(AppInfo.AppId);
+                    previousKind = key.GetValueKind(AppInfo.Id);
 
-                key.DeleteValue(AppInfo.AppId, false);
+                key.DeleteValue(AppInfo.Id, false);
                 if (global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(false))
                     return true;
 
                 if (previousValue != null)
-                    key.SetValue(AppInfo.AppId, previousValue, previousKind);
+                    key.SetValue(AppInfo.Id, previousValue, previousKind);
                 _ = global::Xdows_Security.ProtectionStatus.SynchronizeStartupProtection(true);
                 return false;
             }

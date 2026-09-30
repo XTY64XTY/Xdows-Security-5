@@ -219,6 +219,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="LocalScanToggle" Tag="LocalScan" Toggled="Toggled_SaveToggleData" />
                     <controls:SettingsExpander.Items>
+                        <ToolTip></ToolTip>
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Local_DeepScan"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
@@ -500,7 +501,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                             <TextBlock x:Name="Settings_About_Version"/>
                         </controls:SettingsCard>
                         <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Developer" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
-                            <TextBlock l:Uids.Uid="SettingsPage_Other_About_Developer_Info"/>
+                            <TextBlock x:Name="Settings_About_Developer"/>
                         </controls:SettingsCard>
                         <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Feedback" HeaderIcon="{ui:FontIcon Glyph=&#xED15;}">
                             <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" x:Name="Settings_About_Feedback"/>

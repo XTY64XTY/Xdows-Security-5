@@ -1352,9 +1352,6 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Other_About_Developer.Header" xml:space="preserve">
     <value>Developer</value>
   </data>
-  <data name="SettingsPage_Other_About_Developer_Info.Text" xml:space="preserve">
-    <value>Xdows Software</value>
-  </data>
   <data name="SettingsPage_Other_ContextMenuScan.Header" xml:space="preserve">
     <value>Context Menu Scan</value>
   </data>

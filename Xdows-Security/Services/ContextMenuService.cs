@@ -1,4 +1,3 @@
-using Microsoft.Windows.Storage;
 using Microsoft.Win32;
 using System;
 using System.IO;
@@ -36,7 +35,7 @@ namespace Xdows_Security.Services
             {
                 string menuText = GetLocalizedMenuText();
                 string commandValue = GetScanCommand();
-                
+
                 LogText.AddNewLog(LogText.LogLevel.INFO, "ContextMenu", $"Registering context menu with command: {commandValue}");
 
                 RegisterKey(MenuKeyFile, menuText, commandValue);
@@ -179,10 +178,7 @@ namespace Xdows_Security.Services
             try
             {
                 using var key = Registry.CurrentUser.OpenSubKey(keyPath, writable: true);
-                if (key != null)
-                {
-                    key.SetValue("", menuText);
-                }
+                key?.SetValue("", menuText);
             }
             catch (Exception ex)
             {

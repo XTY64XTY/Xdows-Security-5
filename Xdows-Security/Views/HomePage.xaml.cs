@@ -2,11 +2,9 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.Windows.Storage;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -73,7 +71,7 @@ namespace Xdows_Security.Views
         private bool _hasMoreOlder = true;
         private bool _isAutoScroll = true;
         private ScrollViewer? _logScrollViewer;
-        private DispatcherQueueTimer? _logThrottleTimer;
+        private readonly DispatcherQueueTimer? _logThrottleTimer;
         private LogEntry? _pendingLogEntry;
 
         public HomePage()

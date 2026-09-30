@@ -1,3 +1,4 @@
+using Helper;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -5,7 +6,6 @@ using System.Security.Principal;
 using System.Text.Json;
 using System.Threading.Channels;
 using TrustQuarantine;
-using Helper;
 using Xdows_Local;
 using static Protection.Callback;
 
@@ -1030,7 +1030,7 @@ public sealed class DriverProtection : IProtectionModel
             // let an untrusted actor inherit the trust of a signed victim, and
             // conversely reported signed system actors as threats whenever the
             // target happened to be unsigned.
-string gatePath = actorPath;
+            string gatePath = actorPath;
 
             if (!string.IsNullOrWhiteSpace(gatePath) &&
                 !gatePath.StartsWith("PID ", StringComparison.Ordinal))
@@ -1100,7 +1100,7 @@ string gatePath = actorPath;
                     }
                 }
             }
-else
+            else
             {
                 // No acting image to judge. Per the driver's fail-open bridge
                 // policy, absence of evidence must not become a confirmed
@@ -1123,37 +1123,37 @@ else
         switch (behaviorType)
         {
             case XdowsSecurityBehaviorType.DestructiveDirectoryDelete:
-            {
-                string? targetPath = ParseRdTargetPath(CleanDriverString(driverEvent.CommandLine));
-                if (string.IsNullOrWhiteSpace(targetPath) ||
-                    !Directory.Exists(targetPath) ||
-                    CountFilesBounded(targetPath, 501) <= 500)
                 {
-                    string smallKey = BuildDecisionCacheKey("Behavior", targetPath ?? "rd-small-unknown");
-                    Cache(
-                        smallKey,
-                        XdowsSecurityDecisionType.Allow,
-                        "rd-target-small",
-                        TimeSpan.FromMinutes(10));
-                    return Allow(driverEvent.EventId, "rd-target-small", TimeSpan.FromMinutes(10));
+                    string? targetPath = ParseRdTargetPath(CleanDriverString(driverEvent.CommandLine));
+                    if (string.IsNullOrWhiteSpace(targetPath) ||
+                        !Directory.Exists(targetPath) ||
+                        CountFilesBounded(targetPath, 501) <= 500)
+                    {
+                        string smallKey = BuildDecisionCacheKey("Behavior", targetPath ?? "rd-small-unknown");
+                        Cache(
+                            smallKey,
+                            XdowsSecurityDecisionType.Allow,
+                            "rd-target-small",
+                            TimeSpan.FromMinutes(10));
+                        return Allow(driverEvent.EventId, "rd-target-small", TimeSpan.FromMinutes(10));
+                    }
+                    break;
                 }
-                break;
-            }
             case XdowsSecurityBehaviorType.OwnershipEscalation:
             case XdowsSecurityBehaviorType.SystemControlCommand:
-            {
-                if (!string.IsNullOrWhiteSpace(actorPath) &&
-                    !actorPath.StartsWith("PID ", StringComparison.Ordinal))
                 {
-                    if (TrustManager.IsPathTrusted(actorPath))
-                        return Allow(driverEvent.EventId, "behavior-command-actor-trusted", TimeSpan.FromMinutes(10));
+                    if (!string.IsNullOrWhiteSpace(actorPath) &&
+                        !actorPath.StartsWith("PID ", StringComparison.Ordinal))
+                    {
+                        if (TrustManager.IsPathTrusted(actorPath))
+                            return Allow(driverEvent.EventId, "behavior-command-actor-trusted", TimeSpan.FromMinutes(10));
 
-                    SignerTrustResult actorTrustResult = SignerTrustService.Evaluate(actorPath);
-                    if (actorTrustResult.IsTrusted)
-                        return Allow(driverEvent.EventId, $"behavior-command-actor-signed:{actorTrustResult.Reason}", TimeSpan.FromMinutes(10));
+                        SignerTrustResult actorTrustResult = SignerTrustService.Evaluate(actorPath);
+                        if (actorTrustResult.IsTrusted)
+                            return Allow(driverEvent.EventId, $"behavior-command-actor-signed:{actorTrustResult.Reason}", TimeSpan.FromMinutes(10));
+                    }
+                    break;
                 }
-                break;
-            }
             default:
                 break;
         }

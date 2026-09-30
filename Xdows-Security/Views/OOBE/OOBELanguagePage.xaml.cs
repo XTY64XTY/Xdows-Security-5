@@ -1,9 +1,6 @@
-using Microsoft.Windows.Storage;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 using System.Linq;
-using Windows.Globalization;
 using WinUI3Localizer;
 
 namespace Xdows_Security.Views.OOBE

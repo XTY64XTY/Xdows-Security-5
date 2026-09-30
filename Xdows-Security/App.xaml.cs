@@ -55,7 +55,7 @@ namespace Xdows_Security
 
         static Updater()
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{AppInfo.AppId}/{AppInfo.AppVersion}");
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"{AppInfo.Id}/{AppInfo.Version}");
         }
 
         public static async Task<UpdateInfo?> CheckUpdateAsync()
@@ -104,12 +104,13 @@ namespace Xdows_Security
     }
     public class AppInfo
     {
-        public static readonly string AppName = "Xdows Security";
-        public static readonly string AppId = "Xdows-Security";
-        public static readonly string AppVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? string.Empty;
-        public static readonly string AppFeedback = "https://github.com/XTY64XTY/Xdows-Security-5/issues/new/choose";
-        public static readonly string AppWebsite = "https://docs.xiguastudio.top/";
-        // 修改 开发团队、Xdows Tools 名称请修改本地化资源文件
+        public static readonly string Name = "Xdows Security";
+        public static readonly string Id = "Xdows-Security";
+        public static readonly string Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? string.Empty;
+        public static readonly string Developer = "Xdows Software";
+        public static readonly string Feedback = "https://github.com/XTY64XTY/Xdows-Security-5/issues/new/choose";
+        public static readonly string Website = "https://docs.xiguastudio.top/";
+        // 修改 Xdows Tools 名称请修改本地化资源文件
     }
     public static class ProtectionStatus
     {

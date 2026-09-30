@@ -1,5 +1,4 @@
 using Helper.PInvoke.User32;
-using System;
 
 namespace Helper.PInvoke.Comctl32
 {

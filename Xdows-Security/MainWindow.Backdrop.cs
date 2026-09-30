@@ -1,11 +1,9 @@
 // MainWindow backdrop and theme management (partial class)
-using Microsoft.Windows.Storage;
 using Microsoft.UI;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using System;
 using Windows.UI;
 using Windows.UI.ViewManagement;
 

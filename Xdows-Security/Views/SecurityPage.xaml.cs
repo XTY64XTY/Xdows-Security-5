@@ -1621,10 +1621,8 @@ namespace Xdows_Security.Views
                 }
             });
 
-            using (var registration = token.Register(() => tcs.TrySetCanceled()))
-            {
-                return await tcs.Task;
-            }
+            using var registration = token.Register(() => tcs.TrySetCanceled());
+            return await tcs.Task;
         }
 
         public async Task StartScanAsync(string displayName, ScanMode mode, IReadOnlyList<string>? customPaths = null)
@@ -2646,6 +2644,10 @@ namespace Xdows_Security.Views
                     {
                         try
                         {
+                            if (archivePath is null)
+                            {
+                                return;
+                            }
                             if (isArchiveEntry)
                             {
                                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(archivePath) { UseShellExecute = true });
@@ -2748,7 +2750,7 @@ namespace Xdows_Security.Views
             if (mode is ScanMode.Quick or ScanMode.File)
                 return false;
 
-            HashSet<string> indexedFiles = new(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> indexedFiles = [with(StringComparer.OrdinalIgnoreCase)];
             bool indexComplete = false;
             NtfsFileTableIndexer.VolumeIndexCache volumeCache = new();
             HashSet<string> volumesReadFromTable = new(StringComparer.OrdinalIgnoreCase);

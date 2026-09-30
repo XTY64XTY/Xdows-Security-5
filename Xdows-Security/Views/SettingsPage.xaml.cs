@@ -62,7 +62,6 @@ namespace Xdows_Security.Views
             UpdateBootProtectionToggleState();
             UpdateProtectionToggleState(RegistryToggle, 4);
             ApplyDriverProtectionControlState();
-            UpdateRegistryCategoryControlState();
         }
 
         private void UpdateProtectionToggleState(ToggleSwitch toggle, int runId)
@@ -87,10 +86,11 @@ namespace Xdows_Security.Views
             {
                 try
                 {
-                    Settings_About_Name.Text = AppInfo.AppName;
-                    Settings_About_Version.Text = AppInfo.AppVersion;
-                    Settings_About_Feedback.NavigateUri = new Uri(AppInfo.AppFeedback);
-                    Settings_About_Website.NavigateUri = new Uri(AppInfo.AppWebsite);
+                    Settings_About_Name.Text = AppInfo.Name;
+                    Settings_About_Version.Text = AppInfo.Version;
+                    Settings_About_Developer.Text = AppInfo.Developer;
+                    Settings_About_Feedback.NavigateUri = new Uri(AppInfo.Feedback);
+                    Settings_About_Website.NavigateUri = new Uri(AppInfo.Website);
 
                     if (!App.IsRunAsAdmin())
                     {
@@ -188,7 +188,6 @@ namespace Xdows_Security.Views
                 BootProtectionToggle.IsEnabled = false;
                 RegistryToggle.IsEnabled = false;
                 InjectionProtectionCard.IsEnabled = false;
-                UpdateRegistryCategoryControlState();
                 return;
             }
 
@@ -204,12 +203,6 @@ namespace Xdows_Security.Views
                 !_bootProtectionOperationInProgress &&
                 App.IsRunAsAdmin();
             RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
-            UpdateRegistryCategoryControlState();
-        }
-
-        private void UpdateRegistryCategoryControlState()
-        {
-            // Registry secondary/other sub-cards removed; nothing to update.
         }
 
         private async Task ShowDriverEnvironmentDialogAsync()
@@ -322,8 +315,6 @@ namespace Xdows_Security.Views
                 toggle.IsOn = !toggle.IsOn;
             toggle.IsOn = ProtectionStatus.IsRun(runId);
             toggle.Toggled += RunProtection;
-            if (runId == 4)
-                UpdateRegistryCategoryControlState();
             if (runId == 5)
             {
                 UpdateDriverProtectionState();
@@ -917,7 +908,7 @@ namespace Xdows_Security.Views
                 UpdateProgressRing.Visibility = Visibility.Visible;
 
                 UpdateInfo? update = await Updater.CheckUpdateAsync();
-                if (update == null || update.Version == AppInfo.AppVersion)
+                if (update == null || update.Version == AppInfo.Version)
                 {
                     UpdateButton.IsEnabled = true;
                     UpdateProgressRing.IsActive = false;
