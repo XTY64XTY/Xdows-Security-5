@@ -16,16 +16,16 @@ internal static class BootFilterProtocol
         @"\\.\Global\XdowsSecurityBootFilter"
     ];
 
-    private const uint FileDeviceXdowsBoot = 0x8001;
+    private const uint FileDeviceBoot = 0x8001;
     private const uint MethodBuffered = 0;
     private const uint FileReadData = 0x0001;
     private const uint FileWriteData = 0x0002;
 
-    public static readonly uint RegisterClient = CtlCode(FileDeviceXdowsBoot, 0x901, MethodBuffered, FileReadData | FileWriteData);
-    public static readonly uint Configure = CtlCode(FileDeviceXdowsBoot, 0x902, MethodBuffered, FileReadData | FileWriteData);
-    public static readonly uint GetNextEvent = CtlCode(FileDeviceXdowsBoot, 0x903, MethodBuffered, FileReadData | FileWriteData);
-    public static readonly uint SubmitDecision = CtlCode(FileDeviceXdowsBoot, 0x904, MethodBuffered, FileReadData | FileWriteData);
-    public static readonly uint GetState = CtlCode(FileDeviceXdowsBoot, 0x905, MethodBuffered, FileReadData | FileWriteData);
+    public static readonly uint RegisterClient = CtlCode(FileDeviceBoot, 0x901, MethodBuffered, FileReadData | FileWriteData);
+    public static readonly uint Configure = CtlCode(FileDeviceBoot, 0x902, MethodBuffered, FileReadData | FileWriteData);
+    public static readonly uint GetNextEvent = CtlCode(FileDeviceBoot, 0x903, MethodBuffered, FileReadData | FileWriteData);
+    public static readonly uint SubmitDecision = CtlCode(FileDeviceBoot, 0x904, MethodBuffered, FileReadData | FileWriteData);
+    public static readonly uint GetState = CtlCode(FileDeviceBoot, 0x905, MethodBuffered, FileReadData | FileWriteData);
 
     public static BootFilterHeader Header<T>() where T : struct => new()
     {

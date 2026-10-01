@@ -132,9 +132,9 @@ internal static class DriverProtocol
         return (deviceType << 16) | (access << 14) | (function << 2) | method;
     }
 
-    public static XdowsProtocolHeader Header<T>() where T : struct
+    public static ProtocolHeader Header<T>() where T : struct
     {
-        return new XdowsProtocolHeader
+        return new ProtocolHeader
         {
             Size = (uint)Marshal.SizeOf<T>(),
             Version = ProtocolVersion
@@ -253,7 +253,7 @@ internal enum XdowsSecurityProcessOperation : uint
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct XdowsProtocolHeader
+internal struct ProtocolHeader
 {
     public uint Size;
     public uint Version;
@@ -271,7 +271,7 @@ internal struct XdowsProtocolHeader
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
 internal struct XdowsSecurityEventBatch
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Count;
     public uint Reserved;
 
@@ -280,9 +280,9 @@ internal struct XdowsSecurityEventBatch
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct XdowsRegisterRequest
+internal struct RegisterRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ClientProcessId;
     public uint Flags;
     public uint HeartbeatTimeoutMs;
@@ -290,9 +290,9 @@ internal struct XdowsRegisterRequest
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsRegisterResponse
+internal struct RegisterResponse
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Status;
     public uint ProtocolVersion;
     public uint DefaultKernelWaitTimeoutMs;
@@ -304,9 +304,9 @@ internal struct XdowsRegisterResponse
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct XdowsHeartbeatRequest
+internal struct HeartbeatRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ClientProcessId;
     public uint Reserved;
 }
@@ -314,7 +314,7 @@ internal struct XdowsHeartbeatRequest
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
 internal struct XdowsSecurityEvent
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public ulong EventId;
     public ulong CorrelationId;
     public uint EventType;
@@ -344,7 +344,7 @@ internal struct XdowsSecurityEvent
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
 internal struct XdowsSecurityDecision
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public ulong EventId;
     public uint Decision;
     public uint CacheTtlMs;
@@ -358,7 +358,7 @@ internal struct XdowsSecurityDecision
 [StructLayout(LayoutKind.Sequential)]
 internal struct XdowsSecurityState
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ClientConnected;
     public uint PendingEventCount;
     public uint DroppedEventCount;
@@ -384,9 +384,9 @@ internal struct XdowsSecurityState
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct XdowsProtectedProcessRequest
+internal struct ProtectedProcessRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ProcessId;
     public uint MainThreadId;
     public uint Flags;
@@ -394,18 +394,18 @@ internal struct XdowsProtectedProcessRequest
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct XdowsVoluntaryExitRequest
+internal struct VoluntaryExitRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ProcessId;
     public uint IsVoluntaryExit;
     public uint Reserved;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsShutdownRequest
+internal struct ShutdownRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Flags;
     public uint Reserved;
 
@@ -414,18 +414,18 @@ internal struct XdowsShutdownRequest
 }
 
 [StructLayout(LayoutKind.Sequential)]
-internal struct XdowsStartupProtectionRequest
+internal struct StartupProtectionRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ProcessId;
     public uint Enabled;
     public uint Reserved;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsBootProtectionRequest
+internal struct BootProtectionRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Enabled;
     public uint DiskNumber;
     public uint VolumeRootCount;
@@ -445,26 +445,26 @@ internal struct XdowsBootProtectionRequest
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsRegistryRulePath
+internal struct RegistryRulePath
 {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxRegistryPathChars)]
     public string Path;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsRegistryProtectionRequest
+internal struct RegistryProtectionRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Enabled;
     public uint RuleCount;
     public uint Reserved;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxRegistryRules)]
-    public XdowsRegistryRulePath[] RulePaths;
+    public RegistryRulePath[] RulePaths;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsRuleTerm
+internal struct RuleTerm
 {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = DriverProtocol.MaxRuleTermChars)]
     public string Value;
@@ -474,13 +474,13 @@ internal struct XdowsRuleTerm
 // One matching axis. TermCount == 0 leaves the axis unconstrained.
 //
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsRuleTermAxis
+internal struct RuleTermAxis
 {
     public uint TermCount;
     public uint Reserved;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxRuleTerms)]
-    public XdowsRuleTerm[] Terms;
+    public RuleTerm[] Terms;
 }
 
 //
@@ -489,7 +489,7 @@ internal struct XdowsRuleTermAxis
 // XDOWS_SECURITY_BEHAVIOR_RULE.
 //
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsBehaviorRule
+internal struct BehaviorRule
 {
     public uint RuleId;
     public uint BehaviorType;
@@ -499,9 +499,9 @@ internal struct XdowsBehaviorRule
     public uint WindowMs;
     public uint TargetMatchKind;
     public uint Reserved;
-    public XdowsRuleTermAxis Initiator;
-    public XdowsRuleTermAxis Target;
-    public XdowsRuleTermAxis CommandLine;
+    public RuleTermAxis Initiator;
+    public RuleTermAxis Target;
+    public RuleTermAxis CommandLine;
 }
 
 //
@@ -510,15 +510,15 @@ internal struct XdowsBehaviorRule
 // built and reused.
 //
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsBehaviorRuleRequest
+internal struct BehaviorRuleRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Enabled;
     public uint RuleCount;
     public uint Reserved;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxBehaviorRules)]
-    public XdowsBehaviorRule[] Rules;
+    public BehaviorRule[] Rules;
 }
 
 //
@@ -526,7 +526,7 @@ internal struct XdowsBehaviorRuleRequest
 // contains a backslash, an actor-path suffix.
 //
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsInitiatorExclusion
+internal struct InitiatorExclusion
 {
     public uint ScopeMask;
     public uint Reserved;
@@ -536,20 +536,20 @@ internal struct XdowsInitiatorExclusion
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsInitiatorExclusionRequest
+internal struct InitiatorExclusionRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Count;
     public uint Reserved;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.MaxInitiatorExclusions)]
-    public XdowsInitiatorExclusion[] Entries;
+    public InitiatorExclusion[] Entries;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsProcessQueryRequest
+internal struct ProcessQueryRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Cursor;
     public uint Reserved;
 
@@ -558,7 +558,7 @@ internal struct XdowsProcessQueryRequest
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsDriverProcessEntry
+internal struct DriverProcessEntry
 {
     public uint ProcessId;
     public uint ParentProcessId;
@@ -574,22 +574,22 @@ internal struct XdowsDriverProcessEntry
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsProcessQueryResponse
+internal struct ProcessQueryResponse
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint Count;
     public uint NextCursor;
     public uint HasMore;
     public uint Reserved;
 
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = DriverProtocol.ProcessBatchSize)]
-    public XdowsDriverProcessEntry[] Entries;
+    public DriverProcessEntry[] Entries;
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsProcessOperationRequest
+internal struct ProcessOperationRequest
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public uint ProcessId;
     public uint Operation;
 
@@ -598,9 +598,9 @@ internal struct XdowsProcessOperationRequest
 }
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-internal struct XdowsDriverLogEntry
+internal struct DriverLogEntry
 {
-    public XdowsProtocolHeader Header;
+    public ProtocolHeader Header;
     public ulong EventId;
     public ulong CorrelationId;
     public uint Severity;

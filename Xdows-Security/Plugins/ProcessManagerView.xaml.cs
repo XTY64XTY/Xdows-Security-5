@@ -1341,7 +1341,7 @@ namespace Xdows_Security.Views
 
             try
             {
-                var garbage = Encoding.ASCII.GetBytes("Xdows_APC_GARBAGE_TARGET_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789");
+                var garbage = Encoding.ASCII.GetBytes("APC_GARBAGE_TARGET_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789");
                 var allocation = RemoteAllocAndWrite(hProcess, garbage, NativeMethods.PAGE_READWRITE);
                 if (allocation.Address == 0)
                     return (false, FormatLocalized("ProcessManager_WriteRemote_GarbageFailed", allocation.Error));

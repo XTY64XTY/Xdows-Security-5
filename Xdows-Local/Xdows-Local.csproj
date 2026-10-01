@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="XdowsVirusFamilyRules.json">
-      <LogicalName>Xdows_Local.XdowsVirusFamilyRules.json</LogicalName>
+    <EmbeddedResource Include="VirusFamilyRules.json">
+      <LogicalName>Xdows_Local.VirusFamilyRules.json</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 

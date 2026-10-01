@@ -26,7 +26,7 @@ internal sealed class BootFilterClient : IDisposable
 
         _controlHandle = OpenDevice(out int openError);
         if (_controlHandle is null)
-            throw new Win32Exception(openError, "Failed to open the Xdows boot filter device.");
+            throw new Win32Exception(openError, "Failed to open the Xdows Security Driver boot filter device.");
 
         var request = new BootFilterRegisterRequest
         {
@@ -37,7 +37,7 @@ internal sealed class BootFilterClient : IDisposable
         {
             int error = Marshal.GetLastWin32Error();
             Disconnect();
-            throw new Win32Exception(error, "Failed to register the Xdows boot filter client.");
+            throw new Win32Exception(error, "Failed to register the Xdows Security Driver boot filter client.");
         }
 
         if (response.Header.Size != Marshal.SizeOf<BootFilterRegisterResponse>() ||
@@ -56,7 +56,7 @@ internal sealed class BootFilterClient : IDisposable
         if (_eventHandle is null)
         {
             Disconnect();
-            throw new Win32Exception(eventOpenError, "Failed to open the Xdows boot filter event channel.");
+            throw new Win32Exception(eventOpenError, "Failed to open the Xdows Security Driver boot filter event channel.");
         }
     }
 

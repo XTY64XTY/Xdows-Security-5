@@ -174,7 +174,7 @@ namespace Xdows_Local
 
     public static class VirusFamilyEngine
     {
-        private const string RulesFileName = "XdowsVirusFamilyRules.json";
+        private const string RulesFileName = "VirusFamilyRules.json";
         private const int ScanSize = 512 * 1024;
 
         private static readonly CompiledSignature[] _signatures;

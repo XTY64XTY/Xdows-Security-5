@@ -610,7 +610,7 @@ public sealed class DriverProtection : IProtectionModel
         {
             try
             {
-                if (client.TryGetNextLog(out XdowsDriverLogEntry entry))
+                if (client.TryGetNextLog(out DriverLogEntry entry))
                 {
                     LogCallback?.Invoke(ConvertLogEntry(entry));
                     continue;
@@ -636,7 +636,7 @@ public sealed class DriverProtection : IProtectionModel
         }
     }
 
-    private static DriverProtectionLogEntry ConvertLogEntry(XdowsDriverLogEntry entry)
+    private static DriverProtectionLogEntry ConvertLogEntry(DriverLogEntry entry)
     {
         DateTimeOffset timestamp;
         try
@@ -864,7 +864,7 @@ public sealed class DriverProtection : IProtectionModel
         var request = new ProtectionDecisionRequest(
             string.IsNullOrWhiteSpace(path) ? "EFI/BCD" : path,
             "Boot",
-            "Xdows.R0.BootFileWrite",
+            "Xdows.Security.Driver.BootFileWrite",
             100,
             checked((int)driverEvent.ProcessId),
             checked((int)driverEvent.ParentProcessId),
@@ -903,7 +903,7 @@ public sealed class DriverProtection : IProtectionModel
         var request = new ProtectionDecisionRequest(
             path,
             "Boot",
-            "Xdows.R0.RawBootWrite",
+            "Xdows.Security.Driver.RawBootWrite",
             100,
             checked((int)writeEvent.ProcessId),
             0,
@@ -1242,7 +1242,7 @@ public sealed class DriverProtection : IProtectionModel
             Log("Scan", $"ProcessCreate scanning: {imagePath}");
             long scanStarted = Stopwatch.GetTimestamp();
             scan = await ScanSingleFlightAsync(imagePath, token).ConfigureAwait(false);
-            Log("Scan", $"ProcessCreate result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine} ElapsedMs={Stopwatch.GetElapsedTime(scanStarted).TotalMilliseconds:F1}");
+            Log("Scan", $"ProcessCreate result: IsThreat={scan.IsThreat} Verdict={scan.Verdict} Status={scan.Status} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine} ElapsedMs={Stopwatch.GetElapsedTime(scanStarted).TotalMilliseconds:F1}");
         }
         finally
         {
@@ -1252,12 +1252,14 @@ public sealed class DriverProtection : IProtectionModel
         // AskUser outside ScanLimiter to avoid deadlock: holding the limiter
         // during a 25s popup would exhaust the worker slots and block all other
         // scans, causing driver timeouts and system lockup.
-        if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
+        if (IsModelInfrastructureFailure(scan))
         {
             // Extraction/runtime failures are infrastructure failures, not
             // confirmed threats. Fail open briefly and keep the error in the
             // diagnostic log; presenting a synthetic threat here causes every
             // unsupported or temporarily inaccessible file to be reported.
+            // "Not a PE" / "file not found" are non-threat results, not failures,
+            // and are classified as such by NativeModelScanner.
             Log("Scan", $"ProcessCreate model infrastructure error, allowing briefly: {scan.ErrorMessage}");
             Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "model-infrastructure-error-allow", TimeSpan.FromSeconds(30));
             return Allow(driverEvent.EventId, "model-infrastructure-error-allow");
@@ -1339,9 +1341,9 @@ public sealed class DriverProtection : IProtectionModel
             Log("Scan", $"FileEvent scanning: {filePath}");
             long scanStarted = Stopwatch.GetTimestamp();
             scan = await ScanSingleFlightAsync(filePath, token).ConfigureAwait(false);
-            Log("Scan", $"FileEvent result: IsThreat={scan.IsThreat} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine} ElapsedMs={Stopwatch.GetElapsedTime(scanStarted).TotalMilliseconds:F1}");
+            Log("Scan", $"FileEvent result: IsThreat={scan.IsThreat} Verdict={scan.Verdict} Status={scan.Status} Prob={scan.Probability} Error={scan.ErrorMessage ?? "(none)"} Native={scan.UsedNativeEngine} ElapsedMs={Stopwatch.GetElapsedTime(scanStarted).TotalMilliseconds:F1}");
 
-            if (!string.IsNullOrWhiteSpace(scan.ErrorMessage))
+            if (IsModelInfrastructureFailure(scan))
             {
                 Cache(cacheKey, XdowsSecurityDecisionType.Allow, "model-error", TimeSpan.FromSeconds(5));
                 return Allow(driverEvent.EventId, "model-error:" + scan.ErrorMessage);
@@ -1523,6 +1525,19 @@ public sealed class DriverProtection : IProtectionModel
         return ProtectionUserDecision.Block;
     }
 
+    /// <summary>
+    /// 判定扫描结果是否属于模型基础设施故障。原生库把「不是 PE」与「文件不存在」
+    /// 作为非威胁状态返回（不带错误信息），不能当成基础设施故障而触发 fail-open；
+    /// 只有真正带错误信息的失败才短暂放行。
+    /// </summary>
+    private static bool IsModelInfrastructureFailure(NativeModelScannerResult scan)
+    {
+        if (scan.Status is NativeModelStatus.UnsupportedFile or NativeModelStatus.FileNotFound)
+            return false;
+
+        return !string.IsNullOrWhiteSpace(scan.ErrorMessage);
+    }
+
     private static XdowsSecurityDecision Allow(ulong eventId, string reason, TimeSpan? ttl = null)
     {
         uint cacheTtlMs = ttl is null ? 0 : checked((uint)ttl.Value.TotalMilliseconds);
@@ -1681,25 +1696,25 @@ public sealed class DriverProtection : IProtectionModel
     {
         return type switch
         {
-            XdowsSecurityBehaviorType.VssDeletion => "Xdows.Behavior.ShadowCopyDestruction",
-            XdowsSecurityBehaviorType.HiddenPowerShell => "Xdows.Behavior.HiddenPowerShell",
-            XdowsSecurityBehaviorType.EncodedCommand => "Xdows.Behavior.EncodedCommand",
-            XdowsSecurityBehaviorType.PolicyBypass => "Xdows.Behavior.PolicyBypass",
-            XdowsSecurityBehaviorType.DownloadExecute => "Xdows.Behavior.DownloadExecute",
-            XdowsSecurityBehaviorType.LolbinAbuse => "Xdows.Behavior.LolbinAbuse",
-            XdowsSecurityBehaviorType.ProcessInjection => "Xdows.Behavior.ProcessInjection",
-            XdowsSecurityBehaviorType.ThreadInjection => "Xdows.Behavior.ThreadInjection",
-            XdowsSecurityBehaviorType.ParentProcessChain => "Xdows.Behavior.ParentProcessChain",
-            XdowsSecurityBehaviorType.AutorunInf => "Xdows.Behavior.AutorunInf",
-            XdowsSecurityBehaviorType.ProtectedProcessTerminate => "Xdows.Behavior.ProtectedProcessTerminate",
-            XdowsSecurityBehaviorType.SensitiveProcessHandle => "Xdows.Behavior.SensitiveProcessHandle",
-            XdowsSecurityBehaviorType.DestructiveDirectoryDelete => "Xdows.Behavior.DestructiveDirectoryDelete",
-            XdowsSecurityBehaviorType.OwnershipEscalation => "Xdows.Behavior.OwnershipEscalation",
-            XdowsSecurityBehaviorType.SystemControlCommand => "Xdows.Behavior.SystemControlCommand",
-            XdowsSecurityBehaviorType.EfiMount => "Xdows.Behavior.EfiMount",
-            XdowsSecurityBehaviorType.OobeReset => "Xdows.Behavior.OobeReset",
-            XdowsSecurityBehaviorType.SystemDirectoryRansomware => "Xdows.Behavior.SystemDirectoryRansomware",
-            _ => "Xdows.Behavior.Unknown"
+            XdowsSecurityBehaviorType.VssDeletion => "Xdows.Security.Behavior.ShadowCopyDestruction",
+            XdowsSecurityBehaviorType.HiddenPowerShell => "Xdows.Security.Behavior.HiddenPowerShell",
+            XdowsSecurityBehaviorType.EncodedCommand => "Xdows.Security.Behavior.EncodedCommand",
+            XdowsSecurityBehaviorType.PolicyBypass => "Xdows.Security.Behavior.PolicyBypass",
+            XdowsSecurityBehaviorType.DownloadExecute => "Xdows.Security.Behavior.DownloadExecute",
+            XdowsSecurityBehaviorType.LolbinAbuse => "Xdows.Security.Behavior.LolbinAbuse",
+            XdowsSecurityBehaviorType.ProcessInjection => "Xdows.Security.Behavior.ProcessInjection",
+            XdowsSecurityBehaviorType.ThreadInjection => "Xdows.Security.Behavior.ThreadInjection",
+            XdowsSecurityBehaviorType.ParentProcessChain => "Xdows.Security.Behavior.ParentProcessChain",
+            XdowsSecurityBehaviorType.AutorunInf => "Xdows.Security.Behavior.AutorunInf",
+            XdowsSecurityBehaviorType.ProtectedProcessTerminate => "Xdows.Security.Behavior.ProtectedProcessTerminate",
+            XdowsSecurityBehaviorType.SensitiveProcessHandle => "Xdows.Security.Behavior.SensitiveProcessHandle",
+            XdowsSecurityBehaviorType.DestructiveDirectoryDelete => "Xdows.Security.Behavior.DestructiveDirectoryDelete",
+            XdowsSecurityBehaviorType.OwnershipEscalation => "Xdows.Security.Behavior.OwnershipEscalation",
+            XdowsSecurityBehaviorType.SystemControlCommand => "Xdows.Security.Behavior.SystemControlCommand",
+            XdowsSecurityBehaviorType.EfiMount => "Xdows.Security.Behavior.EfiMount",
+            XdowsSecurityBehaviorType.OobeReset => "Xdows.Security.Behavior.OobeReset",
+            XdowsSecurityBehaviorType.SystemDirectoryRansomware => "Xdows.Security.Behavior.SystemDirectoryRansomware",
+            _ => "Xdows.Security.Behavior.Unknown"
         };
     }
 

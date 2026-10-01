@@ -56,7 +56,7 @@ public sealed record RegistryProtectionOptions(
 
 public static class RegistryScan
 {
-    public const string DetectionName = "Xdows.Local.RegistryScan";
+    public const string DetectionName = "Xdows.Security.Local.RegistryScan";
     public const string DiagnosticTestPath = @"SOFTWARE\Xdows-Security\Tests\RegistryProtection";
 
     private static readonly RegistryProtectionRule[] ProtectionRules =

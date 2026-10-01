@@ -37,20 +37,20 @@ namespace Protection;
 //
 internal sealed class DriverBehaviorRuleCatalog
 {
-    private static readonly IReadOnlyList<XdowsBehaviorRule> NoRules = Array.Empty<XdowsBehaviorRule>();
-    private static readonly IReadOnlyList<XdowsInitiatorExclusion> NoExclusions = Array.Empty<XdowsInitiatorExclusion>();
+    private static readonly IReadOnlyList<BehaviorRule> NoRules = Array.Empty<BehaviorRule>();
+    private static readonly IReadOnlyList<InitiatorExclusion> NoExclusions = Array.Empty<InitiatorExclusion>();
 
     private DriverBehaviorRuleCatalog(
-        IReadOnlyList<XdowsBehaviorRule> rules,
-        IReadOnlyList<XdowsInitiatorExclusion> exclusions)
+        IReadOnlyList<BehaviorRule> rules,
+        IReadOnlyList<InitiatorExclusion> exclusions)
     {
         Rules = rules;
         Exclusions = exclusions;
     }
 
-    public IReadOnlyList<XdowsBehaviorRule> Rules { get; }
+    public IReadOnlyList<BehaviorRule> Rules { get; }
 
-    public IReadOnlyList<XdowsInitiatorExclusion> Exclusions { get; }
+    public IReadOnlyList<InitiatorExclusion> Exclusions { get; }
 
     public static DriverBehaviorRuleCatalog Empty { get; } = new(NoRules, NoExclusions);
 
@@ -76,12 +76,12 @@ internal sealed class DriverBehaviorRuleCatalog
         if (file is null)
             throw new InvalidDataException("BehaviorRules.json is empty or not a JSON object.");
 
-        var rules = new List<XdowsBehaviorRule>();
+        var rules = new List<BehaviorRule>();
         var seenIds = new HashSet<uint>();
 
         foreach (BehaviorRuleEntry entry in file.Rules ?? [])
         {
-            XdowsBehaviorRule rule = BuildRule(entry);
+            BehaviorRule rule = BuildRule(entry);
             if (!seenIds.Add(rule.RuleId))
                 throw new InvalidDataException($"Duplicate declarative rule id {rule.RuleId}.");
             rules.Add(rule);
@@ -91,7 +91,7 @@ internal sealed class DriverBehaviorRuleCatalog
             throw new InvalidDataException(
                 $"BehaviorRules.json declares {rules.Count} rules; the driver accepts at most {DriverProtocol.MaxBehaviorRules}.");
 
-        var exclusions = new List<XdowsInitiatorExclusion>();
+        var exclusions = new List<InitiatorExclusion>();
         foreach (InitiatorExclusionEntry entry in file.InitiatorExclusions ?? [])
         {
             if (string.IsNullOrWhiteSpace(entry.Pattern))
@@ -101,7 +101,7 @@ internal sealed class DriverBehaviorRuleCatalog
                     $"Initiator exclusion \"{entry.Pattern}\" exceeds {DriverProtocol.MaxExclusionChars - 1} characters.");
 
             uint scopes = ParseScopes(entry.Scopes);
-            exclusions.Add(new XdowsInitiatorExclusion
+            exclusions.Add(new InitiatorExclusion
             {
                 ScopeMask = scopes,
                 Pattern = entry.Pattern
@@ -115,7 +115,7 @@ internal sealed class DriverBehaviorRuleCatalog
         return new DriverBehaviorRuleCatalog(rules, exclusions);
     }
 
-    private static XdowsBehaviorRule BuildRule(BehaviorRuleEntry entry)
+    private static BehaviorRule BuildRule(BehaviorRuleEntry entry)
     {
         if (entry.Id == 0)
             throw new InvalidDataException("A declarative rule is missing a non-zero id.");
@@ -130,7 +130,7 @@ internal sealed class DriverBehaviorRuleCatalog
         if (entry.WindowMs < 0 || entry.WindowMs > 60000)
             throw new InvalidDataException($"Rule {entry.Id}: windowMs must be between 0 and 60000.");
 
-        return new XdowsBehaviorRule
+        return new BehaviorRule
         {
             RuleId = entry.Id,
             BehaviorType = behaviorType,
@@ -146,14 +146,14 @@ internal sealed class DriverBehaviorRuleCatalog
         };
     }
 
-    private static XdowsRuleTermAxis BuildAxis(uint ruleId, string axisName, string[]? terms)
+    private static RuleTermAxis BuildAxis(uint ruleId, string axisName, string[]? terms)
     {
         terms ??= [];
         if (terms.Length > DriverProtocol.MaxRuleTerms)
             throw new InvalidDataException(
                 $"Rule {ruleId}: {axisName} declares {terms.Length} terms; at most {DriverProtocol.MaxRuleTerms} are supported.");
 
-        var axisTerms = new XdowsRuleTerm[DriverProtocol.MaxRuleTerms];
+        var axisTerms = new RuleTerm[DriverProtocol.MaxRuleTerms];
         for (int i = 0; i < DriverProtocol.MaxRuleTerms; i++)
         {
             string value = i < terms.Length ? terms[i] ?? string.Empty : string.Empty;
@@ -166,10 +166,10 @@ internal sealed class DriverBehaviorRuleCatalog
                 throw new InvalidDataException(
                     $"Rule {ruleId}: {axisName} term \"{value}\" uses a wildcard; the interpreter matches literals only.");
 
-            axisTerms[i] = new XdowsRuleTerm { Value = value };
+            axisTerms[i] = new RuleTerm { Value = value };
         }
 
-        return new XdowsRuleTermAxis
+        return new RuleTermAxis
         {
             TermCount = (uint)terms.Length,
             Reserved = 0,

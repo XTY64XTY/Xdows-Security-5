@@ -1505,7 +1505,7 @@ namespace Xdows_Security.Views
 
                 FileSavePicker picker = new(XamlRoot.ContentIslandEnvironment.AppWindowId)
                 {
-                    SuggestedFileName = $"Xdows-Boot-Disk{selected.Disk.Index}-{DateTime.Now:yyyyMMdd-HHmmss}",
+                    SuggestedFileName = $"Boot-Disk{selected.Disk.Index}-{DateTime.Now:yyyyMMdd-HHmmss}",
                     SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
                     SuggestedFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
                 };

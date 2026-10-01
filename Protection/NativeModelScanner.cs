@@ -10,12 +10,38 @@ public enum NativeModelScannerMode
     Adaptive = 3
 }
 
+/// <summary>
+/// 原生库状态码，与 xdows_model_native.h 的 <c>XDOWS_MODEL_NATIVE_STATUS</c> 一一对应。
+/// </summary>
+public enum NativeModelStatus
+{
+    Ok = 0,
+    InvalidArgument = 1,
+    FileNotFound = 2,
+    UnsupportedFile = 3,
+    ModelNotFound = 4,
+    InternalError = 5,
+    ModelManifestInvalid = 6
+}
+
+/// <summary>
+/// 三档判定，与 xdows_model_native.h 的 <c>XDOWS_MODEL_NATIVE_VERDICT</c> 一一对应。
+/// </summary>
+public enum NativeModelVerdict
+{
+    Clean = 0,
+    Suspicious = 1,
+    Malware = 2
+}
+
 public sealed record NativeModelScannerResult(
     bool IsThreat,
     double Probability,
     string DetectionName,
     bool UsedNativeEngine,
-    string? ErrorMessage);
+    string? ErrorMessage,
+    NativeModelStatus Status,
+    NativeModelVerdict Verdict);
 
 public sealed class NativeModelScanner : IDisposable
 {
@@ -66,7 +92,7 @@ public sealed class NativeModelScanner : IDisposable
     public NativeModelScannerResult ScanFile(string path)
     {
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-            return new NativeModelScannerResult(false, 0, string.Empty, _nativeReady, "file-not-found");
+            return Benign(NativeModelStatus.FileNotFound, _nativeReady);
 
         if (!_nativeReady)
             return new NativeModelScannerResult(
@@ -74,13 +100,22 @@ public sealed class NativeModelScanner : IDisposable
                 0,
                 string.Empty,
                 false,
-                $"native-not-ready:{_nativeInitializationError ?? "unknown"}");
+                $"native-not-ready:{_nativeInitializationError ?? "unknown"}",
+                NativeModelStatus.InternalError,
+                NativeModelVerdict.Clean);
 
         try
         {
-            int status = XdowsModelNativeScanFile(_session, path, out XdowsNativeScanResult nativeResult);
+            // 版本化 Size 协议：必须先把 Size 声明为本结构大小，原生库才会写回
+            // Verdict；Size 不足时只写旧字段，避免越界写内存。
+            NativeScanResult nativeResult = NativeScanResult.Create();
+            int status = XdowsModelNativeScanFile(_session, path, ref nativeResult);
             string detectionName = NormalizeDetectionName(PtrToStringAndFree(nativeResult.DetectionName));
             string? error = PtrToStringAndFree(nativeResult.ErrorMessage);
+
+            NativeModelStatus callStatus = (NativeModelStatus)status;
+            NativeModelStatus resultStatus = (NativeModelStatus)nativeResult.Status;
+            NativeModelVerdict verdict = (NativeModelVerdict)nativeResult.Verdict;
 
             if (status == 0 && nativeResult.Status == 0)
             {
@@ -89,17 +124,57 @@ public sealed class NativeModelScanner : IDisposable
                     nativeResult.Probability,
                     detectionName,
                     true,
-                    error);
+                    error,
+                    NativeModelStatus.Ok,
+                    verdict);
             }
 
-            return new NativeModelScannerResult(false, 0, detectionName, true, error ?? $"native-status:{status}/{nativeResult.Status}");
+            NativeModelStatus failureStatus = callStatus != NativeModelStatus.Ok ? callStatus : resultStatus;
+
+            // 非 PE/空文件（UnsupportedFile）与文件不存在不是模型基础设施故障，
+            // 而是「这个文件不参与模型判定」：按无威胁返回且不带错误信息，
+            // 让驱动侧正常放行，而不是 fail-open 并误记为基础设施错误。
+            if (failureStatus is NativeModelStatus.UnsupportedFile or NativeModelStatus.FileNotFound)
+                return Benign(failureStatus, true);
+
+            return new NativeModelScannerResult(
+                false,
+                0,
+                detectionName,
+                true,
+                error ?? $"native-status:{status}/{nativeResult.Status}",
+                failureStatus,
+                verdict);
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or SEHException or BadImageFormatException)
         {
             _nativeReady = false;
             _nativeInitializationError = $"native-scan-exception:{ex.GetType().Name}:{ex.Message}";
-            return new NativeModelScannerResult(false, 0, string.Empty, true, _nativeInitializationError);
+            return new NativeModelScannerResult(
+                false,
+                0,
+                string.Empty,
+                true,
+                _nativeInitializationError,
+                NativeModelStatus.InternalError,
+                NativeModelVerdict.Clean);
         }
+    }
+
+    /// <summary>
+    /// 「不是威胁，也不是故障」的结果：文件不存在或不是 PE。ErrorMessage 保持为空，
+    /// 避免驱动侧把它归因为模型基础设施错误而触发 fail-open。
+    /// </summary>
+    private static NativeModelScannerResult Benign(NativeModelStatus status, bool usedNativeEngine)
+    {
+        return new NativeModelScannerResult(
+            false,
+            0,
+            string.Empty,
+            usedNativeEngine,
+            null,
+            status,
+            NativeModelVerdict.Clean);
     }
 
     public void Dispose()
@@ -147,7 +222,7 @@ public sealed class NativeModelScanner : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct XdowsNativeScanResult
+    private struct NativeScanResult
     {
         public int Size;
         public int Status;
@@ -155,6 +230,15 @@ public sealed class NativeModelScanner : IDisposable
         public float Probability;
         public IntPtr DetectionName;
         public IntPtr ErrorMessage;
+        public int Verdict;
+
+        /// <summary>按版本化协议声明自身大小，使原生库写回 Verdict。</summary>
+        public static NativeScanResult Create()
+        {
+            NativeScanResult result = default;
+            result.Size = Marshal.SizeOf<NativeScanResult>();
+            return result;
+        }
     }
 
     [DllImport(NativeDllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
@@ -167,7 +251,7 @@ public sealed class NativeModelScanner : IDisposable
     private static extern int XdowsModelNativeScanFile(
         IntPtr session,
         string filePath,
-        out XdowsNativeScanResult result);
+        ref NativeScanResult result);
 
     [DllImport(NativeDllName, CallingConvention = CallingConvention.StdCall)]
     private static extern void XdowsModelNativeShutdown(IntPtr session);

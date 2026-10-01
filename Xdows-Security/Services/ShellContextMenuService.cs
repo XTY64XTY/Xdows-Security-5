@@ -130,7 +130,7 @@ namespace Xdows_Security.Services
     public static class ShellContextMenuService
     {
         /// <summary>禁用外壳扩展时追加到子键名的后缀，资源管理器会忽略改名后的项。</summary>
-        public const string DisabledSuffix = ".XdowsDisabled";
+        public const string DisabledSuffix = ".Disabled";
 
         private const string LegacyDisableValue = "LegacyDisable";
         private const string ShellBranch = "shell";

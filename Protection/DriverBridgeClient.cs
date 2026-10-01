@@ -67,19 +67,19 @@ internal sealed class DriverBridgeClient : IDisposable
         _handle = OpenDriverDevice(out int openError);
         if (_handle is null)
         {
-            throw new Win32Exception(openError, "Failed to open Xdows Security driver device.");
+            throw new Win32Exception(openError, "Failed to open Xdows Security Driver device.");
         }
 
         _clientProcessId = checked((uint)Environment.ProcessId);
-        var request = new XdowsRegisterRequest
+        var request = new RegisterRequest
         {
-            Header = DriverProtocol.Header<XdowsRegisterRequest>(),
+            Header = DriverProtocol.Header<RegisterRequest>(),
             ClientProcessId = _clientProcessId,
             Flags = DriverProtocol.RegisterFlagAsyncReview,
             HeartbeatTimeoutMs = 10_000
         };
 
-        if (!DeviceIoControl(request, DriverProtocol.RegisterClient, out XdowsRegisterResponse response))
+        if (!DeviceIoControl(request, DriverProtocol.RegisterClient, out RegisterResponse response))
         {
             int error = Marshal.GetLastWin32Error();
             Disconnect();
@@ -87,9 +87,9 @@ internal sealed class DriverBridgeClient : IDisposable
             {
                 throw new Win32Exception(
                     error,
-                    $"Xdows Security driver protocol is outdated. Expected v{DriverProtocol.ProtocolVersion}/{DriverProtocol.DriverBuildId}; reinstall the packaged driver.");
+                    $"Xdows Security Driver protocol is outdated. Expected v{DriverProtocol.ProtocolVersion}/{DriverProtocol.DriverBuildId}; reinstall the packaged driver.");
             }
-            throw new Win32Exception(error, "Failed to register Xdows Security driver client.");
+            throw new Win32Exception(error, "Failed to register Xdows Security Driver client.");
         }
 
         if (response.ProtocolVersion != DriverProtocol.ProtocolVersion ||
@@ -113,7 +113,7 @@ internal sealed class DriverBridgeClient : IDisposable
         if (_eventHandle is null)
         {
             Disconnect();
-            throw new Win32Exception(eventOpenError, "Failed to open the Xdows Security driver event channel.");
+            throw new Win32Exception(eventOpenError, "Failed to open the Xdows Security Driver event channel.");
         }
 
         _shutdownToken.Capture(response.ShutdownToken);
@@ -243,7 +243,7 @@ internal sealed class DriverBridgeClient : IDisposable
         return state;
     }
 
-    public bool TryGetNextLog(out XdowsDriverLogEntry entry)
+    public bool TryGetNextLog(out DriverLogEntry entry)
     {
         EnsureConnected();
 
@@ -255,7 +255,7 @@ internal sealed class DriverBridgeClient : IDisposable
         if (error == ErrorNoMoreItems)
             return false;
 
-        throw new Win32Exception(error, "Failed to get next Xdows Security driver log entry.");
+        throw new Win32Exception(error, "Failed to get next Xdows Security Driver log entry.");
     }
 
     public static bool TryQueryStateWithoutRegister(out XdowsSecurityState state, out int win32Error)
@@ -370,11 +370,11 @@ internal sealed class DriverBridgeClient : IDisposable
         }
 
         uint processId = checked((uint)Environment.ProcessId);
-        var registerRequest = new XdowsRegisterRequest
+        var registerRequest = new RegisterRequest
         {
-            Header = new XdowsProtocolHeader
+            Header = new ProtocolHeader
             {
-                Size = (uint)Marshal.SizeOf<XdowsRegisterRequest>(),
+                Size = (uint)Marshal.SizeOf<RegisterRequest>(),
                 Version = source.ProtocolVersion
             },
             ClientProcessId = processId,
@@ -385,7 +385,7 @@ internal sealed class DriverBridgeClient : IDisposable
                 handle,
                 registerRequest,
                 DriverProtocol.RegisterClient,
-                out XdowsRegisterResponse response))
+                out RegisterResponse response))
         {
             int registrationError = Marshal.GetLastWin32Error();
             revisionMismatch = registrationError == ErrorRevisionMismatch;
@@ -413,11 +413,11 @@ internal sealed class DriverBridgeClient : IDisposable
 
         if (source.ProtocolVersion == DriverProtocol.ProtocolVersion)
         {
-            var protectedProcessRequest = new XdowsProtectedProcessRequest
+            var protectedProcessRequest = new ProtectedProcessRequest
             {
-                Header = new XdowsProtocolHeader
+                Header = new ProtocolHeader
                 {
-                    Size = (uint)Marshal.SizeOf<XdowsProtectedProcessRequest>(),
+                    Size = (uint)Marshal.SizeOf<ProtectedProcessRequest>(),
                     Version = source.ProtocolVersion
                 },
                 ProcessId = processId
@@ -436,11 +436,11 @@ internal sealed class DriverBridgeClient : IDisposable
             }
         }
 
-        var shutdownRequest = new XdowsShutdownRequest
+        var shutdownRequest = new ShutdownRequest
         {
-            Header = new XdowsProtocolHeader
+            Header = new ProtocolHeader
             {
-                Size = (uint)Marshal.SizeOf<XdowsShutdownRequest>(),
+                Size = (uint)Marshal.SizeOf<ShutdownRequest>(),
                 Version = source.ProtocolVersion
             },
             ShutdownToken = response.ShutdownToken
@@ -464,9 +464,9 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
-        var request = new XdowsProtectedProcessRequest
+        var request = new ProtectedProcessRequest
         {
-            Header = DriverProtocol.Header<XdowsProtectedProcessRequest>(),
+            Header = DriverProtocol.Header<ProtectedProcessRequest>(),
             ProcessId = _clientProcessId,
             MainThreadId = mainThreadId
         };
@@ -479,9 +479,9 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
-        var request = new XdowsVoluntaryExitRequest
+        var request = new VoluntaryExitRequest
         {
-            Header = DriverProtocol.Header<XdowsVoluntaryExitRequest>(),
+            Header = DriverProtocol.Header<VoluntaryExitRequest>(),
             ProcessId = _clientProcessId,
             IsVoluntaryExit = isVoluntaryExit ? 1u : 0u
         };
@@ -494,9 +494,9 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
-        var request = new XdowsStartupProtectionRequest
+        var request = new StartupProtectionRequest
         {
-            Header = DriverProtocol.Header<XdowsStartupProtectionRequest>(),
+            Header = DriverProtocol.Header<StartupProtectionRequest>(),
             ProcessId = _clientProcessId,
             Enabled = enabled ? 1u : 0u
         };
@@ -517,9 +517,9 @@ internal sealed class DriverBridgeClient : IDisposable
             .Concat(Enumerable.Repeat(string.Empty, DriverProtocol.MaxBootVolumeRoots))
             .Take(DriverProtocol.MaxBootVolumeRoots)
             .ToArray();
-        var request = new XdowsBootProtectionRequest
+        var request = new BootProtectionRequest
         {
-            Header = DriverProtocol.Header<XdowsBootProtectionRequest>(),
+            Header = DriverProtocol.Header<BootProtectionRequest>(),
             Enabled = 1,
             DiskNumber = checked((uint)configuration.DiskIndex),
             VolumeRootCount = checked((uint)configuration.NtVolumeRoots.Count),
@@ -541,10 +541,10 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new InvalidDataException(
                 $"Registry protection requires between one and {DriverProtocol.MaxRegistryRules} rules.");
 
-        var rules = new XdowsRegistryRulePath[DriverProtocol.MaxRegistryRules];
+        var rules = new RegistryRulePath[DriverProtocol.MaxRegistryRules];
         for (int i = 0; i < DriverProtocol.MaxRegistryRules; i++)
         {
-            rules[i] = new XdowsRegistryRulePath
+            rules[i] = new RegistryRulePath
             {
                 Path = i < nativeRulePaths.Count
                     ? Truncate(nativeRulePaths[i], DriverProtocol.MaxRegistryPathChars - 1)
@@ -552,9 +552,9 @@ internal sealed class DriverBridgeClient : IDisposable
             };
         }
 
-        var request = new XdowsRegistryProtectionRequest
+        var request = new RegistryProtectionRequest
         {
-            Header = DriverProtocol.Header<XdowsRegistryProtectionRequest>(),
+            Header = DriverProtocol.Header<RegistryProtectionRequest>(),
             Enabled = enabled ? 1u : 0u,
             RuleCount = checked((uint)nativeRulePaths.Count),
             RulePaths = rules
@@ -569,7 +569,7 @@ internal sealed class DriverBridgeClient : IDisposable
     // buffered IOCTL; the driver validates it as a unit and keeps the previous
     // set when validation fails. An empty list clears the set.
     //
-    public void SetBehaviorRules(IReadOnlyList<XdowsBehaviorRule> rules)
+    public void SetBehaviorRules(IReadOnlyList<BehaviorRule> rules)
     {
         EnsureConnected();
         ArgumentNullException.ThrowIfNull(rules);
@@ -579,12 +579,12 @@ internal sealed class DriverBridgeClient : IDisposable
 
         VerifyRuleSetLayout();
 
-        var entries = new XdowsBehaviorRule[DriverProtocol.MaxBehaviorRules];
+        var entries = new BehaviorRule[DriverProtocol.MaxBehaviorRules];
         for (int i = 0; i < DriverProtocol.MaxBehaviorRules; i++)
         {
             entries[i] = i < rules.Count
                 ? rules[i]
-                : new XdowsBehaviorRule
+                : new BehaviorRule
                 {
                     Initiator = EmptyAxis(),
                     Target = EmptyAxis(),
@@ -592,9 +592,9 @@ internal sealed class DriverBridgeClient : IDisposable
                 };
         }
 
-        var request = new XdowsBehaviorRuleRequest
+        var request = new BehaviorRuleRequest
         {
-            Header = DriverProtocol.Header<XdowsBehaviorRuleRequest>(),
+            Header = DriverProtocol.Header<BehaviorRuleRequest>(),
             Enabled = rules.Count == 0 ? 0u : 1u,
             RuleCount = checked((uint)rules.Count),
             Reserved = 0,
@@ -609,7 +609,7 @@ internal sealed class DriverBridgeClient : IDisposable
     // Replace the initiator exclusion list. An empty list clears it, which
     // restores the default "every actor reaches the decision window" policy.
     //
-    public void SetInitiatorExclusions(IReadOnlyList<XdowsInitiatorExclusion> exclusions)
+    public void SetInitiatorExclusions(IReadOnlyList<InitiatorExclusion> exclusions)
     {
         EnsureConnected();
         ArgumentNullException.ThrowIfNull(exclusions);
@@ -619,17 +619,17 @@ internal sealed class DriverBridgeClient : IDisposable
 
         VerifyRuleSetLayout();
 
-        var entries = new XdowsInitiatorExclusion[DriverProtocol.MaxInitiatorExclusions];
+        var entries = new InitiatorExclusion[DriverProtocol.MaxInitiatorExclusions];
         for (int i = 0; i < DriverProtocol.MaxInitiatorExclusions; i++)
         {
             entries[i] = i < exclusions.Count
                 ? exclusions[i]
-                : new XdowsInitiatorExclusion { ScopeMask = 0, Pattern = string.Empty };
+                : new InitiatorExclusion { ScopeMask = 0, Pattern = string.Empty };
         }
 
-        var request = new XdowsInitiatorExclusionRequest
+        var request = new InitiatorExclusionRequest
         {
-            Header = DriverProtocol.Header<XdowsInitiatorExclusionRequest>(),
+            Header = DriverProtocol.Header<InitiatorExclusionRequest>(),
             Count = checked((uint)exclusions.Count),
             Reserved = 0,
             Entries = entries
@@ -639,15 +639,15 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to configure the initiator exclusion list.");
     }
 
-    private static XdowsRuleTermAxis EmptyAxis() => new()
+    private static RuleTermAxis EmptyAxis() => new()
     {
         TermCount = 0,
         Reserved = 0,
         Terms =
         [
-            new XdowsRuleTerm { Value = string.Empty },
-            new XdowsRuleTerm { Value = string.Empty },
-            new XdowsRuleTerm { Value = string.Empty }
+            new RuleTerm { Value = string.Empty },
+            new RuleTerm { Value = string.Empty },
+            new RuleTerm { Value = string.Empty }
         ]
     };
 
@@ -662,19 +662,19 @@ internal sealed class DriverBridgeClient : IDisposable
         if (_ruleSetLayoutVerified)
             return;
 
-        int ruleSize = Marshal.SizeOf<XdowsBehaviorRule>();
+        int ruleSize = Marshal.SizeOf<BehaviorRule>();
         int expectedRuleSize = 32 + 3 * (8 + DriverProtocol.MaxRuleTerms * DriverProtocol.MaxRuleTermChars * sizeof(char));
         if (ruleSize != expectedRuleSize)
             throw new InvalidDataException(
                 $"Declarative rule layout mismatch: {ruleSize} bytes, expected {expectedRuleSize}.");
 
-        int requestSize = Marshal.SizeOf<XdowsBehaviorRuleRequest>();
+        int requestSize = Marshal.SizeOf<BehaviorRuleRequest>();
         int expectedRequestSize = 20 + DriverProtocol.MaxBehaviorRules * expectedRuleSize;
         if (requestSize != expectedRequestSize)
             throw new InvalidDataException(
                 $"Declarative rule request layout mismatch: {requestSize} bytes, expected {expectedRequestSize}.");
 
-        int exclusionSize = Marshal.SizeOf<XdowsInitiatorExclusion>();
+        int exclusionSize = Marshal.SizeOf<InitiatorExclusion>();
         int expectedExclusionSize = 8 + DriverProtocol.MaxExclusionChars * sizeof(char);
         if (exclusionSize != expectedExclusionSize)
             throw new InvalidDataException(
@@ -685,27 +685,27 @@ internal sealed class DriverBridgeClient : IDisposable
 
     private static bool _ruleSetLayoutVerified;
 
-    public IReadOnlyList<XdowsDriverProcessEntry> QueryProcesses()
+    public IReadOnlyList<DriverProcessEntry> QueryProcesses()
     {
         EnsureConnected();
 
         string token = GetAuthorizationToken();
-        var processes = new List<XdowsDriverProcessEntry>();
+        var processes = new List<DriverProcessEntry>();
         uint cursor = 0;
 
         for (; ; )
         {
-            var request = new XdowsProcessQueryRequest
+            var request = new ProcessQueryRequest
             {
-                Header = DriverProtocol.Header<XdowsProcessQueryRequest>(),
+                Header = DriverProtocol.Header<ProcessQueryRequest>(),
                 Cursor = cursor,
                 AuthorizationToken = token
             };
 
-            if (!DeviceIoControl(request, DriverProtocol.QueryProcesses, out XdowsProcessQueryResponse response))
+            if (!DeviceIoControl(request, DriverProtocol.QueryProcesses, out ProcessQueryResponse response))
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to query the driver process list.");
 
-            int responseSize = Marshal.SizeOf<XdowsProcessQueryResponse>();
+            int responseSize = Marshal.SizeOf<ProcessQueryResponse>();
             if (response.Header.Size != (uint)responseSize ||
                 response.Header.Version != DriverProtocol.ProtocolVersion ||
                 response.Count > DriverProtocol.ProcessBatchSize ||
@@ -732,9 +732,9 @@ internal sealed class DriverBridgeClient : IDisposable
         if (operation is XdowsSecurityProcessOperation.None)
             throw new ArgumentOutOfRangeException(nameof(operation));
 
-        var request = new XdowsProcessOperationRequest
+        var request = new ProcessOperationRequest
         {
-            Header = DriverProtocol.Header<XdowsProcessOperationRequest>(),
+            Header = DriverProtocol.Header<ProcessOperationRequest>(),
             ProcessId = processId,
             Operation = (uint)operation,
             AuthorizationToken = GetAuthorizationToken()
@@ -752,9 +752,9 @@ internal sealed class DriverBridgeClient : IDisposable
         if (string.IsNullOrWhiteSpace(token))
             return false;
 
-        var request = new XdowsShutdownRequest
+        var request = new ShutdownRequest
         {
-            Header = DriverProtocol.Header<XdowsShutdownRequest>(),
+            Header = DriverProtocol.Header<ShutdownRequest>(),
             ShutdownToken = token
         };
 
@@ -840,9 +840,9 @@ internal sealed class DriverBridgeClient : IDisposable
     {
         EnsureConnected();
 
-        var request = new XdowsHeartbeatRequest
+        var request = new HeartbeatRequest
         {
-            Header = DriverProtocol.Header<XdowsHeartbeatRequest>(),
+            Header = DriverProtocol.Header<HeartbeatRequest>(),
             ClientProcessId = _clientProcessId
         };
 
@@ -874,7 +874,7 @@ internal sealed class DriverBridgeClient : IDisposable
             if (error == ErrorNoMoreItems)
                 return 0;
 
-            throw new Win32Exception(error, "Failed to get next Xdows Security driver event batch.");
+            throw new Win32Exception(error, "Failed to get next Xdows Security Driver event batch.");
         }
 
         uint count = unchecked((uint)Marshal.ReadInt32(_eventBatchPtr, 8));

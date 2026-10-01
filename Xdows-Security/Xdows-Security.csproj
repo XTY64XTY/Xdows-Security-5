@@ -29,23 +29,23 @@
 		<IlcOptimizationPreference>Speed</IlcOptimizationPreference>
 		<IlcInstructionSet>x86-64-v2</IlcInstructionSet>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<XdowsCodeRoot>$(MSBuildProjectDirectory)\..\..</XdowsCodeRoot>
-		<XdowsBuildDriver Condition="'$(XdowsBuildDriver)' == ''">true</XdowsBuildDriver>
-		<XdowsNativeConfiguration Condition="'$(XdowsNativeConfiguration)' == ''">$(Configuration)</XdowsNativeConfiguration>
-		<XdowsDriverConfiguration Condition="'$(XdowsDriverConfiguration)' == ''">$(Configuration)</XdowsDriverConfiguration>
-		<XdowsRuntimeProjectConfiguration Condition="'$(XdowsRuntimeProjectConfiguration)' == ''">$(Configuration)</XdowsRuntimeProjectConfiguration>
-		<XdowsModelInvokerRoot>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Invoker</XdowsModelInvokerRoot>
-		<XdowsModelNativeProject>$(XdowsCodeRoot)\Xdows-Model\Xdows-Model-Native\Xdows-Model-Native.vcxproj</XdowsModelNativeProject>
-		<XdowsModelNativeOutput>$(MSBuildProjectDirectory)\obj\XdowsModelNative\$(Platform)\$(XdowsNativeConfiguration)</XdowsModelNativeOutput>
-		<XdowsModelNativeIntermediate>$(MSBuildProjectDirectory)\obj\XdowsModelNative\$(Platform)\$(XdowsNativeConfiguration)\Intermediate</XdowsModelNativeIntermediate>
-		<XdowsDriverProject>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj</XdowsDriverProject>
-		<XdowsDriverProjectOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(XdowsDriverConfiguration)\</XdowsDriverProjectOutput>
-		<XdowsDriverProjectPackageOutput>$(XdowsDriverProjectOutput)Xdows-Security-Driver</XdowsDriverProjectPackageOutput>
-		<XdowsDriverPackageOutput>$(XdowsDriverProjectPackageOutput)</XdowsDriverPackageOutput>
-		<XdowsBootFilterProject>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-BootFilter\Xdows-Security-BootFilter.vcxproj</XdowsBootFilterProject>
-		<XdowsBootFilterProjectOutput>$(XdowsCodeRoot)\Xdows-Security-Driver\Xdows-Security-BootFilter\$(Platform)\$(XdowsDriverConfiguration)\</XdowsBootFilterProjectOutput>
-		<XdowsBootFilterIntermediate>$(MSBuildProjectDirectory)\obj\XdowsBootFilter\$(Platform)\$(XdowsDriverConfiguration)\Intermediate\</XdowsBootFilterIntermediate>
-		<XdowsBootFilterPackageOutput>$(XdowsBootFilterProjectOutput)Xdows-Security-BootFilter</XdowsBootFilterPackageOutput>
+		<CodeRoot>$(MSBuildProjectDirectory)\..\..</CodeRoot>
+		<BuildDriver Condition="'$(BuildDriver)' == ''">true</BuildDriver>
+		<NativeConfiguration Condition="'$(NativeConfiguration)' == ''">$(Configuration)</NativeConfiguration>
+		<DriverConfiguration Condition="'$(DriverConfiguration)' == ''">$(Configuration)</DriverConfiguration>
+		<RuntimeProjectConfiguration Condition="'$(RuntimeProjectConfiguration)' == ''">$(Configuration)</RuntimeProjectConfiguration>
+		<XdowsModelInvokerRoot>$(CodeRoot)\Xdows-Model\Xdows-Model-Invoker</XdowsModelInvokerRoot>
+		<XdowsModelNativeProject>$(CodeRoot)\Xdows-Model\Xdows-Model-Native\Xdows-Model-Native.vcxproj</XdowsModelNativeProject>
+		<XdowsModelNativeOutput>$(MSBuildProjectDirectory)\obj\XdowsModelNative\$(Platform)\$(NativeConfiguration)</XdowsModelNativeOutput>
+		<XdowsModelNativeIntermediate>$(MSBuildProjectDirectory)\obj\XdowsModelNative\$(Platform)\$(NativeConfiguration)\Intermediate</XdowsModelNativeIntermediate>
+		<DriverProject>$(CodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\Xdows-Security-Driver.vcxproj</DriverProject>
+		<DriverProjectOutput>$(CodeRoot)\Xdows-Security-Driver\Xdows-Security-Driver\$(Platform)\$(DriverConfiguration)\</DriverProjectOutput>
+		<DriverProjectPackageOutput>$(DriverProjectOutput)Xdows-Security-Driver</DriverProjectPackageOutput>
+		<DriverPackageOutput>$(DriverProjectPackageOutput)</DriverPackageOutput>
+		<BootFilterProject>$(CodeRoot)\Xdows-Security-Driver\Xdows-Security-BootFilter\Xdows-Security-BootFilter.vcxproj</BootFilterProject>
+		<BootFilterProjectOutput>$(CodeRoot)\Xdows-Security-Driver\Xdows-Security-BootFilter\$(Platform)\$(DriverConfiguration)\</BootFilterProjectOutput>
+		<BootFilterIntermediate>$(MSBuildProjectDirectory)\obj\BootFilter\$(Platform)\$(DriverConfiguration)\Intermediate\</BootFilterIntermediate>
+		<BootFilterPackageOutput>$(BootFilterProjectOutput)Xdows-Security-BootFilter</BootFilterPackageOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -140,7 +140,7 @@
 		<Optimize>true</Optimize>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-		<XdowsBuildDriver>false</XdowsBuildDriver>
+		<BuildDriver>false</BuildDriver>
 	</PropertyGroup>
 	<ItemGroup>
 		<PRIResource Remove="Resources\**" />
@@ -162,121 +162,121 @@
 	  <Folder Include="Dialog\" />
 	</ItemGroup>
 
-	<Target Name="BuildXdowsNativeAndDriverProjects" BeforeTargets="CollectXdowsDriverAndModelAssets" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
-		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(XdowsNativeConfiguration);Platform=$(Platform);OutDir=$(XdowsModelNativeOutput)\;IntDir=$(XdowsModelNativeIntermediate)\;WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
-		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(XdowsNativeConfiguration);Platform=$(Platform);OutDir=$(XdowsModelNativeOutput)\;IntDir=$(XdowsModelNativeIntermediate)\" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
-		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);OutDir=$(XdowsDriverProjectOutput);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
-		<MSBuild Projects="$(XdowsDriverProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);OutDir=$(XdowsDriverProjectOutput);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
-		<MSBuild Projects="$(XdowsBootFilterProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);OutDir=$(XdowsBootFilterProjectOutput);IntDir=$(XdowsBootFilterIntermediate);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsBootFilterProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
-		<MSBuild Projects="$(XdowsBootFilterProject)" Targets="Build" Properties="Configuration=$(XdowsDriverConfiguration);Platform=$(Platform);OutDir=$(XdowsBootFilterProjectOutput);IntDir=$(XdowsBootFilterIntermediate);SignMode=$(SignMode)" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsBootFilterProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
+	<Target Name="BuildNativeAndDriverProjects" BeforeTargets="CollectDriverAndModelAssets" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
+		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(NativeConfiguration);Platform=$(Platform);OutDir=$(XdowsModelNativeOutput)\;IntDir=$(XdowsModelNativeIntermediate)\;WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion)" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
+		<MSBuild Projects="$(XdowsModelNativeProject)" Targets="Build" Properties="Configuration=$(NativeConfiguration);Platform=$(Platform);OutDir=$(XdowsModelNativeOutput)\;IntDir=$(XdowsModelNativeIntermediate)\" Condition="Exists('$(XdowsModelNativeProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
+		<MSBuild Projects="$(DriverProject)" Targets="Build" Properties="Configuration=$(DriverConfiguration);Platform=$(Platform);OutDir=$(DriverProjectOutput);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(BuildDriver)' == 'true' AND Exists('$(DriverProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
+		<MSBuild Projects="$(DriverProject)" Targets="Build" Properties="Configuration=$(DriverConfiguration);Platform=$(Platform);OutDir=$(DriverProjectOutput);SignMode=$(SignMode)" Condition="'$(BuildDriver)' == 'true' AND Exists('$(DriverProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
+		<MSBuild Projects="$(BootFilterProject)" Targets="Build" Properties="Configuration=$(DriverConfiguration);Platform=$(Platform);OutDir=$(BootFilterProjectOutput);IntDir=$(BootFilterIntermediate);WindowsTargetPlatformVersion=$(WindowsTargetPlatformVersion);SignMode=$(SignMode)" Condition="'$(BuildDriver)' == 'true' AND Exists('$(BootFilterProject)') AND '$(WindowsTargetPlatformVersion)' != ''" />
+		<MSBuild Projects="$(BootFilterProject)" Targets="Build" Properties="Configuration=$(DriverConfiguration);Platform=$(Platform);OutDir=$(BootFilterProjectOutput);IntDir=$(BootFilterIntermediate);SignMode=$(SignMode)" Condition="'$(BuildDriver)' == 'true' AND Exists('$(BootFilterProject)') AND '$(WindowsTargetPlatformVersion)' == ''" />
 	</Target>
 
-	<Target Name="BuildXdowsRuntimeProjectReferences" BeforeTargets="ResolveReferences" Condition="'$(RuntimeIdentifier)' != '' AND '$(DesignTimeBuild)' != 'true'">
+	<Target Name="BuildRuntimeProjectReferences" BeforeTargets="ResolveReferences" Condition="'$(RuntimeIdentifier)' != '' AND '$(DesignTimeBuild)' != 'true'">
 		<ItemGroup>
-			<XdowsRuntimeProjectReference Include="..\Helper\Helper.csproj" />
-			<XdowsRuntimeProjectReference Include="..\Protection\Protection.csproj" />
-			<XdowsRuntimeProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
+			<RuntimeProjectReference Include="..\Helper\Helper.csproj" />
+			<RuntimeProjectReference Include="..\Protection\Protection.csproj" />
+			<RuntimeProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
 		</ItemGroup>
-		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Restore" Properties="Configuration=$(XdowsRuntimeProjectConfiguration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
-		<MSBuild Projects="@(XdowsRuntimeProjectReference)" Targets="Build" Properties="Configuration=$(XdowsRuntimeProjectConfiguration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
+		<MSBuild Projects="@(RuntimeProjectReference)" Targets="Restore" Properties="Configuration=$(RuntimeProjectConfiguration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
+		<MSBuild Projects="@(RuntimeProjectReference)" Targets="Build" Properties="Configuration=$(RuntimeProjectConfiguration);Platform=AnyCPU;RuntimeIdentifier=$(RuntimeIdentifier)" BuildInParallel="false" />
 	</Target>
 
-	<Target Name="CollectXdowsDriverAndModelAssets" AfterTargets="Build" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
+	<Target Name="CollectDriverAndModelAssets" AfterTargets="Build" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
 		<ItemGroup>
 			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.onnx" />
 			<XdowsModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.json" />
-			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
-			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
-			<XdowsNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
-			<XdowsDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')" />
-			<XdowsBootFilterFiles Include="$(XdowsBootFilterPackageOutput)\**\*" Condition="Exists('$(XdowsBootFilterPackageOutput)')" />
+			<NativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
+			<NativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
+			<NativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
+			<DriverFiles Include="$(DriverPackageOutput)\**\*" Condition="Exists('$(DriverPackageOutput)')" />
+			<BootFilterFiles Include="$(BootFilterPackageOutput)\**\*" Condition="Exists('$(BootFilterPackageOutput)')" />
 		</ItemGroup>
 
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll')" Text="Xdows-Model-Native.dll was not found. Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\onnxruntime.dll')" Text="onnxruntime.dll was not found in $(XdowsModelNativeOutput)." />
 		<Error Condition="!Exists('$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll')" Text="onnxruntime_providers_shared.dll was not found in $(XdowsModelNativeOutput)." />
-		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.inf')" Text="Driver INF was not found in $(XdowsDriverPackageOutput). Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
-		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys')" Text="Driver SYS was not found in $(XdowsDriverPackageOutput)." />
-		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsDriverPackageOutput)\xdows-security-driver.cat') AND !Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.cat')" Text="Driver CAT was not found in $(XdowsDriverPackageOutput)." />
-		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsBootFilterPackageOutput)\Xdows-Security-BootFilter.inf')" Text="Boot filter INF was not found in $(XdowsBootFilterPackageOutput)." />
-		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsBootFilterPackageOutput)\Xdows-Security-BootFilter.sys')" Text="Boot filter SYS was not found in $(XdowsBootFilterPackageOutput)." />
-		<Error Condition="'$(XdowsBuildDriver)' == 'true' AND !Exists('$(XdowsBootFilterPackageOutput)\xdows-security-bootfilter.cat') AND !Exists('$(XdowsBootFilterPackageOutput)\Xdows-Security-BootFilter.cat')" Text="Boot filter CAT was not found in $(XdowsBootFilterPackageOutput)." />
+		<Error Condition="'$(BuildDriver)' == 'true' AND !Exists('$(DriverPackageOutput)\Xdows-Security-Driver.inf')" Text="Driver INF was not found in $(DriverPackageOutput). Build Xdows-Security.slnx with Visual Studio/MSBuild for $(Configuration)|$(Platform)." />
+		<Error Condition="'$(BuildDriver)' == 'true' AND !Exists('$(DriverPackageOutput)\Xdows-Security-Driver.sys')" Text="Driver SYS was not found in $(DriverPackageOutput)." />
+		<Error Condition="'$(BuildDriver)' == 'true' AND !Exists('$(DriverPackageOutput)\xdows-security-driver.cat') AND !Exists('$(DriverPackageOutput)\Xdows-Security-Driver.cat')" Text="Driver CAT was not found in $(DriverPackageOutput)." />
+		<Error Condition="'$(BuildDriver)' == 'true' AND !Exists('$(BootFilterPackageOutput)\Xdows-Security-BootFilter.inf')" Text="Boot filter INF was not found in $(BootFilterPackageOutput)." />
+		<Error Condition="'$(BuildDriver)' == 'true' AND !Exists('$(BootFilterPackageOutput)\Xdows-Security-BootFilter.sys')" Text="Boot filter SYS was not found in $(BootFilterPackageOutput)." />
+		<Error Condition="'$(BuildDriver)' == 'true' AND !Exists('$(BootFilterPackageOutput)\xdows-security-bootfilter.cat') AND !Exists('$(BootFilterPackageOutput)\Xdows-Security-BootFilter.cat')" Text="Boot filter CAT was not found in $(BootFilterPackageOutput)." />
 		<Error Condition="!Exists('$(XdowsModelInvokerRoot)\Models\Xdows-Model.onnx')" Text="Model assets were not found in $(XdowsModelInvokerRoot)\Models. Build Xdows-Model with MSBuild for $(Configuration)|$(Platform)." />
 
 		<Copy SourceFiles="@(XdowsModelFiles)" DestinationFolder="$(OutDir)Models" SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(XdowsNativeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFiles="@(XdowsDriverFiles->'$(OutDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(XdowsDriverFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(XdowsBootFilterFiles)" DestinationFiles="@(XdowsBootFilterFiles->'$(OutDir)Driver\BootFilter\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(NativeFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(DriverFiles)" DestinationFiles="@(DriverFiles->'$(OutDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(DriverFiles)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(BootFilterFiles)" DestinationFiles="@(BootFilterFiles->'$(OutDir)Driver\BootFilter\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 	</Target>
 
-	<Target Name="VerifyPackagedXdowsDriver" AfterTargets="CollectXdowsDriverAndModelAssets" Condition="'$(XdowsBuildDriver)' == 'true' AND Exists('$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys') AND Exists('$(OutDir)Driver\Xdows-Security-Driver.sys')">
-		<GetFileHash Files="$(XdowsDriverPackageOutput)\Xdows-Security-Driver.sys">
-			<Output TaskParameter="Items" ItemName="XdowsSourceDriverHash" />
+	<Target Name="VerifyPackagedDriver" AfterTargets="CollectDriverAndModelAssets" Condition="'$(BuildDriver)' == 'true' AND Exists('$(DriverPackageOutput)\Xdows-Security-Driver.sys') AND Exists('$(OutDir)Driver\Xdows-Security-Driver.sys')">
+		<GetFileHash Files="$(DriverPackageOutput)\Xdows-Security-Driver.sys">
+			<Output TaskParameter="Items" ItemName="SourceDriverHash" />
 		</GetFileHash>
 		<GetFileHash Files="$(OutDir)Driver\Xdows-Security-Driver.sys">
-			<Output TaskParameter="Items" ItemName="XdowsPackagedDriverHash" />
+			<Output TaskParameter="Items" ItemName="PackagedDriverHash" />
 		</GetFileHash>
 		<PropertyGroup>
-			<XdowsSourceDriverHashValue>%(XdowsSourceDriverHash.FileHash)</XdowsSourceDriverHashValue>
-			<XdowsPackagedDriverHashValue>%(XdowsPackagedDriverHash.FileHash)</XdowsPackagedDriverHashValue>
+			<SourceDriverHashValue>%(SourceDriverHash.FileHash)</SourceDriverHashValue>
+			<PackagedDriverHashValue>%(PackagedDriverHash.FileHash)</PackagedDriverHashValue>
 		</PropertyGroup>
-		<Error Condition="'$(XdowsSourceDriverHashValue)' != '$(XdowsPackagedDriverHashValue)'" Text="Packaged Xdows Security driver hash does not match the current driver build output." />
+		<Error Condition="'$(SourceDriverHashValue)' != '$(PackagedDriverHashValue)'" Text="Packaged Xdows Security Driver hash does not match the current driver build output." />
 	</Target>
 
-	<Target Name="VerifyPackagedXdowsNativeModel" AfterTargets="CollectXdowsDriverAndModelAssets" Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll') AND Exists('$(OutDir)Xdows-Model-Native.dll')">
+	<Target Name="VerifyPackagedNativeModel" AfterTargets="CollectDriverAndModelAssets" Condition="Exists('$(XdowsModelNativeOutput)\Xdows-Model-Native.dll') AND Exists('$(OutDir)Xdows-Model-Native.dll')">
 		<GetFileHash Files="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll">
-			<Output TaskParameter="Items" ItemName="XdowsSourceNativeHash" />
+			<Output TaskParameter="Items" ItemName="SourceNativeHash" />
 		</GetFileHash>
 		<GetFileHash Files="$(OutDir)Xdows-Model-Native.dll">
-			<Output TaskParameter="Items" ItemName="XdowsPackagedNativeHash" />
+			<Output TaskParameter="Items" ItemName="PackagedNativeHash" />
 		</GetFileHash>
 		<PropertyGroup>
-			<XdowsSourceNativeHashValue>%(XdowsSourceNativeHash.FileHash)</XdowsSourceNativeHashValue>
-			<XdowsPackagedNativeHashValue>%(XdowsPackagedNativeHash.FileHash)</XdowsPackagedNativeHashValue>
+			<SourceNativeHashValue>%(SourceNativeHash.FileHash)</SourceNativeHashValue>
+			<PackagedNativeHashValue>%(PackagedNativeHash.FileHash)</PackagedNativeHashValue>
 		</PropertyGroup>
-		<Error Condition="'$(XdowsSourceNativeHashValue)' != '$(XdowsPackagedNativeHashValue)'" Text="Packaged Xdows native model hash does not match the current native build output." />
+		<Error Condition="'$(SourceNativeHashValue)' != '$(PackagedNativeHashValue)'" Text="Packaged Xdows Model native hash does not match the current native build output." />
 	</Target>
 
-	<Target Name="AddXdowsDriverAndModelAssetsToPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
+	<Target Name="AddDriverAndModelAssetsToPublish" BeforeTargets="ComputeFilesToPublish" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">
 		<ItemGroup>
-			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
-			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')" />
-			<XdowsPublishBootFilterFiles Include="$(XdowsBootFilterPackageOutput)\**\*" Condition="Exists('$(XdowsBootFilterPackageOutput)')" />
-			<ResolvedFileToPublish Include="@(XdowsPublishNativeFiles)" Condition="Exists('%(XdowsPublishNativeFiles.Identity)')">
+			<PublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
+			<PublishDriverFiles Include="$(DriverPackageOutput)\**\*" Condition="Exists('$(DriverPackageOutput)')" />
+			<PublishBootFilterFiles Include="$(BootFilterPackageOutput)\**\*" Condition="Exists('$(BootFilterPackageOutput)')" />
+			<ResolvedFileToPublish Include="@(PublishNativeFiles)" Condition="Exists('%(PublishNativeFiles.Identity)')">
 				<RelativePath>%(Filename)%(Extension)</RelativePath>
 				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 			</ResolvedFileToPublish>
-			<ResolvedFileToPublish Include="@(XdowsPublishDriverFiles)" Condition="Exists('%(XdowsPublishDriverFiles.Identity)')">
+			<ResolvedFileToPublish Include="@(PublishDriverFiles)" Condition="Exists('%(PublishDriverFiles.Identity)')">
 				<RelativePath>Driver\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
 				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 			</ResolvedFileToPublish>
-			<ResolvedFileToPublish Include="@(XdowsPublishBootFilterFiles)" Condition="Exists('%(XdowsPublishBootFilterFiles.Identity)')">
+			<ResolvedFileToPublish Include="@(PublishBootFilterFiles)" Condition="Exists('%(PublishBootFilterFiles.Identity)')">
 				<RelativePath>Driver\BootFilter\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
 				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 			</ResolvedFileToPublish>
-			<ResolvedFileToPublish Include="@(XdowsPublishDriverFiles)" Condition="Exists('%(XdowsPublishDriverFiles.Identity)')">
+			<ResolvedFileToPublish Include="@(PublishDriverFiles)" Condition="Exists('%(PublishDriverFiles.Identity)')">
 				<RelativePath>%(Filename)%(Extension)</RelativePath>
 				<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 			</ResolvedFileToPublish>
 		</ItemGroup>
 	</Target>
 
-	<Target Name="PublishXdowsDriverAndModelAssets" AfterTargets="Publish" Condition="'$(PublishDir)' != '' AND ('$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64')">
+	<Target Name="PublishDriverAndModelAssets" AfterTargets="Publish" Condition="'$(PublishDir)' != '' AND ('$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64')">
 		<ItemGroup>
-			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.onnx" />
-			<XdowsPublishModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.json" />
-			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
-			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
-			<XdowsPublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
-			<XdowsPublishDriverFiles Include="$(XdowsDriverPackageOutput)\**\*" Condition="Exists('$(XdowsDriverPackageOutput)')" />
-			<XdowsPublishBootFilterFiles Include="$(XdowsBootFilterPackageOutput)\**\*" Condition="Exists('$(XdowsBootFilterPackageOutput)')" />
+			<PublishModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.onnx" />
+			<PublishModelFiles Include="$(XdowsModelInvokerRoot)\Models\*.json" />
+			<PublishNativeFiles Include="$(XdowsModelNativeOutput)\Xdows-Model-Native.dll" />
+			<PublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime.dll" />
+			<PublishNativeFiles Include="$(XdowsModelNativeOutput)\onnxruntime_providers_shared.dll" />
+			<PublishDriverFiles Include="$(DriverPackageOutput)\**\*" Condition="Exists('$(DriverPackageOutput)')" />
+			<PublishBootFilterFiles Include="$(BootFilterPackageOutput)\**\*" Condition="Exists('$(BootFilterPackageOutput)')" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(XdowsPublishModelFiles)" DestinationFolder="$(PublishDir)Models" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishModelFiles.Identity)')" />
-		<Copy SourceFiles="@(XdowsPublishNativeFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(XdowsPublishNativeFiles.Identity)')" />
-		<Copy SourceFiles="@(XdowsPublishDriverFiles)" DestinationFiles="@(XdowsPublishDriverFiles->'$(PublishDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(XdowsPublishDriverFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(XdowsPublishBootFilterFiles)" DestinationFiles="@(XdowsPublishBootFilterFiles->'$(PublishDir)Driver\BootFilter\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(PublishModelFiles)" DestinationFolder="$(PublishDir)Models" SkipUnchangedFiles="true" Condition="Exists('%(PublishModelFiles.Identity)')" />
+		<Copy SourceFiles="@(PublishNativeFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('%(PublishNativeFiles.Identity)')" />
+		<Copy SourceFiles="@(PublishDriverFiles)" DestinationFiles="@(PublishDriverFiles->'$(PublishDir)Driver\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(PublishDriverFiles)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(PublishBootFilterFiles)" DestinationFiles="@(PublishBootFilterFiles->'$(PublishDir)Driver\BootFilter\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
 	</Target>
 </Project>

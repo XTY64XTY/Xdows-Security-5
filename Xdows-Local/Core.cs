@@ -50,7 +50,7 @@ namespace Xdows_Local
                     (int score, string extra) scriptScanResult = ScriptScan.ScanScriptFile(path, fileBytes);
                     if (scriptScanResult.score >= 100)
                     {
-                        return extraData ? $"Xdows.script.code{scriptScanResult.score} {scriptScanResult.extra}" : $"Xdows.script.code{scriptScanResult.score}";
+                        return extraData ? $"Xdows.Security.script.code{scriptScanResult.score} {scriptScanResult.extra}" : $"Xdows.Security.script.code{scriptScanResult.score}";
                     }
                     return string.Empty;
                 }
@@ -90,7 +90,7 @@ namespace Xdows_Local
             (int score, string extra) score = Heuristic.Evaluate(path, peFile, fileInfo, deep);
             if (score.score >= 100)
             {
-                return extraData ? $"Xdows.local.code{score.score} {score.extra}" : $"Xdows.local.code{score.score}";
+                return extraData ? $"Xdows.Security.local.code{score.score} {score.extra}" : $"Xdows.Security.local.code{score.score}";
             }
 
             return string.Empty;

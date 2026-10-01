@@ -801,7 +801,7 @@ internal static class NativeModelLibraryLoader
         })
         {
             IsBackground = true,
-            Name = "XdowsNativeLoader"
+            Name = "NativeLoader"
         };
 
         using (ExecutionContext.SuppressFlow())
