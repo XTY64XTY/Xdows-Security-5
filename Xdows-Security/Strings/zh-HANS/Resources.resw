@@ -243,18 +243,6 @@
   <data name="SecurityPage_PathText_Default" xml:space="preserve">
     <value>扫描模式：未指定</value>
   </data>
-  <data name="SecurityPage_ScanItem_System" xml:space="preserve">
-    <value>系统关键区域</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Memory" xml:space="preserve">
-    <value>内存进程</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
-    <value>启动扫描</value>
-  </data>
-  <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
-    <value>用户文档</value>
-  </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>获取失败</value>
   </data>
@@ -307,7 +295,7 @@
     <value>取消</value>
   </data>
   <data name="SecurityPage_More_BrowseFolder" xml:space="preserve">
-    <value>浏览文件夹</value>
+    <value>浏览目录</value>
   </data>
   <data name="SecurityPage_More_BrowseFile" xml:space="preserve">
     <value>浏览文件</value>

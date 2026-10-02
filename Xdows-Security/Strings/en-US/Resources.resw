@@ -243,18 +243,6 @@
   <data name="SecurityPage_PathText_Default" xml:space="preserve">
     <value>Scan mode: Unspecified</value>
   </data>
-  <data name="SecurityPage_ScanItem_System" xml:space="preserve">
-    <value>System critical areas</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Memory" xml:space="preserve">
-    <value>Memory processes</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
-    <value>Startup items</value>
-  </data>
-  <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
-    <value>User documents</value>
-  </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>Get Failed</value>
   </data>

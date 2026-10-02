@@ -1188,7 +1188,13 @@ namespace Xdows_Security.Views
                     }
                     yield break;
                 case ScanMode.File:
-                    if (userPath != null && System.IO.File.Exists(userPath)) yield return userPath;
+                    if (customPaths != null)
+                    {
+                        foreach (string p in customPaths)
+                        {
+                            if (System.IO.File.Exists(p)) yield return p;
+                        }
+                    }
                     yield break;
                 case ScanMode.Folder:
                     if (userPath != null && Directory.Exists(userPath))
@@ -1295,40 +1301,50 @@ namespace Xdows_Security.Views
 
         private async void OnMoreScanBrowseFolderClick(object sender, RoutedEventArgs e)
         {
-            string? folder = await PickPathAsync(ScanMode.Folder);
-            if (folder is null) return;
-            await AddPathToMoreScanList(folder, true);
+            IReadOnlyList<string> folders = await PickFoldersAsync();
+            if (folders.Count == 0) return;
+            AddPathsToMoreScanList(folders, true);
         }
 
         private async void OnMoreScanBrowseFileClick(object sender, RoutedEventArgs e)
         {
-            string? file = await PickPathAsync(ScanMode.File);
-            if (file is null) return;
-            await AddPathToMoreScanList(file, false);
+            IReadOnlyList<string> files = await PickFilesAsync();
+            if (files.Count == 0) return;
+            AddPathsToMoreScanList(files, false);
         }
 
-        private async Task AddPathToMoreScanList(string path, bool isFolder)
+        private void AddPathsToMoreScanList(IReadOnlyList<string> paths, bool isFolder)
         {
             ListView? listView = FindChild<ListView>(_moreScanDialog?.Content as DependencyObject);
             if (listView?.ItemsSource is not ObservableCollection<MoreScanItem> items) return;
 
             HashSet<string> existingPaths = new(items.Select(i => i.Path), StringComparer.OrdinalIgnoreCase);
+            string? duplicatePath = null;
 
-            if (existingPaths.Contains(path))
+            foreach (string path in paths)
+            {
+                if (existingPaths.Add(path))
+                {
+                    items.Add(new MoreScanItem { Path = path, IsFolder = isFolder });
+                }
+                else if (duplicatePath is null)
+                {
+                    duplicatePath = path;
+                }
+            }
+
+            if (duplicatePath is not null)
             {
                 ContentDialog dup = new()
                 {
                     Title = Localizer.Get().GetLocalizedString("SecurityPage_DuplicatePath_Title"),
-                    Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_DuplicatePath_Content"), path),
+                    Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_DuplicatePath_Content"), duplicatePath),
                     CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
                     XamlRoot = this.XamlRoot,
                     RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
                 };
                 _ = dup.ShowAsync();
-                return;
             }
-
-            items.Add(new MoreScanItem { Path = path, IsFolder = isFolder });
         }
 
         private void OnMoreScanClearClick(object sender, RoutedEventArgs e)
@@ -1727,18 +1743,31 @@ namespace Xdows_Security.Views
             }
 
             string? userPath = null;
-            if (mode is ScanMode.File or ScanMode.Folder)
+            bool pathSelectionCancelled = false;
+            if (mode == ScanMode.File)
             {
-                userPath = await PickPathAsync(mode);
+                // 文件扫描支持多选，选中的文件通过 customPaths 传入扫描流程
+                IReadOnlyList<string> files = await PickFilesAsync();
+                if (files.Count == 0)
+                    pathSelectionCancelled = true;
+                else
+                    customPaths = files;
+            }
+            else if (mode == ScanMode.Folder)
+            {
+                userPath = await PickFolderAsync();
                 if (string.IsNullOrEmpty(userPath))
+                    pathSelectionCancelled = true;
+            }
+
+            if (pathSelectionCancelled)
+            {
+                _dispatcherQueue.TryEnqueue(() =>
                 {
-                    _dispatcherQueue.TryEnqueue(() =>
-                    {
-                        StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Cancelled");
-                        StopRadar();
-                    });
-                    return;
-                }
+                    StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Cancelled");
+                    StopRadar();
+                });
+                return;
             }
 
             ScanButton.IsEnabled = false;
@@ -2708,22 +2737,36 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task<string?> PickPathAsync(ScanMode mode)
+        /// <summary>多选文件。用户取消或未选择时返回空集合。</summary>
+        private async Task<IReadOnlyList<string>> PickFilesAsync()
         {
             try
             {
-                if (mode == ScanMode.File)
-                {
-                    PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
-                    if (file is null) { return null; }
-                    return file.Path;
-                }
-                else
-                {
-                    PickFolderResult folder = await (new FolderPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFolderAsync());
-                    if (folder is null) { return null; }
-                    return folder.Path;
-                }
+                var files = await new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickMultipleFilesAsync();
+                return files is null ? [] : [.. files.Select(f => f.Path)];
+            }
+            catch { return []; }
+        }
+
+        /// <summary>多选文件夹。用户取消或未选择时返回空集合。</summary>
+        private async Task<IReadOnlyList<string>> PickFoldersAsync()
+        {
+            try
+            {
+                var folders = await new FolderPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickMultipleFoldersAsync();
+                return folders is null ? [] : [.. folders.Select(f => f.Path)];
+            }
+            catch { return []; }
+        }
+
+        /// <summary>单选文件夹。用户取消时返回 null。</summary>
+        private async Task<string?> PickFolderAsync()
+        {
+            try
+            {
+                PickFolderResult folder = await (new FolderPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFolderAsync());
+                if (folder is null) { return null; }
+                return folder.Path;
             }
             catch { return null; }
         }
@@ -2732,7 +2775,7 @@ namespace Xdows_Security.Views
         {
             ScanMode.Quick => CountQuickScanFiles(),
             ScanMode.Full => CountFullScanFiles(),
-            ScanMode.File => (userPath != null && System.IO.File.Exists(userPath)) ? 1 : 0,
+            ScanMode.File => customPaths?.Count(p => System.IO.File.Exists(p)) ?? 0,
             ScanMode.Folder => (userPath != null && Directory.Exists(userPath)) ? CountFilesInFolder(userPath) : 0,
             ScanMode.More => customPaths?.Sum(p =>
                 Directory.Exists(p) ? CountFilesInFolder(p)

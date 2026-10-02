@@ -243,18 +243,6 @@
   <data name="SecurityPage_PathText_Default" xml:space="preserve">
     <value>掃描模式：未指定</value>
   </data>
-  <data name="SecurityPage_ScanItem_System" xml:space="preserve">
-    <value>系統關鍵區域</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Memory" xml:space="preserve">
-    <value>內存進程</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
-    <value>啟動掃描</value>
-  </data>
-  <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
-    <value>用戶文檔</value>
-  </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>獲取失敗</value>
   </data>
@@ -307,7 +295,7 @@
     <value>取消</value>
   </data>
   <data name="SecurityPage_More_BrowseFolder" xml:space="preserve">
-    <value>瀏覽資料夾</value>
+    <value>瀏覽目錄</value>
   </data>
   <data name="SecurityPage_More_BrowseFile" xml:space="preserve">
     <value>瀏覽文件</value>
