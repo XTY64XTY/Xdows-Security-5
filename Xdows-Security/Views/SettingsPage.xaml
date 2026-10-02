@@ -7,6 +7,7 @@
 xmlns:ui="using:CommunityToolkit.WinUI"
       xmlns:controls="using:CommunityToolkit.WinUI.Controls"
       xmlns:l="using:WinUI3Localizer"
+      NavigationCacheMode="Enabled"
       mc:Ignorable="d">
     <ScrollViewer>
         <StackPanel Spacing="4" Margin="80,24,80,0">
@@ -382,42 +383,20 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                             Click="Boot_Restore_Button_Click"/>
                 </controls:SettingsCard>
                 <TextBlock Margin="0,8,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
-                <controls:SettingsExpander
-               VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Quarantine"
-               HeaderIcon="{ui:FontIcon Glyph=&#xE8B6;}"
-               Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Quarantine_ViewItems"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
-                            <Button x:Name="Quarantine_ViewButton" l:Uids.Uid="SettingsPage_Quarantine_ViewButton" Click="Quarantine_ViewButton_Click"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Quarantine_ClearAll"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE74D;}">
-                            <Button x:Name="Quarantine_ClearButton" l:Uids.Uid="SettingsPage_Quarantine_ClearButton" Click="Quarantine_ClearButton_Click"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
-               VerticalAlignment="Top"
-               l:Uids.Uid="SettingsPage_Trust"
-               HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}"
-               Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Trust_ViewItems"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
-                            <Button x:Name="Trust_ViewButton" l:Uids.Uid="SettingsPage_Trust_ViewButton" Click="Trust_ViewButton_Click"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
-                       l:Uids.Uid="SettingsPage_Trust_AddItem"
-                       HeaderIcon="{ui:FontIcon Glyph=&#xE710;}">
-                            <Button x:Name="Trust_AddButton" l:Uids.Uid="SettingsPage_Trust_AddButton" Click="Trust_AddButton_Click"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                <controls:SettingsCard
+                   VerticalAlignment="Top"
+                   l:Uids.Uid="SettingsPage_Quarantine"
+                   HeaderIcon="{ui:FontIcon Glyph=&#xE8B6;}"
+                   IsClickEnabled="True"
+                   Click="Quarantine_Card_Click"
+                   Margin="0,0,0,4" />
+                <controls:SettingsCard
+                   VerticalAlignment="Top"
+                   l:Uids.Uid="SettingsPage_Trust"
+                   HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}"
+                   IsClickEnabled="True"
+                   Click="Trust_Card_Click"
+                   Margin="0,0,0,4" />
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Other"/>
                 <controls:SettingsCard 
                     l:Uids.Uid="SettingsPage_Other_Language"

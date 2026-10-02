@@ -14,7 +14,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using TrustQuarantine;
 using Windows.Security.Credentials.UI;
 using WinUI3Localizer;
 using Xdows_Security.Services;
@@ -43,10 +42,11 @@ namespace Xdows_Security.Views
 
         private void InitializeProtectionStatusTimer()
         {
-            ProtectionStatusTimer = new DispatcherTimer
+            ProtectionStatusTimer ??= new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(5)
             };
+            ProtectionStatusTimer.Tick -= ProtectionStatusTimer_Tick;
             ProtectionStatusTimer.Tick += ProtectionStatusTimer_Tick;
             ProtectionStatusTimer.Start();
         }
@@ -877,6 +877,11 @@ namespace Xdows_Security.Views
             ProtectionStatusTimer?.Stop();
             Frame frame = this.Frame;
             if (frame == null) return;
+            // 设置页启用了导航缓存，直接 Navigate 会复用缓存实例导致字体资源不重新求值；
+            // 先清空帧缓存移除当前实例，再恢复缓存容量后重建页面（新页面仍会被缓存）。
+            int cacheSize = frame.CacheSize;
+            frame.CacheSize = 0;
+            frame.CacheSize = cacheSize;
             frame.Navigate(typeof(SettingsPage));
             // 重载不应产生一条"返回到旧设置页"的历史记录。
             if (frame.BackStack.Count > 0)
@@ -1130,48 +1135,14 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private async void Quarantine_ViewButton_Click(object sender, RoutedEventArgs e)
+        private void Quarantine_Card_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                QuarantineDialog dialog = new()
-                {
-                    XamlRoot = this.XamlRoot,
-                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                };
-                await dialog.ShowAsync();
-            }
-            catch { }
+            App.MainWindow?.GoToPage("Quarantine");
         }
 
-        private async void Quarantine_ClearButton_Click(object sender, RoutedEventArgs e)
+        private void Trust_Card_Click(object sender, RoutedEventArgs e)
         {
-            _ = QuarantineManager.ClearQuarantine();
-        }
-
-        private async void Trust_ViewButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                TrustDialog dialog = new()
-                {
-                    XamlRoot = this.XamlRoot,
-                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default,
-                };
-                _ = dialog.ShowAsync();
-            }
-            catch { }
-        }
-
-        private async void Trust_AddButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
-                if (file is null) { return; }
-                await TrustManager.AddToTrust(file.Path);
-            }
-            catch { }
+            App.MainWindow?.GoToPage("Trust");
         }
 
         private void TrayVisibleToggle_Toggled(object sender, RoutedEventArgs e)
@@ -1997,6 +1968,14 @@ namespace Xdows_Security.Views
 
             ElementSoundPlayer.State = sound ? ElementSoundPlayerState.On : ElementSoundPlayerState.Off;
             if (sound) ElementSoundPlayer.SpatialAudioMode = spatial ? ElementSpatialAudioMode.On : ElementSpatialAudioMode.Off;
+        }
+
+        protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            // 页面被缓存后再次进入时不会执行构造函数，这里恢复防护状态轮询。
+            if (!IsInitialize)
+                InitializeProtectionStatusTimer();
         }
 
         protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)

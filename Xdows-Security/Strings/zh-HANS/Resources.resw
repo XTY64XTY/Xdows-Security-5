@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -600,47 +600,11 @@
   <data name="SettingsPage_Quarantine.Description" xml:space="preserve">
     <value>管理被隔离的威胁文件，你可以查看、恢复或永久删除这些文件</value>
   </data>
-  <data name="SettingsPage_Quarantine_ViewItems.Header" xml:space="preserve">
-    <value>查看隔离项</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ViewItems.Description" xml:space="preserve">
-    <value>查看所有被隔离的文件列表</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ViewButton.Content" xml:space="preserve">
-    <value>查看</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearAll.Header" xml:space="preserve">
-    <value>清空隔离区</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearAll.Description" xml:space="preserve">
-    <value>永久删除所有被隔离的文件</value>
-  </data>
-  <data name="SettingsPage_Quarantine_ClearButton.Content" xml:space="preserve">
-    <value>清空</value>
-  </data>
   <data name="SettingsPage_Trust.Header" xml:space="preserve">
     <value>信任区</value>
   </data>
   <data name="SettingsPage_Trust.Description" xml:space="preserve">
     <value>管理你信任的文件和应用程序，这些项目将被安全扫描排除</value>
-  </data>
-  <data name="SettingsPage_Trust_ViewItems.Header" xml:space="preserve">
-    <value>查看信任项</value>
-  </data>
-  <data name="SettingsPage_Trust_ViewItems.Description" xml:space="preserve">
-    <value>查看所有被信任的文件和应用程序列表</value>
-  </data>
-  <data name="SettingsPage_Trust_ViewButton.Content" xml:space="preserve">
-    <value>查看</value>
-  </data>
-  <data name="SettingsPage_Trust_AddItem.Header" xml:space="preserve">
-    <value>添加信任项</value>
-  </data>
-  <data name="SettingsPage_Trust_AddItem.Description" xml:space="preserve">
-    <value>添加新的文件或文件夹到信任列表</value>
-  </data>
-  <data name="SettingsPage_Trust_AddButton.Content" xml:space="preserve">
-    <value>添加</value>
   </data>
   <data name="SettingsPage_Other_Language.Description" xml:space="preserve">
     <value>更改应用程序的显示语言</value>
@@ -1096,58 +1060,58 @@
   <data name="Button_Close" xml:space="preserve">
     <value>关闭</value>
   </data>
-  <data name="TrustDialog_Dialog.Title" xml:space="preserve">
+  <data name="TrustPage_Title" xml:space="preserve">
     <value>信任区</value>
   </data>
-  <data name="QuarantineDialog_Dialog.Title" xml:space="preserve">
+  <data name="QuarantinePage_Title" xml:space="preserve">
     <value>隔离区</value>
   </data>
-  <data name="TrustDialog_AddButton.Label" xml:space="preserve">
+  <data name="TrustPage_AddButton.Label" xml:space="preserve">
     <value>添加</value>
   </data>
-  <data name="QuarantineDialog_RestoreButton.Label" xml:space="preserve">
+  <data name="QuarantinePage_RestoreButton.Label" xml:space="preserve">
     <value>恢复</value>
   </data>
-  <data name="TrustDialog_AddMenuItem.Text" xml:space="preserve">
+  <data name="TrustPage_AddMenuItem.Text" xml:space="preserve">
     <value>添加</value>
   </data>
-  <data name="QuarantineDialog_RestoreMenuItem.Text" xml:space="preserve">
+  <data name="QuarantinePage_RestoreMenuItem.Text" xml:space="preserve">
     <value>恢复</value>
   </data>
-  <data name="QuarantineDialog_RestoreToButton.Label" xml:space="preserve">
+  <data name="QuarantinePage_RestoreToButton.Label" xml:space="preserve">
     <value>恢复到...</value>
   </data>
-  <data name="QuarantineDialog_RestoreToMenuItem.Text" xml:space="preserve">
+  <data name="QuarantinePage_RestoreToMenuItem.Text" xml:space="preserve">
     <value>恢复到...</value>
   </data>
-  <data name="TrustDialog_DeleteButton.Label" xml:space="preserve">
+  <data name="TrustPage_DeleteButton.Label" xml:space="preserve">
     <value>删除</value>
   </data>
-  <data name="QuarantineDialog_DeleteButton.Label" xml:space="preserve">
+  <data name="QuarantinePage_DeleteButton.Label" xml:space="preserve">
     <value>删除</value>
   </data>
-  <data name="TrustDialog_DeleteMenuItem.Text" xml:space="preserve">
+  <data name="TrustPage_DeleteMenuItem.Text" xml:space="preserve">
     <value>删除</value>
   </data>
-  <data name="QuarantineDialog_DeleteMenuItem.Text" xml:space="preserve">
+  <data name="QuarantinePage_DeleteMenuItem.Text" xml:space="preserve">
     <value>删除</value>
   </data>
-  <data name="TrustDialog_ClearButton.Label" xml:space="preserve">
+  <data name="TrustPage_ClearButton.Label" xml:space="preserve">
     <value>清空</value>
   </data>
-  <data name="QuarantineDialog_ClearButton.Label" xml:space="preserve">
+  <data name="QuarantinePage_ClearButton.Label" xml:space="preserve">
     <value>清空</value>
   </data>
-  <data name="TrustDialog_ClearMenuItem.Text" xml:space="preserve">
+  <data name="TrustPage_ClearMenuItem.Text" xml:space="preserve">
     <value>清空</value>
   </data>
-  <data name="QuarantineDialog_ClearMenuItem.Text" xml:space="preserve">
+  <data name="QuarantinePage_ClearMenuItem.Text" xml:space="preserve">
     <value>清空</value>
   </data>
-  <data name="QuarantineDialog_EmptyState" xml:space="preserve">
+  <data name="QuarantinePage_EmptyState" xml:space="preserve">
     <value>暂无隔离文件</value>
   </data>
-  <data name="TrustDialog_EmptyState" xml:space="preserve">
+  <data name="TrustPage_EmptyState" xml:space="preserve">
     <value>暂无信任项，单击“添加”将文件加入信任列表</value>
   </data>
   <data name="SettingsPage_Scan_IndexMode.Header" xml:space="preserve">

@@ -8,16 +8,15 @@ using System.Threading.Tasks;
 using TrustQuarantine;
 using WinUI3Localizer;
 
-namespace Xdows_Security
+namespace Xdows_Security.Views
 {
-    public sealed partial class TrustDialog : ContentDialog
+    public sealed partial class TrustPage : Page
     {
         private ObservableCollection<TrustItemModel> _items = [];
 
-        public TrustDialog()
+        public TrustPage()
         {
-            this.InitializeComponent();
-            CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
+            InitializeComponent();
             _ = ReloadAsync();
         }
 
@@ -44,7 +43,7 @@ namespace Xdows_Security
             bool isEmpty = _items.Count == 0;
             EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
             TrustListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
-            EmptyStateText.Text = Localizer.Get().GetLocalizedString("TrustDialog_EmptyState");
+            EmptyStateText.Text = Localizer.Get().GetLocalizedString("TrustPage_EmptyState");
             ClearTrustButton.IsEnabled = !isEmpty;
             DeleteTrustButton.IsEnabled = TrustListView.SelectedItems.Count > 0;
         }
@@ -79,6 +78,5 @@ namespace Xdows_Security
             await TrustManager.AddToTrust(file.Path);
             _ = ReloadAsync();
         }
-
     }
 }

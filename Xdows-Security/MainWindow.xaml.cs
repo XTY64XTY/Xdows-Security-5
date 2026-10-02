@@ -1,9 +1,13 @@
 using Helper.PInvoke.Comctl32;
 using Helper.PInvoke.User32;
+using Microsoft.UI;
+using Microsoft.UI.Text;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -381,24 +385,26 @@ namespace Xdows_Security
             var settings = App.LocalSettings;
             int navTheme = settings.Values.TryGetValue("AppNavTheme", out var raw) && raw is double d ?
                 (int)d : 0;
-            if (navTheme == 0)
+            if (navTheme == 0 && nav.SettingsItem is NavigationViewItem setting)
             {
-                if (nav.SettingsItem is NavigationViewItem setting)
-                {
-                    setting.Content = Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings");
-                    nav.Header = (nav.SelectedItem as NavigationViewItem)?.Content ?? string.Empty;
-                }
+                setting.Content = Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings");
             }
+            // 语言切换后按当前页重建标题（含「设置 > 隔离区」层级面包屑）
+            UpdateHeader(NowPage);
             // 语言切换后刷新通知区域菜单文本（菜单已构建才需要刷新）
             RefreshTrayMenuText();
         }
         public void GoToPage(string PageName, bool pushHistory = true)
         {
+            // 隔离区 / 信任区是「设置」下的子页面，不作为导航菜单项处理
+            bool isSettingsSubPage = PageName is "Quarantine" or "Trust";
+
+            string previousPage = NowPage;
             var selectedItem = nav.SelectedItem as NavigationViewItem;
 
             string currentTag = selectedItem?.Tag as string ?? "";
 
-            if (currentTag != PageName)
+            if (!isSettingsSubPage && currentTag != PageName)
             {
                 var targetItem = FindNavigationItemByTag(nav.MenuItems, PageName);
 
@@ -427,24 +433,132 @@ namespace Xdows_Security
                 UpdateBackEnabled();
             }
 
-            if (PageName == "Settings")
-            {
-                nav.Header = Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings");
-            }
-            else
-            {
-                nav.Header = (nav.SelectedItem as NavigationViewItem)?.Content ?? string.Empty;
-            }
             NowPage = PageName;
+            UpdateHeader(PageName);
             var pageType = PageName switch
             {
                 "Home" => typeof(HomePage),
                 "Security" => typeof(SecurityPage),
                 "XdowsTools" => typeof(XdowsToolsPage),
                 "Settings" => typeof(SettingsPage),
+                "Quarantine" => typeof(QuarantinePage),
+                "Trust" => typeof(TrustPage),
                 _ => typeof(HomePage)
             };
-            navContainer.Navigate(pageType, null, App.GetNavigationTransitionInfo());
+            navContainer.Navigate(pageType, null, ResolveTransition(previousPage, PageName));
+        }
+
+        /// <summary>
+        /// 设置与其子页面之间使用左右滑动切换：进入子页面从右滑入，返回设置页从左滑入。
+        /// 其它导航沿用用户配置的页面切换动画。
+        /// </summary>
+        private static NavigationTransitionInfo ResolveTransition(string from, string to)
+        {
+            if (from == "Settings" && to is "Quarantine" or "Trust")
+                return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromRight };
+
+            if (from is "Quarantine" or "Trust" && to == "Settings")
+                return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft };
+
+            return App.GetNavigationTransitionInfo();
+        }
+
+        /// <summary>
+        /// 根据当前页面构建导航标题。设置子页面（隔离区 / 信任区）显示
+        /// 「设置 &gt; 隔离区」层级面包屑，点击父级可返回上一层。
+        /// </summary>
+        private void UpdateHeader(string pageName)
+        {
+            switch (pageName)
+            {
+                case "Settings":
+                    nav.Header = Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings");
+                    break;
+                case "Quarantine":
+                    nav.Header = BuildBreadcrumb(
+                        ("MainWindow_Nav_Settings", "Settings"),
+                        ("QuarantinePage_Title", null));
+                    break;
+                case "Trust":
+                    nav.Header = BuildBreadcrumb(
+                        ("MainWindow_Nav_Settings", "Settings"),
+                        ("TrustPage_Title", null));
+                    break;
+                default:
+                    nav.Header = (nav.SelectedItem as NavigationViewItem)?.Content ?? string.Empty;
+                    break;
+            }
+        }
+
+        private UIElement BuildBreadcrumb(params (string Uid, string? TargetPage)[] segments)
+        {
+            // 与 NavigationView 页面标题样式保持一致（NavigationViewTitleHeaderContentControlTextStyle：28px / SemiBold）。
+            const double headerFontSize = 28;
+            var headerFontWeight = FontWeights.SemiBold;
+            // 代码创建的文本不经过 XAML 的 {ThemeResource} 求值，需显式套用当前默认字体，
+            // 否则不会跟随"使用 Noto 字体"设置。
+            FontFamily? uiFont = FontService.CurrentFontFamily;
+
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            for (int i = 0; i < segments.Length; i++)
+            {
+                string text = Localizer.Get().GetLocalizedString(segments[i].Uid);
+                string? target = segments[i].TargetPage;
+
+                if (!string.IsNullOrEmpty(target))
+                {
+                    string targetPage = target;
+                    // 用无背景 Button 承载父级：Button 默认前景为主文本色（非强调蓝），
+                    // 悬停时仍有系统高亮反馈，保持与页面标题一致的外观。
+                    var link = new Button
+                    {
+                        Content = text,
+                        Background = new SolidColorBrush(Colors.Transparent),
+                        BorderThickness = new Thickness(0),
+                        Padding = new Thickness(0),
+                        MinWidth = 0,
+                        MinHeight = 0,
+                        FontSize = headerFontSize,
+                        FontWeight = headerFontWeight,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    if (uiFont != null)
+                        link.FontFamily = uiFont;
+                    link.Click += (sender, args) => GoToPage(targetPage, false);
+                    panel.Children.Add(link);
+                }
+                else
+                {
+                    var leaf = new TextBlock
+                    {
+                        Text = text,
+                        FontSize = headerFontSize,
+                        FontWeight = headerFontWeight,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    if (uiFont != null)
+                        leaf.FontFamily = uiFont;
+                    panel.Children.Add(leaf);
+                }
+
+                if (i < segments.Length - 1)
+                {
+                    panel.Children.Add(new FontIcon
+                    {
+                        Glyph = "\uE76C",
+                        FontSize = 16,
+                        Margin = new Thickness(10, 0, 10, 0),
+                        VerticalAlignment = VerticalAlignment.Center
+                    });
+                }
+            }
+
+            return panel;
         }
 
         private static NavigationViewItem? FindNavigationItemByTag(IList<object> items, string targetTag)

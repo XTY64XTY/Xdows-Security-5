@@ -56,6 +56,14 @@ namespace Xdows_Security.Services
         public static bool IsEnabled { get; private set; }
 
         /// <summary>
+        /// 启用时返回当前使用的 Noto 字体族，未启用时返回 null。
+        /// 供代码动态创建的文本控件显式设置 FontFamily——
+        /// 这类控件不经过 XAML 的 {ThemeResource} 求值，无法自动跟随设置。
+        /// </summary>
+        public static FontFamily? CurrentFontFamily
+            => IsEnabled ? (_notoSansFontFamily ??= CreateNotoSansFontFamily()) : null;
+
+        /// <summary>
         /// 读取设置。未写入过该设置时视为启用，以满足“默认启用该设置”的需求。
         /// </summary>
         public static bool ReadSetting()

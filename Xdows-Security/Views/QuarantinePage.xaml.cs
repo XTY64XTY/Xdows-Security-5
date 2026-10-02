@@ -8,17 +8,18 @@ using System.Threading.Tasks;
 using TrustQuarantine;
 using WinUI3Localizer;
 
-namespace Xdows_Security
+namespace Xdows_Security.Views
 {
-    public sealed partial class QuarantineDialog : ContentDialog
+    public sealed partial class QuarantinePage : Page
     {
         private ObservableCollection<QuarantineItemModel> _items = [];
-        public QuarantineDialog()
+
+        public QuarantinePage()
         {
             InitializeComponent();
-            CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
             _ = ReloadAsync();
         }
+
         private Task ReloadAsync()
         {
             _items = new ObservableCollection<QuarantineItemModel>(QuarantineManager.GetQuarantineItems());
@@ -32,7 +33,7 @@ namespace Xdows_Security
             bool isEmpty = _items.Count == 0;
             EmptyStatePanel.Visibility = isEmpty ? Visibility.Visible : Visibility.Collapsed;
             QuarantineListView.Visibility = isEmpty ? Visibility.Collapsed : Visibility.Visible;
-            EmptyStateText.Text = Localizer.Get().GetLocalizedString("QuarantineDialog_EmptyState");
+            EmptyStateText.Text = Localizer.Get().GetLocalizedString("QuarantinePage_EmptyState");
             ClearQuarantineButton.IsEnabled = !isEmpty;
             UpdateSelectionActions();
         }
@@ -112,6 +113,5 @@ namespace Xdows_Security
             await QuarantineManager.ClearQuarantine();
             await ReloadAsync();
         }
-
     }
 }
