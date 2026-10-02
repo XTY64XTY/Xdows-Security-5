@@ -869,6 +869,8 @@ namespace Xdows_Security.Views
             // Tag 即设置键名（UseNotoSansFont），沿用通用开关保存逻辑持久化。
             Toggled_SaveToggleData(sender, e);
             FontService.SetEnabled(UseNotoSansToggle.IsOn);
+            // 主动重建以套用新字体。
+            App.MainWindow?.RefreshHeader();
 
             // 字体资源通过 {ThemeResource} 被默认样式引用，已渲染的控件不会重新求值，
             // 之前的"翻转 RequestedTheme"方案既不彻底又会闪一次相反主题。

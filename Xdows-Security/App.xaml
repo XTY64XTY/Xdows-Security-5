@@ -10,6 +10,11 @@
                 <ResourceDictionary Source="/Styles/CopyButton.xaml" />
                 <ResourceDictionary Source="/Styles/TitleBarMenuResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <!-- 独立 TextBlock 默认使用 XamlAutoFontFamily 自动字体，不会应用 FontService 覆盖的字体资源；
+                 这里把默认 TextBlock 字体绑定到 ContentControlThemeFontFamily，使其跟随“使用 Noto 字体”设置。 -->
+            <Style TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -472,7 +472,7 @@ namespace Xdows_Security
             switch (pageName)
             {
                 case "Settings":
-                    nav.Header = Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings");
+                    nav.Header = BuildHeaderText(Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings"));
                     break;
                 case "Quarantine":
                     nav.Header = BuildBreadcrumb(
@@ -485,9 +485,31 @@ namespace Xdows_Security
                         ("TrustPage_Title", null));
                     break;
                 default:
-                    nav.Header = (nav.SelectedItem as NavigationViewItem)?.Content ?? string.Empty;
+                    nav.Header = BuildHeaderText((nav.SelectedItem as NavigationViewItem)?.Content?.ToString() ?? string.Empty);
                     break;
             }
+        }
+
+        /// <summary>按当前字体设置刷新导航标题（用于运行时切换"使用 Noto 字体"后立即生效）。</summary>
+        public void RefreshHeader() => UpdateHeader(NowPage);
+
+        /// <summary>
+        /// 生成导航标题文本。NavigationView 标题与独立 TextBlock 的字体来自
+        /// XamlAutoFontFamily 自动字体，不会随字体设置生效，故这里显式套用当前字体。
+        /// </summary>
+        private static UIElement BuildHeaderText(string text)
+        {
+            var block = new TextBlock
+            {
+                Text = text,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            FontFamily? uiFont = FontService.CurrentFontFamily;
+            if (uiFont != null)
+                block.FontFamily = uiFont;
+
+            return block;
         }
 
         private UIElement BuildBreadcrumb(params (string Uid, string? TargetPage)[] segments)
