@@ -489,6 +489,12 @@
   <data name="SettingsPage_Scan_Local.Description" xml:space="preserve">
     <value>本地综合引擎速度相对较快，但是可能无法及时发现新的威胁</value>
   </data>
+  <data name="SettingsPage_Scan_Local_SupportWarning.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="SettingsPage_Scan_Local_SupportWarning.Message" xml:space="preserve">
+    <value>此引擎可能已经不受支持。</value>
+  </data>
   <data name="SettingsPage_Scan_Model.Header" xml:space="preserve">
     <value>Xdows Model 本地引擎</value>
   </data>
@@ -785,6 +791,12 @@
   </data>
   <data name="SettingsPage_Scan_Cloud.Description" xml:space="preserve">
     <value>云端引擎需要连接至互联网，但能及时获取最新的威胁并采取措施</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_SupportWarning.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_SupportWarning.Message" xml:space="preserve">
+    <value>此引擎可能已经不受支持。</value>
   </data>
   <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
     <value>在测试阶段中，这个选项为必选项</value>

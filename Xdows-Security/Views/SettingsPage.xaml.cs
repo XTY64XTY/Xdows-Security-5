@@ -124,7 +124,6 @@ namespace Xdows_Security.Views
         private void UpdateAppText()
         {
             SettingsPage_Protection_Registry.Header += " (Beta)";
-            SettingsPage_Scan_Model.Header += " (Beta)";
             UpdateInjectionProtectionText();
             UpdateDriverProtectionState();
         }

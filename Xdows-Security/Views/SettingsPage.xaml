@@ -220,7 +220,11 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="LocalScanToggle" Tag="LocalScan" Toggled="Toggled_SaveToggleData" />
                     <controls:SettingsExpander.Items>
-                        <ToolTip></ToolTip>
+                        <InfoBar
+                            l:Uids.Uid="SettingsPage_Scan_Local_SupportWarning"
+                            IsOpen="True"
+                            IsClosable="False"
+                            Severity="Warning" />
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Local_DeepScan"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
@@ -240,6 +244,11 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="CloudScanToggle" Tag="CloudScan" Toggled="Toggled_SaveToggleData"  />
                     <controls:SettingsExpander.Items>
+                        <InfoBar
+                            l:Uids.Uid="SettingsPage_Scan_Cloud_SupportWarning"
+                            IsOpen="True"
+                            IsClosable="False"
+                            Severity="Warning" />
                         <controls:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Cloud_AutoUpload"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE898;}">

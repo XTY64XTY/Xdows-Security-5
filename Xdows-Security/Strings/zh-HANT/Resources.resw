@@ -489,6 +489,12 @@
   <data name="SettingsPage_Scan_Local.Description" xml:space="preserve">
     <value>本地綜合引擎速度相對較快，但是可能無法及時發現新的威脅</value>
   </data>
+  <data name="SettingsPage_Scan_Local_SupportWarning.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="SettingsPage_Scan_Local_SupportWarning.Message" xml:space="preserve">
+    <value>此引擎可能已經不受支援。</value>
+  </data>
   <data name="SettingsPage_Scan_Model.Header" xml:space="preserve">
     <value>Xdows Model 本地引擎</value>
   </data>
@@ -785,6 +791,12 @@
   </data>
   <data name="SettingsPage_Scan_Cloud.Description" xml:space="preserve">
     <value>雲端引擎需要連接至互聯網，但能及時獲取最新的威脅並採取措施</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_SupportWarning.Title" xml:space="preserve">
+    <value>警告</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_SupportWarning.Message" xml:space="preserve">
+    <value>此引擎可能已經不受支援。</value>
   </data>
   <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
     <value>在測試階段中，這個選項爲必選項</value>

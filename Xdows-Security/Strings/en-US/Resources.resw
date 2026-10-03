@@ -489,6 +489,12 @@
   <data name="SettingsPage_Scan_Local.Description" xml:space="preserve">
     <value>The built-in local engine is fast but may not detect the latest threats promptly.</value>
   </data>
+  <data name="SettingsPage_Scan_Local_SupportWarning.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="SettingsPage_Scan_Local_SupportWarning.Message" xml:space="preserve">
+    <value>This engine may no longer be supported.</value>
+  </data>
   <data name="SettingsPage_Scan_Model.Header" xml:space="preserve">
     <value>Xdows Model Engine</value>
   </data>
@@ -785,6 +791,12 @@ Why not try XIGUA Security?</value>
   </data>
   <data name="SettingsPage_Scan_Cloud.Description" xml:space="preserve">
     <value>The cloud engine requires an internet connection to detect and respond to the latest threats in real time.</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_SupportWarning.Title" xml:space="preserve">
+    <value>Warning</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_SupportWarning.Message" xml:space="preserve">
+    <value>This engine may no longer be supported.</value>
   </data>
   <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
     <value>This option is required during the testing phase.</value>
