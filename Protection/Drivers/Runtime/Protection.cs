@@ -320,7 +320,15 @@ public sealed class DriverProtection : IProtectionModel
             }
             catch (Exception ex)
             {
-                Log("Bridge", $"Driver protection start failed: {ex}");
+                // 启动失败必须用 Error 级别：此前走 Info 的 Log()，用户在日志里很容易漏看。
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    0,
+                    0,
+                    DriverProtectionLogSeverity.Error,
+                    0,
+                    DateTimeOffset.Now,
+                    "Bridge",
+                    $"Driver protection start failed: {ex}"));
                 try
                 {
                     if (DriverBridgeClient.TryQueryStateWithoutRegister(out var driverState, out _))
@@ -1874,10 +1882,15 @@ public sealed class DriverProtection : IProtectionModel
         {
             catalog = DriverBehaviorRuleCatalog.TryLoad(path);
         }
-        catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException or UnauthorizedAccessException)
+        //
+        // 声明式规则是可选增强：任何加载/解析失败都只记录并跳过下发，
+        // 绝不允许把整个驱动防护启动打断（2026-10-03 曾因 AOT 下反射式
+        // JSON 抛 InvalidOperationException 逃出这个过滤器，导致防护起不来）。
+        //
+        catch (Exception ex)
         {
             Log("Behavior",
-                $"Declarative rule configuration rejected; kernel keeps its fixed rules. file={path} reason={ex.Message}");
+                $"Declarative rule configuration rejected; kernel keeps its fixed rules. file={path} reason={ex}");
             return;
         }
 

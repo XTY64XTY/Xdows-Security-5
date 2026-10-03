@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Protection;
 
@@ -35,7 +36,7 @@ namespace Protection;
 //     ]
 //   }
 //
-internal sealed class DriverBehaviorRuleCatalog
+internal sealed partial class DriverBehaviorRuleCatalog
 {
     private static readonly IReadOnlyList<BehaviorRule> NoRules = Array.Empty<BehaviorRule>();
     private static readonly IReadOnlyList<InitiatorExclusion> NoExclusions = Array.Empty<InitiatorExclusion>();
@@ -69,9 +70,15 @@ internal sealed class DriverBehaviorRuleCatalog
             return null;
 
         using FileStream stream = File.OpenRead(path);
-        BehaviorRuleConfigFile? file = JsonSerializer.Deserialize<BehaviorRuleConfigFile>(
+        //
+        // 必须走 source generator：AOT 发布（PublishAot=true）默认关闭基于反射的
+        // System.Text.Json（runtimeconfig 里 JsonSerializer.IsReflectionEnabledByDefault=false），
+        // 反射式 Deserialize<T> 会抛 InvalidOperationException。此前这个异常类型不在
+        // 调用方的过滤器里，直接把整个驱动防护启动带崩（2026-10-03 用户实测日志）。
+        //
+        BehaviorRuleConfigFile? file = JsonSerializer.Deserialize(
             stream,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip });
+            BehaviorRuleJsonContext.Default.BehaviorRuleConfigFile);
 
         if (file is null)
             throw new InvalidDataException("BehaviorRules.json is empty or not a JSON object.");
@@ -323,4 +330,13 @@ internal sealed class DriverBehaviorRuleCatalog
 
         public string? Pattern { get; set; }
     }
+
+    //
+    // AOT 安全的反序列化入口。选项从 Deserialize 的 JsonSerializerOptions
+    // 迁到生成器特性上（PropertyNamingPolicy 保持默认：配置文件用 camelCase，
+    // 靠 PropertyNameCaseInsensitive 对上 PascalCase 属性）。
+    //
+    [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip)]
+    [JsonSerializable(typeof(BehaviorRuleConfigFile))]
+    private sealed partial class BehaviorRuleJsonContext : JsonSerializerContext;
 }
