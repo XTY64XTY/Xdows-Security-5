@@ -123,8 +123,8 @@
 	<PropertyGroup Label="Globals">
 		<ApplicationIcon>logo.ico</ApplicationIcon>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<AssemblyVersion>5.0.1.0</AssemblyVersion>
-		<FileVersion>5.0.1.0</FileVersion>
+		<AssemblyVersion>5.0.2.0</AssemblyVersion>
+		<FileVersion>5.0.2.0</FileVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
