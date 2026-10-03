@@ -1,4 +1,4 @@
-namespace Xdows_Local;
+namespace Protection;
 
 public enum RegistryRuleCategory
 {

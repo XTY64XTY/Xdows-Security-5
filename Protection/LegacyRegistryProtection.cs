@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Channels;
 using TrustQuarantine;
-using Xdows_Local;
 using static Protection.Callback;
 
 namespace Protection;

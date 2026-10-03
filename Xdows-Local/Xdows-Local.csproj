@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="RegistryScan.cs" />
     <PackageReference Include="PeNet" Version="6.1.2" />
   </ItemGroup>
 

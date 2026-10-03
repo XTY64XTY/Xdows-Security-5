@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Xdows-Local\RegistryScan.cs" Link="RegistryScan.cs" />
     <ProjectReference Include="..\Helper\Helper.csproj" />
     <ProjectReference Include="..\TrustQuarantine\TrustQuarantine.csproj" />
     <ProjectReference Include="..\Xdows-Local\Xdows-Local.csproj" />

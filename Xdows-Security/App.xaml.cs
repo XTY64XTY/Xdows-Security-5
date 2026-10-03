@@ -201,7 +201,7 @@ namespace Xdows_Security
             };
         }
 
-        private static Xdows_Local.RegistryProtectionOptions GetRegistryProtectionOptions()
+        private static Protection.RegistryProtectionOptions GetRegistryProtectionOptions()
         {
             var settings = App.LocalSettings;
             bool includeSecondary = !settings.Values.TryGetValue(
@@ -210,7 +210,7 @@ namespace Xdows_Security
             bool includeOther = settings.Values.TryGetValue(
                 "RegistryProtectionOther",
                 out object? otherRaw) && otherRaw is bool other && other;
-            return new Xdows_Local.RegistryProtectionOptions(includeSecondary, includeOther);
+            return new Protection.RegistryProtectionOptions(includeSecondary, includeOther);
         }
 
         /// <summary>
