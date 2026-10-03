@@ -33,7 +33,7 @@ public sealed partial class UsbScanWindow : Window
         this.SystemBackdrop = new Microsoft.UI.Xaml.Media.MicaBackdrop();
 
         DeviceNameText.Text = driveLabel;
-        StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Scanning.Text");
+        StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Scanning");
         FilesScannedText.Text = "0";
         ThreatsFoundText.Text = "0";
 
@@ -81,13 +81,13 @@ public sealed partial class UsbScanWindow : Window
             }
             if (e.IsPaused)
             {
-                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Paused.Text");
-                PauseButton.Content = Localizer.Get().GetLocalizedString("UsbScanWindow_Resume.Content");
+                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Paused");
+                PauseButton.Content = Localizer.Get().GetLocalizedString("UsbScanWindow_Resume");
             }
             else
             {
-                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Scanning.Text");
-                PauseButton.Content = Localizer.Get().GetLocalizedString("UsbScanWindow_Pause.Content");
+                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Scanning");
+                PauseButton.Content = Localizer.Get().GetLocalizedString("UsbScanWindow_Pause");
             }
         });
     }
@@ -109,13 +109,13 @@ public sealed partial class UsbScanWindow : Window
             if (e.IsCancelled)
             {
                 StatusIcon.Glyph = "\uE711";
-                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Cancelled.Text");
+                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Cancelled");
                 ResultBorder.Visibility = Visibility.Visible;
                 ResultBorder.Background =
                     (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCautionBackgroundBrush"];
                 ResultBorder.BorderBrush =
                     (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCautionBrush"];
-                ResultTitleText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Result_Cancelled.Text");
+                ResultTitleText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Result_Cancelled");
                 _autoCloseTimer.Start();
                 return;
             }
@@ -126,7 +126,7 @@ public sealed partial class UsbScanWindow : Window
                 StatusIcon.Foreground =
                     (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCriticalBrush"];
                 StatusText.Text = string.Format(
-                    Localizer.Get().GetLocalizedString("UsbScanWindow_Status_ThreatsFound.Text"),
+                    Localizer.Get().GetLocalizedString("UsbScanWindow_Status_ThreatsFound"),
                     e.ThreatsFound);
                 ResultBorder.Visibility = Visibility.Visible;
                 ResultBorder.Background =
@@ -134,9 +134,9 @@ public sealed partial class UsbScanWindow : Window
                 ResultBorder.BorderBrush =
                     (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorCriticalBrush"];
                 ResultTitleText.Text = string.Format(
-                    Localizer.Get().GetLocalizedString("UsbScanWindow_Result_Threats.Text"),
+                    Localizer.Get().GetLocalizedString("UsbScanWindow_Result_Threats"),
                     e.ThreatsFound);
-                ResultDetailText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Result_ThreatsDetail.Text");
+                ResultDetailText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Result_ThreatsDetail");
                 ViewThreatsButton.Visibility = Visibility.Visible;
             }
             else
@@ -144,9 +144,9 @@ public sealed partial class UsbScanWindow : Window
                 StatusIcon.Glyph = "\uE73E";
                 StatusIcon.Foreground =
                     (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["SystemFillColorSuccessBrush"];
-                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Safe.Text");
+                StatusText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Status_Safe");
                 ResultBorder.Visibility = Visibility.Visible;
-                ResultTitleText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Result_Safe.Text");
+                ResultTitleText.Text = Localizer.Get().GetLocalizedString("UsbScanWindow_Result_Safe");
                 _autoCloseTimer.Start();
             }
 

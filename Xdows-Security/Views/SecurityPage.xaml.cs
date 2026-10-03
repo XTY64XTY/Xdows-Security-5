@@ -1139,7 +1139,7 @@ namespace Xdows_Security.Views
                 IReadOnlyList<string> paths = await ShowMoreScanDialogAsync();
                 if (paths.Count > 0)
                 {
-                    await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_More.Text"), ScanMode.More, paths);
+                    await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_More"), ScanMode.More, paths);
                 }
                 return;
             }
@@ -1168,7 +1168,7 @@ namespace Xdows_Security.Views
                 return;
             }
 
-            await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_Quick.Text"), ScanMode.Quick);
+            await StartScanAsync(Localizer.Get().GetLocalizedString("SecurityPage_ScanMenu_Quick"), ScanMode.Quick);
         }
 
         private static IEnumerable<string> EnumerateFilesStreaming(ScanMode mode, string? userPath, IReadOnlyList<string>? customPaths)

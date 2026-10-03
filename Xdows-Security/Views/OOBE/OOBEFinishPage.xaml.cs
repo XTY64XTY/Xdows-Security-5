@@ -40,14 +40,14 @@ namespace Xdows_Security.Views.OOBE
                 FinishButton.IsEnabled = false;
                 LoadingRing.IsActive = true;
                 LoadingRing.Visibility = Visibility.Visible;
-                FinishButtonText.Text = Localizer.Get().GetLocalizedString("OOBE_Finish_Button_Loading.Text");
+                FinishButtonText.Text = Localizer.Get().GetLocalizedString("OOBE_Finish_Button_Loading");
             }
             else
             {
                 FinishButton.IsEnabled = true;
                 LoadingRing.IsActive = false;
                 LoadingRing.Visibility = Visibility.Collapsed;
-                FinishButtonText.Text = Localizer.Get().GetLocalizedString("OOBE_Finish_Button.Content");
+                FinishButtonText.Text = Localizer.Get().GetLocalizedString("OOBE_Finish_Button");
             }
         }
 

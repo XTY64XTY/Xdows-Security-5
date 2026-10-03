@@ -225,10 +225,10 @@
   <data name="OOBE_Finish_Content.Text" xml:space="preserve">
     <value>Click Finish to continue</value>
   </data>
-  <data name="OOBE_Finish_Button.Content" xml:space="preserve">
+  <data name="OOBE_Finish_Button" xml:space="preserve">
     <value>Finish</value>
   </data>
-  <data name="OOBE_Finish_Button_Loading.Text" xml:space="preserve">
+  <data name="OOBE_Finish_Button_Loading" xml:space="preserve">
     <value>Please wait</value>
   </data>
   <data name="SettingsPage_Other_RestartOOBE.Header" xml:space="preserve">
@@ -242,6 +242,18 @@
   </data>
   <data name="SecurityPage_PathText_Default" xml:space="preserve">
     <value>Scan mode: Unspecified</value>
+  </data>
+  <data name="SecurityPage_ScanItem_System" xml:space="preserve">
+    <value>System critical areas</value>
+  </data>
+  <data name="SecurityPage_ScanItem_Memory" xml:space="preserve">
+    <value>Memory processes</value>
+  </data>
+  <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
+    <value>Startup items</value>
+  </data>
+  <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
+    <value>User documents</value>
   </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>Get Failed</value>
@@ -855,7 +867,7 @@ Why not try XIGUA Security?</value>
   <data name="HomePage_LogFilter_Fatal.Text" xml:space="preserve">
     <value>Fatal</value>
   </data>
-  <data name="HomePage_GetFailed.Text" xml:space="preserve">
+  <data name="HomePage_GetFailed" xml:space="preserve">
     <value>Unavailable</value>
   </data>
   <data name="HomePage_ExportLog_SaveDialog_Title" xml:space="preserve">
@@ -1358,7 +1370,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="LogExportDialog_Keyword.Text" xml:space="preserve">
     <value>Keyword</value>
   </data>
-  <data name="LogExportDialog_Export.Content" xml:space="preserve">
+  <data name="LogExportDialog_Export" xml:space="preserve">
     <value>Export</value>
   </data>
   <data name="LogExportDialog_FromDate.PlaceholderText" xml:space="preserve">
@@ -1379,19 +1391,19 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="UsbScanWindow_Title.Title" xml:space="preserve">
     <value>USB Device Scan</value>
   </data>
-  <data name="UsbScanWindow_Status_Scanning.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Scanning" xml:space="preserve">
     <value>Scanning...</value>
   </data>
-  <data name="UsbScanWindow_Status_Paused.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Paused" xml:space="preserve">
     <value>Paused</value>
   </data>
-  <data name="UsbScanWindow_Status_Safe.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Safe" xml:space="preserve">
     <value>Safe</value>
   </data>
-  <data name="UsbScanWindow_Status_ThreatsFound.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_ThreatsFound" xml:space="preserve">
     <value>{0} threat(s) found</value>
   </data>
-  <data name="UsbScanWindow_Status_Cancelled.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Cancelled" xml:space="preserve">
     <value>Cancelled</value>
   </data>
   <data name="UsbScanWindow_FilesScanned.Text" xml:space="preserve">
@@ -1400,16 +1412,16 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="UsbScanWindow_ThreatsFound.Text" xml:space="preserve">
     <value>Threats found</value>
   </data>
-  <data name="UsbScanWindow_Result_Safe.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_Safe" xml:space="preserve">
     <value>No threats found</value>
   </data>
-  <data name="UsbScanWindow_Result_Threats.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_Threats" xml:space="preserve">
     <value>{0} threat(s) found</value>
   </data>
-  <data name="UsbScanWindow_Result_ThreatsDetail.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_ThreatsDetail" xml:space="preserve">
     <value>Click "View Threats" to handle</value>
   </data>
-  <data name="UsbScanWindow_Result_Cancelled.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_Cancelled" xml:space="preserve">
     <value>Scan cancelled</value>
   </data>
   <data name="UsbScanWindow_OpenDevice.Content" xml:space="preserve">
@@ -1421,7 +1433,7 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="UsbScanWindow_Pause.Content" xml:space="preserve">
     <value>Pause</value>
   </data>
-  <data name="UsbScanWindow_Resume.Content" xml:space="preserve">
+  <data name="UsbScanWindow_Resume" xml:space="preserve">
     <value>Resume</value>
   </data>
   <data name="UsbScanWindow_Cancel.Content" xml:space="preserve">

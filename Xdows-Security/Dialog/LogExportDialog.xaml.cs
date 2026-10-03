@@ -14,7 +14,7 @@ namespace Xdows_Security
         public LogExportDialog()
         {
             InitializeComponent();
-            PrimaryButtonText = Localizer.Get().GetLocalizedString("LogExportDialog_Export.Content");
+            PrimaryButtonText = Localizer.Get().GetLocalizedString("LogExportDialog_Export");
             CloseButtonText = Localizer.Get().GetLocalizedString("Button_Close");
         }
 

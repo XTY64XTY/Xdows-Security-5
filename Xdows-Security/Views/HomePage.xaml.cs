@@ -560,8 +560,8 @@ namespace Xdows_Security.Views
             }
             catch (Exception ex)
             {
-                OsName.Text = Localizer.Get().GetLocalizedString("HomePage_GetFailed.Text");
-                OsVersion.Text = Localizer.Get().GetLocalizedString("HomePage_GetFailed.Text");
+                OsName.Text = Localizer.Get().GetLocalizedString("HomePage_GetFailed");
+                OsVersion.Text = Localizer.Get().GetLocalizedString("HomePage_GetFailed");
                 LogText.AddNewLog(LogText.LogLevel.WARN, "LoadSystemInfo", ex.Message);
             }
             UpdateMemory();
@@ -574,7 +574,7 @@ namespace Xdows_Security.Views
         {
             var (ok, _, disp) = SystemInfoModel.GetMemory();
 
-            MemoryUsage.Text = ok ? disp : Localizer.Get().GetLocalizedString("HomePage_GetFailed.Text");
+            MemoryUsage.Text = ok ? disp : Localizer.Get().GetLocalizedString("HomePage_GetFailed");
         }
 
         private void LoadProtection()

@@ -225,10 +225,10 @@
   <data name="OOBE_Finish_Content.Text" xml:space="preserve">
     <value>单击 完成 以继续</value>
   </data>
-  <data name="OOBE_Finish_Button.Content" xml:space="preserve">
+  <data name="OOBE_Finish_Button" xml:space="preserve">
     <value>完成</value>
   </data>
-  <data name="OOBE_Finish_Button_Loading.Text" xml:space="preserve">
+  <data name="OOBE_Finish_Button_Loading" xml:space="preserve">
     <value>请稍等</value>
   </data>
   <data name="SettingsPage_Other_RestartOOBE.Header" xml:space="preserve">
@@ -242,6 +242,18 @@
   </data>
   <data name="SecurityPage_PathText_Default" xml:space="preserve">
     <value>扫描模式：未指定</value>
+  </data>
+  <data name="SecurityPage_ScanItem_System" xml:space="preserve">
+    <value>系统关键区域</value>
+  </data>
+  <data name="SecurityPage_ScanItem_Memory" xml:space="preserve">
+    <value>内存进程</value>
+  </data>
+  <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
+    <value>启动扫描</value>
+  </data>
+  <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
+    <value>用户文档</value>
   </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>获取失败</value>
@@ -855,7 +867,7 @@
   <data name="HomePage_LogFilter_Fatal.Text" xml:space="preserve">
     <value>致命</value>
   </data>
-  <data name="HomePage_GetFailed.Text" xml:space="preserve">
+  <data name="HomePage_GetFailed" xml:space="preserve">
     <value>获取失败</value>
   </data>
   <data name="HomePage_ExportLog_SaveDialog_Title" xml:space="preserve">
@@ -1357,7 +1369,7 @@
   <data name="LogExportDialog_Keyword.Text" xml:space="preserve">
     <value>关键词</value>
   </data>
-  <data name="LogExportDialog_Export.Content" xml:space="preserve">
+  <data name="LogExportDialog_Export" xml:space="preserve">
     <value>导出</value>
   </data>
   <data name="LogExportDialog_FromDate.PlaceholderText" xml:space="preserve">
@@ -1378,19 +1390,19 @@
   <data name="UsbScanWindow_Title.Title" xml:space="preserve">
     <value>USB 设备扫描</value>
   </data>
-  <data name="UsbScanWindow_Status_Scanning.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Scanning" xml:space="preserve">
     <value>正在扫描...</value>
   </data>
-  <data name="UsbScanWindow_Status_Paused.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Paused" xml:space="preserve">
     <value>已暂停</value>
   </data>
-  <data name="UsbScanWindow_Status_Safe.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Safe" xml:space="preserve">
     <value>安全</value>
   </data>
-  <data name="UsbScanWindow_Status_ThreatsFound.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_ThreatsFound" xml:space="preserve">
     <value>发现 {0} 个威胁</value>
   </data>
-  <data name="UsbScanWindow_Status_Cancelled.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Status_Cancelled" xml:space="preserve">
     <value>已取消</value>
   </data>
   <data name="UsbScanWindow_FilesScanned.Text" xml:space="preserve">
@@ -1399,16 +1411,16 @@
   <data name="UsbScanWindow_ThreatsFound.Text" xml:space="preserve">
     <value>发现威胁</value>
   </data>
-  <data name="UsbScanWindow_Result_Safe.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_Safe" xml:space="preserve">
     <value>未发现威胁</value>
   </data>
-  <data name="UsbScanWindow_Result_Threats.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_Threats" xml:space="preserve">
     <value>发现 {0} 个威胁</value>
   </data>
-  <data name="UsbScanWindow_Result_ThreatsDetail.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_ThreatsDetail" xml:space="preserve">
     <value>单击“查看威胁”处理</value>
   </data>
-  <data name="UsbScanWindow_Result_Cancelled.Text" xml:space="preserve">
+  <data name="UsbScanWindow_Result_Cancelled" xml:space="preserve">
     <value>扫描已取消</value>
   </data>
   <data name="UsbScanWindow_OpenDevice.Content" xml:space="preserve">
@@ -1420,7 +1432,7 @@
   <data name="UsbScanWindow_Pause.Content" xml:space="preserve">
     <value>暂停</value>
   </data>
-  <data name="UsbScanWindow_Resume.Content" xml:space="preserve">
+  <data name="UsbScanWindow_Resume" xml:space="preserve">
     <value>继续</value>
   </data>
   <data name="UsbScanWindow_Cancel.Content" xml:space="preserve">
