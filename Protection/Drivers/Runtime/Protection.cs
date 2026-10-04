@@ -72,6 +72,22 @@ public sealed class DriverProtection : IProtectionModel
 
     private static readonly Lock StateLock = new();
     private static readonly ConcurrentDictionary<string, DecisionCacheEntry> DecisionCache = new(StringComparer.OrdinalIgnoreCase);
+    //
+    // Storm breaker: the bridge can redeliver the same kernel event (or an
+    // identical behavior consult can recur at a very high rate while the
+    // kernel origin thread retries the operation). Without this cache every
+    // redelivery re-ran the full hold + prompt path, producing tens of
+    // thousands of "user-decision-timeout-blocked" entries per second
+    // (7.5w log lines in 2 minutes, one core pegged). A repeated eventId
+    // inside the TTL is answered instantly from the recorded verdict: no
+    // user-decision hold, no dialog, no per-iteration logging.
+    //
+    private static readonly ConcurrentDictionary<ulong, DecisionCacheEntry> EventVerdictCache = new();
+    private static readonly TimeSpan EventVerdictTtl = TimeSpan.FromSeconds(30);
+    // Log-once markers: "Block decision submitted to kernel." and the
+    // user-decision-hold failure are logged only for the first iteration of
+    // each eventId so a redelivery storm cannot flood the log database.
+    private static readonly ConcurrentDictionary<ulong, bool> EventIdsLogged = new();
     // F1: Raised from 4 to 16. Pro model ScanFile takes ~480ms; with only 4
     // concurrent slots the limiter was exhausted by the FileCreate flood
     // (3357 events in 2 minutes), causing unrelated events to queue until
@@ -532,8 +548,12 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityDecision decision,
         CancellationToken token)
     {
-        if (decision.Decision == (uint)XdowsSecurityDecisionType.Block)
+        if (decision.Decision == (uint)XdowsSecurityDecisionType.Block &&
+            EventIdsLogged.TryAdd(driverEvent.EventId, true))
         {
+            // Log once per eventId: a redelivery storm must not write one
+            // "Block decision submitted" entry per iteration (37k lines in
+            // the 2026-10-04 incident log).
             LogCallback?.Invoke(new DriverProtectionLogEntry(
                 driverEvent.EventId,
                 driverEvent.CorrelationId,
@@ -682,7 +702,19 @@ public sealed class DriverProtection : IProtectionModel
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
-        return (XdowsSecurityEventType)driverEvent.EventType switch
+        //
+        // Storm breaker: a redelivered eventId is answered from the verdict
+        // recorded by its first handling. Duplicates never reach the hold or
+        // the dialog, so the kernel origin thread receives the same decision
+        // it already acted on without any user-mode work.
+        //
+        if (EventVerdictCache.TryGetValue(driverEvent.EventId, out var seen) &&
+            seen.ExpiresAt > DateTimeOffset.UtcNow)
+        {
+            return DriverBridgeClient.CreateDecision(driverEvent.EventId, seen.Decision, seen.Reason);
+        }
+
+        XdowsSecurityDecision decision = (XdowsSecurityEventType)driverEvent.EventType switch
         {
             XdowsSecurityEventType.ProcessCreate => await HandleProcessCreateAsync(driverEvent, token).ConfigureAwait(false),
             XdowsSecurityEventType.FileCreate or
@@ -696,6 +728,16 @@ public sealed class DriverProtection : IProtectionModel
             XdowsSecurityEventType.RegistryWrite => await HandleRegistryEventAsync(driverEvent, token).ConfigureAwait(false),
             _ => DriverBridgeClient.CreateDecision(driverEvent.EventId, XdowsSecurityDecisionType.Allow, "unsupported-event")
         };
+
+        if (EventVerdictCache.Count >= 8192)
+        {
+            EventVerdictCache.Clear();
+            EventIdsLogged.Clear();
+        }
+        EventVerdictCache[driverEvent.EventId] =
+            new DecisionCacheEntry((XdowsSecurityDecisionType)decision.Decision, decision.Reason, DateTimeOffset.UtcNow.Add(EventVerdictTtl));
+
+        return decision;
     }
 
     private async Task<XdowsSecurityDecision> HandleRegistryEventAsync(
@@ -960,14 +1002,6 @@ public sealed class DriverProtection : IProtectionModel
             return Allow(driverEvent.EventId, "injection-protection-disabled", TimeSpan.Zero);
         }
 
-        if (!TryEnterUserDecisionHold(driverEvent))
-        {
-            return DriverBridgeClient.CreateDecision(
-                driverEvent.EventId,
-                XdowsSecurityDecisionType.Block,
-                "behavior-user-hold-failed-block");
-        }
-
         XdowsSecurityBehaviorType behaviorType = (XdowsSecurityBehaviorType)driverEvent.BehaviorType;
         string imagePath = DriverPathNormalizer.Normalize(CleanDriverString(driverEvent.ImagePath));
         string actorPath = ResolveActorPath(driverEvent) ?? string.Empty;
@@ -983,14 +1017,58 @@ public sealed class DriverProtection : IProtectionModel
                 : $"PID {driverEvent.ProcessId}";
         }
 
+        //
+        // Signature cache: identical (behavior, target, actor) consults that
+        // recur within the TTL are answered from the verdict of the first
+        // one. The kernel-side ProtectedProcessTerminate gate is fail-closed
+        // and synchronous, so a supervisor loop retrying a blocked terminate
+        // produced one fresh consult after another; without this cache each
+        // one re-entered the user-decision hold and re-logged, pegging a CPU
+        // while the dialog was open. The cache deliberately sits before the
+        // user-decision hold so a cached answer never spends a kernel wait.
+        //
+        string behaviorSignatureKey = BuildDecisionCacheKey(
+            "BehaviorSig",
+            $"{behaviorType}:{imagePath}:{actorPath}");
+        CleanupDecisionCache();
+        if (DecisionCache.TryGetValue(behaviorSignatureKey, out var cachedSignature) &&
+            cachedSignature.ExpiresAt > DateTimeOffset.UtcNow)
+        {
+            return DriverBridgeClient.CreateDecision(driverEvent.EventId, cachedSignature.Decision, cachedSignature.Reason);
+        }
+
+        // Self-actor fast-allow for the terminate / sensitive-handle gates.
+        // The kernel only exempts the registered client PID; our own relaunch
+        // and helper processes are separate PIDs, so an internal restart flow
+        // targeting our own image used to reach this prompt path and
+        // timeout-block itself ("误报自身"). The match is on the exact own
+        // binary (path or content hash), never on the directory: a payload
+        // dropped into the deployment folder must keep going through the
+        // normal trust/model gates. The target is additionally guarded by
+        // the SelfProtect module, so our own image acting on our own image
+        // is not an attacker pattern worth a prompt.
+        if ((behaviorType is XdowsSecurityBehaviorType.ProtectedProcessTerminate
+                or XdowsSecurityBehaviorType.SensitiveProcessHandle) &&
+            !string.IsNullOrWhiteSpace(actorPath) &&
+            !actorPath.StartsWith("PID ", StringComparison.Ordinal) &&
+            IsOwnExecutableImage(actorPath) &&
+            IsOwnExecutableImage(imagePath))
+        {
+            Cache(behaviorSignatureKey, XdowsSecurityDecisionType.Allow, "behavior-self-actor", TimeSpan.FromMinutes(10));
+            return Allow(driverEvent.EventId, "behavior-self-actor", TimeSpan.FromMinutes(10));
+        }
+
         // Self fast-allow: our own scanning activity must never prompt. The
         // kernel-side ClientProcessId exemption covers the registered client
-        // only; heartbeat disconnect windows and helper binaries deployed
-        // beside the main executable would otherwise reach the prompt path,
-        // and unsigned dev/publish builds cannot pass any signer gate.
+        // only; heartbeat disconnect windows and renamed copies of our own
+        // image would otherwise reach the prompt path, and unsigned
+        // dev/publish builds cannot pass any signer gate. The match is on
+        // the exact own binary (path or content hash), never on the
+        // directory: a payload dropped beside our exe must not inherit this
+        // fast-allow and instead falls through to the trust/model gates.
         if ((behaviorType is XdowsSecurityBehaviorType.ProcessInjection
                 or XdowsSecurityBehaviorType.ThreadInjection) &&
-            IsOwnDeploymentImage(actorPath))
+            IsOwnExecutableImage(actorPath))
         {
             return Allow(driverEvent.EventId, "behavior-handle-self", TimeSpan.FromMinutes(10));
         }
@@ -1004,10 +1082,10 @@ public sealed class DriverProtection : IProtectionModel
         if ((behaviorType is XdowsSecurityBehaviorType.ProcessInjection
                 or XdowsSecurityBehaviorType.ThreadInjection) &&
             !imagePath.StartsWith("PID ", StringComparison.Ordinal) &&
-            IsOwnDeploymentImage(imagePath) &&
+            IsOwnExecutableImage(imagePath) &&
             !string.IsNullOrWhiteSpace(actorPath) &&
             !actorPath.StartsWith("PID ", StringComparison.Ordinal) &&
-            !IsOwnDeploymentImage(actorPath) &&
+            !IsOwnExecutableImage(actorPath) &&
             (TrustManager.IsPathTrusted(actorPath) ||
              SignerTrustService.Evaluate(actorPath).IsTrusted))
         {
@@ -1165,6 +1243,23 @@ public sealed class DriverProtection : IProtectionModel
                 break;
         }
 
+        //
+        // Enter the user-decision hold only when the cheap gates above did
+        // not settle the event. The hold makes the kernel origin thread wait
+        // on the user instead of its own (short) timeout, but spending it on
+        // fast-allow paths both wastes a kernel wait and, when the kernel
+        // already timed the event out, surfaces as a spurious "could not
+        // enter user-decision hold" failure that blocks what should have
+        // been an allow.
+        //
+        if (!TryEnterUserDecisionHold(driverEvent))
+        {
+            return DriverBridgeClient.CreateDecision(
+                driverEvent.EventId,
+                XdowsSecurityDecisionType.Block,
+                "behavior-user-hold-failed-block");
+        }
+
         DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
         var request = new ProtectionDecisionRequest(
             imagePath,
@@ -1187,11 +1282,23 @@ public sealed class DriverProtection : IProtectionModel
             token).ConfigureAwait(false);
 
         if (userDecision == ProtectionUserDecision.Allow)
+        {
+            Cache(behaviorSignatureKey, XdowsSecurityDecisionType.Allow, "user-release-behavior", TimeSpan.FromMinutes(5));
             return Allow(driverEvent.EventId, "user-release-behavior");
+        }
 
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "behavior-user-timeout-block"
             : "user-block-behavior";
+
+        //
+        // Remember the block verdict for the same (behavior, target, actor)
+        // signature: a retrying origin must not re-open the dialog once per
+        // attempt. Sixty seconds of silent blocking keeps the prompt from
+        // becoming a second-by-second series while keeping the window short
+        // enough that a changed situation gets a fresh consultation.
+        //
+        Cache(behaviorSignatureKey, XdowsSecurityDecisionType.Block, reason, TimeSpan.FromSeconds(60));
         XdowsSecurityDecision blockDecision = DriverBridgeClient.CreateDecision(
             driverEvent.EventId,
             XdowsSecurityDecisionType.Block,
@@ -1298,9 +1405,7 @@ public sealed class DriverProtection : IProtectionModel
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "confirmed-threat-user-timeout-block"
             : "user-block-threat";
-        string detectionName = string.IsNullOrWhiteSpace(scan.DetectionName)
-            ? "Xdows.Model.ProcessThreat"
-            : scan.DetectionName;
+        string detectionName = FormatModelDetectionName(scan);
         QueueQuarantineAfterBlock(driverEvent, imagePath, detectionName);
 
         // Do not cache an interactive block. Each later execution attempt must
@@ -1399,9 +1504,7 @@ public sealed class DriverProtection : IProtectionModel
             return Allow(driverEvent.EventId, "user-release", TimeSpan.FromMinutes(5));
         }
 
-        string detectionName = string.IsNullOrWhiteSpace(scan.DetectionName)
-            ? "Xdows.Model.FileThreat"
-            : scan.DetectionName;
+        string detectionName = FormatModelDetectionName(scan);
         QueueQuarantineAfterBlock(driverEvent, filePath, detectionName);
 
         XdowsSecurityDecisionType decisionType = XdowsSecurityDecisionType.Block;
@@ -1454,7 +1557,7 @@ public sealed class DriverProtection : IProtectionModel
         var request = new ProtectionDecisionRequest(
             imagePath,
             protectionType,
-            string.IsNullOrWhiteSpace(scan.DetectionName) ? "Xdows.Model.Threat" : scan.DetectionName,
+            FormatModelDetectionName(scan),
             scan.Probability,
             checked((int)driverEvent.ProcessId),
             checked((int)driverEvent.ParentProcessId),
@@ -1485,14 +1588,19 @@ public sealed class DriverProtection : IProtectionModel
         }
         catch (Exception ex)
         {
-            LogCallback?.Invoke(new DriverProtectionLogEntry(
-                driverEvent.EventId,
-                driverEvent.CorrelationId,
-                DriverProtectionLogSeverity.Error,
-                0,
-                DateTimeOffset.Now,
-                "Decision",
-                $"Confirmed threat could not enter user-decision hold; blocking immediately: {ex.GetType().Name}"));
+            // Concurrent duplicate holds fail here; log once per eventId so a
+            // redelivery storm cannot flood the log database with ERROR rows.
+            if (EventIdsLogged.TryAdd(driverEvent.EventId, true))
+            {
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    driverEvent.EventId,
+                    driverEvent.CorrelationId,
+                    DriverProtectionLogSeverity.Error,
+                    0,
+                    DateTimeOffset.Now,
+                    "Decision",
+                    $"Confirmed threat could not enter user-decision hold; blocking immediately: {ex.GetType().Name}"));
+            }
             return false;
         }
     }
@@ -1549,6 +1657,26 @@ public sealed class DriverProtection : IProtectionModel
     {
         uint cacheTtlMs = ttl is null ? 0 : checked((uint)ttl.Value.TotalMilliseconds);
         return DriverBridgeClient.CreateDecision(eventId, XdowsSecurityDecisionType.Allow, reason, cacheTtlMs);
+    }
+
+    /// <summary>
+    /// 引擎命中的展示名：优先用扫描结果自带的具体检测名；缺失时按
+    /// 「Xdows.Model.{引擎模式}.Probability{整数概率}」合成（与 ScanEngine 的
+    /// 命名一致），不再退回笼统的 Xdows.Model.Threat。
+    /// </summary>
+    private string FormatModelDetectionName(NativeModelScannerResult scan)
+    {
+        if (!string.IsNullOrWhiteSpace(scan.DetectionName))
+            return scan.DetectionName;
+
+        string modeTag = ModelMode switch
+        {
+            NativeModelScannerMode.Flash => "Flash",
+            NativeModelScannerMode.Adaptive => "Adaptive",
+            NativeModelScannerMode.Pro => "Pro",
+            _ => "Standard"
+        };
+        return $"Xdows.Model.{modeTag}.Probability{(int)Math.Round(scan.Probability)}";
     }
 
     private static void Cache(
@@ -1658,6 +1786,79 @@ public sealed class DriverProtection : IProtectionModel
         {
             return false;
         }
+    }
+
+    //
+    // Self-image fast-allow requires "is literally our own binary", not "is
+    // in our directory". A directory check alone hands any payload dropped
+    // into the deployment folder a silent allow for terminate / sensitive-
+    // handle / injection consultations — exactly the hole an attacker needs.
+    // Accepted: the exact running executable path, or a file whose content
+    // hash matches it (renamed update copies of our own exe).
+    //
+    private static readonly Lazy<string?> OwnExecutablePath = new(
+        () => string.IsNullOrWhiteSpace(Environment.ProcessPath) ? null : Environment.ProcessPath,
+        LazyThreadSafetyMode.ExecutionAndPublication);
+
+    private static readonly Lazy<string?> OwnExecutableHash = new(
+        () =>
+        {
+            try
+            {
+                string? path = OwnExecutablePath.Value;
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                    return null;
+
+                using FileStream stream = File.OpenRead(path);
+                return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+            }
+            catch
+            {
+                return null;
+            }
+        },
+        LazyThreadSafetyMode.ExecutionAndPublication);
+
+    // Verdict cache: hashing our own (large) executable per event would be
+    // wasteful; a session-scoped verdict per candidate path is enough. The
+    // deployment directory is replaced as a whole on update, which restarts
+    // the process, so staleness within one session is not a concern.
+    private static readonly ConcurrentDictionary<string, bool> OwnExecutableVerdicts = new(StringComparer.OrdinalIgnoreCase);
+
+    private static bool IsOwnExecutableImage(string? candidatePath)
+    {
+        if (string.IsNullOrWhiteSpace(candidatePath))
+            return false;
+
+        if (OwnExecutableVerdicts.Count >= 1024)
+            OwnExecutableVerdicts.Clear();
+
+        return OwnExecutableVerdicts.GetOrAdd(candidatePath, static path =>
+        {
+            string? ownPath = OwnExecutablePath.Value;
+            if (ownPath is not null &&
+                string.Equals(path, ownPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            string? ownHash = OwnExecutableHash.Value;
+            if (ownHash is null || !IsOwnDeploymentImage(path))
+                return false;
+
+            try
+            {
+                if (!File.Exists(path))
+                    return false;
+
+                using FileStream stream = File.OpenRead(path);
+                return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream)) == ownHash;
+            }
+            catch
+            {
+                return false;
+            }
+        });
     }
 
     private static bool IsUnderSystemRoot(string? path)

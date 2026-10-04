@@ -119,8 +119,17 @@ public sealed class NativeModelScanner : IDisposable
 
             if (status == 0 && nativeResult.Status == 0)
             {
+                bool isThreat = nativeResult.IsThreat != 0;
+                if (isThreat && string.IsNullOrWhiteSpace(detectionName))
+                {
+                    // 原生库未给出具体检测名时，用「引擎模式 + 整数概率」合成，
+                    // 与 ScanEngine 的 Xdows.Model.Flash.Probability99 命名保持一致，
+                    // 避免拦截提示里只出现笼统的 Xdows.Model.Threat。
+                    detectionName = $"Xdows.Model.{ModeTag()}.Probability{(int)Math.Round(nativeResult.Probability)}";
+                }
+
                 return new NativeModelScannerResult(
-                    nativeResult.IsThreat != 0,
+                    isThreat,
                     nativeResult.Probability,
                     detectionName,
                     true,
@@ -219,6 +228,17 @@ public sealed class NativeModelScanner : IDisposable
     private static string NormalizeDetectionName(string detectionName)
     {
         return detectionName.Replace("Xdows.Model.Native.", "Xdows.Model.", StringComparison.Ordinal);
+    }
+
+    private string ModeTag()
+    {
+        return _mode switch
+        {
+            NativeModelScannerMode.Flash => "Flash",
+            NativeModelScannerMode.Adaptive => "Adaptive",
+            NativeModelScannerMode.Pro => "Pro",
+            _ => "Standard"
+        };
     }
 
     [StructLayout(LayoutKind.Sequential)]
