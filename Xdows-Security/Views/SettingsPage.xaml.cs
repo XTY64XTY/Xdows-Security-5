@@ -637,12 +637,12 @@ namespace Xdows_Security.Views
 
             if (!settings.Values.ContainsKey("ModelMode"))
             {
-                settings.Values["ModelMode"] = "Standard";
+                settings.Values["ModelMode"] = "Flash";
             }
 
             try
             {
-                string modelMode = settings.Values.TryGetValue("ModelMode", out object? modeRaw) && modeRaw is string ms ? ms : "Standard";
+                string modelMode = settings.Values.TryGetValue("ModelMode", out object? modeRaw) && modeRaw is string ms ? ms : "Flash";
                 ComboBox modelCombo = this.FindName("ModelModeComboBox") as ComboBox ?? new();
                 if (modelCombo != null)
                 {

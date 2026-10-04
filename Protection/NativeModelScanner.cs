@@ -56,7 +56,7 @@ public sealed class NativeModelScanner : IDisposable
     public string? InitializationError => _nativeInitializationError;
     public NativeModelScannerMode Mode => _mode;
 
-    public NativeModelScanner(NativeModelScannerMode mode = NativeModelScannerMode.Standard, string? modelDirectory = null)
+    public NativeModelScanner(NativeModelScannerMode mode = NativeModelScannerMode.Flash, string? modelDirectory = null)
     {
         _mode = mode;
 

@@ -226,13 +226,13 @@ namespace Xdows_Security
                     mfpRaw is bool mfpOn && mfpOn)
                 {
                     string mode = settings.Values.TryGetValue("ModelMode", out var modeRaw) && modeRaw is string ms
-                        ? ms : "Standard";
+                        ? ms : "Flash";
                     protection.ModelMode = mode switch
                     {
                         "Flash" => NativeModelScannerMode.Flash,
                         "Adaptive" => NativeModelScannerMode.Adaptive,
                         "Pro" => NativeModelScannerMode.Pro,
-                        _ => NativeModelScannerMode.Standard
+                        _ => NativeModelScannerMode.Flash
                     };
                 }
             }

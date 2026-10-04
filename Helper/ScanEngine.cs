@@ -86,7 +86,7 @@ namespace Helper
                 LazyThreadSafetyMode.PublicationOnly);
             private static ApplicationDataContainer Settings => _settingsLazy.Value;
 
-            private static Xdows_Model_Invoker.ModelMode _mode = Xdows_Model_Invoker.ModelMode.Standard;
+            private static Xdows_Model_Invoker.ModelMode _mode = Xdows_Model_Invoker.ModelMode.Flash;
 
             public static Xdows_Model_Invoker.ModelMode Mode
             {
@@ -113,7 +113,7 @@ namespace Helper
                             "Flash" => Xdows_Model_Invoker.ModelMode.Flash,
                             "Adaptive" => Xdows_Model_Invoker.ModelMode.Adaptive,
                             "Pro" => Xdows_Model_Invoker.ModelMode.Pro,
-                            _ => Xdows_Model_Invoker.ModelMode.Standard
+                            _ => Xdows_Model_Invoker.ModelMode.Flash
                         };
                     }
                 }
@@ -150,7 +150,7 @@ namespace Helper
                     }
                     catch (Exception) { }
 
-                    var mode = applyToProtection ? _mode : Xdows_Model_Invoker.ModelMode.Standard;
+                    var mode = applyToProtection ? _mode : Xdows_Model_Invoker.ModelMode.Flash;
                     InitializeWithMode(mode);
                     return true;
                 }
@@ -191,7 +191,7 @@ namespace Helper
                             Xdows_Model_Invoker.ModelMode.Flash => "Flash",
                             Xdows_Model_Invoker.ModelMode.Adaptive => "Adaptive",
                             Xdows_Model_Invoker.ModelMode.Pro => "Pro",
-                            _ => "Standard"
+                            _ => "Flash"
                         };
                         return (true, $"Xdows.Model.{modeTag}.Probability{(int)probability}");
                     }
@@ -207,7 +207,7 @@ namespace Helper
                     Xdows_Model_Invoker.ModelMode.Flash => "Flash",
                     Xdows_Model_Invoker.ModelMode.Adaptive => "Adaptive",
                     Xdows_Model_Invoker.ModelMode.Pro => "Pro",
-                    _ => "Standard"
+                    _ => "Flash"
                 };
                 return $"Xdows-Model ({modeTag})";
             }

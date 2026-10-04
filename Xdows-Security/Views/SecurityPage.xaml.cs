@@ -1703,7 +1703,7 @@ namespace Xdows_Security.Views
                     Xdows_Model_Invoker.ModelMode.Flash => "Flash",
                     Xdows_Model_Invoker.ModelMode.Adaptive => "Adaptive",
                     Xdows_Model_Invoker.ModelMode.Pro => "Pro",
-                    _ => "Standard"
+                    _ => "Flash"
                 };
                 enginesLog += $" Xdows-Model-{modeTag}";
             }

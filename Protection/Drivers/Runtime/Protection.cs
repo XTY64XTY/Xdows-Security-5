@@ -95,7 +95,7 @@ public sealed class DriverProtection : IProtectionModel
     public const string DriverProtectionName = "Driver";
     public string Name => DriverProtectionName;
 
-    public NativeModelScannerMode ModelMode { get; set; } = NativeModelScannerMode.Standard;
+    public NativeModelScannerMode ModelMode { get; set; } = NativeModelScannerMode.Flash;
 
     public Func<ProtectionDecisionRequest, CancellationToken, Task<ProtectionUserDecision>>? DecisionCallback { get; set; }
     public Action<DriverProtectionLogEntry>? LogCallback { get; set; }
