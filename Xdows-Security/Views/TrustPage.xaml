@@ -79,6 +79,11 @@
                           IsEnabled="False"
                           l:Uids.Uid="TrustPage_ClearButton"
                           Click="ClearMenuItem_Click" />
+            <AppBarButton x:Name="TrustRefreshButton"
+                          AutomationProperties.AutomationId="TrustRefreshButton"
+                          Icon="Refresh"
+                          l:Uids.Uid="TrustPage_RefreshButton"
+                          Click="RefreshButton_Click" />
         </CommandBar>
     </Grid>
 </Page>

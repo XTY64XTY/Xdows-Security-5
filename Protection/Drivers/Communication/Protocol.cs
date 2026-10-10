@@ -83,7 +83,7 @@ internal static class DriverProtocol
     // constants; the whole rule set travels in one IOCTL.
     //
     public const int MaxBehaviorRules = 32;
-    public const int MaxRuleTerms = 3;
+    public const int MaxRuleTerms = 4;
     public const int MaxRuleTermChars = 96;
     public const int MaxInitiatorExclusions = 32;
     public const int MaxExclusionChars = 160;

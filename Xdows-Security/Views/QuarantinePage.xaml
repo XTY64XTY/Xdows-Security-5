@@ -91,6 +91,11 @@
                           IsEnabled="False"
                           l:Uids.Uid="QuarantinePage_ClearButton"
                           Click="ClearMenuItem_Click" />
+            <AppBarButton x:Name="QuarantineRefreshButton"
+                          AutomationProperties.AutomationId="QuarantineRefreshButton"
+                          Icon="Refresh"
+                          l:Uids.Uid="QuarantinePage_RefreshButton"
+                          Click="RefreshButton_Click" />
         </CommandBar>
     </Grid>
 </Page>

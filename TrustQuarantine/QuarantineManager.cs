@@ -79,8 +79,28 @@ namespace TrustQuarantine
                 var fileHash = CalculateHashFromBytes(fileData);
 
                 var current = GetQuarantineItems();
-                if (current.Any(x => string.Equals(x.FileHash, fileHash, StringComparison.OrdinalIgnoreCase)))
+                var existing = current.FirstOrDefault(x =>
+                    string.Equals(x.FileHash, fileHash, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
                 {
+                    //
+                    // 同一份内容再次被隔离（同一个 exe 的不同副本）时复用已有密文，
+                    // 但必须把来源路径更新为本次的路径：弹窗里的「恢复 / 信任并恢复」
+                    // 是按 SourcePath 查找条目的，沿用旧路径会让它查不到而失败。
+                    //
+                    if (!string.Equals(existing.SourcePath, sourcePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        existing.SourcePath = sourcePath;
+                        if (!string.IsNullOrWhiteSpace(threatName))
+                        {
+                            existing.ThreatName = threatName;
+                        }
+
+                        string existingItemPath = Path.Combine(QuarantineFolderPath, $"{existing.FileHash}.json");
+                        string existingJson = JsonSerializer.Serialize(existing, QuarantineJsonContext.Default.QuarantineItemModel);
+                        await File.WriteAllTextAsync(existingItemPath, existingJson);
+                    }
+
                     if (deleteSource && File.Exists(sourcePath))
                     {
                         File.Delete(sourcePath);

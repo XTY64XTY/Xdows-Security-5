@@ -12,6 +12,16 @@
     <type fullname="Microsoft.UI.Xaml.Controls.ContentControl" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ItemsControl" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.TextBlock" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.TitleBar" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.AppBarButton" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.AppBarToggleButton" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.CalendarDatePicker" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.ComboBoxItem" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.ContentDialog" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.HyperlinkButton" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.InfoBar" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.ToggleSwitch" preserve="all" />
+    <type fullname="Microsoft.UI.Xaml.Controls.ToggleMenuFlyoutItem" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.TextBox" preserve="all" />
     <type fullname="Microsoft.UI.Xaml.Controls.ContentPresenter" preserve="all" />
 	<type fullname="Microsoft.UI.Xaml.Controls.Button" preserve="all" />

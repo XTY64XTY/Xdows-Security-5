@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.Windows.Storage.Pickers;
 using Protection;
 using System;
 using System.Collections.Generic;
@@ -38,6 +37,22 @@ namespace Xdows_Security.Views
             this.InitializeComponent();
             _ = InitializeAsync();
             InitializeProtectionStatusTimer();
+            //
+            // 启动时的驱动防护恢复在后台线程完成；页面构造时读到的还是「未连接」。
+            // 订阅状态变化，恢复完成的瞬间就把开关与状态文字刷新过来，不再等 5 秒轮询。
+            //
+            ProtectionStatus.StateChanged += OnProtectionStateChanged;
+            Unloaded += (_, _) => ProtectionStatus.StateChanged -= OnProtectionStateChanged;
+        }
+
+        private void OnProtectionStateChanged(object? sender, EventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (IsInitialize) return;
+                UpdateDriverProtectionState();
+                ApplyDriverProtectionControlState();
+            });
         }
 
         private void InitializeProtectionStatusTimer()

@@ -74,6 +74,33 @@ internal static class DriverServiceControl
             return new DriverServiceOperationResult(false, error, message);
         }
 
+        //
+        // A StopPending service cannot be started: StartService fails and the
+        // protection restore reports "not running" while the kernel driver is
+        // still winding down (the app restart right after an authorized stop
+        // hit exactly this and the settings toggle stayed off). Wait for the
+        // stop to complete first.
+        //
+        DriverServiceSnapshot initial = QueryStatus(service);
+        if (initial.State == DriverServiceState.StopPending)
+        {
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                Thread.Sleep(500);
+                initial = QueryStatus(service);
+                if (initial.State != DriverServiceState.StopPending)
+                    break;
+            }
+
+            if (initial.State == DriverServiceState.StopPending)
+            {
+                return new DriverServiceOperationResult(
+                    false,
+                    ErrorServiceNotActive,
+                    "Driver service did not leave StopPending within 20 seconds.");
+            }
+        }
+
         if (NativeMethods.StartService(service, 0, nint.Zero))
             return new DriverServiceOperationResult(true, 0, "StartService accepted.");
 

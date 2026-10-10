@@ -1097,6 +1097,12 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="QuarantinePage_RestoreToMenuItem.Text" xml:space="preserve">
     <value>Restore to...</value>
   </data>
+  <data name="TrustPage_RefreshButton.Label" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="QuarantinePage_RefreshButton.Label" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
   <data name="TrustPage_DeleteButton.Label" xml:space="preserve">
     <value>Delete</value>
   </data>

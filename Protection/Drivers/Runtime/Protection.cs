@@ -56,7 +56,7 @@ public sealed record DriverProcessInfo(
     ulong PrivateBytes,
     string Name);
 
-public sealed class DriverProtection : IProtectionModel
+public sealed partial class DriverProtection : IProtectionModel
 {
     private static readonly TimeSpan UserDecisionTimeout = TimeSpan.FromSeconds(25);
 
@@ -585,6 +585,12 @@ public sealed class DriverProtection : IProtectionModel
         {
             await foreach (PendingQuarantine pending in reader.ReadAllAsync(token).ConfigureAwait(false))
             {
+                //
+                // Capture the threat's identity (name / size / content hash)
+                // BEFORE the quarantine move, so a copy sweep can recognize
+                // the other copies (e.g. the original a copy was made from).
+                //
+                (long Size, string Hash)? threatIdentity = TryMeasureFile(pending.Path);
                 bool quarantineSucceeded = await QuarantineManager
                     .AddToQuarantine(pending.Path, pending.DetectionName)
                     .ConfigureAwait(false);
@@ -598,10 +604,124 @@ public sealed class DriverProtection : IProtectionModel
                     quarantineSucceeded
                         ? $"Blocked threat quarantined: {pending.Path}"
                         : $"Blocked threat could not be quarantined: {pending.Path}"));
+
+                if (quarantineSucceeded && threatIdentity is { } identity)
+                {
+                    //
+                    // The driver only reports the destination of a copy; the
+                    // original the copy was made from never triggers a file
+                    // event. Sweep for same-name, same-size, hash-identical
+                    // files and quarantine them as copies of the confirmed
+                    // threat. Fire-and-forget, bounded, user profile only.
+                    //
+                    _ = Task.Run(
+                        () => SweepThreatCopiesAsync(pending, identity.Size, identity.Hash),
+                        CancellationToken.None);
+                }
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+        }
+    }
+
+    private static (long Size, string Hash)? TryMeasureFile(string path)
+    {
+        try
+        {
+            if (!File.Exists(path))
+                return null;
+
+            long size = new FileInfo(path).Length;
+            using FileStream stream = File.OpenRead(path);
+            string hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+            return (size, hash);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async Task SweepThreatCopiesAsync(
+        PendingQuarantine pending,
+        long threatSize,
+        string threatHash)
+    {
+        try
+        {
+            string? userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            if (string.IsNullOrWhiteSpace(userProfile))
+                return;
+
+            string? ownDirectory = OwnDeploymentDirectory.Value;
+            string fileName = Path.GetFileName(pending.Path);
+            var options = new EnumerationOptions
+            {
+                RecurseSubdirectories = true,
+                MaxRecursionDepth = 16,
+                IgnoreInaccessible = true,
+                // Hidden skips AppData entirely; ReparsePoint skips junctions
+                // and OneDrive redirections; System skips the Windows tree.
+                AttributesToSkip = FileAttributes.ReparsePoint | FileAttributes.System |
+                    FileAttributes.Hidden | FileAttributes.Device,
+                MatchCasing = MatchCasing.CaseInsensitive
+            };
+
+            int hashed = 0;
+            foreach (string candidate in Directory.EnumerateFiles(userProfile, fileName, options))
+            {
+                if (string.Equals(candidate, pending.Path, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (ownDirectory is not null &&
+                    candidate.StartsWith(ownDirectory, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                bool quarantined;
+                try
+                {
+                    if (hashed >= 128)
+                        break;
+                    var info = new FileInfo(candidate);
+                    if (info.Length != threatSize)
+                        continue;
+                    hashed++;
+                    using FileStream stream = File.OpenRead(candidate);
+                    string hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(stream));
+                    if (hash != threatHash)
+                        continue;
+                }
+                catch
+                {
+                    continue;
+                }
+
+                try
+                {
+                    quarantined = await QuarantineManager
+                        .AddToQuarantine(candidate, pending.DetectionName)
+                        .ConfigureAwait(false);
+                }
+                catch
+                {
+                    quarantined = false;
+                }
+
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    pending.EventId,
+                    pending.CorrelationId,
+                    quarantined ? DriverProtectionLogSeverity.Info : DriverProtectionLogSeverity.Warning,
+                    0,
+                    DateTimeOffset.Now,
+                    "Quarantine",
+                    quarantined
+                        ? $"Threat copy quarantined: {candidate} (original: {pending.Path})"
+                        : $"Threat copy could not be quarantined: {candidate} (original: {pending.Path})"));
+            }
+        }
+        catch
+        {
+            // Best-effort sweep: never let it take the pump down.
         }
     }
 
@@ -749,6 +869,13 @@ public sealed class DriverProtection : IProtectionModel
         string registryPath = CleanDriverString(driverEvent.ImagePath);
         string valueName = CleanDriverString(driverEvent.RegistryValueName);
         string? actorPath = ResolveActorPath(driverEvent);
+
+        //
+        // Self write: our own registry persistence (settings, protection
+        // state) must not be intercepted by our own protection.
+        //
+        if (driverEvent.ProcessId == (ulong)Environment.ProcessId)
+            return Allow(driverEvent.EventId, "self-registry-operation");
 
         // System-directory actors are excluded before the trust gates below.
         // Windows servicing, installers, and group-policy application run from
@@ -1027,9 +1154,7 @@ public sealed class DriverProtection : IProtectionModel
         // while the dialog was open. The cache deliberately sits before the
         // user-decision hold so a cached answer never spends a kernel wait.
         //
-        string behaviorSignatureKey = BuildDecisionCacheKey(
-            "BehaviorSig",
-            $"{behaviorType}:{imagePath}:{actorPath}");
+        string behaviorSignatureKey = $"BehaviorSig:{(int)behaviorType}:{imagePath}:{actorPath}";
         CleanupDecisionCache();
         if (DecisionCache.TryGetValue(behaviorSignatureKey, out var cachedSignature) &&
             cachedSignature.ExpiresAt > DateTimeOffset.UtcNow)
@@ -1287,6 +1412,16 @@ public sealed class DriverProtection : IProtectionModel
             return Allow(driverEvent.EventId, "user-release-behavior");
         }
 
+        if (userDecision == ProtectionUserDecision.Deferred)
+        {
+            //
+            // Another event for the same behavior is already waiting for the
+            // user. Defer without a verdict and without the counter-kill: the
+            // pending dialog's decision governs this behavior too.
+            //
+            return Allow(driverEvent.EventId, "behavior-deferred-to-pending-user-decision");
+        }
+
         string reason = userDecision == ProtectionUserDecision.Timeout
             ? "behavior-user-timeout-block"
             : "user-block-behavior";
@@ -1329,17 +1464,32 @@ public sealed class DriverProtection : IProtectionModel
         if (string.IsNullOrWhiteSpace(imagePath))
             return Allow(driverEvent.EventId, "empty-image-path");
 
-        if (TrustManager.IsPathTrusted(imagePath))
-            return Allow(driverEvent.EventId, "trusted-path", TimeSpan.FromMinutes(10));
+        //
+        // Self launch: anything this client starts (driver helper binaries,
+        // the update flow, and the released-file relaunch) is trusted at the
+        // same level the kernel already trusts the client. Intercepting our
+        // own launches broke driver setup and the post-release start.
+        //
+        if (driverEvent.CreatingProcessId == (ulong)Environment.ProcessId)
+            return Allow(driverEvent.EventId, "self-launch");
 
         CleanupDecisionCache();
         string processCacheKey = BuildDecisionCacheKey("process", imagePath);
 
+        //
+        // Cache lookup MUST precede the trust check: IsPathTrusted hashes the
+        // whole file, and for a freshly released image that hash alone can
+        // outlive the 1s release-trust window, producing a second dialog for
+        // the very launch the user just allowed.
+        //
         if (DecisionCache.TryGetValue(processCacheKey, out var cached) &&
             cached.ExpiresAt > DateTimeOffset.UtcNow)
         {
             return DriverBridgeClient.CreateDecision(driverEvent.EventId, cached.Decision, cached.Reason);
         }
+
+        if (TrustManager.IsPathTrusted(imagePath))
+            return Allow(driverEvent.EventId, "trusted-path", TimeSpan.FromMinutes(10));
 
         await ScanLimiter.WaitAsync(token).ConfigureAwait(false);
         NativeModelScannerResult scan;
@@ -1385,33 +1535,172 @@ public sealed class DriverProtection : IProtectionModel
             return Allow(driverEvent.EventId, "model-safe", TimeSpan.FromMinutes(1));
         }
 
-        ProtectionUserDecision userDecision = await AskUserForThreatDecisionAsync(
-            imagePath,
-            commandLine,
-            driverEvent,
-            scan,
-            actorPath: ResolveActorPath(driverEvent),
-            actorTrust: null,
-            actorScan: null,
-            token).ConfigureAwait(false);
-
-        if (userDecision == ProtectionUserDecision.Allow)
+        //
+        // Deny-first interception: return the verdict immediately so the
+        // kernel never blocks on the interactive dialog (the creating thread
+        // used to sit in the create-notify consult for up to 25s). The kernel
+        // fails the launch with STATUS_VIRUS_INFECTED right away — which is
+        // what makes the creator show the "file contains a virus" error — and
+        // the decision dialog runs asynchronously from here. If the user
+        // releases the file it is trusted for 1 second and started by us.
+        //
+        // Single-flight: a double launch (double-click, FileCreate racing
+        // ProcessCreate) produced several parallel events, each spawning its
+        // own dialog task — the user had to answer the SAME prompt multiple
+        // times and the extra interception locks made the released-file start
+        // fail with "file in use". One pending decision per image; the
+        // duplicates are already denied and governed by that one dialog.
+        //
+        string detectionName = FormatModelDetectionName(scan);
+        Cache(processCacheKey, XdowsSecurityDecisionType.Block, "threat-process-denied", TimeSpan.FromSeconds(10));
+        if (PendingThreatDecisions.TryAdd(imagePath, true))
         {
-            Cache(processCacheKey, XdowsSecurityDecisionType.Allow, "user-release", TimeSpan.FromMinutes(5));
-            return Allow(driverEvent.EventId, "user-release", TimeSpan.FromMinutes(5));
+            _ = Task.Run(
+                () => DecideThreatProcessLaunchAsync(driverEvent, imagePath, commandLine, processCacheKey, scan, detectionName),
+                CancellationToken.None);
         }
 
-        XdowsSecurityDecisionType decisionType = XdowsSecurityDecisionType.Block;
-        string reason = userDecision == ProtectionUserDecision.Timeout
-            ? "confirmed-threat-user-timeout-block"
-            : "user-block-threat";
-        string detectionName = FormatModelDetectionName(scan);
-        QueueQuarantineAfterBlock(driverEvent, imagePath, detectionName);
-
-        // Do not cache an interactive block. Each later execution attempt must
-        // surface a fresh interception prompt instead of being blocked silently.
-        return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
+        return DriverBridgeClient.CreateDecision(
+            driverEvent.EventId,
+            XdowsSecurityDecisionType.Block,
+            "threat-process-denied");
     }
+
+    // One in-flight asynchronous decision per image path. Keyed without the
+    // stable-identity indirection: the decision is short-lived and the plain
+    // path comparison is what the duplicate events share.
+    private static readonly ConcurrentDictionary<string, bool> PendingThreatDecisions =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    //
+    // Asynchronous decision for a launch that was already denied. Never
+    // touches the kernel pending-decision hold: the kernel entry for this
+    // eventId was finalized (Block) the moment the handler returned.
+    //
+    private async Task DecideThreatProcessLaunchAsync(
+        XdowsSecurityEvent driverEvent,
+        string imagePath,
+        string commandLine,
+        string processCacheKey,
+        NativeModelScannerResult scan,
+        string detectionName)
+    {
+        try
+        {            DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
+            var request = new ProtectionDecisionRequest(
+                imagePath,
+                "Process",
+                detectionName,
+                scan.Probability,
+                checked((int)driverEvent.ProcessId),
+                checked((int)driverEvent.ParentProcessId),
+                string.IsNullOrWhiteSpace(commandLine) ? null : commandLine,
+                ActorPath: ResolveActorPath(driverEvent),
+                EventId: driverEvent.EventId,
+                CorrelationId: driverEvent.CorrelationId,
+                Module: ProtectionModule.Process,
+                Backend: ProtectionBackend.Driver,
+                DecisionDeadline: decisionDeadline,
+                Buttons: ProtectionInterceptButtons.RestoreOrTrust);
+
+            //
+            // 拦截独占：判定为威胁后先独占镜像，期间其他进程无法读写。
+            // Best effort：别的进程已持有句柄时按 Win32 共享规则无法加锁。
+            //
+            FileStream? interceptionLock = null;
+            try
+            {
+                try
+                {
+                    interceptionLock = File.Open(imagePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                    Log("Process", $"Interception hold acquired: {imagePath}");
+                }
+                catch (Exception ex)
+                {
+                    if (InterceptionHoldUnavailable.TryAdd(imagePath, true))
+                    {
+                        if (InterceptionHoldUnavailable.Count >= 2048)
+                            InterceptionHoldUnavailable.Clear();
+                        Log("Process", $"Interception hold unavailable (file in use): {ex.GetType().Name}");
+                    }
+                }
+            }
+            finally
+            {
+                // 隔离需要读并移动文件，必须先释放独占句柄。
+                interceptionLock?.Dispose();
+            }
+
+            //
+            // 拦截即隔离：内核已经拒绝本次启动，这里先把文件移入隔离区，
+            // **然后**才弹窗。顺序不能颠倒——弹窗里的「恢复 / 信任并恢复」
+            // 是直接操作隔离区条目的（QuarantineManager.RestoreFile、
+            // TrustManager.AddToTrustByHash）；如果隔离发生在弹窗之后，
+            // 弹窗打开时隔离区里还没有条目，恢复会失败，而「信任并恢复」
+            // 之后迟到的隔离又会把刚恢复的文件重新移走。
+            //
+            bool quarantined = await QuarantineManager
+                .AddToQuarantine(imagePath, detectionName)
+                .ConfigureAwait(false);
+            LogCallback?.Invoke(new DriverProtectionLogEntry(
+                driverEvent.EventId,
+                driverEvent.CorrelationId,
+                quarantined ? DriverProtectionLogSeverity.Info : DriverProtectionLogSeverity.Warning,
+                0,
+                DateTimeOffset.Now,
+                "Quarantine",
+                quarantined
+                    ? $"Threat image quarantined; restore is available in the dialog: {imagePath}"
+                    : $"Threat image could not be quarantined: {imagePath}"));
+
+            if (DecisionCallback is not null)
+            {
+                //
+                // The UI decision queue serializes dialogs; a "busy" answer
+                // means another dialog is up, so wait for it instead of
+                // dropping this threat's prompt.
+                //
+                while (true)
+                {
+                    TimeSpan remaining = decisionDeadline - DateTimeOffset.UtcNow;
+                    if (remaining <= TimeSpan.Zero)
+                    {
+                        break;
+                    }
+
+                    ProtectionUserDecision answer = await DriverDecisionService.AskUserAsync(
+                        callbackToken => DecisionCallback(request, callbackToken),
+                        remaining,
+                        CancellationToken.None).ConfigureAwait(false);
+                    if (answer != ProtectionUserDecision.Deferred)
+                        break;
+
+                    await Task.Delay(200).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                _interceptCallback?.Invoke(new ProtectionInterceptEvent(
+                    request.Path,
+                    true,
+                    request.DetectionName,
+                    request.Probability,
+                    request.Module,
+                    request.Backend));
+            }
+        }
+        catch (Exception ex)
+        {
+            Log("Process", $"Threat process decision failed: {ex}");
+        }
+        finally
+        {
+            // Release the single-flight slot so the next launch attempt of
+            // this image gets a fresh prompt.
+            PendingThreatDecisions.TryRemove(imagePath, out _);
+        }
+    }
+
 
     private async Task<XdowsSecurityDecision> HandleFileEventAsync(
         XdowsSecurityEvent driverEvent,
@@ -1423,6 +1712,15 @@ public sealed class DriverProtection : IProtectionModel
 
         if (!File.Exists(filePath))
             return Allow(driverEvent.EventId, "file-missing");
+
+        //
+        // Self write: our own file operations (log export, quarantine and
+        // trust-list writes, settings persistence) must never be intercepted
+        // by our own protection — the client is trusted at the same level the
+        // kernel already trusts it.
+        //
+        if (driverEvent.ProcessId == (ulong)Environment.ProcessId)
+            return Allow(driverEvent.EventId, "self-file-operation");
 
         if (TrustManager.IsPathTrusted(filePath))
             return Allow(driverEvent.EventId, "trusted-file", TimeSpan.FromMinutes(10));
@@ -1485,23 +1783,67 @@ public sealed class DriverProtection : IProtectionModel
             ScanLimiter.Release();
         }
 
-        // AskUser outside ScanLimiter to avoid deadlock: holding the limiter
-        // during a 25s popup would exhaust the worker slots and block all other
-        // scans, causing driver timeouts and system lockup.
-        ProtectionUserDecision userDecision = await AskUserForThreatDecisionAsync(
-            filePath,
-            string.Empty,
-            driverEvent,
-            scan,
-            actorPath,
-            actorTrust,
-            actorScan,
-            token).ConfigureAwait(false);
+        //
+        // Interception hold: while the user decision for this threat file is
+        // pending, deny new reads/writes from every other process by holding
+        // an exclusive handle. Best effort: if another process already holds
+        // the file open (e.g. an in-progress copy), Win32 sharing rules make
+        // the lock impossible and the driver's per-event denies still apply.
+        //
+        ProtectionUserDecision userDecision;
+        FileStream? interceptionLock = null;
+        try
+        {
+            try
+            {
+                interceptionLock = File.Open(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+                Log("Scan", $"Interception hold acquired: {filePath}");
+            }
+            catch (Exception ex)
+            {
+                if (InterceptionHoldUnavailable.TryAdd(filePath, true))
+                {
+                    if (InterceptionHoldUnavailable.Count >= 2048)
+                        InterceptionHoldUnavailable.Clear();
+                    Log("Scan", $"Interception hold unavailable (file in use): {ex.GetType().Name}");
+                }
+            }
+
+            // AskUser outside ScanLimiter to avoid deadlock: holding the limiter
+            // during a 25s popup would exhaust the worker slots and block all other
+            // scans, causing driver timeouts and system lockup.
+            userDecision = await AskUserForThreatDecisionAsync(
+                filePath,
+                string.Empty,
+                driverEvent,
+                scan,
+                actorPath,
+                actorTrust,
+                actorScan,
+                token).ConfigureAwait(false);
+        }
+        finally
+        {
+            interceptionLock?.Dispose();
+        }
 
         if (userDecision == ProtectionUserDecision.Allow)
         {
             Cache(cacheKey, XdowsSecurityDecisionType.Allow, "user-release", TimeSpan.FromMinutes(5));
             return Allow(driverEvent.EventId, "user-release", TimeSpan.FromMinutes(5));
+        }
+
+        if (userDecision == ProtectionUserDecision.Deferred)
+        {
+            //
+            // A parallel event for the same file is already showing its
+            // dialog. Let this write through WITHOUT quarantining or caching
+            // a verdict: the event that owns the dialog decides the file's
+            // fate (release keeps the file; block/timeout quarantines it).
+            // Returning a block here would corrupt the copy in progress, and
+            // quarantining here is what deleted files the user released.
+            //
+            return Allow(driverEvent.EventId, "deferred-to-pending-user-decision");
         }
 
         string detectionName = FormatModelDetectionName(scan);
@@ -1513,6 +1855,29 @@ public sealed class DriverProtection : IProtectionModel
             : "user-block-file-threat";
         Cache(cacheKey, decisionType, reason, TimeSpan.FromSeconds(10));
         return DriverBridgeClient.CreateDecision(driverEvent.EventId, decisionType, reason);
+    }
+
+    //
+    // 与驱动 InjectionCriticalProcesses 同一份名单（lsass / csrss / winlogon /
+    // wininit / services / smss）。此处仅用于**拒绝**判定。
+    //
+    private static readonly string[] CriticalProcessImageNames =
+    [
+        "lsass.exe",
+        "csrss.exe",
+        "winlogon.exe",
+        "wininit.exe",
+        "services.exe",
+        "smss.exe"
+    ];
+
+    private static bool IsCriticalProcessImage(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        string leaf = Path.GetFileName(path);
+        return CriticalProcessImageNames.Contains(leaf, StringComparer.OrdinalIgnoreCase);
     }
 
     private Task<XdowsSecurityDecision> HandleSensitiveOperationAsync(
@@ -1531,10 +1896,27 @@ public sealed class DriverProtection : IProtectionModel
             return Task.FromResult(DriverBridgeClient.CreateDecision(driverEvent.EventId, cached.Decision, cached.Reason));
         }
 
-        // The current policy allows both trusted and untrusted sensitive
-        // operations. Avoid expensive Authenticode chain construction here:
-        // it cannot change the verdict and regularly exceeds the driver's
-        // 500 ms synchronous consultation budget during handle-event floods.
+        //
+        // 关键系统进程的句柄请求必须拒绝。内核只在目标属于 lsass / csrss /
+        // winlogon / wininit / services / smss 时才把事件送到这里，而这里过去
+        // 对任何请求都直接放行——「打开关键进程拿危险权限」于是完全敞开：
+        // 拿到 PROCESS_TERMINATE 结束 csrss 就是一次蓝屏，MEMZ 一类破坏型样本
+        // 正是这么做的。目标名是**拒绝方向**的判据，改名无法绕过（改名只会被拒）。
+        //
+        if (IsCriticalProcessImage(targetPath))
+        {
+            const string criticalReason = "critical-process-handle-denied";
+            Cache(cacheKey, XdowsSecurityDecisionType.Block, criticalReason, TimeSpan.FromSeconds(10));
+            return Task.FromResult(DriverBridgeClient.CreateDecision(
+                driverEvent.EventId,
+                XdowsSecurityDecisionType.Block,
+                criticalReason));
+        }
+
+        // Ordinary sensitive operations keep the fast allow. Avoid expensive
+        // Authenticode chain construction here: it cannot change the verdict
+        // and regularly exceeds the driver's 500 ms synchronous consultation
+        // budget during handle-event floods.
         Cache(cacheKey, XdowsSecurityDecisionType.Allow, "sensitive-op-fast-allow", TimeSpan.FromMinutes(5));
         return Task.FromResult(Allow(driverEvent.EventId, "sensitive-op-fast-allow", TimeSpan.FromMinutes(5)));
     }
@@ -1550,7 +1932,7 @@ public sealed class DriverProtection : IProtectionModel
         CancellationToken token)
     {
         if (!TryEnterUserDecisionHold(driverEvent))
-            return ProtectionUserDecision.Block;
+            return ProtectionUserDecision.Deferred;
 
         string protectionType = DriverEventTypeToProtectionType((XdowsSecurityEventType)driverEvent.EventType);
         DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
@@ -1588,8 +1970,10 @@ public sealed class DriverProtection : IProtectionModel
         }
         catch (Exception ex)
         {
-            // Concurrent duplicate holds fail here; log once per eventId so a
-            // redelivery storm cannot flood the log database with ERROR rows.
+            // Concurrent duplicate holds fail here (the kernel entry already
+            // carries a pending user decision). Defer to the event that owns
+            // the prompt instead of blocking-and-quarantining: otherwise the
+            // duplicates deleted files the user had not decided on yet.
             if (EventIdsLogged.TryAdd(driverEvent.EventId, true))
             {
                 LogCallback?.Invoke(new DriverProtectionLogEntry(
@@ -1599,7 +1983,7 @@ public sealed class DriverProtection : IProtectionModel
                     0,
                     DateTimeOffset.Now,
                     "Decision",
-                    $"Confirmed threat could not enter user-decision hold; blocking immediately: {ex.GetType().Name}"));
+                    $"Confirmed threat could not enter user-decision hold; deferring to the pending decision: {ex.GetType().Name}"));
             }
             return false;
         }
@@ -1719,6 +2103,11 @@ public sealed class DriverProtection : IProtectionModel
             return $"{prefix}:{path}";
         }
     }
+
+    // Log-once markers for "interception hold unavailable" so a copy storm
+    // cannot spam one log line per event for the same locked file.
+    private static readonly ConcurrentDictionary<string, bool> InterceptionHoldUnavailable =
+        new(StringComparer.OrdinalIgnoreCase);
 
     private async Task<NativeModelScannerResult> ScanSingleFlightAsync(string path, CancellationToken token)
     {

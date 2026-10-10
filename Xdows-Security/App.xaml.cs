@@ -269,6 +269,8 @@ namespace Xdows_Security
             if (App.MainWindow?.DispatcherQueue is null)
                 return ProtectionUserDecision.Block;
 
+            bool restoreOnlyRequest = request.Buttons == ProtectionInterceptButtons.RestoreOrTrust;
+
             if (request.Module is not Helper.ProtectionModule.Behavior and
                 not Helper.ProtectionModule.Boot and
                 not Helper.ProtectionModule.Registry &&
@@ -315,7 +317,9 @@ namespace Xdows_Security
                     {
                         Path = request.Path,
                         IsSucceed = true,
-                        InterceptWindowButtonType = InterceptWindowHelper.InterceptWindowButtonType.InterceptOrRelease,
+                        InterceptWindowButtonType = restoreOnlyRequest
+                            ? InterceptWindowHelper.InterceptWindowButtonType.RestoreOrTrust
+                            : InterceptWindowHelper.InterceptWindowButtonType.InterceptOrRelease,
                         ProtectionType = request.ProtectionType,
                         DetectionName = request.DetectionName,
                         Probability = request.Probability,
@@ -575,7 +579,16 @@ namespace Xdows_Security
                     StateChanged?.Invoke(null, EventArgs.Empty);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // Previously swallowed: a failed restore left protection off
+                // with no trace, and the settings toggle then disagreed with
+                // what the user believed was running.
+                LogText.AddNewLog(
+                    LogText.LogLevel.ERROR,
+                    "DriverProtection",
+                    $"Restore protection (runId {runId}) failed: {ex}");
+            }
         }
 
         public static bool IsRun(int RunId)
@@ -586,6 +599,18 @@ namespace Xdows_Security
         public static void PrepareVoluntaryExit()
         {
             DriverProtection.TrySetVoluntaryExit(true);
+
+            //
+            // 退出即关闭驱动防护。只发「允许终止」标志是不够的：文件防护、
+            // 注册表防护与自我保护会继续生效，而裁决它们的客户端已经退出，
+            // 系统会停在「驱动仍在拦截、却无人裁决」的状态。
+            //
+            // 不写回 Protection_Enabled_5 —— 用户下次启动仍应自动恢复防护。
+            //
+            if (DriverProtection.IsRun())
+            {
+                DriverProtection.Stop();
+            }
         }
 
         public static bool SynchronizeStartupProtection(bool enabled)

@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.Windows.Storage.Pickers;
+using Xdows_Security.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -47,6 +47,11 @@ namespace Xdows_Security.Views
             RestoreQuarantineButton.IsEnabled = hasSelection;
             RestoreQuarantineToButton.IsEnabled = hasSelection;
             DeleteQuarantineButton.IsEnabled = hasSelection;
+        }
+
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            _ = ReloadAsync();
         }
 
         private async void RestoreMenuItem_Click(object sender, RoutedEventArgs e)

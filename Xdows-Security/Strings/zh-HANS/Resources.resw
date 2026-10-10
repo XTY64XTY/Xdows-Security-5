@@ -1096,6 +1096,12 @@
   <data name="QuarantinePage_RestoreToMenuItem.Text" xml:space="preserve">
     <value>恢复到...</value>
   </data>
+  <data name="TrustPage_RefreshButton.Label" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="QuarantinePage_RefreshButton.Label" xml:space="preserve">
+    <value>刷新</value>
+  </data>
   <data name="TrustPage_DeleteButton.Label" xml:space="preserve">
     <value>删除</value>
   </data>
