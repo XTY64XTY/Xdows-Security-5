@@ -96,7 +96,7 @@ namespace Helper
                     if (!string.IsNullOrEmpty(password))
                         options.Password = password;
 
-                    using var archive = ArchiveFactory.Open(archivePath, options);
+                    using var archive = ArchiveFactory.OpenArchive(archivePath, options);
 
                     foreach (var entry in archive.Entries)
                     {
@@ -309,7 +309,7 @@ namespace Helper
                     // 检测嵌套类型
                     if (bytesRead >= 6 && MatchesBytes(buffer, bytesRead, Magic7z))
                     {
-                        using var archive = ArchiveFactory.Open(ms, options);
+                        using var archive = ArchiveFactory.OpenArchive(ms, options);
                         foreach (var entry in archive.Entries)
                         {
                             if (entry.IsDirectory) continue;
@@ -349,7 +349,7 @@ namespace Helper
                     else
                     {
                         ms.Position = 0;
-                        using var archive = ArchiveFactory.Open(ms, options);
+                        using var archive = ArchiveFactory.OpenArchive(ms, options);
                         foreach (var entry in archive.Entries)
                         {
                             if (entry.IsDirectory) continue;

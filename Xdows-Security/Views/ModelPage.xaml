@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page x:Class="Xdows_Security.Views.ModelPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:ui="using:CommunityToolkit.WinUI"
+      xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+      xmlns:l="using:WinUI3Localizer"
+      mc:Ignorable="d">
+    <ScrollViewer>
+        <StackPanel Spacing="4" Margin="80,24,80,24">
+            <controls:SettingsCard
+               l:Uids.Uid="SettingsPage_Scan_Model"
+               HeaderIcon="{ui:FontIcon Glyph=&#xEC26;}"
+               Margin="0,0,0,4">
+                <ToggleSwitch x:Name="ModelScanToggle" Tag="ModelScan" Toggled="ModelScanToggle_Toggled" />
+            </controls:SettingsCard>
+            <controls:SettingsCard
+               l:Uids.Uid="ModelPage_ScanEngine"
+               HeaderIcon="{ui:FontIcon Glyph=&#xE8F9;}"
+               Margin="0,0,0,4">
+                <ComboBox x:Name="ModelModeComboBox" Tag="ModelMode" SelectionChanged="ModelModeComboBox_SelectionChanged">
+                    <ComboBoxItem Content="Flash" Tag="Flash" />
+                    <ComboBoxItem Content="Standard" Tag="Standard" />
+                    <ComboBoxItem Content="Adaptive" Tag="Adaptive" />
+                    <ComboBoxItem Content="Pro" Tag="Pro" />
+                </ComboBox>
+            </controls:SettingsCard>
+            <controls:SettingsCard
+               l:Uids.Uid="ModelPage_ProtectionEngine"
+               HeaderIcon="{ui:FontIcon Glyph=&#xF7ED;}"
+               Margin="0,0,0,4">
+                <ComboBox x:Name="ProtectionModeComboBox" Tag="ProtectionModelMode" SelectionChanged="ModelModeComboBox_SelectionChanged">
+                    <ComboBoxItem Content="Flash" Tag="Flash" />
+                    <ComboBoxItem Content="Standard" Tag="Standard" />
+                    <ComboBoxItem Content="Adaptive" Tag="Adaptive" />
+                    <ComboBoxItem Content="Pro" Tag="Pro" />
+                </ComboBox>
+            </controls:SettingsCard>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

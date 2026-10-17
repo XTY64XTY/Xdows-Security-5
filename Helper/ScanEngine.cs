@@ -138,20 +138,17 @@ namespace Helper
             {
                 try
                 {
-                    SyncModeFromSettings();
-                    bool applyToProtection = false;
-                    try
+                    var settings = Settings;
+                    string mode = settings.Values.TryGetValue("ProtectionModelMode", out var raw) && raw is string ms
+                        ? ms
+                        : "Flash";
+                    InitializeWithMode(mode switch
                     {
-                        var settings = Settings;
-                        if (settings.Values.TryGetValue("ModelModeForProtection", out var raw) && raw is bool enabled)
-                        {
-                            applyToProtection = enabled;
-                        }
-                    }
-                    catch (Exception) { }
-
-                    var mode = applyToProtection ? _mode : Xdows_Model_Invoker.ModelMode.Flash;
-                    InitializeWithMode(mode);
+                        "Standard" => Xdows_Model_Invoker.ModelMode.Standard,
+                        "Adaptive" => Xdows_Model_Invoker.ModelMode.Adaptive,
+                        "Pro" => Xdows_Model_Invoker.ModelMode.Pro,
+                        _ => Xdows_Model_Invoker.ModelMode.Flash
+                    });
                     return true;
                 }
                 catch (Exception)

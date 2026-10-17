@@ -655,32 +655,9 @@ namespace Xdows_Security.Views
                 settings.Values["ModelMode"] = "Flash";
             }
 
-            try
+            if (!settings.Values.ContainsKey("ProtectionModelMode"))
             {
-                string modelMode = settings.Values.TryGetValue("ModelMode", out object? modeRaw) && modeRaw is string ms ? ms : "Flash";
-                ComboBox modelCombo = this.FindName("ModelModeComboBox") as ComboBox ?? new();
-                if (modelCombo != null)
-                {
-                    foreach (object obj in modelCombo.Items)
-                    {
-                        if (obj is ComboBoxItem item && (item.Tag as string) == modelMode)
-                        {
-                            modelCombo.SelectedItem = item;
-                            break;
-                        }
-                    }
-                }
-            }
-            catch { }
-
-            if (!settings.Values.ContainsKey("ModelModeForProtection"))
-            {
-                settings.Values["ModelModeForProtection"] = false;
-                ModelModeForProtectionToggle.IsOn = false;
-            }
-            else if (settings.Values.TryGetValue("ModelModeForProtection", out var mfpRaw) && mfpRaw is bool mfpOn)
-            {
-                ModelModeForProtectionToggle.IsOn = mfpOn;
+                settings.Values["ProtectionModelMode"] = "Flash";
             }
 
             if (!settings.Values.ContainsKey("IsBackButtonVisible"))
@@ -780,24 +757,9 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void ModelModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void Model_Card_Click(object sender, RoutedEventArgs e)
         {
-            if (IsInitialize) return;
-            if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
-            {
-                ApplicationDataContainer settings = App.LocalSettings;
-                settings.Values["ModelMode"] = tag;
-            }
-        }
-
-        private void ModelModeForProtectionToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            if (IsInitialize) return;
-            if (sender is ToggleSwitch toggle)
-            {
-                ApplicationDataContainer settings = App.LocalSettings;
-                settings.Values["ModelModeForProtection"] = toggle.IsOn;
-            }
+            App.MainWindow?.GoToPage("Model");
         }
 
         private void LoadLanguageSetting()
@@ -1991,7 +1953,14 @@ namespace Xdows_Security.Views
             base.OnNavigatedTo(e);
             // 页面被缓存后再次进入时不会执行构造函数，这里恢复防护状态轮询。
             if (!IsInitialize)
+            {
                 InitializeProtectionStatusTimer();
+                // Xdows Model 页内也能改模型扫描开关，返回设置页时同步卡片上的开关状态。
+                if (App.LocalSettings.Values.TryGetValue("ModelScan", out var modelScanRaw) && modelScanRaw is bool modelScanOn)
+                {
+                    ModelScanToggle.IsOn = modelScanOn;
+                }
+            }
         }
 
         protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)

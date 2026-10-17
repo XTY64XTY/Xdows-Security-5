@@ -214,31 +214,27 @@ namespace Xdows_Security
         }
 
         /// <summary>
-        /// 璇诲彇 UI 璁剧疆鐨勬壂鎻忔ā寮忓苟搴旂敤鍒伴┍鍔ㄩ槻鎶ゃ€傚綋鐢ㄦ埛寮€鍚?灏嗘壂鎻忔ā寮忓簲鐢ㄥ埌闃叉姢"鏃讹紝
-        /// 浣跨敤 UI 閫夋嫨鐨勬ā鍨嬫ā寮?Flash/Pro/Standard)锛涘惁鍒欎繚鎸侀粯璁?Standard銆?        /// </summary>
+        /// 读取「防护调用引擎」设置并应用到驱动防护，默认 Flash。
+        /// </summary>
         private static void ApplyDriverProtectionModelMode(DriverProtection protection)
         {
             try
             {
                 var settings = App.LocalSettings;
 
-                if (settings.Values.TryGetValue("ModelModeForProtection", out var mfpRaw) &&
-                    mfpRaw is bool mfpOn && mfpOn)
+                string mode = settings.Values.TryGetValue("ProtectionModelMode", out var modeRaw) && modeRaw is string ms
+                    ? ms : "Flash";
+                protection.ModelMode = mode switch
                 {
-                    string mode = settings.Values.TryGetValue("ModelMode", out var modeRaw) && modeRaw is string ms
-                        ? ms : "Flash";
-                    protection.ModelMode = mode switch
-                    {
-                        "Flash" => NativeModelScannerMode.Flash,
-                        "Adaptive" => NativeModelScannerMode.Adaptive,
-                        "Pro" => NativeModelScannerMode.Pro,
-                        _ => NativeModelScannerMode.Flash
-                    };
-                }
+                    "Standard" => NativeModelScannerMode.Standard,
+                    "Adaptive" => NativeModelScannerMode.Adaptive,
+                    "Pro" => NativeModelScannerMode.Pro,
+                    _ => NativeModelScannerMode.Flash
+                };
             }
             catch
             {
-                // 璁剧疆璇诲彇澶辫触鏃朵繚鎸侀粯璁?Standard
+                // 设置读取失败时保持默认 Flash
             }
         }
 
