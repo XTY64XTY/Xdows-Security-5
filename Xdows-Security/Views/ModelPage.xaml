@@ -10,12 +10,14 @@
       mc:Ignorable="d">
     <ScrollViewer>
         <StackPanel Spacing="4" Margin="80,24,80,24">
+            <TextBlock Margin="0,4,0,8" l:Uids.Uid="ModelPage_Overview" />
             <controls:SettingsCard
                l:Uids.Uid="SettingsPage_Scan_Model"
                HeaderIcon="{ui:FontIcon Glyph=&#xEC26;}"
                Margin="0,0,0,4">
                 <ToggleSwitch x:Name="ModelScanToggle" Tag="ModelScan" Toggled="ModelScanToggle_Toggled" />
             </controls:SettingsCard>
+            <TextBlock Margin="0,4,0,8" l:Uids.Uid="ModelPage_ScanSection" />
             <controls:SettingsCard
                l:Uids.Uid="ModelPage_ScanEngine"
                HeaderIcon="{ui:FontIcon Glyph=&#xE8F9;}"
@@ -27,6 +29,32 @@
                     <ComboBoxItem Content="Pro" Tag="Pro" />
                 </ComboBox>
             </controls:SettingsCard>
+            <controls:SettingsExpander
+               l:Uids.Uid="ModelPage_ScanThreshold"
+               HeaderIcon="{ui:FontIcon Glyph=&#xE71C;}"
+               Margin="0,0,0,4">
+                <ComboBox x:Name="ScanThresholdComboBox" Tag="ModelThreshold" SelectionChanged="ThresholdComboBox_SelectionChanged">
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Loose" Tag="Loose" />
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Medium" Tag="Medium" />
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Strict" Tag="Strict" />
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Custom" Tag="Custom" />
+                </ComboBox>
+                <controls:SettingsExpander.Items>
+                    <controls:SettingsCard
+                       x:Name="ScanThresholdCustomCard"
+                       l:Uids.Uid="ModelPage_ScanThreshold_Custom"
+                       HeaderIcon="{ui:FontIcon Glyph=&#xE70F;}">
+                        <NumberBox x:Name="ScanThresholdNumberBox"
+                                   Tag="ModelThresholdValue"
+                                   Minimum="80"
+                                   Maximum="100"
+                                   SmallChange="1"
+                                   SpinButtonPlacementMode="Compact"
+                                   ValueChanged="ThresholdNumberBox_ValueChanged" />
+                    </controls:SettingsCard>
+                </controls:SettingsExpander.Items>
+            </controls:SettingsExpander>
+            <TextBlock Margin="0,4,0,8" l:Uids.Uid="ModelPage_ProtectionSection" />
             <controls:SettingsCard
                l:Uids.Uid="ModelPage_ProtectionEngine"
                HeaderIcon="{ui:FontIcon Glyph=&#xF7ED;}"
@@ -38,6 +66,31 @@
                     <ComboBoxItem Content="Pro" Tag="Pro" />
                 </ComboBox>
             </controls:SettingsCard>
+            <controls:SettingsExpander
+               l:Uids.Uid="ModelPage_ProtectionThreshold"
+               HeaderIcon="{ui:FontIcon Glyph=&#xE71C;}"
+               Margin="0,0,0,4">
+                <ComboBox x:Name="ProtectionThresholdComboBox" Tag="ProtectionModelThreshold" SelectionChanged="ThresholdComboBox_SelectionChanged">
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Loose" Tag="Loose" />
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Medium" Tag="Medium" />
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Strict" Tag="Strict" />
+                    <ComboBoxItem l:Uids.Uid="ModelPage_Threshold_Custom" Tag="Custom" />
+                </ComboBox>
+                <controls:SettingsExpander.Items>
+                    <controls:SettingsCard
+                       x:Name="ProtectionThresholdCustomCard"
+                       l:Uids.Uid="ModelPage_ProtectionThreshold_Custom"
+                       HeaderIcon="{ui:FontIcon Glyph=&#xE70F;}">
+                        <NumberBox x:Name="ProtectionThresholdNumberBox"
+                                   Tag="ProtectionModelThresholdValue"
+                                   Minimum="80"
+                                   Maximum="100"
+                                   SmallChange="1"
+                                   SpinButtonPlacementMode="Compact"
+                                   ValueChanged="ThresholdNumberBox_ValueChanged" />
+                    </controls:SettingsCard>
+                </controls:SettingsExpander.Items>
+            </controls:SettingsExpander>
         </StackPanel>
     </ScrollViewer>
 </Page>

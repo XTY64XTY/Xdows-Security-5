@@ -1,6 +1,7 @@
 using Microsoft.Windows.Storage;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Xdows_Model_Config;
 using Xdows_Model_Invoker;
 
 namespace Helper
@@ -125,6 +126,7 @@ namespace Helper
                 try
                 {
                     SyncModeFromSettings();
+                    ApplyThresholdFromSettings("ModelThreshold", "ModelThresholdValue");
                     InitializeWithMode(_mode);
                     return true;
                 }
@@ -142,6 +144,7 @@ namespace Helper
                     string mode = settings.Values.TryGetValue("ProtectionModelMode", out var raw) && raw is string ms
                         ? ms
                         : "Flash";
+                    ApplyThresholdFromSettings("ProtectionModelThreshold", "ProtectionModelThresholdValue");
                     InitializeWithMode(mode switch
                     {
                         "Standard" => Xdows_Model_Invoker.ModelMode.Standard,
@@ -155,6 +158,29 @@ namespace Helper
                 {
                     return false;
                 }
+            }
+
+            /// <summary>
+            /// 按设置里的阈值预设（宽松 / 中等 / 严格 / 自定义）配置固定判毒阈值。
+            /// 固定阈值是 Malware 判定的下限；推荐阈值（Suspicious 区间）在加载模型时仍由模型旁的 *.threshold.json 填充。
+            /// </summary>
+            private static void ApplyThresholdFromSettings(string presetKey, string valueKey)
+            {
+                var settings = Settings;
+                string preset = settings.Values.TryGetValue(presetKey, out var presetRaw) && presetRaw is string p
+                    ? p
+                    : ModelThresholdPresets.Medium;
+                double customValue = settings.Values.TryGetValue(valueKey, out var valueRaw) && valueRaw is double v
+                    ? v
+                    : ModelThresholdPresets.DefaultCustom;
+
+                (float standard, float flash, float pro) = ModelThresholdPresets.Resolve(preset, customValue);
+                ModelInvoker.ConfigureThresholds(new TrainingConfig
+                {
+                    StandardThreshold = standard,
+                    FlashThreshold = flash,
+                    ProThreshold = pro
+                });
             }
 
             private static void InitializeWithMode(Xdows_Model_Invoker.ModelMode mode)

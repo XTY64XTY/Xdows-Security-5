@@ -525,17 +525,62 @@
   <data name="SettingsPage_Scan_Model_ModeForProtection.Description" xml:space="preserve">
     <value>开启后，防护模块将使用选择的模型模式运行；修改此设置需要重启对应防护才能生效</value>
   </data>
+  <data name="ModelPage_Overview.Text" xml:space="preserve">
+    <value>引擎概览</value>
+  </data>
+  <data name="ModelPage_ScanSection.Text" xml:space="preserve">
+    <value>扫描配置</value>
+  </data>
+  <data name="ModelPage_ProtectionSection.Text" xml:space="preserve">
+    <value>防护配置</value>
+  </data>
   <data name="ModelPage_ScanEngine.Header" xml:space="preserve">
-    <value>扫描调用引擎</value>
+    <value>扫描模型类型</value>
   </data>
   <data name="ModelPage_ScanEngine.Description" xml:space="preserve">
     <value>选择扫描时调用的引擎模式</value>
   </data>
   <data name="ModelPage_ProtectionEngine.Header" xml:space="preserve">
-    <value>防护调用引擎</value>
+    <value>防护模型类型</value>
   </data>
   <data name="ModelPage_ProtectionEngine.Description" xml:space="preserve">
     <value>选择防护时调用的引擎模式；修改此设置需要重启对应防护才能生效</value>
+  </data>
+  <data name="ModelPage_ScanThreshold.Header" xml:space="preserve">
+    <value>扫描所用阈值</value>
+  </data>
+  <data name="ModelPage_ScanThreshold.Description" xml:space="preserve">
+    <value>模型判毒的概率阈值；宽松更易报毒，严格更保守。修改后需重新开始扫描才会生效</value>
+  </data>
+  <data name="ModelPage_ProtectionThreshold.Header" xml:space="preserve">
+    <value>防护所用阈值</value>
+  </data>
+  <data name="ModelPage_ProtectionThreshold.Description" xml:space="preserve">
+    <value>模型判毒的概率阈值；宽松更易报毒，严格更保守。修改后需关闭并重新开启防护才会生效</value>
+  </data>
+  <data name="ModelPage_Threshold_Loose.Content" xml:space="preserve">
+    <value>宽松</value>
+  </data>
+  <data name="ModelPage_Threshold_Medium.Content" xml:space="preserve">
+    <value>中等</value>
+  </data>
+  <data name="ModelPage_Threshold_Strict.Content" xml:space="preserve">
+    <value>严格</value>
+  </data>
+  <data name="ModelPage_Threshold_Custom.Content" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="ModelPage_ScanThreshold_Custom.Header" xml:space="preserve">
+    <value>自定义阈值</value>
+  </data>
+  <data name="ModelPage_ScanThreshold_Custom.Description" xml:space="preserve">
+    <value>80-100 的整数百分比；仅在阈值选择「自定义」时生效</value>
+  </data>
+  <data name="ModelPage_ProtectionThreshold_Custom.Header" xml:space="preserve">
+    <value>自定义阈值</value>
+  </data>
+  <data name="ModelPage_ProtectionThreshold_Custom.Description" xml:space="preserve">
+    <value>80-100 的整数百分比；仅在阈值选择「自定义」时生效</value>
   </data>
   <data name="SettingsPage_Scan_Local_DeepScan.Header" xml:space="preserve">
     <value>深度扫描</value>

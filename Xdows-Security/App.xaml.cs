@@ -172,6 +172,7 @@ namespace Xdows_Security
                 InjectionProtectionEnabledProvider = IsInjectionProtectionEnabled
             };
             ApplyDriverProtectionModelMode(protection);
+            ApplyDriverProtectionThresholds(protection);
             return protection;
         }
 
@@ -235,6 +236,34 @@ namespace Xdows_Security
             catch
             {
                 // 设置读取失败时保持默认 Flash
+            }
+        }
+
+        /// <summary>
+        /// 读取「防护阈值」设置并应用到驱动防护。中等即引擎默认阈值，
+        /// 宽松 / 严格在默认值上偏移，自定义则三档统一使用设置值。
+        /// </summary>
+        private static void ApplyDriverProtectionThresholds(DriverProtection protection)
+        {
+            try
+            {
+                var settings = App.LocalSettings;
+
+                string preset = settings.Values.TryGetValue("ProtectionModelThreshold", out var presetRaw) && presetRaw is string p
+                    ? p
+                    : ModelThresholdPresets.Medium;
+                double customValue = settings.Values.TryGetValue("ProtectionModelThresholdValue", out var valueRaw) && valueRaw is double v
+                    ? v
+                    : ModelThresholdPresets.DefaultCustom;
+
+                (float standard, float flash, float pro) = ModelThresholdPresets.Resolve(preset, customValue);
+                protection.StandardThreshold = standard;
+                protection.FlashThreshold = flash;
+                protection.ProThreshold = pro;
+            }
+            catch
+            {
+                // 设置读取失败时保持默认阈值
             }
         }
 
@@ -485,10 +514,11 @@ namespace Xdows_Security
 
             if (protection is null) { return false; }
 
-            // Refresh ModelMode from settings before each start
+            // Refresh ModelMode / thresholds from settings before each start
             if (protection is DriverProtection driverProt)
             {
                 ApplyDriverProtectionModelMode(driverProt);
+                ApplyDriverProtectionThresholds(driverProt);
             }
 
             bool result;

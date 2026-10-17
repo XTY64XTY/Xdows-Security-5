@@ -113,6 +113,11 @@ public sealed partial class DriverProtection : IProtectionModel
 
     public NativeModelScannerMode ModelMode { get; set; } = NativeModelScannerMode.Flash;
 
+    // 三档固定判毒阈值（百分比，按 Standard / Flash / Pro 排列），由应用侧按「防护阈值」设置写入。
+    public float StandardThreshold { get; set; } = 92f;
+    public float FlashThreshold { get; set; } = 96f;
+    public float ProThreshold { get; set; } = 94f;
+
     public Func<ProtectionDecisionRequest, CancellationToken, Task<ProtectionUserDecision>>? DecisionCallback { get; set; }
     public Action<DriverProtectionLogEntry>? LogCallback { get; set; }
     public Func<bool>? StartupProtectionStateProvider { get; set; }
@@ -190,6 +195,8 @@ public sealed partial class DriverProtection : IProtectionModel
                 // Loading the native model here, in the pre-registration
                 // state, avoids that interaction entirely.
                 Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
+                int thresholdStatus = NativeModelScanner.ConfigureThresholds(StandardThreshold, FlashThreshold, ProThreshold);
+                Log("Scanner", $"Thresholds configured: Standard={StandardThreshold} Flash={FlashThreshold} Pro={ProThreshold} status={thresholdStatus}");
                 _scanner = new NativeModelScanner(ModelMode);
                 Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}, Engine={NativeModelLibraryLoader.LoadedFrom ?? "unloaded"}");
                 if (!_scanner.NativeReady)

@@ -56,6 +56,18 @@ public sealed class NativeModelScanner : IDisposable
     public string? InitializationError => _nativeInitializationError;
     public NativeModelScannerMode Mode => _mode;
 
+    /// <summary>
+    /// 配置原生引擎的固定判毒阈值（Standard / Flash / Pro，百分比 0-100）。须在创建扫描器会话前调用；
+    /// 只覆盖固定判毒下限，推荐阈值清单（Suspicious 区间）仍自动采用。
+    /// </summary>
+    public static int ConfigureThresholds(float standardThreshold, float flashThreshold, float proThreshold)
+    {
+        NativeModelLibraryLoader.EnsureLoaded();
+        return XdowsModelNativeConfigureThresholds(
+            new[] { standardThreshold, flashThreshold, proThreshold },
+            1);
+    }
+
     public NativeModelScanner(NativeModelScannerMode mode = NativeModelScannerMode.Flash, string? modelDirectory = null)
     {
         _mode = mode;
@@ -266,6 +278,11 @@ public sealed class NativeModelScanner : IDisposable
         string? modelDirectory,
         int mode,
         out IntPtr session);
+
+    [DllImport(NativeDllName, CallingConvention = CallingConvention.StdCall)]
+    private static extern int XdowsModelNativeConfigureThresholds(
+        float[] fixedThresholds,
+        int autoThresholdSelection);
 
     [DllImport(NativeDllName, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
     private static extern int XdowsModelNativeScanFile(
