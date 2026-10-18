@@ -573,7 +573,36 @@ namespace Xdows_Security
 
         public static void RestoreDriverProtection()
         {
+            StartIntegrityMonitors();
             RestoreProtection(5);
+        }
+
+        private static SelfIntegrityMonitor? _selfIntegrity;
+
+        /// <summary>
+        /// 启动两个后台监控：自身完整性（映像 / 驱动服务 / 桥接）与新出现的不可信内核驱动。
+        /// 两者都只写日志，不自动处置——用户态没有办法可靠地修复被破坏的内核状态。
+        /// </summary>
+        private static void StartIntegrityMonitors()
+        {
+            if (_selfIntegrity is not null)
+                return;
+
+            var selfIntegrity = new SelfIntegrityMonitor(() => IsRun(5));
+            selfIntegrity.ViolationDetected += violation => LogText.AddNewLog(
+                LogText.LogLevel.ERROR,
+                "SelfIntegrity",
+                $"{violation.Issue}: {violation.Detail}");
+            selfIntegrity.Start();
+            _selfIntegrity = selfIntegrity;
+
+            // 监控对象由自身的轮询 Task 保持存活，不需要额外字段。
+            var kernelDrivers = new KernelDriverMonitor();
+            kernelDrivers.UntrustedDriverDetected += driver => LogText.AddNewLog(
+                LogText.LogLevel.WARN,
+                "KernelDriver",
+                $"New driver service '{driver.ServiceName}' ({driver.ImagePath ?? "unknown path"}): {driver.Reason}");
+            kernelDrivers.Start();
         }
 
         public static void RestoreLegacyProtections()

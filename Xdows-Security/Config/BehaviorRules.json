@@ -37,6 +37,33 @@
       "threshold": 5,
       "windowMs": 3000,
       "initiator": ["tar.exe", "7z.exe", "expand.exe", "makecab.exe"]
+    },
+    {
+      "id": 4,
+      "name": "KernelDriverServiceCreated",
+      "behaviorType": 15,
+      "flags": [],
+      "operations": ["processCreate"],
+      "initiator": ["sc.exe"],
+      "commandLine": ["create", "type=", "kernel"]
+    },
+    {
+      "id": 5,
+      "name": "EventLogCleared",
+      "behaviorType": 15,
+      "flags": [],
+      "operations": ["processCreate"],
+      "initiator": ["wevtutil.exe"],
+      "commandLine": ["cl"]
+    },
+    {
+      "id": 6,
+      "name": "ShadowCopiesDeleted",
+      "behaviorType": 15,
+      "flags": [],
+      "operations": ["processCreate"],
+      "initiator": ["vssadmin.exe"],
+      "commandLine": ["delete", "shadows"]
     }
   ],
   "initiatorExclusions": []
