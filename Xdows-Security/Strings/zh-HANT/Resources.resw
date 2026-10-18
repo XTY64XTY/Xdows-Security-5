@@ -1567,77 +1567,92 @@
   <data name="SettingsPage_Protection_Driver_Status_Error" xml:space="preserve">
     <value>錯誤</value>
   </data>
-  <data name="DriverEnvironmentDialog_Title" xml:space="preserve">
-    <value>驅動環境檢測</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Close" xml:space="preserve">
-    <value>關閉</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Refresh" xml:space="preserve">
-    <value>重新整理</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Checking" xml:space="preserve">
-    <value>正在檢查驅動防護環境...</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Repairing" xml:space="preserve">
-    <value>正在修復 {0}...</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Summary_Healthy" xml:space="preserve">
-    <value>驅動防護環境就緒。</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Summary_NeedsAttention" xml:space="preserve">
-    <value>驅動防護需要關注。請使用下方修復操作，或在驅動就緒前保持相容防護啟用。</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Summary_Error" xml:space="preserve">
-    <value>無法完成驅動環境檢測。請保持相容防護啟用並檢查日誌。</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Status_Passed" xml:space="preserve">
-    <value>通過</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Status_Warning" xml:space="preserve">
-    <value>警告</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Status_Failed" xml:space="preserve">
-    <value>失敗</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Privileges_Title" xml:space="preserve">
-    <value>執行權限</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Signing_Title" xml:space="preserve">
-    <value>驅動簽名與系統策略</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Packages_Title" xml:space="preserve">
-    <value>雙驅動包及服務</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Runtime_Title" xml:space="preserve">
-    <value>雙驅動通信與模型資源</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Item_Admin_Title" xml:space="preserve">
+  <data name="DriverEnvironmentPage_Check_Administrator" xml:space="preserve">
     <value>管理員權限</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Testsigning_Title" xml:space="preserve">
-    <value>驅動簽名</value>
+  <data name="DriverEnvironmentPage_Check_TestSigning" xml:space="preserve">
+    <value>測試模式</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Package_Title" xml:space="preserve">
-    <value>主驅動包</value>
+  <data name="DriverEnvironmentPage_Check_FileIntegrity" xml:space="preserve">
+    <value>檔案完整性</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Service_Title" xml:space="preserve">
-    <value>主驅動服務</value>
+  <data name="DriverEnvironmentPage_Check_DriverStarted" xml:space="preserve">
+    <value>驅動啟動狀態</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_BootfilterPackage_Title" xml:space="preserve">
-    <value>引導過濾驅動包</value>
+  <data name="DriverEnvironmentPage_Ok_Administrator" xml:space="preserve">
+    <value>目前處理程序以系統管理員身分執行。</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_BootfilterService_Title" xml:space="preserve">
-    <value>引導過濾驅動服務</value>
+  <data name="DriverEnvironmentPage_Ok_TestSigning" xml:space="preserve">
+    <value>系統已開啟測試模式。</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Communication_Title" xml:space="preserve">
-    <value>主驅動通信</value>
+  <data name="DriverEnvironmentPage_Ok_FileIntegrity" xml:space="preserve">
+    <value>驅動套件檔案齊全。</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_BootfilterCommunication_Title" xml:space="preserve">
-    <value>引導過濾驅動通信</value>
+  <data name="DriverEnvironmentPage_Ok_DriverStarted" xml:space="preserve">
+    <value>驅動服務正在執行，橋接可用。</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Model_Title" xml:space="preserve">
-    <value>原生模型資源</value>
+  <data name="DriverEnvironmentPage_Fail_TestSigningPendingRestart" xml:space="preserve">
+    <value>測試模式已設定，需要重新啟動 Windows 後才會生效。</value>
+  </data>
+  <data name="DriverEnvironmentPage_TestSigning_Warning_Title" xml:space="preserve">
+    <value>啟用測試模式前請閱讀</value>
+  </data>
+  <data name="DriverEnvironmentPage_TestSigning_Warning_Text" xml:space="preserve">
+    <value>安全性警告：測試模式會放寬 Windows 對核心驅動的程式碼完整性校驗。開啟期間，任何使用測試憑證簽章的驅動都可能被載入，包括來源不明的驅動。&#10;&#10;免責聲明：此應用程式的驅動使用自簽測試憑證，因此在一般裝置上必須啟用測試模式才能載入。開啟後需要重新啟動 Windows 才會生效，桌面右下角會顯示「測試模式」浮水印。此應用程式發行者及原始開發者不承擔由此操作造成的任何風險責任。&#10;&#10;是否繼續？</value>
+  </data>
+  <data name="DriverEnvironmentPage_Repair_DisableTestSigning" xml:space="preserve">
+    <value>復原變更</value>
+  </data>
+  <data name="DriverEnvironmentPage_RepairUndone" xml:space="preserve">
+    <value>已復原測試模式設定，重新啟動 Windows 後生效。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Fail_TestSigning" xml:space="preserve">
+    <value>系統未開啟測試模式，測試簽章驅動無法載入。開啟後需要重新啟動 Windows。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Fail_DriverNotStarted" xml:space="preserve">
+    <value>驅動未啟動，請開啟驅動防護後重試。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Fail_Unrepairable" xml:space="preserve">
+    <value>驅動防護在目前裝置上遇到無法修復的問題，請嘗試重新安裝此軟體或啟用相容防護。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Repair_TestSigning" xml:space="preserve">
+    <value>開啟測試模式</value>
+  </data>
+  <data name="DriverEnvironmentPage_Status_Passed" xml:space="preserve">
+    <value>通過</value>
+  </data>
+  <data name="DriverEnvironmentPage_Status_Failed" xml:space="preserve">
+    <value>未通過</value>
+  </data>
+  <data name="DriverEnvironmentPage_Headline_Ready" xml:space="preserve">
+    <value>驅動防護環境正常</value>
+  </data>
+  <data name="DriverEnvironmentPage_Headline_Blocked" xml:space="preserve">
+    <value>環境不符驅動防護要求</value>
+  </data>
+  <data name="DriverEnvironmentPage_Summary_Ready" xml:space="preserve">
+    <value>四項檢查全部通過，可以啟用驅動防護。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Summary_Blocked" xml:space="preserve">
+    <value>{0} 項檢查未通過。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Recheck" xml:space="preserve">
+    <value>重新檢測</value>
+  </data>
+  <data name="DriverEnvironmentPage_Checking" xml:space="preserve">
+    <value>正在檢查…</value>
+  </data>
+  <data name="DriverEnvironmentPage_Repairing" xml:space="preserve">
+    <value>正在開啟測試模式…</value>
+  </data>
+  <data name="DriverEnvironmentPage_RepairDone" xml:space="preserve">
+    <value>已開啟測試模式，請重新啟動 Windows 後再次檢測。</value>
+  </data>
+  <data name="DriverEnvironmentPage_Title" xml:space="preserve">
+    <value>驅動環境檢測</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Environment.Content" xml:space="preserve">
+    <value>環境檢測</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
     <value>需要檢測驅動環境</value>
@@ -1656,6 +1671,48 @@
   </data>
   <data name="SettingsPage_Protection_Driver_Setup_Title" xml:space="preserve">
     <value>正在配置驅動防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Preparing" xml:space="preserve">
+    <value>載入本機模型</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Preparing_Detail" xml:space="preserve">
+    <value>啟動 Xdows Model 原生引擎，檔案與處理程序判定都依賴它。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Installing" xml:space="preserve">
+    <value>安裝並啟動驅動</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Installing_Detail" xml:space="preserve">
+    <value>部署主驅動與引導過濾驅動，並啟動對應服務。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Snapshot" xml:space="preserve">
+    <value>讀取引導快照</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Snapshot_Detail" xml:space="preserve">
+    <value>讀取磁碟引導磁區，建立引導防護基準。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Connecting" xml:space="preserve">
+    <value>連線驅動並註冊自我保護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Connecting_Detail" xml:space="preserve">
+    <value>連線驅動裝置、校驗模組與能力，並將本處理程序註冊為受保護物件。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Configuring" xml:space="preserve">
+    <value>設定引導與登錄檔防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Configuring_Detail" xml:space="preserve">
+    <value>下發引導防護、登錄檔防護與宣告式行為規則。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Startup" xml:space="preserve">
+    <value>同步啟動項防護</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Startup_Detail" xml:space="preserve">
+    <value>讓驅動守護本軟體的啟動項。</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Monitoring" xml:space="preserve">
+    <value>啟動監控</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Monitoring_Detail" xml:space="preserve">
+    <value>啟動事件泵，開始接收並裁決驅動事件。</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Setup_Preparing" xml:space="preserve">
     <value>準備驅動防護</value>

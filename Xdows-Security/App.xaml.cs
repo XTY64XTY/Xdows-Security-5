@@ -510,34 +510,54 @@ namespace Xdows_Security
 
         public static bool Run(int RunId)
         {
+            return Run(RunId, null);
+        }
+
+        /// <summary>
+        /// 启动 / 停止某项防护。<paramref name="progress"/> 只对驱动防护有意义：
+        /// 它把每个启动阶段上报给界面，让"卡在哪一步"可见。
+        /// </summary>
+        public static bool Run(int RunId, Action<DriverLoadProgress>? progress)
+        {
             IProtectionModel? protection = RunIdToProtection(RunId);
 
             if (protection is null) { return false; }
 
             // Refresh ModelMode / thresholds from settings before each start
-            if (protection is DriverProtection driverProt)
+            DriverProtection? driverProtection = protection as DriverProtection;
+            if (driverProtection is not null)
             {
-                ApplyDriverProtectionModelMode(driverProt);
-                ApplyDriverProtectionThresholds(driverProt);
+                ApplyDriverProtectionModelMode(driverProtection);
+                ApplyDriverProtectionThresholds(driverProtection);
+                driverProtection.ProgressCallback = progress;
             }
 
-            bool result;
-            if (protection.IsRun())
+            try
             {
-                result = protection.Stop();
-            }
-            else
-            {
-                result = protection.Run(interceptCallback);
-            }
+                bool result;
+                if (protection.IsRun())
+                {
+                    result = protection.Stop();
+                }
+                else
+                {
+                    result = protection.Run(interceptCallback);
+                }
 
-            if (result)
-            {
-                SaveProtectionState(RunId, IsRun(RunId));
-                StateChanged?.Invoke(null, EventArgs.Empty);
-            }
+                if (result)
+                {
+                    SaveProtectionState(RunId, IsRun(RunId));
+                    StateChanged?.Invoke(null, EventArgs.Empty);
+                }
 
-            return result;
+                return result;
+            }
+            finally
+            {
+                // 进度回调只服务于本次启动，用完立刻摘掉，避免页面销毁后仍被调用。
+                if (driverProtection is not null)
+                    driverProtection.ProgressCallback = null;
+            }
         }
 
         private static void SaveProtectionState(int runId, bool enabled)

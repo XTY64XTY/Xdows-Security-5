@@ -507,6 +507,7 @@ namespace Xdows_Security.Views
                 {
                     await new ContentDialog
                     {
+                        Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                         Title = Localizer.Get().GetLocalizedString("SecurityPage_TrustFailed_Title"),
                         Content = ex.Message,
                         CloseButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
@@ -542,6 +543,7 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Title"),
                 Content = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Content"), displayPath),
                 PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_HandleConfirm_Primary"),
@@ -854,6 +856,7 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_HandleAllConfirm_Title"),
                 Content = progressContent,
                 XamlRoot = this.XamlRoot,
@@ -1265,6 +1268,7 @@ namespace Xdows_Security.Views
 
             _moreScanDialog = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = Localizer.Get().GetLocalizedString("SecurityPage_MoreScan_Title"),
                 Content = contentGrid,
                 PrimaryButtonText = Localizer.Get().GetLocalizedString("SecurityPage_StartScanButton"),
@@ -1611,6 +1615,7 @@ namespace Xdows_Security.Views
 
                     var dialog = new ContentDialog
                     {
+                        Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                         Title = $"{Localizer.Get().GetLocalizedString("SecurityPage_ArchivePassword_Title")} — {Path.GetFileName(archivePath)}",
                         Content = passwordBox,
                         PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
@@ -1680,6 +1685,7 @@ namespace Xdows_Security.Views
                     {
                         var dialog = new ContentDialog
                         {
+                            Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                             Title = Localizer.Get().GetLocalizedString("SecurityPage_Model_InitFailed_Title"),
                             Content = Localizer.Get().GetLocalizedString("SecurityPage_InitFailed_Content"),
                             PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),

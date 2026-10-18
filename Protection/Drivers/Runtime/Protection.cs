@@ -29,6 +29,61 @@ public enum DriverProtectionLogSeverity
     Fatal
 }
 
+/// <summary>
+/// 驱动防护的启动阶段。顺序即实际执行顺序，界面按这个顺序逐节点亮；
+/// 失败时停在哪一个阶段就是定位结论，不需要再从日志里拼。
+/// </summary>
+public enum DriverLoadStage
+{
+    /// <summary>加载原生模型。必须在注册自我保护之前完成。</summary>
+    PreparingModel,
+
+    /// <summary>安装并启动主驱动与引导过滤驱动。</summary>
+    InstallingDriver,
+
+    /// <summary>读取引导扇区快照，供引导防护与引导过滤驱动使用。</summary>
+    ReadingBootSnapshot,
+
+    /// <summary>连接驱动设备、校验模块与能力、注册自我保护。</summary>
+    ConnectingDriver,
+
+    /// <summary>下发引导保护、注册表保护与声明式行为规则。</summary>
+    ConfiguringProtection,
+
+    /// <summary>同步启动项自我保护。</summary>
+    SynchronizingStartup,
+
+    /// <summary>启动事件泵与日志泵。</summary>
+    StartingMonitoring
+}
+
+public enum DriverLoadStageStatus
+{
+    Started,
+    Completed,
+    Failed
+}
+
+public sealed record DriverLoadProgress(DriverLoadStage Stage, DriverLoadStageStatus Status, string? Message = null);
+
+/// <summary>
+/// 某一阶段的可预期失败（驱动装不上、服务起不来）。带上阶段与日志模块，
+/// 由 <see cref="DriverProtection.Run"/> 统一记录并上报进度。
+/// </summary>
+public sealed class DriverLoadException : Exception
+{
+    public DriverLoadException(DriverLoadStage stage, string module, string message)
+        : base(message)
+    {
+        Stage = stage;
+        Module = module;
+    }
+
+    public DriverLoadStage Stage { get; }
+
+    public string Module { get; }
+}
+
 public sealed record DriverProtectionLogEntry(
     ulong EventId,
     ulong CorrelationId,
@@ -169,6 +224,19 @@ public sealed partial class DriverProtection : IProtectionModel
         };
     }
 
+    /// <summary>
+    /// 启动进度回调。<see cref="Run"/> 每进入、完成、失败一个阶段上报一次；
+    /// 未设置时行为与原来完全一致（只写日志）。
+    /// </summary>
+    public Action<DriverLoadProgress>? ProgressCallback { get; set; }
+
+    /// <summary>当前阶段，普通异常发生时用来定位失败点。</summary>
+    private DriverLoadStage _currentStage = DriverLoadStage.PreparingModel;
+
+    /// <summary>
+    /// 启动驱动防护。按 <see cref="DriverLoadStage"/> 顺序推进，失败时停在对应阶段，
+    /// 由界面把"卡在哪一步"直接告诉用户。
+    /// </summary>
     public bool Run(InterceptCallback interceptCallback)
     {
         lock (StateLock)
@@ -176,170 +244,28 @@ public sealed partial class DriverProtection : IProtectionModel
             if (IsRun())
                 return true;
 
+            _interceptCallback = interceptCallback;
+
             try
             {
-                _interceptCallback = interceptCallback;
                 _cts = new CancellationTokenSource();
-
-                // Create the native model scanner BEFORE connecting to the
-                // driver and BEFORE registering self-protection. Once
-                // self-protection is active, our ObRegisterCallbacks strip
-                // THREAD_IMPERSONATE / THREAD_SET_THREAD_TOKEN from handles
-                // that external processes (e.g. antivirus daemons such as
-                // Huorong's HipsDaemon) open to our threads. An AV daemon
-                // that impersonates the requesting thread to scan a DLL
-                // being image-mapped then fails with
-                // STATUS_BAD_IMPERSONATION_LEVEL (Win32 1346), and the AV's
-                // minifilter propagates that failure to the SEC_IMAGE
-                // section creation — breaking LoadLibrary for any new DLL.
-                // Loading the native model here, in the pre-registration
-                // state, avoids that interaction entirely.
-                Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
-                int thresholdStatus = NativeModelScanner.ConfigureThresholds(StandardThreshold, FlashThreshold, ProThreshold);
-                Log("Scanner", $"Thresholds configured: Standard={StandardThreshold} Flash={FlashThreshold} Pro={ProThreshold} status={thresholdStatus}");
-                _scanner = new NativeModelScanner(ModelMode);
-                Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}, Engine={NativeModelLibraryLoader.LoadedFrom ?? "unloaded"}");
-                if (!_scanner.NativeReady)
-                {
-                    throw new InvalidOperationException(
-                        $"Native model initialization failed: {_scanner.InitializationError ?? "unknown"}.");
-                }
-
-                DriverRepairResult driverReady = DriverInstaller
-                    .EnsureInstalledAndStartedAsync(_cts.Token)
-                    .GetAwaiter()
-                    .GetResult();
-                if (!driverReady.Success)
-                {
-                    LogCallback?.Invoke(new DriverProtectionLogEntry(
-                        0,
-                        0,
-                        DriverProtectionLogSeverity.Error,
-                        0,
-                        DateTimeOffset.Now,
-                        "Installer",
-                        driverReady.Message));
-                    CleanupLocked();
-                    return false;
-                }
-
-                DriverRepairResult bootFilterReady = DriverInstaller
-                    .EnsureBootFilterInstalledAndStartedAsync(_cts.Token)
-                    .GetAwaiter()
-                    .GetResult();
-                if (!bootFilterReady.Success)
-                {
-                    LogCallback?.Invoke(new DriverProtectionLogEntry(
-                        0,
-                        0,
-                        DriverProtectionLogSeverity.Error,
-                        0,
-                        DateTimeOffset.Now,
-                        "BootProtect",
-                        bootFilterReady.Message));
-                    CleanupLocked();
-                    return false;
-                }
-
-                BootDriverProtectionConfiguration bootConfiguration =
-                    BootProtectionSnapshotService.CreateDriverConfiguration();
-
-                _client = new DriverBridgeClient();
-                Log("Bridge", "Connecting DriverBridgeClient...");
-                _client.Connect();
-                XdowsSecurityState state = _client.GetState();
-                Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8} modules=0x{state.ActiveModules:X8} process={state.ProcessProtectionEnabled} file={state.FileProtectionEnabled}");
-                if (state.ProcessProtectionEnabled == 0 ||
-                    state.FileProtectionEnabled == 0 ||
-                    !HasRequiredModules(state) ||
-                    !HasRequiredCapabilities(state))
-                {
-                    throw new InvalidOperationException(
-                        $"Required driver protection modules or capabilities are not active " +
-                        $"(modules=0x{state.ActiveModules:X8}, requiredModules=0x{DriverProtocol.RequiredModules:X8}, " +
-                        $"capabilities=0x{state.Capabilities:X8}, requiredCapabilities=0x{DriverProtocol.RequiredCapabilities:X8}, " +
-                        $"process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
-                }
-
-                _client.RegisterProtectedProcess();
-                state = _client.GetState();
-                Log("Bridge", $"Self-protection registered active={state.SelfProtectionEnabled} protectedPid={state.ProtectedProcessId} expectedPid={Environment.ProcessId}");
-                if (state.SelfProtectionEnabled == 0 ||
-                    state.ProtectedProcessId != (uint)Environment.ProcessId)
-                {
-                    throw new InvalidOperationException(
-                        $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
-                }
-
-                _client.SetBootProtection(bootConfiguration);
-                state = _client.GetState();
-                if (state.BootProtectionEnabled == 0)
-                    throw new InvalidOperationException("The main minifilter did not activate EFI and BCD protection.");
-
-                _bootClient = new BootFilterClient();
-                _bootClient.Connect();
-                _bootClient.Configure(bootConfiguration);
-                BootFilterState bootState = _bootClient.GetState();
-                if (bootState.ClientConnected == 0 ||
-                    bootState.Configured == 0 ||
-                    bootState.Attached == 0 ||
-                    bootState.DiskNumber != (uint)bootConfiguration.DiskIndex)
-                {
-                    throw new InvalidOperationException(
-                        $"Boot filter state is incomplete " +
-                        $"(connected={bootState.ClientConnected}, configured={bootState.Configured}, " +
-                        $"attached={bootState.Attached}, disk={bootState.DiskNumber}, " +
-                        $"expectedDisk={bootConfiguration.DiskIndex}).");
-                }
-                Log(
-                    "BootProtect",
-                    $"R0 boot protection attached PhysicalDrive{bootConfiguration.DiskIndex} " +
-                    $"rawRanges={bootConfiguration.RawRegions.Count} volumes={bootConfiguration.NtVolumeRoots.Count}");
-
-                // Configure R0 registry protection
-                var registryOptions = RegistryProtectionOptions.Recommended;
-                var registryNativePaths = BuildNativeRegistryRulePaths(registryOptions);
-                _client.SetRegistryProtection(true, registryNativePaths);
-                Log("RegistryProtect", $"R0 registry protection configured rules={registryNativePaths.Count}");
-
-                //
-                // Declarative behaviour rules and the initiator exclusion list.
-                // Both are optional: an absent configuration file simply means
-                // "no declarative rules", and a malformed one is logged and
-                // skipped so the kernel keeps its fixed rule set.
-                //
-                ConfigureDeclarativeRules();
-
-                bool startupProtectionEnabled = StartupProtectionStateProvider?.Invoke() == true;
-                _client.SetStartupProtection(startupProtectionEnabled);
-                state = _client.GetState();
-                if ((state.StartupProtectionEnabled != 0) != startupProtectionEnabled)
-                {
-                    throw new InvalidOperationException(
-                        $"Driver startup self-protection state mismatch " +
-                        $"(active={state.StartupProtectionEnabled}, expected={startupProtectionEnabled}).");
-                }
-                Log("Bridge", $"Startup self-protection synchronized active={state.StartupProtectionEnabled}");
-
-                DriverBridgeClient client = _client;
-                _quarantineChannel = Channel.CreateBounded<PendingQuarantine>(new BoundedChannelOptions(32)
-                {
-                    SingleReader = true,
-                    SingleWriter = false,
-                    FullMode = BoundedChannelFullMode.Wait
-                });
-                _quarantineTask = Task.Run(() => RunQuarantinePumpAsync(_quarantineChannel.Reader, _cts.Token));
-                _pumpTask = Task.Run(() => client.RunEventPumpAsync(
-                    HandleDriverEventAsync,
-                    QueuePostDecisionWorkAsync,
-                    _cts.Token));
-                BootFilterClient bootClient = _bootClient;
-                _bootPumpTask = Task.Run(() => bootClient.RunEventPumpAsync(
-                    HandleRawBootWriteAsync,
-                    _cts.Token));
-                _logTask = Task.Run(() => RunLogPumpAsync(client, _cts.Token));
-                Log("Bridge", "Event pump and log pump started");
+                RunLoadPipeline(_cts.Token);
                 return true;
+            }
+            catch (DriverLoadException ex)
+            {
+                // 装不上/起不来属于可预期结果，日志模块由抛出方指定（Installer / BootProtect）。
+                LogCallback?.Invoke(new DriverProtectionLogEntry(
+                    0,
+                    0,
+                    DriverProtectionLogSeverity.Error,
+                    0,
+                    DateTimeOffset.Now,
+                    ex.Module,
+                    ex.Message));
+                ReportStage(ex.Stage, DriverLoadStageStatus.Failed, ex.Message);
+                CleanupLocked();
+                return false;
             }
             catch (Exception ex)
             {
@@ -352,24 +278,247 @@ public sealed partial class DriverProtection : IProtectionModel
                     DateTimeOffset.Now,
                     "Bridge",
                     $"Driver protection start failed: {ex}"));
-                try
-                {
-                    if (DriverBridgeClient.TryQueryStateWithoutRegister(out var driverState, out _))
-                    {
-                        Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId} modules=0x{driverState.ActiveModules:X8} process={driverState.ProcessProtectionEnabled} file={driverState.FileProtectionEnabled}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
-                    }
-                    else
-                    {
-                        Log("Bridge", "Unable to query runtime driver state after connection failure.");
-                    }
-                }
-                catch (Exception diagEx)
-                {
-                    Log("Bridge", $"State query after failure also failed: {diagEx.Message}");
-                }
+                ReportStage(_currentStage, DriverLoadStageStatus.Failed, ex.Message);
+                LogRuntimeDriverState();
                 CleanupLocked();
                 return false;
             }
+        }
+    }
+
+    /// <summary>
+    /// 阶段顺序即依赖顺序：模型必须在自保护注册前加载，桥接连上之后才谈得上配置，
+    /// 配置全部下发成功才启动事件泵。
+    /// </summary>
+    private void RunLoadPipeline(CancellationToken token)
+    {
+        EnterStage(DriverLoadStage.PreparingModel);
+        PrepareNativeModel();
+        CompleteStage(DriverLoadStage.PreparingModel);
+
+        EnterStage(DriverLoadStage.InstallingDriver);
+        EnsureDriverPackagesReady(token);
+        CompleteStage(DriverLoadStage.InstallingDriver);
+
+        EnterStage(DriverLoadStage.ReadingBootSnapshot);
+        BootDriverProtectionConfiguration bootConfiguration =
+            BootProtectionSnapshotService.CreateDriverConfiguration();
+        CompleteStage(DriverLoadStage.ReadingBootSnapshot);
+
+        EnterStage(DriverLoadStage.ConnectingDriver);
+        ConnectAndRegisterSelfProtection();
+        CompleteStage(DriverLoadStage.ConnectingDriver);
+
+        EnterStage(DriverLoadStage.ConfiguringProtection);
+        ConfigureProtection(bootConfiguration);
+        CompleteStage(DriverLoadStage.ConfiguringProtection);
+
+        EnterStage(DriverLoadStage.SynchronizingStartup);
+        SynchronizeStartupProtection();
+        CompleteStage(DriverLoadStage.SynchronizingStartup);
+
+        EnterStage(DriverLoadStage.StartingMonitoring);
+        StartEventPumps();
+        CompleteStage(DriverLoadStage.StartingMonitoring);
+    }
+
+    private void EnterStage(DriverLoadStage stage)
+    {
+        _currentStage = stage;
+        ReportStage(stage, DriverLoadStageStatus.Started);
+    }
+
+    private void CompleteStage(DriverLoadStage stage)
+    {
+        ReportStage(stage, DriverLoadStageStatus.Completed);
+    }
+
+    /// <summary>
+    /// 回调跑在 UI 线程，页面可能在加载途中被导航走。这里隔断回调异常，
+    /// 避免一次界面故障把驱动启动流程本身带崩。
+    /// </summary>
+    private void ReportStage(DriverLoadStage stage, DriverLoadStageStatus status, string? message = null)
+    {
+        try
+        {
+            ProgressCallback?.Invoke(new DriverLoadProgress(stage, status, message));
+        }
+        catch
+        {
+        }
+    }
+
+    private void PrepareNativeModel()
+    {
+        // Create the native model scanner BEFORE connecting to the driver and
+        // BEFORE registering self-protection. Once self-protection is active,
+        // our ObRegisterCallbacks strip THREAD_IMPERSONATE / THREAD_SET_THREAD_TOKEN
+        // from handles that external processes (e.g. antivirus daemons such as
+        // Huorong's HipsDaemon) open to our threads. An AV daemon that
+        // impersonates the requesting thread to scan a DLL being image-mapped
+        // then fails with STATUS_BAD_IMPERSONATION_LEVEL (Win32 1346), and the
+        // AV's minifilter propagates that failure to the SEC_IMAGE section
+        // creation — breaking LoadLibrary for any new DLL. Loading the native
+        // model here, in the pre-registration state, avoids that interaction.
+        Log("Scanner", $"Creating NativeModelScanner mode={ModelMode}");
+        int thresholdStatus = NativeModelScanner.ConfigureThresholds(StandardThreshold, FlashThreshold, ProThreshold);
+        Log("Scanner", $"Thresholds configured: Standard={StandardThreshold} Flash={FlashThreshold} Pro={ProThreshold} status={thresholdStatus}");
+
+        _scanner = new NativeModelScanner(ModelMode);
+        Log("Scanner", $"NativeModelScanner created, NativeReady={_scanner.NativeReady}, Mode={_scanner.Mode}, Engine={NativeModelLibraryLoader.LoadedFrom ?? "unloaded"}");
+        if (!_scanner.NativeReady)
+        {
+            throw new InvalidOperationException(
+                $"Native model initialization failed: {_scanner.InitializationError ?? "unknown"}.");
+        }
+    }
+
+    private void EnsureDriverPackagesReady(CancellationToken token)
+    {
+        DriverRepairResult driver = DriverInstaller
+            .EnsureInstalledAndStartedAsync(token)
+            .GetAwaiter()
+            .GetResult();
+        if (!driver.Success)
+            throw new DriverLoadException(DriverLoadStage.InstallingDriver, "Installer", driver.Message);
+
+        DriverRepairResult bootFilter = DriverInstaller
+            .EnsureBootFilterInstalledAndStartedAsync(token)
+            .GetAwaiter()
+            .GetResult();
+        if (!bootFilter.Success)
+            throw new DriverLoadException(DriverLoadStage.InstallingDriver, "BootProtect", bootFilter.Message);
+    }
+
+    private void ConnectAndRegisterSelfProtection()
+    {
+        _client = new DriverBridgeClient();
+        Log("Bridge", "Connecting DriverBridgeClient...");
+        _client.Connect();
+
+        XdowsSecurityState state = _client.GetState();
+        Log("Bridge", $"DriverBridgeClient connected protocol={state.ProtocolVersion} build={state.DriverBuildId} capabilities=0x{state.Capabilities:X8} modules=0x{state.ActiveModules:X8} process={state.ProcessProtectionEnabled} file={state.FileProtectionEnabled}");
+        if (state.ProcessProtectionEnabled == 0 ||
+            state.FileProtectionEnabled == 0 ||
+            !HasRequiredModules(state) ||
+            !HasRequiredCapabilities(state))
+        {
+            throw new InvalidOperationException(
+                $"Required driver protection modules or capabilities are not active " +
+                $"(modules=0x{state.ActiveModules:X8}, requiredModules=0x{DriverProtocol.RequiredModules:X8}, " +
+                $"capabilities=0x{state.Capabilities:X8}, requiredCapabilities=0x{DriverProtocol.RequiredCapabilities:X8}, " +
+                $"process={state.ProcessProtectionEnabled}, file={state.FileProtectionEnabled}).");
+        }
+
+        _client.RegisterProtectedProcess();
+        state = _client.GetState();
+        Log("Bridge", $"Self-protection registered active={state.SelfProtectionEnabled} protectedPid={state.ProtectedProcessId} expectedPid={Environment.ProcessId}");
+        if (state.SelfProtectionEnabled == 0 ||
+            state.ProtectedProcessId != (uint)Environment.ProcessId)
+        {
+            throw new InvalidOperationException(
+                $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
+        }
+    }
+
+    private void ConfigureProtection(BootDriverProtectionConfiguration bootConfiguration)
+    {
+        DriverBridgeClient client = _client
+            ?? throw new InvalidOperationException("Driver bridge is not connected.");
+
+        client.SetBootProtection(bootConfiguration);
+        XdowsSecurityState state = client.GetState();
+        if (state.BootProtectionEnabled == 0)
+            throw new InvalidOperationException("The main minifilter did not activate EFI and BCD protection.");
+
+        _bootClient = new BootFilterClient();
+        _bootClient.Connect();
+        _bootClient.Configure(bootConfiguration);
+        BootFilterState bootState = _bootClient.GetState();
+        if (bootState.ClientConnected == 0 ||
+            bootState.Configured == 0 ||
+            bootState.Attached == 0 ||
+            bootState.DiskNumber != (uint)bootConfiguration.DiskIndex)
+        {
+            throw new InvalidOperationException(
+                $"Boot filter state is incomplete " +
+                $"(connected={bootState.ClientConnected}, configured={bootState.Configured}, " +
+                $"attached={bootState.Attached}, disk={bootState.DiskNumber}, " +
+                $"expectedDisk={bootConfiguration.DiskIndex}).");
+        }
+        Log(
+            "BootProtect",
+            $"R0 boot protection attached PhysicalDrive{bootConfiguration.DiskIndex} " +
+            $"rawRanges={bootConfiguration.RawRegions.Count} volumes={bootConfiguration.NtVolumeRoots.Count}");
+
+        var registryOptions = RegistryProtectionOptions.Recommended;
+        var registryNativePaths = BuildNativeRegistryRulePaths(registryOptions);
+        client.SetRegistryProtection(true, registryNativePaths);
+        Log("RegistryProtect", $"R0 registry protection configured rules={registryNativePaths.Count}");
+
+        // 声明式规则是可选增强：文件缺失或格式错误只记日志，不打断启动。
+        ConfigureDeclarativeRules();
+    }
+
+    private void SynchronizeStartupProtection()
+    {
+        DriverBridgeClient client = _client
+            ?? throw new InvalidOperationException("Driver bridge is not connected.");
+
+        bool startupProtectionEnabled = StartupProtectionStateProvider?.Invoke() == true;
+        client.SetStartupProtection(startupProtectionEnabled);
+        XdowsSecurityState state = client.GetState();
+        if ((state.StartupProtectionEnabled != 0) != startupProtectionEnabled)
+        {
+            throw new InvalidOperationException(
+                $"Driver startup self-protection state mismatch " +
+                $"(active={state.StartupProtectionEnabled}, expected={startupProtectionEnabled}).");
+        }
+        Log("Bridge", $"Startup self-protection synchronized active={state.StartupProtectionEnabled}");
+    }
+
+    private void StartEventPumps()
+    {
+        DriverBridgeClient client = _client
+            ?? throw new InvalidOperationException("Driver bridge is not connected.");
+        BootFilterClient bootClient = _bootClient
+            ?? throw new InvalidOperationException("Boot filter bridge is not connected.");
+        CancellationToken pumpToken = _cts?.Token ?? CancellationToken.None;
+
+        _quarantineChannel = Channel.CreateBounded<PendingQuarantine>(new BoundedChannelOptions(32)
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.Wait
+        });
+        _quarantineTask = Task.Run(() => RunQuarantinePumpAsync(_quarantineChannel.Reader, pumpToken));
+        _pumpTask = Task.Run(() => client.RunEventPumpAsync(
+            HandleDriverEventAsync,
+            QueuePostDecisionWorkAsync,
+            pumpToken));
+        _bootPumpTask = Task.Run(() => bootClient.RunEventPumpAsync(
+            HandleRawBootWriteAsync,
+            pumpToken));
+        _logTask = Task.Run(() => RunLogPumpAsync(client, pumpToken));
+        Log("Bridge", "Event pump and log pump started");
+    }
+
+    private void LogRuntimeDriverState()
+    {
+        try
+        {
+            if (DriverBridgeClient.TryQueryStateWithoutRegister(out var driverState, out _))
+            {
+                Log("Bridge", $"Runtime driver reports headerSize={driverState.Header.Size} headerVersion={driverState.Header.Version} protocolVersion={driverState.ProtocolVersion} buildId={driverState.DriverBuildId} modules=0x{driverState.ActiveModules:X8} process={driverState.ProcessProtectionEnabled} file={driverState.FileProtectionEnabled}; client expects protocolVersion={DriverProtocol.ProtocolVersion} buildId={DriverProtocol.DriverBuildId}");
+            }
+            else
+            {
+                Log("Bridge", "Unable to query runtime driver state after connection failure.");
+            }
+        }
+        catch (Exception diagEx)
+        {
+            Log("Bridge", $"State query after failure also failed: {diagEx.Message}");
         }
     }
 

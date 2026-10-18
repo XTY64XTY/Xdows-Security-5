@@ -150,6 +150,7 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = Localizer.Get().GetLocalizedString("ContextMenuManager_DeleteConfirm_Title"),
                 Content = new StackPanel
                 {
@@ -244,6 +245,7 @@ namespace Xdows_Security.Views
         {
             var dialog = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = title,
                 Content = new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
                 CloseButtonText = Localizer.Get().GetLocalizedString("ContextMenuManager_OK"),

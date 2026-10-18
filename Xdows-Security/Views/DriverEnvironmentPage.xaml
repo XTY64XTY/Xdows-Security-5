@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page x:Class="Xdows_Security.Views.DriverEnvironmentPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:Xdows_Security.Views"
+      xmlns:controls="using:Xdows_Security">
+
+    <Page.Resources>
+        <!-- 一项检查：InfoCard 承载图标 / 名称 / 状态与修复按钮 / 说明与折叠的技术细节 -->
+        <DataTemplate x:Key="CheckItemTemplate" x:DataType="local:DriverEnvironmentItemView">
+            <controls:InfoCard Title="{x:Bind Title}"
+                               Icon="{x:Bind Glyph}"
+                               Margin="0,0,0,8">
+                <controls:InfoCard.HeaderActions>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{x:Bind StatusText}"
+                                   Foreground="{x:Bind StatusBrush}"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="{x:Bind RepairText}"
+                                Visibility="{x:Bind RepairVisibility}"
+                                Tag="{x:Bind Source}"
+                                Click="ItemRepairButton_Click"/>
+                    </StackPanel>
+                </controls:InfoCard.HeaderActions>
+
+                <controls:InfoCard.CardContent>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Bind Message}"
+                                   Style="{ThemeResource BodyTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   TextWrapping="Wrap"/>
+
+                        <TextBlock Text="{x:Bind Diagnostic}"
+                                   Visibility="{x:Bind DetailVisibility}"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                   TextWrapping="Wrap"
+                                   IsTextSelectionEnabled="True"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                </controls:InfoCard.CardContent>
+            </controls:InfoCard>
+        </DataTemplate>
+    </Page.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="80,24,80,32" Spacing="18">
+
+            <!-- 结论 -->
+            <StackPanel Spacing="10">
+                <InfoBar x:Name="SummaryBar"
+                         IsOpen="True"
+                         IsClosable="False"
+                         Severity="Success"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="RecheckButton" Click="RefreshButton_Click"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- 四项检查，顺序：管理员权限 / 测试模式 / 文件完整性 / 驱动是否正常启动 -->
+            <ItemsControl x:Name="CheckItems" ItemTemplate="{StaticResource CheckItemTemplate}"/>
+
+            <InfoBar x:Name="ResultInfoBar" IsOpen="False" IsClosable="True"/>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

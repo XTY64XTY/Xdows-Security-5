@@ -1,98 +1,85 @@
-using Microsoft.Win32.SafeHandles;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
-using Xdows_Model_Config;
 
 namespace Protection;
 
 public enum DriverEnvironmentCheckStatus
 {
     Passed,
-    Warning,
     Failed
 }
 
-public sealed record DriverEnvironmentCheckItem(
-    string Id,
-    string Title,
-    string Detail,
-    DriverEnvironmentCheckStatus Status,
-    bool CanRepair,
-    string RepairAction)
+/// <summary>
+/// 环境检测的四项检查。成员名同时是资源键片段：
+/// <c>DriverEnvironmentPage_Check_{Id}</c>、<c>_Ok_{Id}</c>。
+/// </summary>
+public enum DriverEnvironmentCheckId
 {
-    public bool Passed => Status == DriverEnvironmentCheckStatus.Passed;
+    Administrator,
+    TestSigning,
+    FileIntegrity,
+    DriverStarted
 }
 
-public sealed record DriverEnvironmentCheckGroup(
-    string Id,
-    string Title,
-    IReadOnlyList<DriverEnvironmentCheckItem> Items)
+/// <summary>
+/// 失败时的提示类别。决定界面给哪一句说明、按钮做什么。
+/// </summary>
+public enum DriverEnvironmentCheckHint
 {
-    public DriverEnvironmentCheckStatus Status =>
-        Items.Any(i => i.Status == DriverEnvironmentCheckStatus.Failed)
-            ? DriverEnvironmentCheckStatus.Failed
-            : Items.Any(i => i.Status == DriverEnvironmentCheckStatus.Warning)
-                ? DriverEnvironmentCheckStatus.Warning
-                : DriverEnvironmentCheckStatus.Passed;
+    None,
 
-    public bool CanRepair => Items.Any(i => i.CanRepair);
+    /// <summary>设备环境不满足，只能重装或改用兼容防护。</summary>
+    Unrepairable,
 
-    public string PrimaryRepairAction =>
-        Items.FirstOrDefault(i => i.CanRepair)?.RepairAction ?? string.Empty;
+    /// <summary>驱动只是没启动，引导用户去开驱动防护即可。</summary>
+    DriverNotStarted,
+
+    /// <summary>测试模式已写入 BCD，但当前内核尚未生效，需要重启；此时可以撤销。</summary>
+    TestSigningPendingRestart
+}
+
+/// <summary>单项检查结果。只描述事实，文案由页面按 Id + Status + Hint 查资源。</summary>
+public sealed record DriverEnvironmentCheckItem(
+    DriverEnvironmentCheckId Id,
+    DriverEnvironmentCheckStatus Status,
+    string? Diagnostic = null,
+    DriverEnvironmentCheckHint Hint = DriverEnvironmentCheckHint.None)
+{
+    public bool Passed => Status == DriverEnvironmentCheckStatus.Passed;
+
+    /// <summary>四项检查里只有「测试模式」可以自动修改，其余失败都属于环境不满足。</summary>
+    public bool CanRepair => Id == DriverEnvironmentCheckId.TestSigning;
 }
 
 public sealed record DriverEnvironmentReport(
-    IReadOnlyList<DriverEnvironmentCheckGroup> Groups,
+    IReadOnlyList<DriverEnvironmentCheckItem> Items,
     DateTimeOffset CheckedAt)
 {
-    public bool IsHealthy => Groups.All(g => g.Status == DriverEnvironmentCheckStatus.Passed);
+    public bool IsHealthy => Items.All(i => i.Passed);
+
+    public int FailedCount => Items.Count(i => !i.Passed);
 }
 
 public static class DriverEnvironmentChecker
 {
-    private const string ServiceName = DriverPackageLocator.ServiceName;
+    /// <summary>SystemInformationClass = SystemCodeIntegrityInformation（winternl.h，数值 103）。</summary>
+    private const int SystemCodeIntegrityInformationClass = 103;
 
+    /// <summary>CODEINTEGRITY_OPTION_TESTSIGN：当前内核允许加载测试签名驱动。</summary>
+    private const uint CodeIntegrityOptionTestSign = 0x02;
+
+    /// <summary>按页面显示顺序检查四项。</summary>
     public static async Task<DriverEnvironmentReport> CheckAsync(CancellationToken token = default)
     {
-        DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
-
-        var groups = new List<DriverEnvironmentCheckGroup>
+        var items = new List<DriverEnvironmentCheckItem>
         {
-            new("privileges", "Privileges", new List<DriverEnvironmentCheckItem>
-            {
-                CheckAdministrator()
-            }),
-            new("signing", "Driver signing", new List<DriverEnvironmentCheckItem>
-            {
-                await CheckTestSigningAsync(token).ConfigureAwait(false)
-            }),
-            new("packages", "Driver packages and services", new List<DriverEnvironmentCheckItem>
-            {
-                CheckDriverPackage(),
-                CheckDriverService(runtimeStatus),
-                CheckBootFilterPackage(),
-                CheckBootFilterService()
-            }),
-            new("runtime", "Driver communication and model assets", new List<DriverEnvironmentCheckItem>
-            {
-                CheckDriverCommunication(runtimeStatus),
-                CheckBootFilterCommunication(),
-                CheckModelAssets()
-            })
+            CheckAdministrator(),
+            await CheckTestSigningAsync(token).ConfigureAwait(false),
+            CheckFileIntegrity(),
+            CheckDriverStarted()
         };
 
-        return new DriverEnvironmentReport(groups, DateTimeOffset.Now);
-    }
-
-    public static string? FindDriverInf()
-    {
-        return DriverPackageLocator.Find()?.InfPath;
-    }
-
-    public static string? FindDriverSys()
-    {
-        return DriverPackageLocator.Find()?.SysPath;
+        return new DriverEnvironmentReport(items, DateTimeOffset.Now);
     }
 
     private static DriverEnvironmentCheckItem CheckAdministrator()
@@ -101,349 +88,163 @@ public static class DriverEnvironmentChecker
         try
         {
             using WindowsIdentity identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            isAdmin = new WindowsPrincipal(identity).IsInRole(WindowsBuiltInRole.Administrator);
         }
         catch
         {
+            // 查询失败按“非管理员”处理：安装或启动驱动时会再报一次权限错误。
         }
 
         return new DriverEnvironmentCheckItem(
-            "admin",
-            "Administrator",
-            isAdmin ? "Current process has administrator rights." : "Start Xdows Security as administrator to install or start the driver.",
+            DriverEnvironmentCheckId.Administrator,
             isAdmin ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
-            false,
-            "Restart as administrator");
+            isAdmin ? null : "The current process does not run with administrator rights.");
     }
 
+    /// <summary>
+    /// 测试模式分两步看：BCD 里是否写入（bcdedit），以及当前内核是否已经生效
+    /// （NtQuerySystemInformation）。两者不一致就是「已设置、待重启」。
+    /// </summary>
     private static async Task<DriverEnvironmentCheckItem> CheckTestSigningAsync(CancellationToken token)
     {
-        var result = await RunCommandAsync("bcdedit", "/enum {current}", token).ConfigureAwait(false);
-        if (!result.Started)
+        if (IsTestSigningActive())
         {
             return new DriverEnvironmentCheckItem(
-                "testsigning",
-                "Driver signing",
-                "Unable to query test-signing state. Formal driver signing may still work.",
-                DriverEnvironmentCheckStatus.Warning,
-                false,
-                "Open signing help");
+                DriverEnvironmentCheckId.TestSigning,
+                DriverEnvironmentCheckStatus.Passed,
+                "Windows test-signing is active.");
         }
 
-        bool enabled = result.Output.Contains("testsigning", StringComparison.OrdinalIgnoreCase) &&
-            result.Output.Contains("Yes", StringComparison.OrdinalIgnoreCase);
+        CommandResult result = await DriverCommandLine
+            .RunAsync("bcdedit", ["/enum", "{current}"], token)
+            .ConfigureAwait(false);
 
-        return new DriverEnvironmentCheckItem(
-            "testsigning",
-            "Driver signing",
-            enabled ? "Windows test-signing is enabled." : "Test-signing is not enabled. Unsigned development drivers will not load.",
-            enabled ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Warning,
-            false,
-            "Open signing help");
+        bool? configured = result.Started ? TryReadTestSigning(result.Output) : null;
+
+        return configured == true
+            ? new DriverEnvironmentCheckItem(
+                DriverEnvironmentCheckId.TestSigning,
+                DriverEnvironmentCheckStatus.Failed,
+                "Test-signing is configured in BCD but not active yet.",
+                DriverEnvironmentCheckHint.TestSigningPendingRestart)
+            : new DriverEnvironmentCheckItem(
+                DriverEnvironmentCheckId.TestSigning,
+                DriverEnvironmentCheckStatus.Failed,
+                result.Started
+                    ? "Test-signing is not enabled."
+                    : "Unable to run bcdedit.");
     }
 
-    private static DriverEnvironmentCheckItem CheckDriverPackage()
+    /// <summary>
+    /// 从 bcdedit 输出里读 testsigning 的值，找不到返回 null。
+    /// 只认以 <c>testsigning</c> 开头的那一行——整段输出里还有别的 "Yes"
+    /// （例如 hypervisorlaunchtype），用 Contains("Yes") 判断会误判。
+    /// </summary>
+    private static bool? TryReadTestSigning(string output)
     {
-        DriverPackage? package = DriverPackageLocator.Find();
+        foreach (string line in output.Split('\n'))
+        {
+            string trimmed = line.Trim();
+            int separator = trimmed.IndexOfAny([' ', '\t']);
+            if (separator <= 0)
+                continue;
 
-        string detail = package is not null
-            ? $"Driver package found: {package.DirectoryPath}"
-            : DriverPackageLocator.CreateNotFoundMessage();
+            if (!trimmed[..separator].Equals("testsigning", StringComparison.OrdinalIgnoreCase))
+                continue;
 
-        return new DriverEnvironmentCheckItem(
-            "package",
-            "Driver package",
-            detail,
-            package is not null ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
-            package is not null,
-            "Install driver");
+            return trimmed[separator..].Trim().Equals("Yes", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return null;
     }
 
-    private static DriverEnvironmentCheckItem CheckDriverService(DriverProtectionRuntimeStatus runtimeStatus)
+    /// <summary>
+    /// 当前内核是否允许测试签名驱动。BCD 改动必须重启才生效，所以这个状态
+    /// 与 bcdedit 的持久配置可能不一致，正是「待重启」的判定依据。
+    /// </summary>
+    private static bool IsTestSigningActive()
     {
-        DriverServiceSnapshot service = DriverServiceControl.Query(ServiceName);
-        if (service.IsMissing)
+        var info = new SystemCodeIntegrityInformation
         {
-            return new DriverEnvironmentCheckItem(
-                "service",
-                "Driver service",
-                "Driver service is not installed.",
-                DriverEnvironmentCheckStatus.Failed,
-                FindDriverInf() is not null,
-                "Install driver");
-        }
-
-        if (service.State == DriverServiceState.Unknown)
-        {
-            return new DriverEnvironmentCheckItem(
-                "service",
-                "Driver service",
-                $"Unable to query driver service. {service.Detail}",
-                DriverEnvironmentCheckStatus.Failed,
-                false,
-                "Restart as administrator");
-        }
-
-        if (service.IsTransitioning)
-        {
-            return new DriverEnvironmentCheckItem(
-                "service",
-                "Driver service",
-                $"Driver service is changing state ({service.State}). Wait for it to finish or restart Windows.",
-                DriverEnvironmentCheckStatus.Failed,
-                false,
-                "Restart Windows");
-        }
-
-        if (service.IsRunning && runtimeStatus == DriverProtectionRuntimeStatus.NotInstalled)
-        {
-            return new DriverEnvironmentCheckItem(
-                "service",
-                "Driver service",
-                "Driver service is running, but the Xdows Security bridge device is missing. Restart Windows before repairing or starting driver protection.",
-                DriverEnvironmentCheckStatus.Failed,
-                false,
-                "Restart Windows");
-        }
-
-        return new DriverEnvironmentCheckItem(
-            "service",
-            "Driver service",
-            service.IsRunning ? "Driver service is running." : $"Driver service is installed but not running. {service.Detail}",
-            service.IsRunning ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
-            true,
-            "Start service");
-    }
-
-    private static DriverEnvironmentCheckItem CheckDriverCommunication(DriverProtectionRuntimeStatus status)
-    {
-        DriverEnvironmentCheckStatus checkStatus = status switch
-        {
-            DriverProtectionRuntimeStatus.Protected => DriverEnvironmentCheckStatus.Passed,
-            DriverProtectionRuntimeStatus.NotRunning => DriverEnvironmentCheckStatus.Warning,
-            _ => DriverEnvironmentCheckStatus.Failed
+            Length = (uint)Marshal.SizeOf<SystemCodeIntegrityInformation>()
         };
 
-        string detail = status == DriverProtectionRuntimeStatus.Protected
-            ? $"Driver device query returned {status}."
-            : status == DriverProtectionRuntimeStatus.NotRunning
-                ? $"Driver device is reachable but no client is connected ({status}). Start driver protection."
-                : $"Driver device query failed: {status}.";
+        int status = NtQuerySystemInformation(
+            SystemCodeIntegrityInformationClass,
+            ref info,
+            (int)info.Length,
+            out _);
 
-        return new DriverEnvironmentCheckItem(
-            "communication",
-            "Driver communication",
-            detail,
-            checkStatus,
-            status != DriverProtectionRuntimeStatus.NotInstalled,
-            "Restart bridge");
+        return status >= 0 && (info.CodeIntegrityOptions & CodeIntegrityOptionTestSign) != 0;
     }
 
-    private static DriverEnvironmentCheckItem CheckModelAssets()
+    /// <summary>
+    /// 驱动包文件是否齐全。主驱动与引导过滤驱动都必须在程序目录的 Driver\ 下，
+    /// 缺一个都装不起来。
+    /// </summary>
+    private static DriverEnvironmentCheckItem CheckFileIntegrity()
     {
-        string baseDirectory = AppContext.BaseDirectory;
-        string modelsDirectory = ModelLayout.ResolveModelDirectory(baseDirectory);
+        string driverDirectory = DriverPackageLocator.DriverDirectory;
+        string bootFilterDirectory = Path.Combine(driverDirectory, "BootFilter");
 
-        // 模型与模型清单按 <程序集目录>\Models\ 分发（约定见 Xdows-Model 的 ModelLayout）；
-        // onnxruntime 那两个是原生 DLL 的运行时依赖，留在程序集目录。
-        string[] nativeRuntime =
+        string[] required =
         [
-            "onnxruntime.dll",
-            "onnxruntime_providers_shared.dll"
+            Path.Combine(driverDirectory, DriverPackageLocator.InfName),
+            Path.Combine(driverDirectory, DriverPackageLocator.SysName),
+            Path.Combine(driverDirectory, DriverPackageLocator.CatName),
+            Path.Combine(bootFilterDirectory, DriverPackageLocator.BootFilterInfName),
+            Path.Combine(bootFilterDirectory, DriverPackageLocator.BootFilterSysName),
+            Path.Combine(bootFilterDirectory, DriverPackageLocator.BootFilterCatName)
         ];
 
-        // 与推理端一致：优先 Models\，同时兼容旧部署里直接摊在程序集目录的模型。
-        int foundModels = ModelLayout.RequiredFileNames.Count(
-            name => ModelLayout.ResolveExistingModelPath(baseDirectory, name) is not null);
-        int foundRuntime = nativeRuntime.Count(name => File.Exists(Path.Combine(baseDirectory, name)));
-        bool nativeFound = File.Exists(Path.Combine(baseDirectory, "Xdows-Model-Native.dll"));
-
-        bool modelsInSubdirectory = ModelLayout.RequiredFileNames.All(
-            name => File.Exists(Path.Combine(modelsDirectory, name)));
-        string layout = modelsInSubdirectory ? ModelLayout.ModelDirectoryName : "flat";
-        bool modelOk = foundModels == ModelLayout.RequiredFileNames.Count;
-        bool runtimeOk = foundRuntime == nativeRuntime.Length;
-
-        DriverEnvironmentCheckStatus status = modelOk && runtimeOk && nativeFound
-            ? DriverEnvironmentCheckStatus.Passed
-            : modelOk && nativeFound ? DriverEnvironmentCheckStatus.Warning : DriverEnvironmentCheckStatus.Failed;
-
-        string detail =
-            $"Models: {foundModels}/{ModelLayout.RequiredFileNames.Count} ({layout}), " +
-            $"native runtime: {foundRuntime}/{nativeRuntime.Length}, native DLL: {nativeFound}.";
-        return new DriverEnvironmentCheckItem(
-            "model",
-            "Native model assets",
-            detail,
-            status,
-            true,
-            "Copy model files");
-    }
-
-    private static DriverEnvironmentCheckItem CheckBootFilterPackage()
-    {
-        DriverPackage? package = DriverPackageLocator.FindBootFilter();
-
-        string detail = package is not null
-            ? $"Boot filter package found: {package.DirectoryPath}"
-            : DriverPackageLocator.CreateBootFilterNotFoundMessage();
+        string[] missing = required
+            .Where(path => !File.Exists(path))
+            .Select(path => Path.GetRelativePath(AppContext.BaseDirectory, path))
+            .ToArray();
 
         return new DriverEnvironmentCheckItem(
-            "bootfilter-package",
-            "Boot filter package",
-            detail,
-            package is not null ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
-            package is not null,
-            "Install boot filter");
+            DriverEnvironmentCheckId.FileIntegrity,
+            missing.Length == 0 ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
+            missing.Length == 0
+                ? $"All driver files are present under {Path.GetRelativePath(AppContext.BaseDirectory, driverDirectory)}."
+                : $"Missing: {string.Join(", ", missing)}");
     }
 
-    private static DriverEnvironmentCheckItem CheckBootFilterService()
+    /// <summary>
+    /// 驱动是否正常启动：服务处于 RUNNING，且桥接设备可用（已连接或可连接）。
+    /// 只装了服务没启动、或服务在跑但设备打不开，都算未正常启动。
+    /// </summary>
+    private static DriverEnvironmentCheckItem CheckDriverStarted()
     {
-        DriverServiceSnapshot service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
-        if (service.IsMissing)
-        {
-            return new DriverEnvironmentCheckItem(
-                "bootfilter-service",
-                "Boot filter service",
-                "Boot filter service is not installed.",
-                DriverEnvironmentCheckStatus.Failed,
-                DriverPackageLocator.FindBootFilter() is not null,
-                "Install boot filter");
-        }
+        DriverServiceSnapshot service = DriverServiceControl.Query(DriverPackageLocator.ServiceName);
+        DriverProtectionRuntimeStatus runtimeStatus = DriverProtection.QueryRuntimeStatus();
 
-        if (service.State == DriverServiceState.Unknown)
-        {
-            return new DriverEnvironmentCheckItem(
-                "bootfilter-service",
-                "Boot filter service",
-                $"Unable to query boot filter service. {service.Detail}",
-                DriverEnvironmentCheckStatus.Failed,
-                false,
-                "Restart as administrator");
-        }
+        bool started = service.IsRunning &&
+            runtimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected;
 
-        if (service.IsTransitioning)
-        {
-            return new DriverEnvironmentCheckItem(
-                "bootfilter-service",
-                "Boot filter service",
-                $"Boot filter service is changing state ({service.State}). Wait for it to finish or restart Windows.",
-                DriverEnvironmentCheckStatus.Failed,
-                false,
-                "Restart Windows");
-        }
+        // 服务没在跑（含未安装）时，用户能做的动作是去开驱动防护，不是重装软件。
+        DriverEnvironmentCheckHint hint = service.IsRunning
+            ? DriverEnvironmentCheckHint.Unrepairable
+            : DriverEnvironmentCheckHint.DriverNotStarted;
 
         return new DriverEnvironmentCheckItem(
-            "bootfilter-service",
-            "Boot filter service",
-            service.IsRunning ? "Boot filter service is running." : $"Boot filter service is installed but not running. {service.Detail}",
-            service.IsRunning ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Warning,
-            true,
-            "Start service");
+            DriverEnvironmentCheckId.DriverStarted,
+            started ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
+            $"Service: {service.State}; runtime: {runtimeStatus}.",
+            started ? DriverEnvironmentCheckHint.None : hint);
     }
 
-    private static DriverEnvironmentCheckItem CheckBootFilterCommunication()
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SystemCodeIntegrityInformation
     {
-        bool reachable = TryOpenBootFilterDevice();
-        DriverServiceSnapshot service = DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName);
-
-        DriverEnvironmentCheckStatus status = reachable
-            ? DriverEnvironmentCheckStatus.Passed
-            : service.IsRunning ? DriverEnvironmentCheckStatus.Failed : DriverEnvironmentCheckStatus.Warning;
-
-        string detail = reachable
-            ? "Boot filter device is reachable."
-            : service.IsRunning
-                ? "Boot filter service is running but the device is not reachable. Restart Windows."
-                : "Boot filter device is not reachable. Start the boot filter service first.";
-
-        return new DriverEnvironmentCheckItem(
-            "bootfilter-communication",
-            "Boot filter communication",
-            detail,
-            status,
-            service.State != DriverServiceState.Unknown && !service.IsMissing,
-            "Restart bridge");
+        public uint Length;
+        public uint CodeIntegrityOptions;
     }
 
-    // Opens the boot filter device without registering as a client. This mirrors
-    // BootFilterClient.OpenDevice but is intentionally separate to avoid a full
-    // connect/register round-trip during environment checks.
-    private static bool TryOpenBootFilterDevice()
-    {
-        foreach (string path in BootFilterProtocol.DevicePaths)
-        {
-            try
-            {
-                using var handle = new SafeFileHandle(
-                    CreateFileW(
-                        path,
-                        GenericRead | GenericWrite,
-                        FileShareRead | FileShareWrite,
-                        nint.Zero,
-                        OpenExisting,
-                        FileAttributeNormal,
-                        nint.Zero),
-                    ownsHandle: true);
-
-                if (!handle.IsInvalid)
-                    return true;
-            }
-            catch
-            {
-            }
-        }
-        return false;
-    }
-
-    private const uint GenericRead = 0x80000000;
-    private const uint GenericWrite = 0x40000000;
-    private const uint FileShareRead = 0x00000001;
-    private const uint FileShareWrite = 0x00000002;
-    private const uint OpenExisting = 3;
-    private const uint FileAttributeNormal = 0x00000080;
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern IntPtr CreateFileW(
-        string fileName,
-        uint desiredAccess,
-        uint shareMode,
-        nint securityAttributes,
-        uint creationDisposition,
-        uint flagsAndAttributes,
-        nint templateFile);
-
-    internal static async Task<CommandResult> RunCommandAsync(string fileName, string arguments, CancellationToken token)
-    {
-        try
-        {
-            using var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    Arguments = arguments,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                }
-            };
-
-            if (!process.Start())
-                return new CommandResult(false, -1, string.Empty);
-
-            string output = await process.StandardOutput.ReadToEndAsync(token).ConfigureAwait(false);
-            string error = await process.StandardError.ReadToEndAsync(token).ConfigureAwait(false);
-            await process.WaitForExitAsync(token).ConfigureAwait(false);
-            return new CommandResult(true, process.ExitCode, output + error);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException)
-        {
-            return new CommandResult(false, -1, ex.GetType().Name);
-        }
-    }
-
-    internal sealed record CommandResult(bool Started, int ExitCode, string Output);
+    [DllImport("ntdll.dll")]
+    private static extern int NtQuerySystemInformation(
+        int systemInformationClass,
+        ref SystemCodeIntegrityInformation systemInformation,
+        int systemInformationLength,
+        out int returnLength);
 }

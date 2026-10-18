@@ -396,8 +396,8 @@ namespace Xdows_Security
         }
         public void GoToPage(string PageName, bool pushHistory = true)
         {
-            // 隔离区 / 信任区 / Xdows Model 是「设置」下的子页面，不作为导航菜单项处理
-            bool isSettingsSubPage = PageName is "Quarantine" or "Trust" or "Model";
+            // 隔离区 / 信任区 / Xdows Model / 驱动环境检测是「设置」下的子页面，不作为导航菜单项处理
+            bool isSettingsSubPage = PageName is "Quarantine" or "Trust" or "Model" or "DriverEnvironment";
 
             string previousPage = NowPage;
             var selectedItem = nav.SelectedItem as NavigationViewItem;
@@ -444,6 +444,7 @@ namespace Xdows_Security
                 "Quarantine" => typeof(QuarantinePage),
                 "Trust" => typeof(TrustPage),
                 "Model" => typeof(ModelPage),
+                "DriverEnvironment" => typeof(DriverEnvironmentPage),
                 _ => typeof(HomePage)
             };
             navContainer.Navigate(pageType, null, ResolveTransition(previousPage, PageName));
@@ -455,10 +456,10 @@ namespace Xdows_Security
         /// </summary>
         private static NavigationTransitionInfo ResolveTransition(string from, string to)
         {
-            if (from == "Settings" && to is "Quarantine" or "Trust" or "Model")
+            if (from == "Settings" && to is "Quarantine" or "Trust" or "Model" or "DriverEnvironment")
                 return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromRight };
 
-            if (from is "Quarantine" or "Trust" or "Model" && to == "Settings")
+            if (from is "Quarantine" or "Trust" or "Model" or "DriverEnvironment" && to == "Settings")
                 return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft };
 
             return App.GetNavigationTransitionInfo();
@@ -489,6 +490,11 @@ namespace Xdows_Security
                     nav.Header = BuildBreadcrumb(
                         ("MainWindow_Nav_Settings", "Settings"),
                         ("ModelPage_Title", null));
+                    break;
+                case "DriverEnvironment":
+                    nav.Header = BuildBreadcrumb(
+                        ("MainWindow_Nav_Settings", "Settings"),
+                        ("DriverEnvironmentPage_Title", null));
                     break;
                 default:
                     nav.Header = BuildHeaderText((nav.SelectedItem as NavigationViewItem)?.Content?.ToString() ?? string.Empty);

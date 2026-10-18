@@ -219,21 +219,6 @@ namespace Xdows_Security.Views
             RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
         }
 
-        private async Task ShowDriverEnvironmentDialogAsync()
-        {
-            try
-            {
-                DriverEnvironmentDialog dialog = new()
-                {
-                    XamlRoot = this.XamlRoot,
-                    RequestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default
-                };
-
-                await dialog.ShowAsync();
-            }
-            catch { }
-        }
-
         private Task LoadScanSettingAsync
         {
             get
@@ -458,7 +443,8 @@ namespace Xdows_Security.Views
             try
             {
                 operationSucceeded = requestedOn
-                    ? await ShowDriverProtectionSetupDialogAsync(() => Task.Run(() => ProtectionStatus.Run(5)))
+                    ? await ShowDriverProtectionSetupDialogAsync(
+                        progress => Task.Run(() => ProtectionStatus.Run(5, progress)))
                     : await Task.Run(() => ProtectionStatus.Run(5));
             }
             catch (Exception ex)
@@ -476,7 +462,7 @@ namespace Xdows_Security.Views
 
             if (requestedOn && (!operationSucceeded || !ProtectionStatus.IsRun(5)))
             {
-                await ShowDriverEnvironmentDialogAsync();
+                App.MainWindow?.GoToPage("DriverEnvironment");
             }
         }
 
@@ -503,6 +489,7 @@ namespace Xdows_Security.Views
             {
                 ContentDialogResult result = await new ContentDialog
                 {
+                    Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                     Title = Localizer.Get().GetLocalizedString("SettingsPage_Protection_Driver_Disclaimer_Title"),
                     Content = Localizer.Get().GetLocalizedString("SettingsPage_Protection_Driver_Disclaimer_Text"),
                     PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
@@ -525,7 +512,8 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async Task<bool> ShowDriverProtectionSetupDialogAsync(Func<Task<bool>> configureAsync)
+        private async Task<bool> ShowDriverProtectionSetupDialogAsync(
+            Func<Action<DriverLoadProgress>, Task<bool>> configureAsync)
         {
             DriverProtectionSetupDialog dialog = new(configureAsync)
             {
@@ -547,6 +535,7 @@ namespace Xdows_Security.Views
             {
                 _ = new ContentDialog
                 {
+                    Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                     Title = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Disclaimer_Title"),
                     Content = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Disclaimer_Text"),
                     PrimaryButtonText = Localizer.Get().GetLocalizedString("Button_Confirm"),
@@ -760,6 +749,11 @@ namespace Xdows_Security.Views
         private void Model_Card_Click(object sender, RoutedEventArgs e)
         {
             App.MainWindow?.GoToPage("Model");
+        }
+
+        private void DriverEnvironmentLink_Click(object sender, RoutedEventArgs e)
+        {
+            App.MainWindow?.GoToPage("DriverEnvironment");
         }
 
         private void LoadLanguageSetting()

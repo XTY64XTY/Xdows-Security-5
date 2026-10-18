@@ -372,6 +372,7 @@ namespace Xdows_Security.Views
         {
             ContentDialogResult result = await new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = Localize("ProcessManager_DriverMode_Disclaimer_Title"),
                 Content = new TextBlock
                 {
@@ -541,6 +542,7 @@ namespace Xdows_Security.Views
         {
             var confirm = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = FormatLocalized("ProcessManager_Terminate_Confirm_Title", info.Name, info.Id),
                 Content = Localize("ProcessManager_Terminate_Confirm_Text"),
                 PrimaryButtonText = Localize("ProcessManager_Terminate_Button"),
@@ -752,6 +754,7 @@ namespace Xdows_Security.Views
 
             var dialog = new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = Localize("ProcessManager_Details_Title"),
                 Content = listView,
                 CloseButtonText = Localize("ProcessManager_Close"),
@@ -798,6 +801,7 @@ namespace Xdows_Security.Views
         {
             await new ContentDialog
             {
+                Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                 Title = title,
                 Content = content,
                 CloseButtonText = Localize("ProcessManager_OK"),

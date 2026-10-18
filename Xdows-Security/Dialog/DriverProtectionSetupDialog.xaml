@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <ContentDialog
     x:Class="Xdows_Security.DriverProtectionSetupDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -5,27 +6,110 @@
     DefaultButton="None"
     Style="{ThemeResource DefaultContentDialogStyle}">
 
-    <Grid MinWidth="480" MaxWidth="680" RowSpacing="16">
+    <Grid MinWidth="520" MaxWidth="660" RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid.ChildrenTransitions>
-            <TransitionCollection>
-                <EntranceThemeTransition IsStaggeringEnabled="True" />
-            </TransitionCollection>
-        </Grid.ChildrenTransitions>
+        <!-- 七个阶段对应 DriverLoadStage，由驱动启动流程实时上报，不是定时器演出来的 -->
+        <StackPanel Grid.Row="0" Spacing="1">
+            <StackPanel.ChildrenTransitions>
+                <TransitionCollection>
+                    <EntranceThemeTransition IsStaggeringEnabled="True" />
+                </TransitionCollection>
+            </StackPanel.ChildrenTransitions>
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepPreparingIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepPreparingText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepPreparingDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
 
-        <StackPanel Spacing="8">
-            <TextBlock x:Name="MessageText"
-                       TextWrapping="WrapWholeWords"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-            <TextBlock x:Name="DetailText"
-                       Style="{StaticResource CaptionTextBlockStyle}"
-                       TextWrapping="WrapWholeWords"
-                       Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepInstallingIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepInstallingText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepInstallingDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepSnapshotIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepSnapshotText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepSnapshotDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepConnectingIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepConnectingText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepConnectingDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepConfiguringIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepConfiguringText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepConfiguringDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepStartupIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepStartupText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepStartupDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid ColumnSpacing="10" Padding="0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <FontIcon x:Name="StepMonitoringIcon" Grid.Column="0" FontSize="14" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                <StackPanel Grid.Column="1" Spacing="1">
+                    <TextBlock x:Name="StepMonitoringText" Style="{ThemeResource BodyTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="StepMonitoringDetail" Style="{ThemeResource CaptionTextBlockStyle}"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Grid>
         </StackPanel>
 
         <ProgressBar x:Name="SetupProgressBar"

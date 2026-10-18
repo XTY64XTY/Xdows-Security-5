@@ -438,6 +438,7 @@ namespace Xdows_Security.Views
                 string messageFormat = Localizer.Get().GetLocalizedString("LogExportDialog_Failed_Message");
                 var failureDialog = new ContentDialog
                 {
+                    Style = Application.Current.Resources["DefaultContentDialogStyle"] as Style,
                     XamlRoot = XamlRoot,
                     Title = title,
                     Content = string.Format(messageFormat, detail),

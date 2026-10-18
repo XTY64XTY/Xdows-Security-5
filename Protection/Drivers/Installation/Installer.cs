@@ -1,5 +1,4 @@
 using Microsoft.Windows.Storage;
-using System.Diagnostics;
 using Xdows_Model_Config;
 
 namespace Protection;
@@ -8,6 +7,10 @@ public sealed record DriverRepairResult(bool Success, string Message);
 
 public static class DriverInstaller
 {
+    /// <summary>
+    /// 执行某一项检查的自动修复。四项检查里只有「测试模式」可以自动开启，
+    /// 其余失败都属于设备环境不满足，只能重装或改用兼容防护。
+    /// </summary>
     public static Task<DriverRepairResult> RepairAsync(
         DriverEnvironmentCheckItem item,
         CancellationToken token = default)
@@ -16,21 +19,51 @@ public static class DriverInstaller
 
         return item.Id switch
         {
-            "package" or "service" => InstallAndStartDriverAsync(token),
-            "bootfilter-package" or "bootfilter-service" => BootFilterLoadWorkflow.EnsureReadyAsync(token),
-            "bootfilter-communication" => DriverServiceControl.Query(DriverPackageLocator.BootFilterServiceName).IsRunning
-                ? Task.FromResult(new DriverRepairResult(false, "Boot filter service is running but the device is not reachable. Restart Windows to recover."))
-                : BootFilterLoadWorkflow.EnsureReadyAsync(token),
-            "communication" => DriverProtection.QueryRuntimeStatus() == DriverProtectionRuntimeStatus.NeedsRepair
-                ? InstallAndStartDriverAsync(token)
-                : RestartBridgeAsync(token),
-            "model" => CopyModelAssetsAsync(token),
-            "testsigning" => ShowTestSigningPromptAsync(),
-            "admin" => Task.FromResult(new DriverRepairResult(
+            // 已写入 BCD 但还没重启时，同一个按钮的作用反过来：撤销这次修改。
+            DriverEnvironmentCheckId.TestSigning => item.Hint == DriverEnvironmentCheckHint.TestSigningPendingRestart
+                ? DisableTestSigningAsync(token)
+                : EnableTestSigningAsync(token),
+
+            _ => Task.FromResult(new DriverRepairResult(
                 false,
-                "Restart Xdows Security as administrator, then run the repair again.")),
-            _ => Task.FromResult(new DriverRepairResult(false, $"No repair action is registered for {item.Id}."))
+                "Only test-signing can be repaired automatically. Reinstall the application or enable compatibility protection."))
         };
+    }
+
+    /// <summary>
+    /// 开启测试模式。修改后必须重启才生效，所以成功时返回的是「已设置，需要重启」。
+    /// </summary>
+    private static async Task<DriverRepairResult> EnableTestSigningAsync(CancellationToken token)
+    {
+        CommandResult result = await DriverCommandLine
+            .RunAsync("bcdedit", ["/set", "testsigning", "on"], token)
+            .ConfigureAwait(false);
+
+        return result.Success
+            ? new DriverRepairResult(
+                true,
+                "Test-signing has been enabled. Restart Windows, then enable driver protection again.")
+            : new DriverRepairResult(
+                false,
+                $"Failed to enable test-signing: {result.ShortOutput}");
+    }
+
+    /// <summary>
+    /// 撤销尚未生效的测试模式设置。与开启一样，重启后才完全生效。
+    /// </summary>
+    private static async Task<DriverRepairResult> DisableTestSigningAsync(CancellationToken token)
+    {
+        CommandResult result = await DriverCommandLine
+            .RunAsync("bcdedit", ["/set", "testsigning", "off"], token)
+            .ConfigureAwait(false);
+
+        return result.Success
+            ? new DriverRepairResult(
+                true,
+                "Test-signing has been disabled. Restart Windows to apply the change.")
+            : new DriverRepairResult(
+                false,
+                $"Failed to disable test-signing: {result.ShortOutput}");
     }
 
     public static Task<DriverRepairResult> InstallAndStartDriverAsync(CancellationToken token = default)
@@ -136,26 +169,6 @@ public static class DriverInstaller
 
             return new DriverRepairResult(true, $"Model assets are ready in {outputDirectory}.");
         }, token);
-    }
-
-    private static Task<DriverRepairResult> ShowTestSigningPromptAsync()
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = "/k echo Run as administrator if needed: bcdedit /set testsigning on && echo Restart Windows after changing test-signing.",
-                UseShellExecute = true
-            });
-        }
-        catch
-        {
-        }
-
-        return Task.FromResult(new DriverRepairResult(
-            false,
-            "Enable test-signing with: bcdedit /set testsigning on, then restart Windows. Production builds need a valid driver signature instead."));
     }
 
     /// <summary>
@@ -303,7 +316,9 @@ internal static class DriverLoadWorkflow
                 $"Driver service is loaded or changing state ({snapshot.Service.State}). Restart Windows before uninstalling the loaded driver package.");
         }
 
-        CommandResult drivers = await RunCommandAsync("pnputil", ["/enum-drivers"], token).ConfigureAwait(false);
+        CommandResult drivers = await DriverCommandLine
+            .RunAsync("pnputil", ["/enum-drivers"], token)
+            .ConfigureAwait(false);
         if (!drivers.Success)
             return new DriverRepairResult(false, $"Unable to enumerate drivers: {drivers.ShortOutput}");
 
@@ -311,64 +326,61 @@ internal static class DriverLoadWorkflow
         if (string.IsNullOrWhiteSpace(publishedName))
             return new DriverRepairResult(true, "Driver package is not installed.");
 
-        CommandResult delete = await RunCommandAsync(
-            "pnputil",
-            ["/delete-driver", publishedName, "/uninstall", "/force"],
-            token).ConfigureAwait(false);
+        CommandResult delete = await DriverCommandLine
+            .RunAsync("pnputil", ["/delete-driver", publishedName, "/uninstall", "/force"], token)
+            .ConfigureAwait(false);
 
         return delete.Success
             ? new DriverRepairResult(true, $"Driver package {publishedName} uninstalled.")
             : new DriverRepairResult(false, $"Driver package uninstall failed: {delete.ShortOutput}");
     }
 
+    /// <summary>
+    /// 把驱动从“当前状态”推到“桥接可用”。顺序是有意的，不能调换：
+    /// 先判就绪 → 处理已加载的旧版 → 排掉中间态 → 定位包 → 信任证书 →
+    /// 安装 → 起服务 → 等桥接。每一步失败都不再往下走，避免把
+    /// “驱动已被停掉但新包没装上”这种中间态留下来。
+    /// </summary>
     private static async Task<DriverRepairResult> EnsureReadyCoreAsync(
         string successPrefix,
         CancellationToken token)
     {
-        DriverLoadSnapshot initial = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        DriverLoadSnapshot snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
+        if (snapshot.BridgeReady)
+            return Ready(successPrefix, snapshot);
+
         DriverPackage? package = null;
         bool packageTrusted = false;
-        if (initial.BridgeReady)
-            return new DriverRepairResult(true, $"{successPrefix}: {initial.RuntimeStatus}.");
 
-        if (initial.Service.IsRunning)
+        // 服务在跑：要么是旧版驱动需要就地升级，要么是残留实例只能重启。
+        if (snapshot.Service.IsRunning)
         {
-            if (initial.RuntimeStatus != DriverProtectionRuntimeStatus.NeedsRepair)
-                return CreateLoadedWithoutBridgeResult(initial);
+            if (snapshot.RuntimeStatus != DriverProtectionRuntimeStatus.NeedsRepair)
+                return CreateLoadedWithoutBridgeResult(snapshot);
 
+            // 停旧驱动前先信任证书，否则停完才发现装不上，防护会凭空消失一段时间。
             package = DriverPackageLocator.Find();
             if (package is null)
-                return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
+                return NotFound();
 
-            DriverRepairResult legacyTrust = DriverCertificateTrustInstaller.TrustIfPresent(package);
-            if (!legacyTrust.Success)
-                return legacyTrust;
+            DriverRepairResult trustOfLegacy = DriverCertificateTrustInstaller.TrustIfPresent(package);
+            if (!trustOfLegacy.Success)
+                return trustOfLegacy;
             packageTrusted = true;
 
-            DriverRepairResult legacyStop = await TryStopLegacyDriverForUpgradeAsync(token).ConfigureAwait(false);
-            if (!legacyStop.Success)
-                return legacyStop;
+            DriverRepairResult stopOfLegacy = await TryStopLegacyDriverForUpgradeAsync(token).ConfigureAwait(false);
+            if (!stopOfLegacy.Success)
+                return stopOfLegacy;
 
-            initial = await ReadSnapshotAsync(token).ConfigureAwait(false);
+            snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
         }
 
-        if (initial.Service.IsTransitioning)
-        {
-            return new DriverRepairResult(
-                false,
-                $"Driver service is changing state ({initial.Service.State}). Wait for it to finish or restart Windows before repairing driver protection.");
-        }
-
-        if (initial.Service.State == DriverServiceState.Unknown)
-        {
-            return new DriverRepairResult(
-                false,
-                $"Unable to query driver service. {initial.Service.Detail}");
-        }
+        if (TryDescribeBlockingServiceState(snapshot.Service, out DriverRepairResult? blocked))
+            return blocked!;
 
         package ??= DriverPackageLocator.Find();
         if (package is null)
-            return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
+            return NotFound();
 
         if (!packageTrusted)
         {
@@ -381,35 +393,81 @@ internal static class DriverLoadWorkflow
         if (!install.Success)
             return install;
 
-        DriverServiceSnapshot afterInstall = DriverServiceControl.Query(ServiceName);
-        if (afterInstall.IsMissing)
-        {
-            return new DriverRepairResult(
-                false,
-                $"Driver package install completed, but service {ServiceName} was not registered. Install: {install.Message}");
-        }
-
-        if (afterInstall.State == DriverServiceState.Unknown)
-        {
-            return new DriverRepairResult(
-                false,
-                $"Driver package install completed, but service state could not be queried. {afterInstall.Detail}");
-        }
-
-        DriverRepairResult start = await StartServiceCoreAsync(afterInstall, token).ConfigureAwait(false);
+        DriverRepairResult start = await StartServiceAfterInstallAsync(token).ConfigureAwait(false);
         if (!start.Success)
             return start;
 
+        // 服务进 RUNNING 只说明内核接受了映像，设备对象还要一会儿才出现。
         DriverLoadSnapshot ready = await WaitForBridgeAsync(token).ConfigureAwait(false);
         if (ready.BridgeReady)
-            return new DriverRepairResult(true, $"{successPrefix}: {ready.RuntimeStatus}.");
+            return Ready(successPrefix, ready);
 
         if (ready.Service.IsRunning)
             return CreateLoadedWithoutBridgeResult(ready);
 
         return new DriverRepairResult(
             false,
-            $"Driver did not become ready. Runtime: {ready.RuntimeStatus}. Service: {ready.Service.Detail}. Install: {install.Message}. Start: {start.Message}");
+            $"Driver did not become ready. Runtime: {ready.RuntimeStatus}. Service: {ready.Service.Detail}. Install: {install.Message} Start: {start.Message}");
+    }
+
+    private static DriverRepairResult Ready(string successPrefix, DriverLoadSnapshot snapshot)
+    {
+        return new DriverRepairResult(true, $"{successPrefix}: {snapshot.RuntimeStatus}.");
+    }
+
+    private static DriverRepairResult NotFound()
+    {
+        return new DriverRepairResult(false, DriverPackageLocator.CreateNotFoundMessage());
+    }
+
+    /// <summary>
+    /// 服务正在切换或状态查询失败时，安装和启动都没有意义，先报出去。
+    /// </summary>
+    private static bool TryDescribeBlockingServiceState(
+        DriverServiceSnapshot service,
+        out DriverRepairResult? failure)
+    {
+        if (service.IsTransitioning)
+        {
+            failure = new DriverRepairResult(
+                false,
+                $"Driver service is changing state ({service.State}). Wait for it to finish or restart Windows before repairing driver protection.");
+            return true;
+        }
+
+        if (service.State == DriverServiceState.Unknown)
+        {
+            failure = new DriverRepairResult(
+                false,
+                $"Unable to query driver service. {service.Detail}");
+            return true;
+        }
+
+        failure = null;
+        return false;
+    }
+
+    /// <summary>
+    /// 安装完成后重新查询服务（安装器会注册服务），再交给统一的启动逻辑。
+    /// </summary>
+    private static async Task<DriverRepairResult> StartServiceAfterInstallAsync(CancellationToken token)
+    {
+        DriverServiceSnapshot registered = DriverServiceControl.Query(ServiceName);
+        if (registered.IsMissing)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Driver package install completed, but service {ServiceName} was not registered.");
+        }
+
+        if (registered.State == DriverServiceState.Unknown)
+        {
+            return new DriverRepairResult(
+                false,
+                $"Driver package install completed, but service state could not be queried. {registered.Detail}");
+        }
+
+        return await StartServiceCoreAsync(registered, token).ConfigureAwait(false);
     }
 
     private static async Task<DriverRepairResult> TryStopLegacyDriverForUpgradeAsync(
@@ -493,27 +551,27 @@ internal static class DriverLoadWorkflow
         return new DriverRepairResult(false, $"Driver service start failed: {start.Message}");
     }
 
+    /// <summary>
+    /// 轮询等待桥接可用。两种情况可以提前结束，不必等满整个窗口：
+    /// 服务已经不在跑（不会自己回来），以及协议/构建号不匹配（等多久都不会变）。
+    /// </summary>
     private static async Task<DriverLoadSnapshot> WaitForBridgeAsync(CancellationToken token)
     {
         DriverLoadSnapshot snapshot = await ReadSnapshotAsync(token).ConfigureAwait(false);
-        bool checkedVersionMismatch = false;
+        bool versionMismatchChecked = false;
 
         for (int attempt = 0; attempt < BridgeProbeAttempts; attempt++)
         {
             if (snapshot.BridgeReady)
                 return snapshot;
 
-            if (!snapshot.Service.IsRunning && attempt > 0)
+            if (attempt > 0 && !snapshot.Service.IsRunning)
                 return snapshot;
 
-            // A driver protocol/build version mismatch cannot self-resolve by
-            // waiting. If the first NeedsRepair probe reveals a mismatch, exit
-            // immediately instead of consuming the full 12-second probe window
-            // only to report the same failure.
-            if (!checkedVersionMismatch &&
+            if (!versionMismatchChecked &&
                 snapshot.RuntimeStatus == DriverProtectionRuntimeStatus.NeedsRepair)
             {
-                checkedVersionMismatch = true;
+                versionMismatchChecked = true;
                 if (IsDriverVersionMismatch())
                     return snapshot;
             }
@@ -607,44 +665,6 @@ internal static class DriverLoadWorkflow
             $"Driver service is loaded, but the Xdows Security bridge is not reachable ({snapshot.RuntimeStatus}).{suffix} Restart Windows before repairing, reinstalling, or starting driver protection.");
     }
 
-    private static async Task<CommandResult> RunCommandAsync(
-        string fileName,
-        IReadOnlyList<string> arguments,
-        CancellationToken token)
-    {
-        try
-        {
-            using var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = fileName,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                }
-            };
-
-            foreach (string argument in arguments)
-                process.StartInfo.ArgumentList.Add(argument);
-
-            if (!process.Start())
-                return new CommandResult(false, -1, string.Empty);
-
-            Task<string> outputTask = process.StandardOutput.ReadToEndAsync(token);
-            Task<string> errorTask = process.StandardError.ReadToEndAsync(token);
-            await process.WaitForExitAsync(token).ConfigureAwait(false);
-            string output = await outputTask.ConfigureAwait(false);
-            string error = await errorTask.ConfigureAwait(false);
-            return new CommandResult(true, process.ExitCode, output + error);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException)
-        {
-            return new CommandResult(false, -1, ex.GetType().Name);
-        }
-    }
-
     private static string? FindPublishedName(string pnputilOutput)
     {
         string? currentPublishedName = null;
@@ -683,19 +703,5 @@ internal static class DriverLoadWorkflow
     {
         public bool BridgeReady =>
             RuntimeStatus is DriverProtectionRuntimeStatus.NotRunning or DriverProtectionRuntimeStatus.Protected;
-    }
-
-    private sealed record CommandResult(bool Started, int ExitCode, string Output)
-    {
-        public bool Success => Started && ExitCode == 0;
-
-        public string ShortOutput
-        {
-            get
-            {
-                string value = string.IsNullOrWhiteSpace(Output) ? "No command output." : Output.Trim();
-                return value.Length <= 700 ? value : value[..700];
-            }
-        }
     }
 }

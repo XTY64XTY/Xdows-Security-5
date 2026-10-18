@@ -136,10 +136,10 @@ namespace Xdows_Security.Services
         private const string ShellBranch = "shell";
         private const string HandlerBranch = @"shellex\ContextMenuHandlers";
 
-        internal const string Win11ClassicMenuKey =
+        internal const string ClassicMenuKey =
             @"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32";
 
-        private const string Win11ClassicMenuClsid = "{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}";
+        private const string ClassicMenuClsid = "{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}";
 
         private sealed record ScopeDefinition(string Root, string DisplayKey);
 
@@ -312,7 +312,7 @@ namespace Xdows_Security.Services
         {
             try
             {
-                using var key = Registry.CurrentUser.OpenSubKey(Win11ClassicMenuKey);
+                using var key = Registry.CurrentUser.OpenSubKey(ClassicMenuKey);
                 return key != null;
             }
             catch
@@ -328,19 +328,19 @@ namespace Xdows_Security.Services
             {
                 if (enabled)
                 {
-                    using var key = Registry.CurrentUser.CreateSubKey(Win11ClassicMenuKey);
+                    using var key = Registry.CurrentUser.CreateSubKey(ClassicMenuKey);
                     key?.SetValue("", "", RegistryValueKind.String);
                 }
                 else
                 {
-                    Registry.CurrentUser.DeleteSubKeyTree(Win11ClassicMenuKey, throwOnMissingSubKey: false);
+                    Registry.CurrentUser.DeleteSubKeyTree(ClassicMenuKey, throwOnMissingSubKey: false);
 
                     using var clsid = Registry.CurrentUser.OpenSubKey(@"Software\Classes\CLSID", writable: true);
-                    clsid?.DeleteSubKey(Win11ClassicMenuClsid, throwOnMissingSubKey: false);
+                    clsid?.DeleteSubKey(ClassicMenuClsid, throwOnMissingSubKey: false);
                 }
 
                 LogText.AddNewLog(LogText.LogLevel.INFO, "ContextMenuManager",
-                    $"Win11 classic context menu set to {enabled}");
+                    $"Windows 11 classic context menu set to {enabled}");
                 return true;
             }
             catch (Exception ex)

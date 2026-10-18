@@ -24,23 +24,45 @@
 
         <!-- Content state (hidden while loading) -->
         <StackPanel x:Name="ContentPanel" Visibility="Collapsed">
-            <ListView x:Name="DateStatsListView"
-                      SelectionMode="Multiple"
-                      Height="300" Margin="0,0,0,8">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="svc:LogDateStats">
-                        <Grid Padding="4,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{x:Bind Date}" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="{x:Bind Count}" VerticalAlignment="Center"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+            <Grid Margin="0,0,0,8">
+                <!-- 高度随条目数自适应；超过上限才出现滚动条 -->
+                <ListView x:Name="DateStatsListView"
+                          SelectionMode="Multiple"
+                          MaxHeight="360"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="svc:LogDateStats">
+                            <Grid Padding="4,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{x:Bind Date}" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" Text="{x:Bind Count}" VerticalAlignment="Center"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <!-- 与主页日志框一致的空状态 -->
+                <StackPanel x:Name="EmptyStatePanel"
+                            Visibility="Collapsed"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Margin="0,24"
+                            Spacing="4">
+                    <FontIcon Glyph="&#xE8F1;" FontSize="28"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                              HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="EmptyStateText"
+                               HorizontalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               FontSize="13"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                </StackPanel>
+            </Grid>
 
             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                 <Button x:Name="DeleteSelectedButton" Click="DeleteSelected_Click">

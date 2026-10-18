@@ -1568,77 +1568,92 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Protection_Driver_Status_Error" xml:space="preserve">
     <value>Error</value>
   </data>
-  <data name="DriverEnvironmentDialog_Title" xml:space="preserve">
-    <value>Driver environment check</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Close" xml:space="preserve">
-    <value>Close</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Refresh" xml:space="preserve">
-    <value>Refresh</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Checking" xml:space="preserve">
-    <value>Checking driver protection environment...</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Repairing" xml:space="preserve">
-    <value>Repairing {0}...</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Summary_Healthy" xml:space="preserve">
-    <value>Driver protection environment is ready.</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Summary_NeedsAttention" xml:space="preserve">
-    <value>Driver protection needs attention. Use the repair actions below, or keep compatibility protection enabled until the driver is healthy.</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Summary_Error" xml:space="preserve">
-    <value>Unable to complete the driver environment check. Keep compatibility protection enabled and inspect the logs.</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Status_Passed" xml:space="preserve">
-    <value>Passed</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Status_Warning" xml:space="preserve">
-    <value>Warning</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Status_Failed" xml:space="preserve">
-    <value>Failed</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Privileges_Title" xml:space="preserve">
-    <value>Privileges</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Signing_Title" xml:space="preserve">
-    <value>Driver signing and system policy</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Packages_Title" xml:space="preserve">
-    <value>Driver packages and services</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Group_Runtime_Title" xml:space="preserve">
-    <value>Driver communication and model assets</value>
-  </data>
-  <data name="DriverEnvironmentDialog_Item_Admin_Title" xml:space="preserve">
+  <data name="DriverEnvironmentPage_Check_Administrator" xml:space="preserve">
     <value>Administrator rights</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Testsigning_Title" xml:space="preserve">
-    <value>Driver signing</value>
+  <data name="DriverEnvironmentPage_Check_TestSigning" xml:space="preserve">
+    <value>Test mode</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Package_Title" xml:space="preserve">
-    <value>Main driver package</value>
+  <data name="DriverEnvironmentPage_Check_FileIntegrity" xml:space="preserve">
+    <value>File integrity</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Service_Title" xml:space="preserve">
-    <value>Main driver service</value>
+  <data name="DriverEnvironmentPage_Check_DriverStarted" xml:space="preserve">
+    <value>Driver start status</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_BootfilterPackage_Title" xml:space="preserve">
-    <value>Boot filter package</value>
+  <data name="DriverEnvironmentPage_Ok_Administrator" xml:space="preserve">
+    <value>The process runs with administrator rights.</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_BootfilterService_Title" xml:space="preserve">
-    <value>Boot filter service</value>
+  <data name="DriverEnvironmentPage_Ok_TestSigning" xml:space="preserve">
+    <value>Windows test-signing is enabled.</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Communication_Title" xml:space="preserve">
-    <value>Main driver communication</value>
+  <data name="DriverEnvironmentPage_Ok_FileIntegrity" xml:space="preserve">
+    <value>All driver files are present.</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_BootfilterCommunication_Title" xml:space="preserve">
-    <value>Boot filter communication</value>
+  <data name="DriverEnvironmentPage_Ok_DriverStarted" xml:space="preserve">
+    <value>The driver service is running and the bridge is reachable.</value>
   </data>
-  <data name="DriverEnvironmentDialog_Item_Model_Title" xml:space="preserve">
-    <value>Native model assets</value>
+  <data name="DriverEnvironmentPage_Fail_TestSigningPendingRestart" xml:space="preserve">
+    <value>Test mode has been set but is not active yet. Restart Windows to apply it.</value>
+  </data>
+  <data name="DriverEnvironmentPage_TestSigning_Warning_Title" xml:space="preserve">
+    <value>Before enabling test mode</value>
+  </data>
+  <data name="DriverEnvironmentPage_TestSigning_Warning_Text" xml:space="preserve">
+    <value>Security warning: Test mode relaxes the code integrity checks Windows applies to kernel drivers. While it is on, any driver signed with a test certificate can load, including drivers from unknown sources.&#10;&#10;Disclaimer: This application's driver is signed with a self-signed test certificate, so it must run in test mode on ordinary devices. A restart is required, and a “Test mode” watermark appears in the lower-right corner of the desktop. The publisher and original developer of this application accept no liability for any risk caused by this operation.&#10;&#10;Do you want to continue?</value>
+  </data>
+  <data name="DriverEnvironmentPage_Repair_DisableTestSigning" xml:space="preserve">
+    <value>Undo change</value>
+  </data>
+  <data name="DriverEnvironmentPage_RepairUndone" xml:space="preserve">
+    <value>Test mode has been reverted. Restart Windows to apply the change.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Fail_TestSigning" xml:space="preserve">
+    <value>Test-signing is not enabled, so the test-signed driver cannot load. A restart is required after enabling it.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Fail_DriverNotStarted" xml:space="preserve">
+    <value>The driver is not running. Enable driver protection and try again.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Fail_Unrepairable" xml:space="preserve">
+    <value>Driver protection has hit an unrecoverable problem on this device. Reinstall the application or enable compatibility protection.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Repair_TestSigning" xml:space="preserve">
+    <value>Enable test mode</value>
+  </data>
+  <data name="DriverEnvironmentPage_Status_Passed" xml:space="preserve">
+    <value>Passed</value>
+  </data>
+  <data name="DriverEnvironmentPage_Status_Failed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="DriverEnvironmentPage_Headline_Ready" xml:space="preserve">
+    <value>Driver protection environment is ready</value>
+  </data>
+  <data name="DriverEnvironmentPage_Headline_Blocked" xml:space="preserve">
+    <value>Environment does not meet driver protection requirements</value>
+  </data>
+  <data name="DriverEnvironmentPage_Summary_Ready" xml:space="preserve">
+    <value>All four checks passed. You can enable driver protection.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Summary_Blocked" xml:space="preserve">
+    <value>{0} check(s) failed.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Recheck" xml:space="preserve">
+    <value>Check again</value>
+  </data>
+  <data name="DriverEnvironmentPage_Checking" xml:space="preserve">
+    <value>Checking…</value>
+  </data>
+  <data name="DriverEnvironmentPage_Repairing" xml:space="preserve">
+    <value>Enabling test mode…</value>
+  </data>
+  <data name="DriverEnvironmentPage_RepairDone" xml:space="preserve">
+    <value>Test mode has been enabled. Restart Windows, then check again.</value>
+  </data>
+  <data name="DriverEnvironmentPage_Title" xml:space="preserve">
+    <value>Driver environment check</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Environment.Content" xml:space="preserve">
+    <value>Environment check</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Dialog_Title" xml:space="preserve">
     <value>Driver environment check required</value>
@@ -1657,6 +1672,48 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="SettingsPage_Protection_Driver_Setup_Title" xml:space="preserve">
     <value>Configuring driver protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Preparing" xml:space="preserve">
+    <value>Load local model</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Preparing_Detail" xml:space="preserve">
+    <value>Start the Xdows Model native engine used for file and process verdicts.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Installing" xml:space="preserve">
+    <value>Install and start drivers</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Installing_Detail" xml:space="preserve">
+    <value>Deploy the main driver and boot filter driver, then start their services.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Snapshot" xml:space="preserve">
+    <value>Read boot snapshot</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Snapshot_Detail" xml:space="preserve">
+    <value>Read the disk boot sectors to establish the boot protection baseline.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Connecting" xml:space="preserve">
+    <value>Connect driver and register self-protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Connecting_Detail" xml:space="preserve">
+    <value>Connect the driver device, verify modules and capabilities, and register this process as protected.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Configuring" xml:space="preserve">
+    <value>Configure boot and registry protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Configuring_Detail" xml:space="preserve">
+    <value>Apply boot protection, registry protection, and declarative behavior rules.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Startup" xml:space="preserve">
+    <value>Synchronize startup protection</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Startup_Detail" xml:space="preserve">
+    <value>Let the driver guard this application's startup entry.</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Monitoring" xml:space="preserve">
+    <value>Start monitoring</value>
+  </data>
+  <data name="SettingsPage_Protection_Driver_Setup_Stage_Monitoring_Detail" xml:space="preserve">
+    <value>Start the event pumps and begin receiving driver events.</value>
   </data>
   <data name="SettingsPage_Protection_Driver_Setup_Preparing" xml:space="preserve">
     <value>Preparing driver protection</value>
