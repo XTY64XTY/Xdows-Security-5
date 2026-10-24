@@ -5,8 +5,8 @@ namespace Protection;
 internal static class DriverProtocol
 {
     public const uint ProtocolVersion = 9;
-    public const ulong DriverBuildId = 2026081603;
-    public const ulong PreviousDriverBuildId = 2026081602;
+    public const ulong DriverBuildId = 2026102401;
+    public const ulong PreviousDriverBuildId = 2026081603;
     public const uint LegacyUpgradeProtocolVersion = 7;
     public const ulong LegacyUpgradeDriverBuildId = 2026072802;
     public const ulong OlderLegacyUpgradeDriverBuildId = 2026072801;
@@ -31,6 +31,7 @@ internal static class DriverProtocol
     public const uint CapabilityEventBatch = 0x00000800;
     public const uint CapabilityRuleInterpreter = 0x00001000;
     public const uint CapabilityInitiatorExclusion = 0x00002000;
+    public const uint CapabilityPplSelfProtect = 0x00004000;
     public const uint RequiredCapabilities = CapabilityPriorityQueue |
         CapabilityDirtyWriteCoalescing |
         CapabilityBuildId |
@@ -44,7 +45,8 @@ internal static class DriverProtocol
         CapabilityAsyncReview |
         CapabilityEventBatch |
         CapabilityRuleInterpreter |
-        CapabilityInitiatorExclusion;
+        CapabilityInitiatorExclusion |
+        CapabilityPplSelfProtect;
     public const uint RegisterFlagAsyncReview = 0x00000001;
 
     //
@@ -126,6 +128,7 @@ internal static class DriverProtocol
     public static readonly uint GetNextEvents = CtlCode(FileDeviceXdowsSecurity, 0x810, MethodBuffered, FileAnyAccess);
     public static readonly uint SetBehaviorRules = CtlCode(FileDeviceXdowsSecurity, 0x811, MethodBuffered, FileAnyAccess);
     public static readonly uint SetInitiatorExclusions = CtlCode(FileDeviceXdowsSecurity, 0x812, MethodBuffered, FileAnyAccess);
+    public static readonly uint EnablePplSelfProtection = CtlCode(FileDeviceXdowsSecurity, 0x813, MethodBuffered, FileAnyAccess);
 
     private static uint CtlCode(uint deviceType, uint function, uint method, uint access)
     {
@@ -419,6 +422,14 @@ internal struct StartupProtectionRequest
     public ProtocolHeader Header;
     public uint ProcessId;
     public uint Enabled;
+    public uint Reserved;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct PplProtectionRequest
+{
+    public ProtocolHeader Header;
+    public uint ProcessId;
     public uint Reserved;
 }
 

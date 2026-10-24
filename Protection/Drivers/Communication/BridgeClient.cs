@@ -505,6 +505,20 @@ internal sealed class DriverBridgeClient : IDisposable
             throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to set startup self-protection state.");
     }
 
+    public void EnablePplSelfProtection()
+    {
+        EnsureConnected();
+
+        var request = new PplProtectionRequest
+        {
+            Header = DriverProtocol.Header<PplProtectionRequest>(),
+            ProcessId = _clientProcessId
+        };
+
+        if (!DeviceIoControlNoOutput(request, DriverProtocol.EnablePplSelfProtection))
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to enable PPL self-protection.");
+    }
+
     public void SetBootProtection(BootDriverProtectionConfiguration configuration)
     {
         EnsureConnected();

@@ -419,6 +419,29 @@ public sealed partial class DriverProtection : IProtectionModel
             throw new InvalidOperationException(
                 $"Driver self-protection did not activate for the current process (active={state.SelfProtectionEnabled}, protectedPid={state.ProtectedProcessId}, expectedPid={Environment.ProcessId}).");
         }
+
+        EnablePplSelfProtection(_client);
+    }
+
+    /// <summary>
+    /// 把当前进程提升为反恶意软件 PPL。内核只在 ELAM 引导路径上授予这一级保护，
+    /// 测试签名构建拿不到 ELAM 证书，所以由驱动直接写 EPROCESS 的 Protection 字节。
+    ///
+    /// 失败只记录，不中断驱动防护加载：句柄剥离自保护此时已经生效，PPL 是叠在
+    /// 它上面的第二层；这里抛异常会把整套驱动防护卡在「不支持的 Windows 版本」
+    /// 或「内核函数形态变化」上，代价远大于收益。
+    /// </summary>
+    private void EnablePplSelfProtection(DriverBridgeClient client)
+    {
+        try
+        {
+            client.EnablePplSelfProtection();
+            Log("Bridge", "PPL self-protection enabled for the current process");
+        }
+        catch (Exception ex)
+        {
+            Log("Bridge", $"PPL self-protection unavailable: {ex.Message}");
+        }
     }
 
     private void ConfigureProtection(BootDriverProtectionConfiguration bootConfiguration)
