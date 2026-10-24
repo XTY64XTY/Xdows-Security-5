@@ -2872,4 +2872,109 @@
   <data name="ShellContextMenu_CascadeSuffix" xml:space="preserve">
     <value>（级联子菜单）</value>
   </data>
+  <data name="SettingsPage_Feature_LegacyFilePicker.Header" xml:space="preserve">
+    <value>使用系统文件选择器</value>
+  </data>
+  <data name="SettingsPage_Feature_LegacyFilePicker.Description" xml:space="preserve">
+    <value>使用系统文件选择器以获取更好的体验，但可能会导致软件安全性和兼容性降低</value>
+  </data>
+  <data name="FilePicker_Title_Open" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="FilePicker_Title_Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="FilePicker_Title_Folder" xml:space="preserve">
+    <value>选择文件夹</value>
+  </data>
+  <data name="FilePicker_Button_Open.Content" xml:space="preserve">
+    <value>打开</value>
+  </data>
+  <data name="FilePicker_Button_Save.Content" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="FilePicker_Button_SelectFolder.Content" xml:space="preserve">
+    <value>选择此文件夹</value>
+  </data>
+  <data name="FilePicker_FileName.Text" xml:space="preserve">
+    <value>文件名</value>
+  </data>
+  <data name="FilePicker_FileType.Text" xml:space="preserve">
+    <value>文件类型</value>
+  </data>
+  <data name="FilePicker_Column_Name.Text" xml:space="preserve">
+    <value>名称</value>
+  </data>
+  <data name="FilePicker_Column_DateModified.Text" xml:space="preserve">
+    <value>修改日期</value>
+  </data>
+  <data name="FilePicker_Column_Type.Text" xml:space="preserve">
+    <value>类型</value>
+  </data>
+  <data name="FilePicker_Column_Size.Text" xml:space="preserve">
+    <value>大小</value>
+  </data>
+  <data name="FilePicker_EmptyFolder.Text" xml:space="preserve">
+    <value>此文件夹为空</value>
+  </data>
+  <data name="FilePicker_AccessDenied.Text" xml:space="preserve">
+    <value>无法访问此文件夹。</value>
+  </data>
+  <data name="FilePicker_Loading.Text" xml:space="preserve">
+    <value>正在加载…</value>
+  </data>
+  <data name="FilePicker_NewFolder.Content" xml:space="preserve">
+    <value>新建文件夹</value>
+  </data>
+  <data name="FilePicker_Nav_Back" xml:space="preserve">
+    <value>后退</value>
+  </data>
+  <data name="FilePicker_Nav_Forward" xml:space="preserve">
+    <value>前进</value>
+  </data>
+  <data name="FilePicker_Nav_Up" xml:space="preserve">
+    <value>上一级</value>
+  </data>
+  <data name="FilePicker_Nav_QuickAccess.Text" xml:space="preserve">
+    <value>快速访问</value>
+  </data>
+  <data name="FilePicker_Nav_ThisPc.Text" xml:space="preserve">
+    <value>此电脑</value>
+  </data>
+  <data name="FilePicker_Filter_AllSupported" xml:space="preserve">
+    <value>所有支持的文件</value>
+  </data>
+  <data name="FilePicker_Filter_AllFiles" xml:space="preserve">
+    <value>所有文件</value>
+  </data>
+  <data name="FilePicker_NewFolder_DefaultName" xml:space="preserve">
+    <value>新建文件夹</value>
+  </data>
+  <data name="FilePicker_Overwrite_Title" xml:space="preserve">
+    <value>文件已存在</value>
+  </data>
+  <data name="FilePicker_Overwrite_Message" xml:space="preserve">
+    <value>“{0}”已存在，是否替换？</value>
+  </data>
+  <data name="FilePicker_Overwrite_Replace" xml:space="preserve">
+    <value>替换</value>
+  </data>
+  <data name="FilePicker_Type_Folder" xml:space="preserve">
+    <value>文件夹</value>
+  </data>
+  <data name="FilePicker_FileNameRequired" xml:space="preserve">
+    <value>请输入文件名。</value>
+  </data>
+  <data name="FilePicker_InvalidPath" xml:space="preserve">
+    <value>找不到路径“{0}”。</value>
+  </data>
+  <data name="FilePicker_Count_Selected" xml:space="preserve">
+    <value>已选择 {0} 项</value>
+  </data>
+  <data name="FilePicker_Type_File" xml:space="preserve">
+    <value>文件</value>
+  </data>
+  <data name="FilePicker_Type_FileFormat" xml:space="preserve">
+    <value>{0} 文件</value>
+  </data>
 </root>

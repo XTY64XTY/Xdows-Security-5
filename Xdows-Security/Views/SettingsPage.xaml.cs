@@ -126,6 +126,7 @@ namespace Xdows_Security.Views
                         LoadThreatNotificationSettingAsync
                     );
                     LoadInjectionProtectionSetting();
+                    LoadLegacyFilePickerSetting();
                     WinUI3Localizer.Localizer.Get().LanguageChanged += (s, e) => UpdateAppText();
                     UpdateAppText();
                 }
@@ -166,6 +167,16 @@ namespace Xdows_Security.Views
                 InjectionProtectionToggle.IsOn = true;
             }
             InjectionProtectionToggle.Toggled += InjectionProtectionToggle_Toggled;
+        }
+
+        private void LoadLegacyFilePickerSetting()
+        {
+            if (LegacyFilePickerToggle == null) return;
+            LegacyFilePickerToggle.Toggled -= Toggled_SaveToggleData;
+            LegacyFilePickerToggle.IsOn =
+                App.LocalSettings.Values.TryGetValue("UseLegacyFilePicker", out object? value)
+                && value is true;
+            LegacyFilePickerToggle.Toggled += Toggled_SaveToggleData;
         }
 
         private void InjectionProtectionToggle_Toggled(object sender, RoutedEventArgs e)

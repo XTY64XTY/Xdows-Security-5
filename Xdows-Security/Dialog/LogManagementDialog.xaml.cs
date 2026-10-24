@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUI3Localizer;
 using Xdows_Security.Services;
@@ -11,6 +12,9 @@ namespace Xdows_Security
     public sealed partial class LogManagementDialog : ContentDialog
     {
         private ObservableCollection<LogDateStats> _stats = [];
+
+        /// <summary>用户是否真的删除过日志。主页据此决定要不要重载列表，避免白闪。</summary>
+        public bool LogsChanged { get; private set; }
 
         public LogManagementDialog()
         {
@@ -26,10 +30,15 @@ namespace Xdows_Security
 
         private async Task LoadStatsAsync()
         {
-            LoadingPanel.Visibility = Visibility.Visible;
             ContentPanel.Visibility = Visibility.Collapsed;
+            LoadingPanel.Visibility = Visibility.Collapsed;
+
+            // 读取日志统计通常很快，加载界面延迟 50ms 才出现，避免闪一下。
+            var loadingCts = new CancellationTokenSource();
+            _ = LoadingDelay.ShowAsync(loadingCts.Token, () => LoadingPanel.Visibility = Visibility.Visible);
 
             var stats = await Task.Run(() => LogService.GetDateStats());
+            loadingCts.Cancel();
 
             _stats = new ObservableCollection<LogDateStats>(stats);
             DateStatsListView.ItemsSource = _stats;
@@ -65,6 +74,7 @@ namespace Xdows_Security
                 _stats.Remove(item);
             }
 
+            LogsChanged = true;
             UpdateEmptyState();
         }
 
@@ -72,6 +82,7 @@ namespace Xdows_Security
         {
             LogService.ClearAll();
             _stats.Clear();
+            LogsChanged = true;
             UpdateEmptyState();
         }
     }

@@ -383,6 +383,15 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                             l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
                                             Click="Boot_Restore_Button_Click"/>
                 </controls:SettingsCard>
+                <controls:SettingsCard
+                                    l:Uids.Uid="SettingsPage_Feature_LegacyFilePicker"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8B7;}"
+                                    Margin="0,0,0,4">
+                    <ToggleSwitch x:Name="LegacyFilePickerToggle"
+                                            AutomationProperties.AutomationId="LegacyFilePickerToggle"
+                                            Tag="UseLegacyFilePicker"
+                                            Toggled="Toggled_SaveToggleData" />
+                </controls:SettingsCard>
                 <TextBlock Margin="0,8,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
                 <controls:SettingsCard
                    VerticalAlignment="Top"

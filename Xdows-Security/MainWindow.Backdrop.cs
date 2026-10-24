@@ -4,6 +4,7 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using System;
 using Windows.UI;
 using Windows.UI.ViewManagement;
 
@@ -21,6 +22,39 @@ namespace Xdows_Security
         };
 
         private UISettings? _uiSettings;
+
+        /// <summary>系统 backdrop 是否已成功挂上（false 时窗口只有纯色/透明背景，透明度滑块也不会生效）。</summary>
+        public bool HasBackdrop => _controller is not null;
+
+        /// <summary>
+        /// 在窗口显示之前先把主题与系统背景应用好，避免出现「先闪一个没有组件的空窗口，
+        /// 再刷上组件与材质」。此时窗口尚未 Activate，backdrop 挂载可能失败，
+        /// 由 <c>MainWindow_Activated_FirstTime</c> 再补一次。
+        /// </summary>
+        public void ApplyStartupAppearance()
+        {
+            var settings = App.LocalSettings;
+
+            if (settings.Values.TryGetValue("AppTheme", out object? theme) &&
+                theme is string themeString &&
+                Enum.TryParse(themeString, out ElementTheme themeValue))
+            {
+                if (Content is FrameworkElement rootElement)
+                {
+                    rootElement.RequestedTheme = themeValue;
+                }
+
+                UpdateTheme(themeValue);
+            }
+
+            SystemBackdrop = null;
+
+            string backdrop = settings.Values.TryGetValue("AppBackdrop", out object? raw) && raw is string value
+                ? value
+                : "Mica";
+
+            ApplyBackdrop(backdrop, true);
+        }
 
         public static void UpdateTheme(ElementTheme selectedTheme)
         {

@@ -89,6 +89,7 @@ namespace Xdows_Security
                 });
             }
             LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "MainWindow loaded successfully");
+            ApplyStartupAppearance();
         }
 
         public void RestoreAndActivate()
@@ -111,33 +112,15 @@ namespace Xdows_Security
         {
             var settings = App.LocalSettings;
 
-            if (settings.Values.TryGetValue("AppTheme", out object? theme))
+            // 构造阶段已尝试应用过主题与背景；若当时窗口还没显示导致挂载失败，这里补一次，
+            // 而不是让窗口一直停在纯色背景（那样透明度滑块也会失效）。
+            if (!HasBackdrop)
             {
-                string themeString = theme as string ?? "";
-                if (Enum.TryParse(themeString, out ElementTheme themeValue))
-                {
-                    if (this.Content is FrameworkElement rootElement)
-                    {
-                        rootElement.RequestedTheme = themeValue;
-                    }
-                    UpdateTheme(themeValue);
-                }
+                string backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
+                    ? backdropValue
+                    : "Mica";
+                ApplyBackdrop(backdrop, true);
             }
-            this.SystemBackdrop = null;
-
-            var backdrop = settings.Values.TryGetValue("AppBackdrop", out object? backdropRaw) && backdropRaw is string backdropValue
-                ? backdropValue
-                : "Mica";
-
-            var dq = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-            dq?.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
-                {
-                    try
-                    {
-                        ApplyBackdrop(backdrop, false);
-                    }
-                    catch { }
-                });
 
             Activated -= MainWindow_Activated_FirstTime;
             //if (!App.IsRunAsAdmin())

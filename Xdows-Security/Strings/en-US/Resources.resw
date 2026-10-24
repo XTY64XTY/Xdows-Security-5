@@ -2873,4 +2873,109 @@ Restart File Explorer or sign in again for it to take effect.</value>
   <data name="ShellContextMenu_CascadeSuffix" xml:space="preserve">
     <value>(cascading submenu)</value>
   </data>
+  <data name="SettingsPage_Feature_LegacyFilePicker.Header" xml:space="preserve">
+    <value>Use the system file picker</value>
+  </data>
+  <data name="SettingsPage_Feature_LegacyFilePicker.Description" xml:space="preserve">
+    <value>Use the system file picker for a better experience, but it may reduce the app's security and compatibility</value>
+  </data>
+  <data name="FilePicker_Title_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="FilePicker_Title_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="FilePicker_Title_Folder" xml:space="preserve">
+    <value>Select folder</value>
+  </data>
+  <data name="FilePicker_Button_Open.Content" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="FilePicker_Button_Save.Content" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="FilePicker_Button_SelectFolder.Content" xml:space="preserve">
+    <value>Select this folder</value>
+  </data>
+  <data name="FilePicker_FileName.Text" xml:space="preserve">
+    <value>File name</value>
+  </data>
+  <data name="FilePicker_FileType.Text" xml:space="preserve">
+    <value>File type</value>
+  </data>
+  <data name="FilePicker_Column_Name.Text" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="FilePicker_Column_DateModified.Text" xml:space="preserve">
+    <value>Date modified</value>
+  </data>
+  <data name="FilePicker_Column_Type.Text" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="FilePicker_Column_Size.Text" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="FilePicker_EmptyFolder.Text" xml:space="preserve">
+    <value>This folder is empty</value>
+  </data>
+  <data name="FilePicker_AccessDenied.Text" xml:space="preserve">
+    <value>This folder can't be accessed.</value>
+  </data>
+  <data name="FilePicker_Loading.Text" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="FilePicker_NewFolder.Content" xml:space="preserve">
+    <value>New folder</value>
+  </data>
+  <data name="FilePicker_Nav_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="FilePicker_Nav_Forward" xml:space="preserve">
+    <value>Forward</value>
+  </data>
+  <data name="FilePicker_Nav_Up" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="FilePicker_Nav_QuickAccess.Text" xml:space="preserve">
+    <value>Quick access</value>
+  </data>
+  <data name="FilePicker_Nav_ThisPc.Text" xml:space="preserve">
+    <value>This PC</value>
+  </data>
+  <data name="FilePicker_Filter_AllSupported" xml:space="preserve">
+    <value>All supported files</value>
+  </data>
+  <data name="FilePicker_Filter_AllFiles" xml:space="preserve">
+    <value>All files</value>
+  </data>
+  <data name="FilePicker_NewFolder_DefaultName" xml:space="preserve">
+    <value>New folder</value>
+  </data>
+  <data name="FilePicker_Overwrite_Title" xml:space="preserve">
+    <value>File already exists</value>
+  </data>
+  <data name="FilePicker_Overwrite_Message" xml:space="preserve">
+    <value>"{0}" already exists. Do you want to replace it?</value>
+  </data>
+  <data name="FilePicker_Overwrite_Replace" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="FilePicker_Type_Folder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="FilePicker_FileNameRequired" xml:space="preserve">
+    <value>Enter a file name.</value>
+  </data>
+  <data name="FilePicker_InvalidPath" xml:space="preserve">
+    <value>Can't find "{0}".</value>
+  </data>
+  <data name="FilePicker_Count_Selected" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="FilePicker_Type_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="FilePicker_Type_FileFormat" xml:space="preserve">
+    <value>{0} file</value>
+  </data>
 </root>

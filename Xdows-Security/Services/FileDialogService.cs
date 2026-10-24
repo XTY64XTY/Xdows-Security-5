@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using Microsoft.UI.Xaml;
 
 namespace Xdows_Security.Services;
 
@@ -35,9 +38,34 @@ internal static unsafe partial class FileDialogService
     private static readonly Guid IID_IFileDialog = new("42F85136-DB7E-439C-85F1-E4075D135FC8");
     private static readonly Guid IID_IShellItem = new("43826D1E-E718-42EE-BC55-A1E261C37BFE");
 
+    //
+    // 主题跟随：IFileDialog 没有公开的"深色模式"开关，只能在对话框窗口创建后
+    // 对它的 HWND 应用 DWM 深色属性与深色视觉样式。HWND 只在 Show 之后才存在，
+    // 而 Show 是模态阻塞的，因此唯一正规的切入点是在 IFileDialogEvents 回调里
+    // 通过 IOleWindow::GetWindow 拿到窗口。
+    //
+    // IFileDialogEvents vtable 顺序（Windows SDK 10.0.28000.0，shobjidl_core.h）：
+    // 3 OnFileOk / 4 OnFolderChanging / 5 OnFolderChange / 6 OnSelectionChange
+    // 7 OnShareViolation / 8 OnTypeChange / 9 OnOverwrite
+    //
+    private static readonly Guid IID_IFileDialogEvents = new("973510DB-7D7F-452B-8975-74A85828D354");
+    private static readonly Guid IID_IOleWindow = new("00000114-0000-0000-C000-000000000046");
+    private static readonly Guid IID_IUnknown = new("00000000-0000-0000-C000-000000000046");
+
+    private const uint DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+    private const int S_OK = 0;
+    private const int E_NOINTERFACE = unchecked((int)0x80004002);
+    private const int E_POINTER = unchecked((int)0x80004003);
+
+    private static nint s_eventsVtable;
+    private static int s_themeApplied;
+    private static bool s_useDarkTheme;
+
     // IFileDialog vtable 槽位（IUnknown 0-2 之后）。
     private const int SlotShow = 3;
     private const int SlotSetFileTypes = 4;
+    private const int SlotAdvise = 7;
+    private const int SlotUnadvise = 8;
     private const int SlotSetOptions = 9;
     private const int SlotSetFileName = 15;
     private const int SlotGetResult = 20;
@@ -54,6 +82,9 @@ internal static unsafe partial class FileDialogService
     // IShellItemArray vtable 槽位。
     private const int SlotArrayGetCount = 7;
     private const int SlotArrayGetItemAt = 8;
+
+    // IOleWindow vtable 槽位。
+    private const int SlotOleWindowGetWindow = 3;
 
     [LibraryImport("ole32.dll")]
     private static partial int CoCreateInstance(
@@ -72,6 +103,19 @@ internal static unsafe partial class FileDialogService
         IntPtr pbc,
         in Guid riid,
         out IntPtr ppv);
+
+    [LibraryImport("dwmapi.dll")]
+    private static partial int DwmSetWindowAttribute(
+        nint hwnd,
+        uint dwAttribute,
+        int* pvAttribute,
+        uint cbAttribute);
+
+    [LibraryImport("uxtheme.dll", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial int SetWindowTheme(
+        nint hwnd,
+        string? pszSubAppName,
+        string? pszSubIdList);
 
     /// <summary>保存文件对话框。用户取消或失败时返回 null。</summary>
     public static string? PickSaveFile(
@@ -164,9 +208,21 @@ internal static unsafe partial class FileDialogService
             return null;
         }
 
+        uint themeCookie = 0;
+        IntPtr eventsObject = IntPtr.Zero;
+
         try
         {
             void** vtable = *(void***)dialog;
+
+            s_useDarkTheme = ShouldUseDarkTheme();
+            Volatile.Write(ref s_themeApplied, 0);
+            eventsObject = CreateDialogEvents();
+            var advise = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, uint*, int>)vtable[SlotAdvise];
+            if (advise(dialog, eventsObject, &themeCookie) != S_OK)
+            {
+                themeCookie = 0;
+            }
 
             uint options = (uint)FOS.ForceFilesystem;
             options |= pickFolders ? (uint)FOS.PickFolders : (uint)FOS.PathMustExist;
@@ -368,6 +424,17 @@ internal static unsafe partial class FileDialogService
         }
         finally
         {
+            if (themeCookie != 0)
+            {
+                var unadvise = (delegate* unmanaged[Stdcall]<IntPtr, uint, int>)(*(void***)dialog)[SlotUnadvise];
+                unadvise(dialog, themeCookie);
+            }
+
+            if (eventsObject != IntPtr.Zero)
+            {
+                ReleaseDialogEvents(eventsObject);
+            }
+
             ReleaseComObject(dialog);
         }
     }
@@ -457,6 +524,172 @@ internal static unsafe partial class FileDialogService
         {
             ((delegate* unmanaged[Stdcall]<IntPtr, uint>)(*(void***)comObject)[SlotRelease])(comObject);
         }
+    }
+
+    private static bool ShouldUseDarkTheme()
+    {
+        return App.MainWindow?.Content is FrameworkElement root && root.ActualTheme == ElementTheme.Dark;
+    }
+
+    /// <summary>
+    /// 对通用文件对话框的 HWND 应用深色外观。DWM 属性自 Windows 11 22000 起支持；
+    /// <c>DarkMode_Explorer</c> 是 shell 用于深色视觉样式的主题名（未文档化，
+    /// 与资源管理器深色模式同一套）。
+    /// </summary>
+    private static unsafe void ApplyDialogTheme(IntPtr dialog)
+    {
+        if (Volatile.Read(ref s_themeApplied) != 0)
+        {
+            return;
+        }
+
+        Guid iidOleWindow = IID_IOleWindow;
+        var queryInterface = (delegate* unmanaged[Stdcall]<IntPtr, Guid*, IntPtr*, int>)(*(void***)dialog)[0];
+        IntPtr oleWindow;
+        if (queryInterface(dialog, &iidOleWindow, &oleWindow) != S_OK || oleWindow == IntPtr.Zero)
+        {
+            return;
+        }
+
+        try
+        {
+            IntPtr hwnd;
+            var getWindow = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int>)(*(void***)oleWindow)[SlotOleWindowGetWindow];
+            if (getWindow(oleWindow, &hwnd) != S_OK || hwnd == IntPtr.Zero)
+            {
+                return;
+            }
+
+            int useDark = s_useDarkTheme ? 1 : 0;
+            DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDark, sizeof(int));
+            SetWindowTheme(hwnd, s_useDarkTheme ? "DarkMode_Explorer" : null, null);
+            Volatile.Write(ref s_themeApplied, 1);
+        }
+        finally
+        {
+            ReleaseComObject(oleWindow);
+        }
+    }
+
+    private static unsafe IntPtr EnsureEventsVtable()
+    {
+        if (s_eventsVtable != IntPtr.Zero)
+        {
+            return s_eventsVtable;
+        }
+
+        IntPtr* table = (IntPtr*)NativeMemory.Alloc(10 * (nuint)sizeof(IntPtr));
+        table[0] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, Guid*, IntPtr*, int>)&EventsQueryInterface;
+        table[1] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, uint>)&EventsAddRef;
+        table[2] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, uint>)&EventsRelease;
+        table[3] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)&EventsOnFileOk;
+        table[4] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, int>)&EventsOnFolderChanging;
+        table[5] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)&EventsOnFolderChange;
+        table[6] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)&EventsOnSelectionChange;
+        table[7] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, int*, int>)&EventsOnShareViolation;
+        table[8] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, int>)&EventsOnTypeChange;
+        table[9] = (IntPtr)(delegate* unmanaged[Stdcall]<IntPtr, IntPtr, IntPtr, int*, int>)&EventsOnOverwrite;
+
+        s_eventsVtable = (IntPtr)table;
+        return s_eventsVtable;
+    }
+
+    /// <summary>分配一个 IFileDialogEvents 实现对象：首字段为 vtable，其后为引用计数。</summary>
+    private static unsafe IntPtr CreateDialogEvents()
+    {
+        byte* memory = (byte*)NativeMemory.Alloc(16);
+        *(IntPtr*)memory = EnsureEventsVtable();
+        *(int*)(memory + sizeof(IntPtr)) = 1;
+        return (IntPtr)memory;
+    }
+
+    private static unsafe int AddRefCore(IntPtr eventsObject)
+    {
+        int* count = (int*)((byte*)eventsObject + sizeof(IntPtr));
+        return Interlocked.Increment(ref *count);
+    }
+
+    private static unsafe void ReleaseDialogEvents(IntPtr eventsObject)
+    {
+        int* count = (int*)((byte*)eventsObject + sizeof(IntPtr));
+        if (Interlocked.Decrement(ref *count) == 0)
+        {
+            NativeMemory.Free((void*)eventsObject);
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static unsafe int EventsQueryInterface(IntPtr thisPtr, Guid* riid, IntPtr* ppvObject)
+    {
+        if (ppvObject is null)
+        {
+            return E_POINTER;
+        }
+
+        if (*riid == IID_IUnknown || *riid == IID_IFileDialogEvents)
+        {
+            *ppvObject = thisPtr;
+            AddRefCore(thisPtr);
+            return S_OK;
+        }
+
+        *ppvObject = IntPtr.Zero;
+        return E_NOINTERFACE;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static uint EventsAddRef(IntPtr thisPtr) => (uint)AddRefCore(thisPtr);
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static uint EventsRelease(IntPtr thisPtr)
+    {
+        ReleaseDialogEvents(thisPtr);
+        return 0;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static int EventsOnFileOk(IntPtr thisPtr, IntPtr dialog) => S_OK;
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static int EventsOnFolderChanging(IntPtr thisPtr, IntPtr dialog, IntPtr folder)
+    {
+        ApplyDialogTheme(dialog);
+        return S_OK;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static int EventsOnFolderChange(IntPtr thisPtr, IntPtr dialog) => S_OK;
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static int EventsOnSelectionChange(IntPtr thisPtr, IntPtr dialog) => S_OK;
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static int EventsOnTypeChange(IntPtr thisPtr, IntPtr dialog)
+    {
+        ApplyDialogTheme(dialog);
+        return S_OK;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static unsafe int EventsOnShareViolation(IntPtr thisPtr, IntPtr dialog, IntPtr item, int* response)
+    {
+        if (response is not null)
+        {
+            *response = 0;
+        }
+
+        return S_OK;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static unsafe int EventsOnOverwrite(IntPtr thisPtr, IntPtr dialog, IntPtr item, int* response)
+    {
+        if (response is not null)
+        {
+            *response = 0;
+        }
+
+        return S_OK;
     }
 
     /// <summary>

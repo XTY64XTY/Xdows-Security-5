@@ -6,6 +6,16 @@ using Microsoft.UI;
 
 namespace Xdows_Security.Services;
 
+/// <summary>选择器外观偏好：默认使用应用内 WinUI 选择器，设置可切回系统对话框。</summary>
+internal static class FilePickerPreference
+{
+    // 注意：ApplicationDataContainer.Values 的索引器对不存在的键会抛
+    // FileNotFoundException（HRESULT 0x80070002），必须用 TryGetValue。
+    public static bool UseLegacy =>
+        App.LocalSettings.Values.TryGetValue("UseLegacyFilePicker", out object? value)
+        && value is true;
+}
+
 /// <summary>WinAppSDK PickerLocationId 的兼容枚举。</summary>
 public enum PickerLocationId
 {
@@ -74,20 +84,47 @@ public sealed class FileSavePicker
         _ownerHwnd = (nint)appWindowId.Value;
     }
 
-    public Task<PickFileResult> PickSaveFileAsync()
+    public async Task<PickFileResult> PickSaveFileAsync()
     {
-        string filter = PickerCompat.BuildChoicesFilter(
-            FileTypeChoices.SelectMany(kv => kv.Value.Select(ext => (Name: kv.Key, Ext: ext))));
+        // 调用点多为 async void，异常外泄会直接终止进程；统一在此记录并降级为"未选择"。
+        try
+        {
+            if (!FilePickerPreference.UseLegacy)
+            {
+                var options = new FilePickerOptions
+                {
+                    Mode = FilePickerMode.Save,
+                    SuggestedFileName = SuggestedFileName,
+                    DefaultExtension = PickerCompat.EnsureDot(DefaultFileExtension),
+                    InitialDirectory = PickerCompat.ResolveInitialDirectory(SuggestedFolder, SuggestedStartLocation),
+                    FileTypes = FileTypeChoices
+                        .Select(choice => new FilePickerTypeGroup(
+                            choice.Key,
+                            choice.Value.Select(PickerCompat.EnsureDot).ToArray()))
+                        .ToArray()
+                };
 
-        string? path = FileDialogService.PickSaveFile(
-            _ownerHwnd,
-            SuggestedFileName,
-            DefaultFileExtension,
-            filter,
-            PickerCompat.ResolveInitialDirectory(SuggestedFolder, SuggestedStartLocation));
+                IReadOnlyList<string> picked = await FilePickerWindow.ShowAsync(_ownerHwnd, options);
+                return picked.Count > 0 ? new PickFileResult(picked[0]) : null!;
+            }
 
-        return Task.FromResult(
-            path is null ? null! : new PickFileResult(path));
+            string filter = PickerCompat.BuildChoicesFilter(
+                FileTypeChoices.SelectMany(kv => kv.Value.Select(ext => (Name: kv.Key, Ext: ext))));
+
+            string? path = FileDialogService.PickSaveFile(
+                _ownerHwnd,
+                SuggestedFileName,
+                DefaultFileExtension,
+                filter,
+                PickerCompat.ResolveInitialDirectory(SuggestedFolder, SuggestedStartLocation));
+
+            return path is null ? null! : new PickFileResult(path);
+        }
+        catch (Exception ex)
+        {
+            LogText.AddNewLog(LogText.LogLevel.ERROR, "FilePicker", ex.ToString());
+            return null!;
+        }
     }
 }
 
@@ -108,31 +145,77 @@ public sealed class FileOpenPicker
         _ownerHwnd = (nint)appWindowId.Value;
     }
 
-    public Task<PickFileResult> PickSingleFileAsync()
+    public async Task<PickFileResult> PickSingleFileAsync()
     {
-        string filter = PickerCompat.BuildFilterFilter(FileTypeFilter);
+        try
+        {
+            if (!FilePickerPreference.UseLegacy)
+            {
+                IReadOnlyList<string> picked = await FilePickerWindow.ShowAsync(
+                    _ownerHwnd,
+                    BuildOptions(allowMultiple: false));
 
-        string? path = FileDialogService.PickOpenFile(
-            _ownerHwnd,
-            filter,
-            PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+                return picked.Count > 0 ? new PickFileResult(picked[0]) : null!;
+            }
 
-        return Task.FromResult(
-            path is null ? null! : new PickFileResult(path));
+            string filter = PickerCompat.BuildFilterFilter(FileTypeFilter);
+
+            string? path = FileDialogService.PickOpenFile(
+                _ownerHwnd,
+                filter,
+                PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+
+            return path is null ? null! : new PickFileResult(path);
+        }
+        catch (Exception ex)
+        {
+            LogText.AddNewLog(LogText.LogLevel.ERROR, "FilePicker", ex.ToString());
+            return null!;
+        }
     }
 
-    public Task<IReadOnlyList<PickFileResult>> PickMultipleFilesAsync()
+    public async Task<IReadOnlyList<PickFileResult>> PickMultipleFilesAsync()
     {
-        string filter = PickerCompat.BuildFilterFilter(FileTypeFilter);
+        try
+        {
+            if (!FilePickerPreference.UseLegacy)
+            {
+                IReadOnlyList<string> picked = await FilePickerWindow.ShowAsync(
+                    _ownerHwnd,
+                    BuildOptions(allowMultiple: true));
 
-        IReadOnlyList<string> paths = FileDialogService.PickOpenFiles(
-            _ownerHwnd,
-            filter,
-            PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+                return picked.Select(path => new PickFileResult(path)).ToArray();
+            }
 
-        return Task.FromResult<IReadOnlyList<PickFileResult>>(
-            paths.Select(p => new PickFileResult(p)).ToArray());
+            string filter = PickerCompat.BuildFilterFilter(FileTypeFilter);
+
+            IReadOnlyList<string> paths = FileDialogService.PickOpenFiles(
+                _ownerHwnd,
+                filter,
+                PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+
+            return paths.Select(p => new PickFileResult(p)).ToArray();
+        }
+        catch (Exception ex)
+        {
+            LogText.AddNewLog(LogText.LogLevel.ERROR, "FilePicker", ex.ToString());
+            return Array.Empty<PickFileResult>();
+        }
     }
+
+    private FilePickerOptions BuildOptions(bool allowMultiple) => new()
+    {
+        Mode = FilePickerMode.Open,
+        AllowMultiple = allowMultiple,
+        InitialDirectory = PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation),
+        FileTypes = BuildOpenFileTypes()
+    };
+
+    private FilePickerTypeGroup[] BuildOpenFileTypes() => FileTypeFilter.Count == 0
+        ? Array.Empty<FilePickerTypeGroup>()
+        : [new FilePickerTypeGroup(
+            PickerCompat.BuildFilterLabel(FileTypeFilter),
+            FileTypeFilter.Select(PickerCompat.EnsureDot).ToArray())];
 }
 
 /// <summary>
@@ -150,27 +233,60 @@ public sealed class FolderPicker
         _ownerHwnd = (nint)appWindowId.Value;
     }
 
-    public Task<PickFolderResult> PickSingleFolderAsync()
+    public async Task<PickFolderResult> PickSingleFolderAsync()
     {
-        string? path = FileDialogService.PickFolder(
-            _ownerHwnd,
-            PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+        try
+        {
+            if (!FilePickerPreference.UseLegacy)
+            {
+                IReadOnlyList<string> picked = await FilePickerWindow.ShowAsync(_ownerHwnd, BuildOptions());
+                return picked.Count > 0 ? new PickFolderResult(picked[0]) : null!;
+            }
 
-        return Task.FromResult(
-            path is null ? null! : new PickFolderResult(path));
+            string? path = FileDialogService.PickFolder(
+                _ownerHwnd,
+                PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+
+            return path is null ? null! : new PickFolderResult(path);
+        }
+        catch (Exception ex)
+        {
+            LogText.AddNewLog(LogText.LogLevel.ERROR, "FilePicker", ex.ToString());
+            return null!;
+        }
     }
 
-    public Task<IReadOnlyList<PickFolderResult>> PickMultipleFoldersAsync()
+    public async Task<IReadOnlyList<PickFolderResult>> PickMultipleFoldersAsync()
     {
-        string? path = FileDialogService.PickFolder(
-            _ownerHwnd,
-            PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
+        try
+        {
+            if (!FilePickerPreference.UseLegacy)
+            {
+                IReadOnlyList<string> picked = await FilePickerWindow.ShowAsync(_ownerHwnd, BuildOptions());
+                return picked.Select(path => new PickFolderResult(path)).ToArray();
+            }
 
-        IReadOnlyList<PickFolderResult> results =
-            path is null ? Array.Empty<PickFolderResult>() : new[] { new PickFolderResult(path) };
+            string? path = FileDialogService.PickFolder(
+                _ownerHwnd,
+                PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation));
 
-        return Task.FromResult(results);
+            IReadOnlyList<PickFolderResult> results =
+                path is null ? Array.Empty<PickFolderResult>() : new[] { new PickFolderResult(path) };
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            LogText.AddNewLog(LogText.LogLevel.ERROR, "FilePicker", ex.ToString());
+            return Array.Empty<PickFolderResult>();
+        }
     }
+
+    private FilePickerOptions BuildOptions() => new()
+    {
+        Mode = FilePickerMode.Folder,
+        InitialDirectory = PickerCompat.ResolveInitialDirectory(null, SuggestedStartLocation)
+    };
 }
 
 /// <summary>选择器兼容层的共享内部逻辑。</summary>
@@ -243,7 +359,11 @@ internal static class PickerCompat
         };
     }
 
-    private static string EnsureDot(string ext)
+    /// <summary>取 <see cref="BuildFilterFilter"/> 生成的过滤串里的显示名部分。</summary>
+    public static string BuildFilterLabel(IEnumerable<string> extensions) =>
+        BuildFilterFilter(extensions).Split('|')[0];
+
+    internal static string EnsureDot(string ext)
     {
         ext = ext.Trim();
         if (ext.Length == 0)

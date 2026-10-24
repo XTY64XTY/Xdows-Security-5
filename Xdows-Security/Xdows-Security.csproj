@@ -29,6 +29,7 @@
 		<IlcOptimizationPreference>Speed</IlcOptimizationPreference>
 		<IlcInstructionSet>x86-64-v2</IlcInstructionSet>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
 		<CodeRoot>$(MSBuildProjectDirectory)\..\..</CodeRoot>
 		<BuildDriver Condition="'$(BuildDriver)' == ''">true</BuildDriver>
 		<NativeConfiguration Condition="'$(NativeConfiguration)' == ''">$(Configuration)</NativeConfiguration>

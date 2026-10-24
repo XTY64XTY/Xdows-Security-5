@@ -465,7 +465,12 @@ namespace Xdows_Security.Views
                 XamlRoot = this.XamlRoot
             };
             await dialog.ShowAsync();
-            await LoadInitialLogsAsync();
+
+            // 没有删除任何日志就不重载：重载会清空再重填列表，视觉上会闪一下。
+            if (dialog.LogsChanged)
+            {
+                await LoadInitialLogsAsync();
+            }
         }
 
         private void CopySysInfo_Click(object sender, RoutedEventArgs e)
