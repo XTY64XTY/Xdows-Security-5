@@ -44,6 +44,8 @@ public sealed partial class FilePickerWindow : Window
     private bool _suppressFilterChanged;
     private bool _completed;
     private CancellationTokenSource? _loadingCts;
+    private nint _ownerHwnd;
+    private bool _ownerDisabled;
 
     /// <summary>以模态方式显示选择器；用户取消或关闭时返回空集合。</summary>
     internal static async Task<IReadOnlyList<string>> ShowAsync(nint ownerHwnd, FilePickerOptions options)
@@ -51,9 +53,11 @@ public sealed partial class FilePickerWindow : Window
         try
         {
             var window = new FilePickerWindow(options);
+            window._ownerHwnd = ownerHwnd;
             nint hwnd = WindowNative.GetWindowHandle(window);
             SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, ownerHwnd);
 
+            window._ownerDisabled = true;
             EnableWindow(ownerHwnd, false);
             try
             {
@@ -62,9 +66,7 @@ public sealed partial class FilePickerWindow : Window
             }
             finally
             {
-                // EnableWindow 的返回值表示"之前是否已被禁用"，不能用来判断是否需要恢复；
-                // 这里刚禁用了 owner，无条件重新启用即可。
-                EnableWindow(ownerHwnd, true);
+                window.RestoreOwner();
                 SetForegroundWindow(ownerHwnd);
             }
         }
@@ -115,17 +117,98 @@ public sealed partial class FilePickerWindow : Window
 
         Closed += FilePickerWindow_Closed;
         RootGrid.Loaded += RootGrid_Loaded;
-        ListHost.SizeChanged += ListHost_SizeChanged;
+        ContentHost.SizeChanged += ContentHost_SizeChanged;
+        AppWindow.Changed += FilePickerWindow_AppWindowChanged;
         CenterOnWorkArea();
     }
 
-    /// <summary>列表区硬裁剪，防止任何情况下条目画到底栏之外。</summary>
-    private void ListHost_SizeChanged(object sender, SizeChangedEventArgs e)
+    /// <summary>
+    /// 根容器在测量时拿不到客户区高度，内容一多就按内容撑高，`*` 行跟着长高，
+    /// 列表于是越过底栏。这里把根容器上限钉在客户区高度上，让 `*` 行按真实剩余空间分配。
+    /// </summary>
+    private void UpdateRootHeightConstraint()
     {
-        ListHost.Clip = new RectangleGeometry
+        XamlRoot? xamlRoot = RootGrid.XamlRoot;
+        if (xamlRoot is null)
         {
-            Rect = new Windows.Foundation.Rect(0, 0, e.NewSize.Width, e.NewSize.Height)
+            return;
+        }
+
+        SizeInt32 client = AppWindow.ClientSize;
+        if (client.Height <= 0)
+        {
+            return;
+        }
+
+        double scale = xamlRoot.RasterizationScale;
+        if (scale <= 0)
+        {
+            scale = 1;
+        }
+
+        RootGrid.MaxHeight = client.Height / scale;
+    }
+
+    private void FilePickerWindow_AppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (args.DidSizeChange)
+        {
+            UpdateRootHeightConstraint();
+        }
+    }
+
+    /// <summary>
+    /// WinUI 的 Grid 默认不做 ClipToBounds，子元素测量结果一旦超出所在行就会直接画到行外
+    /// （表现为文件列表压到底栏上）。在内容区这一层按实际尺寸裁剪，把溢出从源头挡住，
+    /// 这样底栏保持半透明也不会透出列表。
+    /// </summary>
+    private void ContentHost_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        ApplyContentClip();
+    }
+
+    private void ApplyContentClip()
+    {
+        double width = ContentHost.ActualWidth;
+        double height = ContentHost.ActualHeight;
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        ContentHost.Clip = new RectangleGeometry
+        {
+            Rect = new Windows.Foundation.Rect(0, 0, width, height)
         };
+
+        // Clip 对这个组合不可靠（列表仍会画到底栏上），改用硬上限：
+        // 内容区高 - 底部 padding(8) - 表头(28) - RowSpacing(2)。
+        double listHeight = height - 8 - 28 - 2;
+        if (listHeight > 0 && Math.Abs(EntryList.MaxHeight - listHeight) > 0.5)
+        {
+            EntryList.MaxHeight = listHeight;
+        }
+
+        // 临时诊断：确认各行实际高度与客户区是否对得上。定位后删除。
+        try
+        {
+            SizeInt32 client = AppWindow.ClientSize;
+            double entryTop = EntryList.TransformToVisual(RootGrid)
+                .TransformPoint(new Windows.Foundation.Point(0, 0)).Y;
+            double footerTop = FooterHost.TransformToVisual(RootGrid)
+                .TransformPoint(new Windows.Foundation.Point(0, 0)).Y;
+            File.AppendAllText(
+                Path.Combine(Path.GetTempPath(), "picker-metrics.log"),
+                $"client={client.Height} root={RootGrid.ActualHeight:0.#} " +
+                $"contentH={ContentHost.ActualHeight:0.#} listHostH={ListHost.ActualHeight:0.#} " +
+                $"entryH={EntryList.ActualHeight:0.#} entryMax={EntryList.MaxHeight:0.#} " +
+                $"entryTop={entryTop:0.#} entryBottom={entryTop + EntryList.ActualHeight:0.#} " +
+                $"footerTop={footerTop:0.#} footerH={FooterHost.ActualHeight:0.#} " +
+                $"clip={(ContentHost.Clip is null ? "null" : "set")}{Environment.NewLine}");
+        }
+        catch
+        {
+        }
     }
 
     private void RootGrid_Loaded(object sender, RoutedEventArgs e)
@@ -137,6 +220,8 @@ public sealed partial class FilePickerWindow : Window
             : Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         NavigateTo(start, recordHistory: true);
+        UpdateRootHeightConstraint();
+        ApplyContentClip();
 
         // 侧栏要枚举 shell 快速访问并读取各盘卷标（磁盘 IO），放到窗口可见之后再做，
         // 否则这些同步调用会把窗口弹出拖慢几百毫秒。
@@ -146,6 +231,8 @@ public sealed partial class FilePickerWindow : Window
     private void FilePickerWindow_Closed(object sender, WindowEventArgs args)
     {
         Closed -= FilePickerWindow_Closed;
+        AppWindow.Changed -= FilePickerWindow_AppWindowChanged;
+        RestoreOwner();
         Complete(Array.Empty<string>());
     }
 
@@ -506,6 +593,20 @@ public sealed partial class FilePickerWindow : Window
         }
 
         AcceptButton.IsEnabled = selected.Any(entry => !entry.IsFolder);
+    }
+
+    /// <summary>侧栏分组可折叠：标题行点击切换对应列表与箭头方向。</summary>
+    private void QuickAccessHeader_Click(object sender, RoutedEventArgs e) =>
+        ToggleLocationGroup(QuickAccessList, QuickAccessChevron);
+
+    private void DriveHeader_Click(object sender, RoutedEventArgs e) =>
+        ToggleLocationGroup(DriveList, DriveChevron);
+
+    private static void ToggleLocationGroup(ListView list, FontIcon chevron)
+    {
+        bool expand = list.Visibility == Visibility.Collapsed;
+        list.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
+        chevron.Glyph = expand ? "\uE70D" : "\uE76C";
     }
 
     private void LocationList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -913,8 +1014,20 @@ public sealed partial class FilePickerWindow : Window
     /// <summary>交付结果并关闭窗口。所有正常结束路径都必须走这里。</summary>
     private void Finish(IReadOnlyList<string> paths)
     {
+        // 先恢复主窗口再关自己：否则主窗口要等窗口真正销毁后才从禁用态恢复，
+        // 表现为关闭瞬间主窗口"消失一下再出现"。
+        RestoreOwner();
         Complete(paths);
         Close();
+    }
+
+    private void RestoreOwner()
+    {
+        if (_ownerDisabled && _ownerHwnd != 0)
+        {
+            _ownerDisabled = false;
+            EnableWindow(_ownerHwnd, true);
+        }
     }
 
     private const int GWLP_HWNDPARENT = -8;

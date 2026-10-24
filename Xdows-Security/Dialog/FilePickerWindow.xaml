@@ -86,55 +86,111 @@
             </Grid>
         </Grid>
 
-        <Grid Grid.Row="2" Padding="12,0,12,8" ColumnSpacing="8">
+        <Grid x:Name="ContentHost" Grid.Row="2" Padding="12,0,12,8" ColumnSpacing="8" MinHeight="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="190" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Grid RowSpacing="4">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          VerticalScrollMode="Auto"
+                          HorizontalScrollMode="Disabled"
+                          HorizontalScrollBarVisibility="Disabled"
+                          MinHeight="0">
+                <StackPanel Spacing="4" Padding="0,0,0,8">
+                    <Button x:Name="QuickAccessHeader"
+                            Click="QuickAccessHeader_Click"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="10,4"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock l:Uids.Uid="FilePicker_Nav_QuickAccess"
+                                       Opacity="0.6"
+                                       VerticalAlignment="Center" />
+                            <FontIcon x:Name="QuickAccessChevron"
+                                      Grid.Column="1"
+                                      Glyph="&#xE76C;"
+                                      FontSize="10"
+                                      VerticalAlignment="Center" />
+                        </Grid>
+                    </Button>
+                    <ListView x:Name="QuickAccessList"
+                              Visibility="Collapsed"
+                              SelectionMode="Single"
+                              VerticalAlignment="Top"
+                              ScrollViewer.VerticalScrollMode="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              SelectionChanged="LocationList_SelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="services:FilePickerLocation">
+                            <Grid ColumnSpacing="10" Padding="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind Label}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
 
-                <TextBlock l:Uids.Uid="FilePicker_Nav_QuickAccess"
-                           Opacity="0.6"
-                           Margin="10,0,0,0" />
-                <ListView x:Name="QuickAccessList"
-                          Grid.Row="1"
-                          SelectionMode="Single"
-                          SelectionChanged="LocationList_SelectionChanged">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="services:FilePickerLocation">
-                            <StackPanel Orientation="Horizontal" Spacing="10" Padding="0,4">
-                                <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" />
-                                <TextBlock Text="{x:Bind Label}" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-
-                <TextBlock Grid.Row="2"
-                           l:Uids.Uid="FilePicker_Nav_ThisPc"
-                           Opacity="0.6"
-                           Margin="10,8,0,0" />
-                <ListView x:Name="DriveList"
-                          Grid.Row="3"
-                          SelectionMode="Single"
-                          SelectionChanged="LocationList_SelectionChanged">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="services:FilePickerLocation">
-                            <StackPanel Orientation="Horizontal" Spacing="10" Padding="0,4">
-                                <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" />
-                                <TextBlock Text="{x:Bind Label}" TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Grid>
+                    <Button x:Name="DriveHeader"
+                            Click="DriveHeader_Click"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="10,4"
+                            Margin="0,4,0,0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock l:Uids.Uid="FilePicker_Nav_ThisPc"
+                                       Opacity="0.6"
+                                       VerticalAlignment="Center" />
+                            <FontIcon x:Name="DriveChevron"
+                                      Grid.Column="1"
+                                      Glyph="&#xE70D;"
+                                      FontSize="10"
+                                      VerticalAlignment="Center" />
+                        </Grid>
+                    </Button>
+                    <ListView x:Name="DriveList"
+                              SelectionMode="Single"
+                              VerticalAlignment="Top"
+                              ScrollViewer.VerticalScrollMode="Disabled"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              SelectionChanged="LocationList_SelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="services:FilePickerLocation">
+                            <Grid ColumnSpacing="10" Padding="0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{x:Bind Label}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </ScrollViewer>
 
             <Grid x:Name="ListHost" Grid.Column="1" RowSpacing="2" MinHeight="0">
                 <Grid.RowDefinitions>
@@ -163,6 +219,8 @@
                 <ListView x:Name="EntryList"
                           Grid.Row="1"
                           SelectionMode="Single"
+                          ScrollViewer.HorizontalScrollMode="Disabled"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           SelectionChanged="EntryList_SelectionChanged"
                           DoubleTapped="EntryList_DoubleTapped"
                           KeyDown="EntryList_KeyDown">
@@ -175,10 +233,17 @@
                                     <ColumnDefinition Width="110" />
                                     <ColumnDefinition Width="80" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                                    <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" />
-                                    <TextBlock Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-                                </StackPanel>
+                                <Grid ColumnSpacing="10" VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{x:Bind Name}"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center" />
+                                </Grid>
                                 <TextBlock Grid.Column="1"
                                            Text="{x:Bind DateText}"
                                            Opacity="0.8"
@@ -217,9 +282,11 @@
             </Grid>
         </Grid>
 
-        <Border Grid.Row="3"
-                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+        <Border x:Name="FooterHost"
+                Grid.Row="3"
+                Background="{ThemeResource SolidBackgroundFillColorSecondary}"
                 BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                Opacity="1"
                 BorderThickness="0,1,0,0">
             <Grid Padding="12,8,12,12" RowSpacing="8">
                 <Grid.RowDefinitions>
