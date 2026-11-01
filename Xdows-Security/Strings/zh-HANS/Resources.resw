@@ -381,14 +381,11 @@
   <data name="SecurityPage_Status_Scanning" xml:space="preserve">
     <value>正在进行扫描任务...</value>
   </data>
-  <data name="SecurityPage_Status_Completed" xml:space="preserve">
-    <value>扫描完成</value>
-  </data>
   <data name="SecurityPage_ScanSummary_Completed" xml:space="preserve">
-    <value>本次任务已扫描 {0} 个文件，耗时 {1:F0} 秒，平均速度 {2:F0} 文件/秒，发现 {3} 个威胁</value>
+    <value>本次任务已扫描 {0} 个文件</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Cancelled" xml:space="preserve">
-    <value>已扫描 {0} 个文件 耗时 {1:F0} 秒 平均速度 {2:F0} 文件/秒 发现 {3} 个威胁</value>
+  <data name="SecurityPage_ScanSummary_Stats" xml:space="preserve">
+    <value>耗时 {0:F0} 秒，平均速度 {1:F0} 文件/秒，发现 {2} 个威胁</value>
   </data>
   <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
     <value>Xdows Tools</value>

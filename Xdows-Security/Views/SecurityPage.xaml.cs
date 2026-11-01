@@ -118,9 +118,12 @@ namespace Xdows_Security.Views
         // 缓存 UI 格式化字符串，避免每次 UpdateScanStats 都查询本地化资源
         private string? _fmtScanSummary;
         private string? _fmtScanSummaryCompleted;
+        private string? _fmtScanSummaryStats;
         // 状态行显示的耗时（秒）与速度（文件/秒），由扫描循环按节流节奏写入
         private double _scanElapsedSeconds;
         private double _scanSpeed;
+        // 扫描结束（完成/取消）后固定下来的平均速度，供结束后的统计刷新复用
+        private double _scanAverageSpeed;
         private bool _taskbarProgressActive = false;
         private bool _lastShowScanProgress = false;
         private int _filesScanned = 0;
@@ -1034,9 +1037,20 @@ namespace Xdows_Security.Views
                 try
                 {
                     // 优先使用缓存的格式字符串（扫描期间已初始化），回退到实时查询以支持非扫描上下文调用
-                    ScanStatsText.Text = string.Format(
-                        _fmtScanSummary ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Format"),
-                        filesScanned, _scanElapsedSeconds, _scanSpeed, threatForDisplay);
+                    if (_isScanRunning)
+                    {
+                        ScanStatsText.Text = string.Format(
+                            _fmtScanSummary ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Format"),
+                            filesScanned, _scanElapsedSeconds, _scanSpeed, threatForDisplay);
+                    }
+                    else
+                    {
+                        // 扫描已结束（例如结束后逐个处理威胁）只刷新「发现 N 个威胁」，
+                        // 不能让「当前速度」把结束后的平均速度文案盖掉
+                        ScanStatsText.Text = string.Format(
+                            _fmtScanSummaryStats ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Stats"),
+                            _scanElapsedSeconds, _scanAverageSpeed, threatForDisplay);
+                    }
                 }
                 catch { }
             });
@@ -1588,8 +1602,10 @@ namespace Xdows_Security.Views
             // 缓存 UI 格式化字符串，避免扫描期间每次 UpdateScanStats 都查询本地化资源
             _fmtScanSummary = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Format");
             _fmtScanSummaryCompleted = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Completed");
+            _fmtScanSummaryStats = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Stats");
             _scanElapsedSeconds = 0;
             _scanSpeed = 0;
+            _scanAverageSpeed = 0;
 
             var settings = App.LocalSettings;
             bool showScanProgress = settings.Values.TryGetValue("ShowScanProgress", out object? showProgressRaw) && showProgressRaw is bool showProgress && showProgress;
@@ -2135,16 +2151,23 @@ namespace Xdows_Security.Views
                     int scannedCount = _filesScanned;
                     double averageSpeed = totalSeconds > 0 ? scannedCount / totalSeconds : 0;
 
+                    // 结束后的统计刷新（如逐个处理威胁）要沿用这里的口径，不能再用循环里的「当前速度」
+                    _scanElapsedSeconds = totalSeconds;
+                    _scanAverageSpeed = averageSpeed;
+
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (!IsCurrentScan(thisId, token)) return;
                         ApplicationDataContainer settingsLocal = App.LocalSettings;
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                        // 完成态直接写这两行，不要再走 UpdateScanStats —— 它会再排一次队，把完成文案覆盖回进行中
-                        StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed");
-                        ScanStatsText.Text = string.Format(
+                        // 和扫描中一样分两行：标题行「本次任务已扫描 N 个文件」，统计行「耗时 … 平均速度 … 发现 …」；
+                        // 不要再走 UpdateScanStats —— 它会再排一次队，把完成文案覆盖回进行中
+                        StatusText.Text = string.Format(
                             _fmtScanSummaryCompleted ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Completed"),
-                            scannedCount, totalSeconds, averageSpeed, CurrentResults?.Count ?? _threatsFound);
+                            scannedCount);
+                        ScanStatsText.Text = string.Format(
+                            _fmtScanSummaryStats ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Stats"),
+                            totalSeconds, averageSpeed, CurrentResults?.Count ?? _threatsFound);
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
                         HideWithVisualReset(PauseScanButton);
@@ -2163,12 +2186,14 @@ namespace Xdows_Security.Views
                         if (thisId != _scanId) return;
 
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanCancelled");
-                        // 摘要换成「平均速度」，口径是开始扫描 → 点下取消那一刻（见 OnCancelScanClick 的快照），
+                        // 统计行换成「平均速度」，口径是开始扫描 → 点下取消那一刻（见 OnCancelScanClick 的快照），
                         // 不用收尾时循环里的最终值，否则等待并行分支退出的时间会稀释平均速度
                         double cancelAverageSpeed = _cancelElapsedSeconds > 0 ? _cancelScannedCount / _cancelElapsedSeconds : 0;
+                        _scanElapsedSeconds = _cancelElapsedSeconds;
+                        _scanAverageSpeed = cancelAverageSpeed;
                         ScanStatsText.Text = string.Format(
-                            Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Cancelled"),
-                            _cancelScannedCount, _cancelElapsedSeconds, cancelAverageSpeed, CurrentResults?.Count ?? _threatsFound);
+                            _fmtScanSummaryStats ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Stats"),
+                            _cancelElapsedSeconds, cancelAverageSpeed, CurrentResults?.Count ?? _threatsFound);
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
                         HideWithVisualReset(PauseScanButton);

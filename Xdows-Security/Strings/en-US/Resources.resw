@@ -381,14 +381,11 @@
   <data name="SecurityPage_Status_Scanning" xml:space="preserve">
     <value>Scanning...</value>
   </data>
-  <data name="SecurityPage_Status_Completed" xml:space="preserve">
-    <value>Scan complete</value>
-  </data>
   <data name="SecurityPage_ScanSummary_Completed" xml:space="preserve">
-    <value>Scan complete: {0} files scanned, {1:F0} s elapsed, average speed {2:F0} files/s, {3} threats found</value>
+    <value>{0} files scanned in this scan</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Cancelled" xml:space="preserve">
-    <value>{0} files scanned, {1:F0} s elapsed, average speed {2:F0} files/s, {3} threats found</value>
+  <data name="SecurityPage_ScanSummary_Stats" xml:space="preserve">
+    <value>{0:F0} s elapsed, average speed {1:F0} files/s, {2} threats found</value>
   </data>
   <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
     <value>Xdows Tools</value>
