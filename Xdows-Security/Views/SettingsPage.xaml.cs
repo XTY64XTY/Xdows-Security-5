@@ -29,6 +29,8 @@ namespace Xdows_Security.Views
         private bool _driverProtectionOperationInProgress;
         private bool _bootOperationInProgress;
         private bool _bootProtectionOperationInProgress;
+        private CloudHealthInfo? _cloudScanHealth;
+        private bool _cloudScanHealthChecked;
 
         private sealed record BootDiskChoice(PhysicalDiskInfo Disk, string Title);
 
@@ -129,6 +131,7 @@ namespace Xdows_Security.Views
                     LoadLegacyFilePickerSetting();
                     WinUI3Localizer.Localizer.Get().LanguageChanged += (s, e) => UpdateAppText();
                     UpdateAppText();
+                    _ = LoadCloudScanHealthAsync();
                 }
                 catch { }
                 finally
@@ -142,6 +145,59 @@ namespace Xdows_Security.Views
             SettingsPage_Protection_Registry.Header += " (Beta)";
             UpdateInjectionProtectionText();
             UpdateDriverProtectionState();
+            UpdateCloudScanModeToolTips();
+            UpdateCloudScanHealthBar();
+        }
+
+        private void UpdateCloudScanModeToolTips()
+        {
+            ToolTipService.SetToolTip(
+                CloudScanModeAdaptive,
+                Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_ScanType_Adaptive_Tooltip"));
+            ToolTipService.SetToolTip(
+                CloudScanModeQuick,
+                Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_ScanType_Quick_Tooltip"));
+            ToolTipService.SetToolTip(
+                CloudScanModeFullUpload,
+                Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_ScanType_FullUpload_Tooltip"));
+        }
+
+        private async Task LoadCloudScanHealthAsync()
+        {
+            _cloudScanHealth = await ScanEngine.GetCloudHealthAsync();
+            _cloudScanHealthChecked = true;
+            UpdateCloudScanHealthBar();
+        }
+
+        private async void CloudScanHealthRefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            _cloudScanHealthChecked = false;
+            CloudScanHealthBar.IsOpen = false;
+            await LoadCloudScanHealthAsync();
+        }
+
+        private void UpdateCloudScanHealthBar()
+        {
+            if (!_cloudScanHealthChecked) return;
+
+            if (_cloudScanHealth is not { } health)
+            {
+                CloudScanHealthBar.Severity = InfoBarSeverity.Warning;
+                CloudScanHealthBar.Title = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Warning_Title");
+                CloudScanHealthBar.Message = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Warning_Message");
+                CloudScanHealthBar.IsOpen = true;
+                return;
+            }
+
+            CloudScanHealthBar.Severity = InfoBarSeverity.Success;
+            CloudScanHealthBar.Title = "SevenEngine";
+            CloudScanHealthBar.Message = string.Format(
+                Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Message"),
+                health.Engine,
+                health.FeatureDim,
+                health.Threshold,
+                health.UptimeSeconds);
+            CloudScanHealthBar.IsOpen = true;
         }
 
         private void UpdateInjectionProtectionText()
@@ -660,6 +716,22 @@ namespace Xdows_Security.Views
                 settings.Values["ProtectionModelMode"] = "Flash";
             }
 
+            if (!settings.Values.ContainsKey("CloudScanMode"))
+            {
+                settings.Values["CloudScanMode"] = "Quick";
+            }
+            string cloudScanMode = settings.Values.TryGetValue("CloudScanMode", out object? cloudModeRaw) && cloudModeRaw is string savedCloudMode
+                ? savedCloudMode
+                : "Quick";
+            foreach (ComboBoxItem item in CloudScanModeComboBox.Items.Cast<ComboBoxItem>())
+            {
+                if (item.Tag as string == cloudScanMode)
+                {
+                    CloudScanModeComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+
             if (!settings.Values.ContainsKey("IsBackButtonVisible"))
             {
                 settings.Values["IsBackButtonVisible"] = true;
@@ -760,6 +832,11 @@ namespace Xdows_Security.Views
         private void Model_Card_Click(object sender, RoutedEventArgs e)
         {
             App.MainWindow?.GoToPage("Model");
+        }
+
+        private void CloudEngine_About_Card_Click(object sender, RoutedEventArgs e)
+        {
+            _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://sevenengine-cloud.onrender.com/"));
         }
 
         private void DriverEnvironmentLink_Click(object sender, RoutedEventArgs e)
@@ -871,6 +948,15 @@ namespace Xdows_Security.Views
                 frame.BackStack.RemoveAt(frame.BackStack.Count - 1);
         }
 
+        private void CloudScanModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (IsInitialize) return;
+            if (CloudScanModeComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is string mode)
+            {
+                App.LocalSettings.Values["CloudScanMode"] = mode;
+            }
+        }
+
         private async void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsInitialize) return;
@@ -940,7 +1026,7 @@ namespace Xdows_Security.Views
         private async Task<ContentDialogResult> ShowUpdateDialogAsync(UpdateInfo update)
         {
             ElementTheme requestedTheme = (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
-            bool useDarkTheme = (XamlRoot.Content as FrameworkElement)?.ActualTheme == ElementTheme.Dark;
+            bool useDarkTheme = XamlRoot.Content is FrameworkElement { ActualTheme: ElementTheme.Dark };
             string markdownDocument = UpdateMarkdownHtmlRenderer.RenderDocument(update.Content, useDarkTheme);
             LogText.AddNewLog(LogText.LogLevel.DEBUG, "Updater", "[DEBUG-md-host] Markdig returned an HTML document.");
 

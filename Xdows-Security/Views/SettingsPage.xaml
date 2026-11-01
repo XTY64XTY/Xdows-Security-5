@@ -233,15 +233,42 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                     <ToggleSwitch x:Name="CloudScanToggle" Tag="CloudScan" Toggled="Toggled_SaveToggleData"  />
                     <controls:SettingsExpander.Items>
                         <InfoBar
-                            l:Uids.Uid="SettingsPage_Scan_Cloud_SupportWarning"
-                            IsOpen="True"
+                            x:Name="CloudScanHealthBar"
+                            IsOpen="False"
                             IsClosable="False"
-                            Severity="Warning" />
+                            Severity="Warning">
+                            <InfoBar.ActionButton>
+                                <Button
+                                    l:Uids.Uid="SettingsPage_Scan_Cloud_Health_Refresh"
+                                    Click="CloudScanHealthRefreshButton_Click" />
+                            </InfoBar.ActionButton>
+                        </InfoBar>
                         <controls:SettingsCard
-                           l:Uids.Uid="SettingsPage_Scan_Cloud_AutoUpload"
-                           HeaderIcon="{ui:FontIcon Glyph=&#xE898;}">
-                            <ToggleSwitch IsEnabled="False" IsOn="True" />
+                           l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE8B7;}">
+                            <ComboBox
+                                x:Name="CloudScanModeComboBox"
+                                SelectionChanged="CloudScanModeComboBox_SelectionChanged">
+                                <ComboBoxItem
+                                    x:Name="CloudScanModeAdaptive"
+                                    Tag="Adaptive"
+                                    l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType_Adaptive" />
+                                <ComboBoxItem
+                                    x:Name="CloudScanModeQuick"
+                                    Tag="Quick"
+                                    l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType_Quick" />
+                                <ComboBoxItem
+                                    x:Name="CloudScanModeFullUpload"
+                                    Tag="FullUpload"
+                                    l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType_FullUpload" />
+                            </ComboBox>
                         </controls:SettingsCard>
+                        <controls:SettingsCard
+                           l:Uids.Uid="SettingsPage_Scan_Cloud_AboutEngine"
+                           HeaderIcon="{ui:FontIcon Glyph=&#xE946;}"
+                           IsClickEnabled="True"
+                           ActionIcon="{ui:FontIcon Glyph=&#xE8A7;}"
+                           Click="CloudEngine_About_Card_Click" />
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Protection" />

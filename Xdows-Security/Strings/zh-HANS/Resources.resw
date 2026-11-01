@@ -820,22 +820,52 @@
     <value>修改主窗口的不透明度</value>
   </data>
   <data name="SettingsPage_Scan_Cloud.Header" xml:space="preserve">
-    <value>基于云的扫描引擎</value>
-  </data>
-  <data name="SettingsPage_Scan_Cloud_AutoUpload.Header" xml:space="preserve">
-    <value>自动上报</value>
+    <value>SevenEngine</value>
   </data>
   <data name="SettingsPage_Scan_Cloud.Description" xml:space="preserve">
     <value>云端引擎需要连接至互联网，但能及时获取最新的威胁并采取措施</value>
   </data>
-  <data name="SettingsPage_Scan_Cloud_SupportWarning.Title" xml:space="preserve">
+  <data name="SettingsPage_Scan_Cloud_Health_Warning_Title" xml:space="preserve">
     <value>警告</value>
   </data>
-  <data name="SettingsPage_Scan_Cloud_SupportWarning.Message" xml:space="preserve">
-    <value>此引擎可能已经不受支持。</value>
+  <data name="SettingsPage_Scan_Cloud_Health_Warning_Message" xml:space="preserve">
+    <value>云服务连接失败，此引擎可能已经不受支持</value>
   </data>
-  <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
-    <value>在测试阶段中，这个选项为必选项</value>
+  <data name="SettingsPage_Scan_Cloud_Health_Message" xml:space="preserve">
+    <value>服务运行正常 · 引擎 {0} · 特征维度 {1} · 判定阈值 {2} · 已运行 {3} 秒</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_Health_Refresh.Content" xml:space="preserve">
+    <value>刷新</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType.Header" xml:space="preserve">
+    <value>扫描类型</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType.Description" xml:space="preserve">
+    <value>更改使用此引擎扫描时的行为</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Adaptive.Content" xml:space="preserve">
+    <value>自适应</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Adaptive_Tooltip" xml:space="preserve">
+    <value>先进行快速判断，若无命中则完整上传</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Quick.Content" xml:space="preserve">
+    <value>快速判断</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Quick_Tooltip" xml:space="preserve">
+    <value>仅上传文件哈希，但不是所有文件都会正确输出结果</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_FullUpload.Content" xml:space="preserve">
+    <value>完整上传</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_FullUpload_Tooltip" xml:space="preserve">
+    <value>上传完整文件（服务器限制 300 MB 内）到第三方服务器，以供第三方服务器分析，可能会导致意外的数据泄露</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_AboutEngine.Header" xml:space="preserve">
+    <value>关于引擎</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_AboutEngine.Description" xml:space="preserve">
+    <value>此引擎由 NewEra Studio 提供</value>
   </data>
   <data name="MainWindow_Nav_Settings" xml:space="preserve">
     <value>设置</value>

@@ -6,6 +6,15 @@ using Xdows_Model_Invoker;
 
 namespace Helper
 {
+    public sealed record CloudHealthInfo(string Engine, int FeatureDim, int Threshold, long UptimeSeconds);
+
+    public enum CloudScanMode
+    {
+        Adaptive,
+        Quick,
+        FullUpload
+    }
+
     public static class ScanEngine
     {
         // 缓存 LocalSettings，避免每次读取配置都调用 ApplicationData.GetForUnpackaged
@@ -15,14 +24,11 @@ namespace Helper
             LazyThreadSafetyMode.PublicationOnly);
         private static ApplicationDataContainer Settings => _settingsLazy.Value;
 
-        private const string DefaultCloudScanBaseUrl = "http://103.118.245.82:5000";
-        private const string DefaultCloudScanApiKey = "my_virus_key_2024";
+        private const string DefaultCloudScanBaseUrl = "https://sevenengine-cloud.onrender.com";
         private const string DefaultExactRuleBaseUrl = "http://103.118.245.82:7050";
 
-        // 云端端点可经 LocalSettings 覆盖（键名 CloudScanBaseUrl / CloudScanApiKey / ExactRuleBaseUrl），
-        // 未设置时回退到默认值。默认值与迁移前的硬编码值完全一致。
+        // 云端端点可经 LocalSettings 覆盖（键名 CloudScanBaseUrl / ExactRuleBaseUrl），未设置时回退到默认值。
         private static string CloudScanBaseUrl => ReadSetting("CloudScanBaseUrl", DefaultCloudScanBaseUrl);
-        private static string CloudScanApiKey => ReadSetting("CloudScanApiKey", DefaultCloudScanApiKey);
         private static string ExactRuleBaseUrl => ReadSetting("ExactRuleBaseUrl", DefaultExactRuleBaseUrl);
 
         private static string ReadSetting(string key, string fallback)
@@ -242,6 +248,9 @@ namespace Helper
         // - AutomaticDecompression: 自动解压响应（gzip/deflate/br），减少带宽消耗
         // 注：自建服务（103.118.245.82）走 HTTP 明文，保持 HTTP/1.1 以兼容未知的服务端 h2c 支持情况
         private static readonly System.Net.Http.HttpClient _httpClient = BuildHttpClient(TimeSpan.FromSeconds(30));
+        private static readonly System.Net.Http.HttpClient _uploadHttpClient = BuildHttpClient(Timeout.InfiniteTimeSpan);
+        private const long MaxCloudUploadBytes = 300L * 1024 * 1024;
+        private static readonly TimeSpan CloudUploadTimeout = TimeSpan.FromMinutes(10);
 
         private static System.Net.Http.HttpClient BuildHttpClient(TimeSpan timeout)
         {
@@ -254,33 +263,151 @@ namespace Helper
             return new System.Net.Http.HttpClient(handler) { Timeout = timeout };
         }
 
+        public static async Task<CloudHealthInfo?> GetCloudHealthAsync()
+        {
+            try
+            {
+                using var resp = await _httpClient.GetAsync($"{CloudScanBaseUrl}/api/health");
+                if (!resp.IsSuccessStatusCode) return null;
+
+                string json = await resp.Content.ReadAsStringAsync();
+                using JsonDocument doc = JsonDocument.Parse(json);
+                JsonElement root = doc.RootElement;
+                if (!root.TryGetProperty("ok", out JsonElement ok) || ok.ValueKind != JsonValueKind.True) return null;
+                if (!root.TryGetProperty("engine", out JsonElement engineProp) || engineProp.ValueKind != JsonValueKind.String) return null;
+                string? engine = engineProp.GetString();
+                if (string.IsNullOrWhiteSpace(engine)) return null;
+                if (!root.TryGetProperty("feature_dim", out JsonElement featureProp) || !featureProp.TryGetInt32(out int featureDim)) return null;
+                if (!root.TryGetProperty("threshold", out JsonElement thresholdProp) || !thresholdProp.TryGetInt32(out int threshold)) return null;
+                if (!root.TryGetProperty("uptime_sec", out JsonElement uptimeProp) || !uptimeProp.TryGetInt64(out long uptimeSeconds)) return null;
+
+                return new CloudHealthInfo(engine, featureDim, threshold, uptimeSeconds);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         public static async Task<(int statusCode, string? result)> CloudScanAsync(string path)
         {
             string hash = await GetFileMD5Async(path);
-            return await CloudScanWithHashAsync(hash);
+            return await CloudScanWithHashAsync(hash, path);
         }
 
-        public static async Task<(int statusCode, string? result)> CloudScanWithHashAsync(string hash)
+        public static async Task<(int statusCode, string? result)> CloudScanWithHashAsync(
+            string hash,
+            string? filePath = null,
+            CancellationToken token = default)
         {
-            var client = _httpClient;
-            string url = $"{CloudScanBaseUrl}/scan/md5?key={CloudScanApiKey}&md5={hash}";
-            try
+            CloudScanMode mode = GetCloudScanMode();
+            if (mode != CloudScanMode.FullUpload)
             {
-                var resp = await client.GetAsync(url);
-                resp.EnsureSuccessStatusCode();
-                string json = await resp.Content.ReadAsStringAsync();
-                using JsonDocument doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("scan_result", out JsonElement prop))
-                {
-                    return (200, prop.GetString());
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                return ((int?)ex.StatusCode ?? -1, string.Empty);
+                (bool succeeded, bool found, string? status) = await QueryCloudHashAsync(hash, token);
+                if (!succeeded) return (-1, string.Empty);
+                if (found) return (200, MapCloudStatus(status));
+                if (mode == CloudScanMode.Quick) return (-1, string.Empty);
             }
 
-            return (-1, string.Empty);
+            if (string.IsNullOrEmpty(filePath)) return (-1, string.Empty);
+            return await UploadCloudScanAsync(filePath, token);
+        }
+
+        private static CloudScanMode GetCloudScanMode()
+        {
+            return ReadSetting("CloudScanMode", "Quick") switch
+            {
+                "Adaptive" => CloudScanMode.Adaptive,
+                "FullUpload" => CloudScanMode.FullUpload,
+                _ => CloudScanMode.Quick
+            };
+        }
+
+        private static async Task<(bool succeeded, bool found, string? status)> QueryCloudHashAsync(
+            string hash,
+            CancellationToken token)
+        {
+            string url = $"{CloudScanBaseUrl}/api/scan/hash";
+            try
+            {
+                var bufferWriter = new System.Buffers.ArrayBufferWriter<byte>();
+                using (var jsonWriter = new Utf8JsonWriter(bufferWriter, new JsonWriterOptions { Indented = false }))
+                {
+                    jsonWriter.WriteStartObject();
+                    jsonWriter.WriteString("md5", hash);
+                    jsonWriter.WriteEndObject();
+                    jsonWriter.Flush();
+                }
+                using var content = new ByteArrayContent(bufferWriter.WrittenSpan.ToArray());
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                using var resp = await _httpClient.PostAsync(url, content, token);
+                if (!resp.IsSuccessStatusCode) return (false, false, null);
+
+                string json = await resp.Content.ReadAsStringAsync(token);
+                using JsonDocument doc = JsonDocument.Parse(json);
+                JsonElement root = doc.RootElement;
+                if (!root.TryGetProperty("ok", out JsonElement ok) || ok.ValueKind != JsonValueKind.True) return (false, false, null);
+                if (root.TryGetProperty("found", out JsonElement foundProp) && foundProp.ValueKind == JsonValueKind.False) return (true, false, null);
+                if (root.TryGetProperty("status", out JsonElement statusProp) && statusProp.ValueKind == JsonValueKind.String)
+                {
+                    return (true, true, statusProp.GetString());
+                }
+
+                return (false, false, null);
+            }
+            catch (OperationCanceledException)
+            {
+                if (token.IsCancellationRequested) throw;
+                return (false, false, null);
+            }
+            catch (Exception)
+            {
+                return (false, false, null);
+            }
+        }
+
+        private static async Task<(int statusCode, string? result)> UploadCloudScanAsync(
+            string filePath,
+            CancellationToken token)
+        {
+            try
+            {
+                FileInfo fileInfo = new(filePath);
+                if (!fileInfo.Exists || fileInfo.Length > MaxCloudUploadBytes) return (-1, string.Empty);
+
+                await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 131072, useAsync: true);
+                using var form = new System.Net.Http.MultipartFormDataContent();
+                using var fileContent = new System.Net.Http.StreamContent(stream);
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                form.Add(fileContent, "file", Path.GetFileName(filePath));
+
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                cts.CancelAfter(CloudUploadTimeout);
+                string url = $"{CloudScanBaseUrl}/api/scan";
+                using var resp = await _uploadHttpClient.PostAsync(url, form, cts.Token);
+                if (!resp.IsSuccessStatusCode) return ((int)resp.StatusCode, string.Empty);
+
+                string json = await resp.Content.ReadAsStringAsync(cts.Token);
+                using JsonDocument doc = JsonDocument.Parse(json);
+                JsonElement root = doc.RootElement;
+                if (!root.TryGetProperty("ok", out JsonElement ok) || ok.ValueKind != JsonValueKind.True) return (-1, string.Empty);
+                if (!root.TryGetProperty("status", out JsonElement statusProp) || statusProp.ValueKind != JsonValueKind.String) return (-1, string.Empty);
+                return (200, MapCloudStatus(statusProp.GetString()));
+            }
+            catch (OperationCanceledException)
+            {
+                if (token.IsCancellationRequested) throw;
+                return (-1, string.Empty);
+            }
+            catch (Exception)
+            {
+                return (-1, string.Empty);
+            }
+        }
+
+        private static string? MapCloudStatus(string? status)
+        {
+            return status == "malware" ? "virus_file" : status;
         }
 
         public static async Task<string> GetFileMD5Async(string path)

@@ -440,10 +440,10 @@ namespace Xdows_Security.Views
 
                     if (success && CurrentResults != null)
                     {
-                        VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
+                        VirusRow? itemToRemove = CurrentResults?.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
                         if (itemToRemove != null)
                         {
-                            CurrentResults.Remove(itemToRemove);
+                            CurrentResults?.Remove(itemToRemove);
                         }
                         _threatsFound--;
                         UpdateScanStats(_filesScanned, _threatsFound);
@@ -535,10 +535,10 @@ namespace Xdows_Security.Views
 
                             foreach (var entry in entriesToDelete)
                             {
-                                VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == $"{zipPath}\\{entry}");
+                                VirusRow? itemToRemove = CurrentResults?.FirstOrDefault(r => r.FilePath == $"{zipPath}\\{entry}");
                                 if (itemToRemove != null)
                                 {
-                                    CurrentResults.Remove(itemToRemove);
+                                    CurrentResults?.Remove(itemToRemove);
                                     _threatsFound--;
                                 }
                             }
@@ -560,10 +560,10 @@ namespace Xdows_Security.Views
                     {
                         if (zipPath == null)
                         {
-                            VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
+                            VirusRow? itemToRemove = CurrentResults?.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
                             if (itemToRemove != null)
                             {
-                                CurrentResults.Remove(itemToRemove);
+                                CurrentResults?.Remove(itemToRemove);
                                 _threatsFound--;
                             }
                         }
@@ -875,10 +875,10 @@ namespace Xdows_Security.Views
 
                                 foreach (var entry in entriesToDelete)
                                 {
-                                    VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == $"{zipPath}\\{entry}");
+                                    VirusRow? itemToRemove = CurrentResults?.FirstOrDefault(r => r.FilePath == $"{zipPath}\\{entry}");
                                     if (itemToRemove != null)
                                     {
-                                        CurrentResults.Remove(itemToRemove);
+                                        CurrentResults?.Remove(itemToRemove);
                                         _threatsFound--;
                                     }
                                 }
@@ -888,10 +888,10 @@ namespace Xdows_Security.Views
                         }
                         else
                         {
-                            VirusRow? itemToRemove = CurrentResults.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
+                            VirusRow? itemToRemove = CurrentResults?.FirstOrDefault(r => r.FilePath == row.FilePath && r.VirusName == row.VirusName);
                             if (itemToRemove != null)
                             {
-                                CurrentResults.Remove(itemToRemove);
+                                CurrentResults?.Remove(itemToRemove);
                                 _threatsFound--;
                             }
                         }
@@ -1375,11 +1375,12 @@ namespace Xdows_Security.Views
 
                 if (useCloudScan && md5Hash != null)
                 {
-                    scanTasks.Add(Helper.ScanEngine.CloudScanWithHashAsync(md5Hash).ContinueWith(t =>
+                    scanTasks.Add(Helper.ScanEngine.CloudScanWithHashAsync(md5Hash, filePath, token).ContinueWith(t =>
                     {
+                        if (t.IsCanceled) return new ScanResult("SevenEngine", null);
                         (int? statusCode, string? result) = t.Result;
-                        string? info = (result == "virus_file") ? "MEMZUAC.Cloud.VirusFile" : null;
-                        return new ScanResult("Cloud", info);
+                        string? info = (result == "virus_file") ? "SevenEngine.Cloud.VirusFile" : null;
+                        return new ScanResult("SevenEngine", info);
                     }, TaskScheduler.Default));
                 }
 
@@ -2338,7 +2339,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private static readonly string[] ArchiveEntryExtensions = new[] { ".zip", ".7z", ".tar", ".tgz", ".tbz2", ".txz", ".gz", ".bz2", ".xz" };
+        private static readonly string[] ArchiveEntryExtensions = [".zip", ".7z", ".tar", ".tgz", ".tbz2", ".txz", ".gz", ".bz2", ".xz"];
 
         private static bool TryParseArchiveEntry(string displayPath, out string archivePath, out string entryPath)
         {

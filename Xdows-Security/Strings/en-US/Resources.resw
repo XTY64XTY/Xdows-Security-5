@@ -820,22 +820,52 @@ Why not try XIGUA Security?</value>
     <value>Modify the opacity of the main window</value>
   </data>
   <data name="SettingsPage_Scan_Cloud.Header" xml:space="preserve">
-    <value>Cloud-based scanning</value>
-  </data>
-  <data name="SettingsPage_Scan_Cloud_AutoUpload.Header" xml:space="preserve">
-    <value>Automatic reporting</value>
+    <value>SevenEngine</value>
   </data>
   <data name="SettingsPage_Scan_Cloud.Description" xml:space="preserve">
     <value>The cloud engine requires an internet connection to detect and respond to the latest threats in real time.</value>
   </data>
-  <data name="SettingsPage_Scan_Cloud_SupportWarning.Title" xml:space="preserve">
+  <data name="SettingsPage_Scan_Cloud_Health_Warning_Title" xml:space="preserve">
     <value>Warning</value>
   </data>
-  <data name="SettingsPage_Scan_Cloud_SupportWarning.Message" xml:space="preserve">
-    <value>This engine may no longer be supported.</value>
+  <data name="SettingsPage_Scan_Cloud_Health_Warning_Message" xml:space="preserve">
+    <value>Cloud service connection failed; this engine may no longer be supported</value>
   </data>
-  <data name="SettingsPage_Scan_Cloud_AutoUpload.Description" xml:space="preserve">
-    <value>This option is required during the testing phase.</value>
+  <data name="SettingsPage_Scan_Cloud_Health_Message" xml:space="preserve">
+    <value>Service is healthy · Engine {0} · Feature dimension {1} · Decision threshold {2} · Uptime {3} s</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_Health_Refresh.Content" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType.Header" xml:space="preserve">
+    <value>Scan type</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType.Description" xml:space="preserve">
+    <value>Change how scans behave when using this engine</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Adaptive.Content" xml:space="preserve">
+    <value>Adaptive</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Adaptive_Tooltip" xml:space="preserve">
+    <value>Run a quick check first; upload the full file if there is no match</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Quick.Content" xml:space="preserve">
+    <value>Quick check</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_Quick_Tooltip" xml:space="preserve">
+    <value>Upload only the file hash; not all files will produce a correct result</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_FullUpload.Content" xml:space="preserve">
+    <value>Full upload</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_ScanType_FullUpload_Tooltip" xml:space="preserve">
+    <value>Upload the full file (server limit: 300 MB) to a third-party server for analysis; this may cause unintended data disclosure</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_AboutEngine.Header" xml:space="preserve">
+    <value>About the engine</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_AboutEngine.Description" xml:space="preserve">
+    <value>Provided by NewEra Studio</value>
   </data>
   <data name="MainWindow_Nav_Settings" xml:space="preserve">
     <value>Settings</value>
