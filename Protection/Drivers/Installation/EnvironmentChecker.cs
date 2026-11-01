@@ -227,10 +227,16 @@ public static class DriverEnvironmentChecker
             ? DriverEnvironmentCheckHint.Unrepairable
             : DriverEnvironmentCheckHint.DriverNotStarted;
 
+        string detail = $"Service: {service.State}; runtime: {runtimeStatus}.";
+
+        // 最近一次启动失败的具体原因（含 Win32 错误码）比服务状态更能说明问题。
+        if (!started && DriverProtection.LastLoadFailureMessage is { Length: > 0 } failure)
+            detail += $" Last start attempt failed: {failure}";
+
         return new DriverEnvironmentCheckItem(
             DriverEnvironmentCheckId.DriverStarted,
             started ? DriverEnvironmentCheckStatus.Passed : DriverEnvironmentCheckStatus.Failed,
-            $"Service: {service.State}; runtime: {runtimeStatus}.",
+            detail,
             started ? DriverEnvironmentCheckHint.None : hint);
     }
 

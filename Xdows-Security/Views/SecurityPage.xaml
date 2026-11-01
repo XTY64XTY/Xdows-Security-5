@@ -7,6 +7,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:l="using:WinUI3Localizer" xmlns:local.Views="using:Xdows_Security.Views"
+    NavigationCacheMode="Required"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -23,16 +24,29 @@
         </DataTemplate>
 
         <DataTemplate x:Key="VirusRowTemplate" x:DataType="local.Views:VirusRow">
-            <Grid Padding="12,6">
+            <Grid Padding="4,6">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="3*" MinWidth="300"/>
-                    <ColumnDefinition Width="Auto" MinWidth="120"/>
+                    <ColumnDefinition Width="1*" MinWidth="120"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0"
-                           Text="{x:Bind FilePath, Mode=OneWay}"
-                           TextTrimming="CharacterEllipsis"/>
+                <CheckBox Grid.Column="0"
+                          MinWidth="0"
+                          Padding="0"
+                          Margin="0,0,8,0"
+                          VerticalAlignment="Center"
+                          IsChecked="{x:Bind IsChecked, Mode=OneWay}"
+                          Tag="{x:Bind}"
+                          Checked="OnVirusRowCheckedChanged"
+                          Unchecked="OnVirusRowCheckedChanged"/>
                 <TextBlock Grid.Column="1"
-                           Text="{x:Bind DisplayName, Mode=OneWay}"/>
+                           Text="{x:Bind FilePath, Mode=OneWay}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="2"
+                           Text="{x:Bind DisplayName, Mode=OneWay}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
                 <Grid.ContextFlyout>
                     <MenuFlyout>
                         <MenuFlyoutItem  l:Uids.Uid="SecurityPage_MenuItem_Details"
@@ -63,198 +77,172 @@
         </DataTemplate>
     </Page.Resources>
 
-    <ScrollViewer>
-        <Grid Margin="64,16,64,0" VerticalAlignment="Top">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+    <Grid Margin="64,4,64,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
 
-            <local:InfoCard Icon="&#xE8FE;" l:Uids.Uid="SecurityPage_ProgressHeader" Grid.Row="3" Grid.ColumnSpan="2" Margin="0,0,0,8">
-                <StackPanel>
-                    <Grid Margin="0,0,0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="1" x:Name="ProgressPercentText" Text="0%" FontSize="14" FontWeight="Bold"/>
-                    </Grid>
+        <TextBlock Name="StatusText"
+                   Grid.Row="0" Grid.Column="0"
+                   FontSize="16"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   TextTrimming="CharacterEllipsis"
+                   TextWrapping="NoWrap"
+                   VerticalAlignment="Center"
+                   Margin="0,0,16,0"/>
 
-                    <Viewbox Stretch="Uniform" Height="120" Margin="0,8,0,8">
-                        <Grid Width="200" Height="200">
-                            <Ellipse Width="180" Height="180"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
-                                     StrokeThickness="2" Opacity="0.3"/>
-                            <Ellipse Width="135" Height="135"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
-                                     StrokeThickness="1" Opacity="0.2"/>
-                            <Ellipse Width="90" Height="90"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
-                                     StrokeThickness="1" Opacity="0.2"/>
-                            <Ellipse Width="45" Height="45"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     Stroke="{ThemeResource AccentTextFillColorTertiaryBrush}"
-                                     StrokeThickness="1" Opacity="0.2"/>
-
-                            <Grid x:Name="ScanLineContainer"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"
-                                  Width="180" Height="180"
-                                  Opacity="0">
-                                <Rectangle Width="8" Height="90"
-                                           HorizontalAlignment="Center" VerticalAlignment="Top"
-                                           Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0.06"
-                                           RadiusX="4" RadiusY="4"
-                                           RenderTransformOrigin="0.5,1.0">
-                                    <Rectangle.RenderTransform>
-                                        <RotateTransform Angle="-25"/>
-                                    </Rectangle.RenderTransform>
-                                </Rectangle>
-                                <Rectangle Width="4" Height="90"
-                                           HorizontalAlignment="Center" VerticalAlignment="Top"
-                                           Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0.15"
-                                           RadiusX="2" RadiusY="2"
-                                           RenderTransformOrigin="0.5,1.0">
-                                    <Rectangle.RenderTransform>
-                                        <RotateTransform Angle="-12"/>
-                                    </Rectangle.RenderTransform>
-                                </Rectangle>
-                                <Rectangle Width="2" Height="90"
-                                           HorizontalAlignment="Center" VerticalAlignment="Top"
-                                           Fill="{ThemeResource AccentTextFillColorTertiaryBrush}" Opacity="0.8"
-                                           RadiusX="1" RadiusY="1"/>
-                            </Grid>
-
-                            <Ellipse x:Name="PulseEllipse"
-                                     Width="20" Height="20"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     Fill="{ThemeResource AccentTextFillColorTertiaryBrush}"
-                                     Opacity="0"/>
-
-                            <Ellipse Width="8" Height="8"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     Fill="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                        </Grid>
-                    </Viewbox>
-
-                    <ProgressBar x:Name="ScanProgress" Height="8" CornerRadius="4" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE916;" FontSize="24" Margin="0,0,0,4" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                            <TextBlock x:Name="ScanSpeedText" FontSize="12" TextAlignment="Center" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE8B7;" FontSize="24" Margin="0,0,0,4" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                            <TextBlock x:Name="FilesScannedText" FontSize="12" TextAlignment="Center" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE7C9;" FontSize="24" Margin="0,0,0,4" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                            <TextBlock x:Name="FilesSafeText" FontSize="12" TextAlignment="Center" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="3" HorizontalAlignment="Center">
-                            <FontIcon Glyph="&#xE783;" FontSize="24" Margin="0,0,0,4" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                            <TextBlock x:Name="ThreatsFoundText" FontSize="12" TextAlignment="Center" Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"/>
-                        </StackPanel>
-                    </Grid>
-                </StackPanel>
-            </local:InfoCard>
-
-            <TextBlock Name="PathText" l:Uids.Uid="SecurityPage_PathText" Grid.Row="4" Grid.Column="0" FontSize="16" VerticalAlignment="Center" Margin="0,0,8,16"/>
-
-            <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,0,16">
-                <Button x:Name="BackToVirusListButton" Click="OnBackToVirusListClick" Visibility="Collapsed">
+        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button x:Name="BackToVirusListButton" Click="OnBackToVirusListClick" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Tag="Visible" Spacing="8">
-                        <FontIcon x:Name="BackToVirusListButtonIcon" Glyph="&#xE890;"/>
-                        <TextBlock x:Name="BackToVirusListButtonText" l:Uids.Uid="SecurityPage_BackToVirusListButtonText"/>
-                    </StackPanel>
-                </Button>
+                    <FontIcon x:Name="BackToVirusListButtonIcon" Glyph="&#xE890;"/>
+                    <TextBlock x:Name="BackToVirusListButtonText" l:Uids.Uid="SecurityPage_BackToVirusListButtonText"/>
+                </StackPanel>
+            </Button>
 
-                <Button x:Name="HandleAllButton" Click="OnHandleAllClick" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE74D;" FontSize="16"/>
-                        <TextBlock x:Name="HandleAllButtonText" l:Uids.Uid="SecurityPage_HandleAllButtonText"/>
-                    </StackPanel>
-                </Button>
+            <Button x:Name="HandleAllButton" Click="OnHandleAllClick" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE74D;" FontSize="16"/>
+                    <TextBlock x:Name="HandleAllButtonText" l:Uids.Uid="SecurityPage_HandleAllButtonText"/>
+                </StackPanel>
+            </Button>
 
-                <Button x:Name="PauseScanButton" Click="OnPauseScanClick" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xF5E7;"/>
-                        <TextBlock l:Uids.Uid="SecurityPage_PauseScanButtonText"/>
-                    </StackPanel>
-                </Button>
+            <Button x:Name="PauseScanButton" Click="OnPauseScanClick" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xF5E7;"/>
+                    <TextBlock l:Uids.Uid="SecurityPage_PauseScanButtonText"/>
+                </StackPanel>
+            </Button>
 
-                <Button x:Name="ResumeScanButton" Click="OnResumeScanClick" Visibility="Collapsed">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE768;"/>
-                        <TextBlock l:Uids.Uid="SecurityPage_ResumeScanButtonText"/>
-                    </StackPanel>
-                </Button>
+            <Button x:Name="ResumeScanButton" Click="OnResumeScanClick" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE768;"/>
+                    <TextBlock l:Uids.Uid="SecurityPage_ResumeScanButtonText"/>
+                </StackPanel>
+            </Button>
 
-                <SplitButton x:Name="ScanButton" Click="ScanButton_Click">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <FontIcon Glyph="&#xE8B7;" FontSize="16"/>
-                        <TextBlock x:Name="ScanButtonText" l:Uids.Uid="SecurityPage_ScanButtonText"/>
-                    </StackPanel>
-                    <SplitButton.Flyout>
-                        <MenuFlyout Placement="Bottom">
-                            <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Quick" Tag="Quick" Click="OnScanMenuClick">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE945;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Full" Tag="Full" Click="OnScanMenuClick">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xEDA2;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutSeparator/>
-                            <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_File" Tag="File" Click="OnScanMenuClick">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE8A5;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Folder" Tag="Folder" Click="OnScanMenuClick">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE8B7;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                            <MenuFlyoutSeparator/>
-                            <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_More" Tag="More" Click="OnScanMenuClick">
-                                <MenuFlyoutItem.Icon>
-                                    <FontIcon Glyph="&#xE944;" />
-                                </MenuFlyoutItem.Icon>
-                            </MenuFlyoutItem>
-                        </MenuFlyout>
-                    </SplitButton.Flyout>
-                </SplitButton>
-            </StackPanel>
+            <Button x:Name="CancelScanButton" Click="OnCancelScanClick" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Grid>
+                        <FontIcon x:Name="CancelScanButtonIcon" Glyph="&#xE711;" FontSize="16"/>
+                        <ProgressRing x:Name="CancelScanButtonRing"
+                                      Width="16" Height="16"
+                                      IsActive="False"
+                                      Visibility="Collapsed"/>
+                    </Grid>
+                    <TextBlock l:Uids.Uid="SecurityPage_CancelScanButtonText"/>
+                </StackPanel>
+            </Button>
 
-            <TextBlock Name="StatusText" Grid.Row="5" Margin="0,8,0,0" FontSize="14" TextWrapping="Wrap" Grid.ColumnSpan="2"/>
+            <SplitButton x:Name="ScanButton" Click="ScanButton_Click">
+                <StackPanel Orientation="Horizontal" Spacing="4">
+                    <FontIcon Glyph="&#xE8B7;" FontSize="16"/>
+                    <TextBlock x:Name="ScanButtonText" l:Uids.Uid="SecurityPage_ScanButtonText"/>
+                </StackPanel>
+                <SplitButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Quick" Tag="Quick" Click="OnScanMenuClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE945;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Full" Tag="Full" Click="OnScanMenuClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xEDA2;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_File" Tag="File" Click="OnScanMenuClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8A5;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Folder" Tag="Folder" Click="OnScanMenuClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE8B7;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSeparator/>
+                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_More" Tag="More" Click="OnScanMenuClick">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon Glyph="&#xE944;" />
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                    </MenuFlyout>
+                </SplitButton.Flyout>
+            </SplitButton>
+        </StackPanel>
 
-            <ListView Name="VirusList" 
-          Grid.Row="6" 
-          Margin="-28,10,0,8" 
-          Visibility="Collapsed" 
-          DoubleTapped="VirusList_DoubleTapped" 
-          Grid.ColumnSpan="2"/>
-        </Grid>
-    </ScrollViewer>
+        <ProgressBar x:Name="ScanProgress"
+                     Grid.Row="1" Grid.ColumnSpan="2"
+                     Margin="0,4,0,0"
+                     Height="8"
+                     CornerRadius="4"
+                     Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                     Foreground="{ThemeResource AccentTextFillColorTertiaryBrush}"
+                     Visibility="Collapsed"/>
+
+        <TextBlock Name="ScanStatsText"
+                   Grid.Row="2" Grid.ColumnSpan="2"
+                   FontSize="12"
+                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   TextTrimming="CharacterEllipsis"
+                   TextWrapping="NoWrap"
+                   VerticalAlignment="Center"
+                   Margin="0,8,0,0"/>
+
+        <Border x:Name="ThreatListBorder"
+                Grid.Row="3" Grid.ColumnSpan="2"
+                Margin="0,8,0,16"
+                CornerRadius="8"
+                BorderThickness="1"
+                BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+                Visibility="Collapsed">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- 左侧 4(自身) + 16(ListViewItem 内边距)，右侧 12(自身) + 12(ListViewItem 内边距)，
+                     与 VirusRowTemplate 的内容区完全对齐 -->
+                <Grid Grid.Row="0"
+                      Padding="20,8,24,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="3*" MinWidth="300"/>
+                        <ColumnDefinition Width="1*" MinWidth="120"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="SelectAllThreatsCheckBox"
+                              Grid.Column="0"
+                              IsChecked="True"
+                              MinWidth="0"
+                              Padding="0"
+                              Margin="0,0,8,0"
+                              VerticalAlignment="Center"
+                              Click="OnSelectAllThreatsClick"/>
+                    <TextBlock Grid.Column="1"
+                               l:Uids.Uid="SecurityPage_ListHeader_Path"
+                               VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <TextBlock Grid.Column="2"
+                               l:Uids.Uid="SecurityPage_ListHeader_Threat"
+                               VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                </Grid>
+
+                <!-- 不自定义 ItemContainerStyle：默认样式（WinUI 2.3.9 generic.xaml 的 DefaultListViewItemStyle）
+                     Padding 本来就是 16,0,12,0，表头的 20 就是按它算的；自己再写一份会把默认 Setter 全丢掉，悬浮/选中的圆角就没了 -->
+                <ListView x:Name="VirusList"
+                          Grid.Row="1"
+                          DoubleTapped="VirusList_DoubleTapped"/>
+            </Grid>
+        </Border>
+    </Grid>
 </Page>

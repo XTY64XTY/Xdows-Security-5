@@ -230,6 +230,12 @@ public sealed partial class DriverProtection : IProtectionModel
     /// </summary>
     public Action<DriverLoadProgress>? ProgressCallback { get; set; }
 
+    /// <summary>
+    /// 最近一次启动失败的原因（含 Win32 错误码）。环境检测页在「驱动启动状态」未通过时
+    /// 会把它显示在技术细节里，用户不必只靠翻日志猜。
+    /// </summary>
+    public static string? LastLoadFailureMessage { get; private set; }
+
     /// <summary>当前阶段，普通异常发生时用来定位失败点。</summary>
     private DriverLoadStage _currentStage = DriverLoadStage.PreparingModel;
 
@@ -250,10 +256,12 @@ public sealed partial class DriverProtection : IProtectionModel
             {
                 _cts = new CancellationTokenSource();
                 RunLoadPipeline(_cts.Token);
+                LastLoadFailureMessage = null;
                 return true;
             }
             catch (DriverLoadException ex)
             {
+                LastLoadFailureMessage = ex.Message;
                 // 装不上/起不来属于可预期结果，日志模块由抛出方指定（Installer / BootProtect）。
                 LogCallback?.Invoke(new DriverProtectionLogEntry(
                     0,
@@ -269,6 +277,8 @@ public sealed partial class DriverProtection : IProtectionModel
             }
             catch (Exception ex)
             {
+                LastLoadFailureMessage = ex.Message;
+
                 // 启动失败必须用 Error 级别：此前走 Info 的 Log()，用户在日志里很容易漏看。
                 LogCallback?.Invoke(new DriverProtectionLogEntry(
                     0,

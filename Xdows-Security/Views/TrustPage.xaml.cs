@@ -3,6 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Xdows_Security.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using TrustQuarantine;
@@ -59,7 +60,21 @@ namespace Xdows_Security.Views
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var selectedItems = TrustListView.SelectedItems.Cast<TrustItemModel>().ToList();
-            if (selectedItems.Count == 0) return;
+            if (selectedItems.Count == 0)
+                return;
+
+            bool confirmed = await ConfirmDialog.ShowAsync(
+                XamlRoot,
+                DialogTheme,
+                Localizer.Get().GetLocalizedString("TrustPage_DeleteConfirm_Title"),
+                string.Format(
+                    Localizer.Get().GetLocalizedString("TrustPage_DeleteConfirm_Text"),
+                    selectedItems.Count),
+                Localizer.Get().GetLocalizedString("TrustPage_DeleteButton"),
+                Localizer.Get().GetLocalizedString("Button_Cancel"));
+
+            if (!confirmed)
+                return;
 
             foreach (var item in selectedItems)
             {
@@ -72,6 +87,22 @@ namespace Xdows_Security.Views
 
         private async void ClearMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            if (_items.Count == 0)
+                return;
+
+            bool confirmed = await ConfirmDialog.ShowAsync(
+                XamlRoot,
+                DialogTheme,
+                Localizer.Get().GetLocalizedString("TrustPage_ClearConfirm_Title"),
+                string.Format(
+                    Localizer.Get().GetLocalizedString("TrustPage_ClearConfirm_Text"),
+                    _items.Count),
+                Localizer.Get().GetLocalizedString("TrustPage_ClearButton"),
+                Localizer.Get().GetLocalizedString("Button_Cancel"));
+
+            if (!confirmed)
+                return;
+
             await TrustManager.ClearTrust();
             await ReloadAsync();
         }
@@ -80,8 +111,25 @@ namespace Xdows_Security.Views
         {
             PickFileResult file = await (new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickSingleFileAsync());
             if (file is null) { return; }
+
+            bool confirmed = await ConfirmDialog.ShowAsync(
+                XamlRoot,
+                DialogTheme,
+                Localizer.Get().GetLocalizedString("TrustPage_AddConfirm_Title"),
+                string.Format(
+                    Localizer.Get().GetLocalizedString("TrustPage_AddConfirm_Text"),
+                    Path.GetFileName(file.Path)),
+                Localizer.Get().GetLocalizedString("TrustPage_AddButton"),
+                Localizer.Get().GetLocalizedString("Button_Cancel"));
+
+            if (!confirmed)
+                return;
+
             await TrustManager.AddToTrust(file.Path);
             _ = ReloadAsync();
         }
+
+        private ElementTheme DialogTheme =>
+            (XamlRoot?.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
     }
 }

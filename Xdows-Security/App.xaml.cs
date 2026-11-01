@@ -1268,6 +1268,30 @@ namespace Xdows_Security
         }
 
         /// <summary>
+        /// 退出动画：淡出，结束后回调由调用方真正收起元素。
+        /// 动画期间元素保持 Visible，避免「点一下瞬间消失」和入场动画不对称。
+        /// </summary>
+        public static void PlayFadeOutAnimation(UIElement uIElement, Action? completed = null)
+        {
+            var opacityAnimation = new DoubleAnimation
+            {
+                From = uIElement.Opacity,
+                To = 0,
+                Duration = new Duration(TimeSpan.FromMilliseconds(200)),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn },
+                // 播完把 Opacity 还原成原值；元素在回调里同一帧就被收起，不会闪一下
+                FillBehavior = FillBehavior.Stop
+            };
+            Storyboard.SetTarget(opacityAnimation, uIElement);
+            Storyboard.SetTargetProperty(opacityAnimation, nameof(UIElement.Opacity));
+
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(opacityAnimation);
+            storyboard.Completed += (_, _) => completed?.Invoke();
+            storyboard.Begin();
+        }
+
+        /// <summary>
         /// 重置元素的视觉状态，停止所有正在运行的入场动画。
         /// 仅停止动画并重置 Opacity，不修改 Offset；下次显示时由布局系统重新设置位置。
         /// </summary>

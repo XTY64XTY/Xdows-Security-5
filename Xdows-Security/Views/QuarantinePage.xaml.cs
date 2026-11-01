@@ -107,7 +107,22 @@ namespace Xdows_Security.Views
         private async void DeleteMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var selected = QuarantineListView.SelectedItems.Cast<QuarantineItemModel>().ToList();
-            if (selected.Count == 0) return;
+            if (selected.Count == 0)
+                return;
+
+            bool confirmed = await ConfirmDialog.ShowAsync(
+                XamlRoot,
+                DialogTheme,
+                Localizer.Get().GetLocalizedString("QuarantinePage_DeleteConfirm_Title"),
+                string.Format(
+                    Localizer.Get().GetLocalizedString("QuarantinePage_DeleteConfirm_Text"),
+                    selected.Count),
+                Localizer.Get().GetLocalizedString("QuarantinePage_DeleteButton"),
+                Localizer.Get().GetLocalizedString("Button_Cancel"));
+
+            if (!confirmed)
+                return;
+
             await QuarantineManager.DeleteItems(selected.Select(x => x.FileHash));
             foreach (var item in selected) _items.Remove(item);
             await ReloadAsync();
@@ -115,8 +130,27 @@ namespace Xdows_Security.Views
 
         private async void ClearMenuItem_Click(object sender, RoutedEventArgs e)
         {
+            if (_items.Count == 0)
+                return;
+
+            bool confirmed = await ConfirmDialog.ShowAsync(
+                XamlRoot,
+                DialogTheme,
+                Localizer.Get().GetLocalizedString("QuarantinePage_ClearConfirm_Title"),
+                string.Format(
+                    Localizer.Get().GetLocalizedString("QuarantinePage_ClearConfirm_Text"),
+                    _items.Count),
+                Localizer.Get().GetLocalizedString("QuarantinePage_ClearButton"),
+                Localizer.Get().GetLocalizedString("Button_Cancel"));
+
+            if (!confirmed)
+                return;
+
             await QuarantineManager.ClearQuarantine();
             await ReloadAsync();
         }
+
+        private ElementTheme DialogTheme =>
+            (XamlRoot?.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
     }
 }

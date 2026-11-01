@@ -240,29 +240,8 @@
   <data name="MainWindow_Nav_Security.Content" xml:space="preserve">
     <value>Security</value>
   </data>
-  <data name="SecurityPage_PathText_Default" xml:space="preserve">
-    <value>Scan mode: Unspecified</value>
-  </data>
-  <data name="SecurityPage_ScanItem_System" xml:space="preserve">
-    <value>System critical areas</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Memory" xml:space="preserve">
-    <value>Memory processes</value>
-  </data>
-  <data name="SecurityPage_ScanItem_Startup" xml:space="preserve">
-    <value>Startup items</value>
-  </data>
-  <data name="SecurityPage_ScanItem_UserDocs" xml:space="preserve">
-    <value>User documents</value>
-  </data>
   <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
     <value>Get Failed</value>
-  </data>
-  <data name="SecurityPage_ProgressHeader.Title" xml:space="preserve">
-    <value>Scan Progress</value>
-  </data>
-  <data name="SecurityPage_PathText.Text" xml:space="preserve">
-    <value>Select scan target</value>
   </data>
   <data name="SecurityPage_BackToVirusListButtonText.Text" xml:space="preserve">
     <value>View list</value>
@@ -270,11 +249,14 @@
   <data name="SecurityPage_PauseScanButtonText.Text" xml:space="preserve">
     <value>Pause scan</value>
   </data>
+  <data name="SecurityPage_CancelScanButtonText.Text" xml:space="preserve">
+    <value>Cancel scan</value>
+  </data>
   <data name="SecurityPage_ResumeScanButtonText.Text" xml:space="preserve">
     <value>Resume scan</value>
   </data>
   <data name="SecurityPage_ScanButtonText.Text" xml:space="preserve">
-    <value>Start scan</value>
+    <value>Start Scan</value>
   </data>
   <data name="SecurityPage_ScanMenu_Quick.Text" xml:space="preserve">
     <value>Quick scan</value>
@@ -293,9 +275,6 @@
   </data>
   <data name="SecurityPage_MenuItem_Details.Text" xml:space="preserve">
     <value>Details</value>
-  </data>
-  <data name="SecurityPage_MenuItem_Delete.Text" xml:space="preserve">
-    <value>Delete file</value>
   </data>
   <data name="SecurityPage_NoEngine_Title" xml:space="preserve">
     <value>No scan engine selected</value>
@@ -333,29 +312,8 @@
   <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
     <value>Please go to Settings - Scan and uncheck this engine.</value>
   </data>
-  <data name="SecurityPage_Status_Cancelled" xml:space="preserve">
-    <value>Cancelled</value>
-  </data>
-  <data name="SecurityPage_Status_Waiting" xml:space="preserve">
-    <value>Waiting</value>
-  </data>
   <data name="SecurityPage_Status_Processing" xml:space="preserve">
     <value>Indexing files...</value>
-  </data>
-  <data name="SecurityPage_Status_Scanning" xml:space="preserve">
-    <value>Scanning: {0}</value>
-  </data>
-  <data name="SecurityPage_Status_FoundThreat" xml:space="preserve">
-    <value>Threat found</value>
-  </data>
-  <data name="SecurityPage_ScanSpeed_Format" xml:space="preserve">
-    <value>{0:F2} files/s</value>
-  </data>
-  <data name="SecurityPage_Status_Completed" xml:space="preserve">
-    <value>Completed</value>
-  </data>
-  <data name="SecurityPage_ScanCompleteFound" xml:space="preserve">
-    <value>Scan completed, found {0} threats</value>
   </data>
   <data name="SecurityPage_ScanCancelled" xml:space="preserve">
     <value>Scan cancelled</value>
@@ -368,6 +326,12 @@
   </data>
   <data name="SecurityPage_Details_FilePath" xml:space="preserve">
     <value>File Path:</value>
+  </data>
+  <data name="SecurityPage_ListHeader_Path.Text" xml:space="preserve">
+    <value>File path</value>
+  </data>
+  <data name="SecurityPage_ListHeader_Threat.Text" xml:space="preserve">
+    <value>Threat name</value>
   </data>
   <data name="SecurityPage_Details_VirusName" xml:space="preserve">
     <value>Virus Name: {0}</value>
@@ -402,23 +366,29 @@
   <data name="SecurityPage_LocateFailed_Content" xml:space="preserve">
     <value>Unable to locate file: {0}</value>
   </data>
-  <data name="SecurityPage_PathText_Format" xml:space="preserve">
-    <value>Scan mode: {0}</value>
-  </data>
   <data name="SecurityPage_BackToVirusList_Hide" xml:space="preserve">
     <value>Hide List</value>
   </data>
   <data name="SecurityPage_BackToVirusList_Show" xml:space="preserve">
     <value>Show List</value>
   </data>
-  <data name="SecurityPage_FilesScanned_Format" xml:space="preserve">
-    <value>{0} files</value>
+  <data name="SecurityPage_ScanSummary_Idle" xml:space="preserve">
+    <value>Select a location to continue</value>
   </data>
-  <data name="SecurityPage_FilesSafe_Format" xml:space="preserve">
-    <value>{0} safe</value>
+  <data name="SecurityPage_ScanSummary_Format" xml:space="preserve">
+    <value>{0} files scanned, {1:F0} s elapsed, current speed {2:F0} files/s, {3} threats found</value>
   </data>
-  <data name="SecurityPage_ThreatsFound_Format" xml:space="preserve">
-    <value>{0} threats</value>
+  <data name="SecurityPage_Status_Scanning" xml:space="preserve">
+    <value>Scanning...</value>
+  </data>
+  <data name="SecurityPage_Status_Completed" xml:space="preserve">
+    <value>Scan complete</value>
+  </data>
+  <data name="SecurityPage_ScanSummary_Completed" xml:space="preserve">
+    <value>Scan complete: {0} files scanned, {1:F0} s elapsed, average speed {2:F0} files/s, {3} threats found</value>
+  </data>
+  <data name="SecurityPage_ScanSummary_Cancelled" xml:space="preserve">
+    <value>{0} files scanned, {1:F0} s elapsed, average speed {2:F0} files/s, {3} threats found</value>
   </data>
   <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
     <value>Xdows Tools</value>
@@ -1006,32 +976,23 @@ If you do not accept it, please turn off the engine, or stop using and delete th
   <data name="SecurityPage_HandleAction_Deleted" xml:space="preserve">
     <value>File has been successfully deleted</value>
   </data>
-  <data name="SecurityPage_HandleAction_Renamed" xml:space="preserve">
-    <value>File has been renamed to: {0}</value>
-  </data>
   <data name="SecurityPage_HandleAction_Failed" xml:space="preserve">
     <value>Failed to handle file</value>
   </data>
-  <data name="SecurityPage_HandleAction_ZipEntriesDeleted" xml:space="preserve">
-    <value>Deleted {0} entries from archive</value>
-  </data>
   <data name="SecurityPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
     <value>Quarantined {0} files and deleted {1} entries from archive</value>
-  </data>
-  <data name="SecurityPage_HandleResult_Title" xml:space="preserve">
-    <value>Handle Result</value>
   </data>
   <data name="SecurityPage_HandleFailed_Title" xml:space="preserve">
     <value>Handle Failed</value>
   </data>
   <data name="SecurityPage_HandleAllButtonText.Text" xml:space="preserve">
-    <value>Handle All</value>
+    <value>Handle selected</value>
   </data>
   <data name="SecurityPage_HandleAllConfirm_Title" xml:space="preserve">
-    <value>Handle All Threats</value>
+    <value>Handle Selected Threats</value>
   </data>
   <data name="SecurityPage_HandleAllConfirm_Content" xml:space="preserve">
-    <value>Are you sure you want to handle all {0} threat files?
+    <value>Are you sure you want to handle the {0} selected threat files?
 Files can be restored from quarantine after handling. Some files may be deleted directly.</value>
   </data>
   <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
@@ -1186,6 +1147,36 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   </data>
   <data name="QuarantinePage_ClearMenuItem.Text" xml:space="preserve">
     <value>Clear</value>
+  </data>
+  <data name="QuarantinePage_DeleteConfirm_Title" xml:space="preserve">
+    <value>Delete selected items?</value>
+  </data>
+  <data name="QuarantinePage_DeleteConfirm_Text" xml:space="preserve">
+    <value>Permanently removes {0} item(s) from quarantine. This cannot be undone.</value>
+  </data>
+  <data name="QuarantinePage_ClearConfirm_Title" xml:space="preserve">
+    <value>Clear quarantine?</value>
+  </data>
+  <data name="QuarantinePage_ClearConfirm_Text" xml:space="preserve">
+    <value>Permanently removes all {0} item(s) from quarantine. This cannot be undone.</value>
+  </data>
+  <data name="TrustPage_AddConfirm_Title" xml:space="preserve">
+    <value>Add to trusted list?</value>
+  </data>
+  <data name="TrustPage_AddConfirm_Text" xml:space="preserve">
+    <value>Adds {0} to the trusted list. It will no longer be intercepted or scanned. Make sure this file is really trustworthy.</value>
+  </data>
+  <data name="TrustPage_DeleteConfirm_Title" xml:space="preserve">
+    <value>Remove from trusted list?</value>
+  </data>
+  <data name="TrustPage_DeleteConfirm_Text" xml:space="preserve">
+    <value>Removes {0} item(s) from the trusted list. They will take part in scanning and interception again.</value>
+  </data>
+  <data name="TrustPage_ClearConfirm_Title" xml:space="preserve">
+    <value>Clear trusted list?</value>
+  </data>
+  <data name="TrustPage_ClearConfirm_Text" xml:space="preserve">
+    <value>Removes all {0} item(s) from the trusted list. They will take part in scanning and interception again.</value>
   </data>
   <data name="QuarantinePage_EmptyState" xml:space="preserve">
     <value>No quarantined files</value>
@@ -1599,7 +1590,11 @@ Files can be restored from quarantine after handling. Some files may be deleted 
     <value>Before enabling test mode</value>
   </data>
   <data name="DriverEnvironmentPage_TestSigning_Warning_Text" xml:space="preserve">
-    <value>Security warning: Test mode relaxes the code integrity checks Windows applies to kernel drivers. While it is on, any driver signed with a test certificate can load, including drivers from unknown sources.&#10;&#10;Disclaimer: This application's driver is signed with a self-signed test certificate, so it must run in test mode on ordinary devices. A restart is required, and a “Test mode” watermark appears in the lower-right corner of the desktop. The publisher and original developer of this application accept no liability for any risk caused by this operation.&#10;&#10;Do you want to continue?</value>
+    <value>Security warning: Test mode relaxes the code integrity checks Windows applies to kernel drivers. While it is on, any driver signed with a test certificate can load, including drivers from unknown sources.
+
+Disclaimer: This application's driver is signed with a self-signed test certificate, so it must run in test mode on ordinary devices. A restart is required, and a “Test mode” watermark appears in the lower-right corner of the desktop. The publisher and original developer of this application accept no liability for any risk caused by this operation.
+
+Do you want to continue?</value>
   </data>
   <data name="DriverEnvironmentPage_Repair_DisableTestSigning" xml:space="preserve">
     <value>Undo change</value>

@@ -22,6 +22,14 @@
 
 </p>
 
+### Requirements
+
+The kernel driver is signed with a self-signed test certificate. Driver protection can only start on a device where **test mode (test-signing)** is enabled; otherwise Windows refuses to load the driver.
+
+Open **Settings → Driver Protection → Environment check** in the app: the page lists each prerequisite, tells you which one is missing and whether it can be repaired automatically, and can enable test mode for you (a restart is required).
+
+See the [documentation](https://docs.xiguastudio.top/en-US/Xdows-Security-5/get-started.html) for details.
+
 ### Usage
 
 #### Direct Use

@@ -1,11 +1,8 @@
 using Helper;
-using Microsoft.UI;
-using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Documents;
-using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
@@ -15,7 +12,6 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -37,6 +33,7 @@ namespace Xdows_Security.Views
         private string _familyName = string.Empty;
         private string _engineName = string.Empty;
         private bool _useFamilyEngine;
+        private bool _isChecked = true;
 
         public string FilePath
         {
@@ -68,6 +65,12 @@ namespace Xdows_Security.Views
             set { _useFamilyEngine = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayName)); }
         }
 
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set { if (_isChecked == value) return; _isChecked = value; OnPropertyChanged(); }
+        }
+
         public string DisplayName => _useFamilyEngine && !string.IsNullOrWhiteSpace(_familyName) && _familyName != Localizer.Get().GetLocalizedString("AllPage_Undefined") ? _familyName : _virusName;
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -76,17 +79,6 @@ namespace Xdows_Security.Views
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-    }
-
-    public record ScanItem
-    {
-        public string ItemName { get; set; } = string.Empty;
-        public string IconGlyph { get; set; } = "&#xE721;";
-        public SolidColorBrush IconColor { get; set; } = new SolidColorBrush(Colors.Gray);
-        public string StatusText { get; set; } = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting");
-        public int ThreatCount { get; set; } = 0;
-        public Visibility ThreatCountVisibility { get; set; } = Visibility.Collapsed;
-        public SolidColorBrush ThreatCountBackground { get; set; } = new SolidColorBrush(Colors.Red);
     }
 
     public partial class MoreScanItem : INotifyPropertyChanged
@@ -124,49 +116,39 @@ namespace Xdows_Security.Views
         // 暂停信号：Set=运行中，Reset=已暂停。配合 WaitWhilePausedAsync 实现零轮询等待
         private readonly ManualResetEventSlim _pauseEvent = new(initialState: true);
         // 缓存 UI 格式化字符串，避免每次 UpdateScanStats 都查询本地化资源
-        private string? _fmtFilesScanned;
-        private string? _fmtFilesSafe;
-        private string? _fmtThreatsFound;
-        // 缓存上次状态文本的文件名，避免相同文件名重复调度 UI 更新
-        private string? _lastStatusFileName;
+        private string? _fmtScanSummary;
+        private string? _fmtScanSummaryCompleted;
+        // 状态行显示的耗时（秒）与速度（文件/秒），由扫描循环按节流节奏写入
+        private double _scanElapsedSeconds;
+        private double _scanSpeed;
         private bool _taskbarProgressActive = false;
         private bool _lastShowScanProgress = false;
-        private bool _lastShowTaskbarProgress = true;
         private int _filesScanned = 0;
-        private int _filesSafe = 0;
         private int _threatsFound = 0;
         private int _scanId = 0;
         private ContentDialog? _moreScanDialog;
         private ContentDialog? _detailsDialog;
         private readonly Dictionary<string, List<(string EntryPath, string VirusName)>> _zipFileThreats = [];
         private ObservableCollection<VirusRow>? CurrentResults;
-        private List<ScanItem>? _scanItems;
-
-        private Compositor? _radarCompositor;
-        private Visual? _scanLineVisual;
-        private Visual? _pulseVisual;
-        private ScalarKeyFrameAnimation? _rotationAnimation;
-        private ScalarKeyFrameAnimation? _pulseScaleAnimation;
-        private ScalarKeyFrameAnimation? _pulseOpacityAnimation;
-        private bool _radarRunning;
-        private bool _radarPausedByWindowDeactivation;
-        private bool _isWindowActive = true;
-        private float _radarPausedAngle;
+        private int _scanTotalFiles;
+        private bool _isScanRunning;
+        private bool _threatListVisible;
+        private bool _threatListShown;
+        private int _threatListVisualToken;
+        private double _cancelElapsedSeconds;
+        private int _cancelScannedCount;
 
         private bool IsCurrentScan(int scanId, CancellationToken token)
         {
             if (token.IsCancellationRequested) return false;
-            if (MainWindow.NowPage != "Security")
-            {
-                ClearTaskbarProgress();
-                return false;
-            }
             return scanId == _scanId;
         }
 
         private static void ShowWithEntranceAnimation(UIElement element, string kind = "up", int delayMs = 0)
         {
             element.Visibility = Visibility.Visible;
+            // 先置透明再强制布局：从 Visible 到 Storyboard 生效之间会渲染一帧完整元素，那一帧就是看到的黑闪
+            element.Opacity = 0;
             element.UpdateLayout();
             App.PlayEntranceAnimation(element, kind, delayMs: delayMs);
         }
@@ -179,6 +161,8 @@ namespace Xdows_Security.Views
 
         private void ShowBackToVirusListButton()
         {
+            SyncBackToVirusListButtonText(_threatListShown);
+
             if (BackToVirusListButton.Visibility != Visibility.Visible)
             {
                 ShowWithEntranceAnimation(BackToVirusListButton, "right");
@@ -187,6 +171,15 @@ namespace Xdows_Security.Views
             {
                 BackToVirusListButton.Visibility = Visibility.Visible;
             }
+        }
+
+        /// <summary>
+        /// 列表始终显示在扫描页上，按钮语义是「隐藏 / 查看」，文案必须跟着列表的真实可见性走。
+        /// </summary>
+        private void SyncBackToVirusListButtonText(bool isListVisible)
+        {
+            BackToVirusListButtonText.Text = isListVisible ? Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Hide") : Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Show");
+            BackToVirusListButtonIcon.Glyph = isListVisible ? "\uED1A" : "\uE890";
         }
 
 #if DEBUG
@@ -236,175 +229,21 @@ namespace Xdows_Security.Views
         {
             this.InitializeComponent();
             _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-            PathText.Text = Localizer.Get().GetLocalizedString("SecurityPage_PathText_Default");
-            ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), 0.0);
-            FilesScannedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), 0);
-            FilesSafeText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), 0);
-            ThreatsFoundText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), 0);
-            InitializeScanItems();
+            StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Idle");
             Loaded += SecurityPage_Loaded;
             Unloaded += SecurityPage_Unloaded;
         }
 
         private void SecurityPage_Loaded(object sender, RoutedEventArgs e)
         {
-            SetupRadarAnimations();
-            // 订阅窗口激活状态变化：窗口最小化/失焦时暂停雷达动画，节省 Composition 线程开销
-            // 先取消再订阅，防止极端场景下 Loaded 重复触发导致多次订阅
-            if (App.MainWindow is { } window)
-            {
-                window.Activated -= OnWindowActivated;
-                window.Activated += OnWindowActivated;
-            }
             // 通知主窗口：SecurityPage 已就绪，可接收扫描请求（替代旧版的 Task.Delay + 轮询）
             App.MainWindow?.NotifySecurityPageReady(this);
         }
 
         private void SecurityPage_Unloaded(object sender, RoutedEventArgs e)
         {
-            StopRadar();
-            ClearTaskbarProgress();
-            if (App.MainWindow is { } window)
-            {
-                window.Activated -= OnWindowActivated;
-            }
-            _radarPausedByWindowDeactivation = false;
-            _isWindowActive = true;
-        }
-
-        /// <summary>
-        /// 窗口激活状态变化：失活时暂停雷达动画（节省 Composition 线程），重新激活时恢复（仅当因窗口失活而暂停且未手动暂停）。
-        /// 同时维护 _isWindowActive 状态，供 StartRadar 检查：若新扫描在窗口已失活时启动，立即暂停。
-        /// </summary>
-        private void OnWindowActivated(object? sender, WindowActivatedEventArgs e)
-        {
-            if (e.WindowActivationState == WindowActivationState.Deactivated)
-            {
-                _isWindowActive = false;
-                if (_radarRunning && !_isPaused)
-                {
-                    _radarPausedByWindowDeactivation = true;
-                    PauseRadar();
-                }
-            }
-            else
-            {
-                _isWindowActive = true;
-                if (_radarPausedByWindowDeactivation)
-                {
-                    _radarPausedByWindowDeactivation = false;
-                    if (_radarRunning && !_isPaused)
-                    {
-                        ResumeRadar();
-                    }
-                }
-            }
-        }
-
-        private void SetupRadarAnimations()
-        {
-            var rootVisual = ElementCompositionPreview.GetElementVisual(this);
-            _radarCompositor = rootVisual.Compositor;
-
-            _scanLineVisual = ElementCompositionPreview.GetElementVisual(ScanLineContainer);
-            _scanLineVisual.CenterPoint = new Vector3(90f, 90f, 0f);
-
-            _pulseVisual = ElementCompositionPreview.GetElementVisual(PulseEllipse);
-            _pulseVisual.CenterPoint = new Vector3(10f, 10f, 0f);
-
-            _rotationAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
-            _rotationAnimation.InsertKeyFrame(0.0f, 0.0f);
-            _rotationAnimation.InsertKeyFrame(1.0f, 360.0f);
-            _rotationAnimation.Duration = TimeSpan.FromSeconds(3);
-            _rotationAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
-
-            _pulseScaleAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
-            _pulseScaleAnimation.InsertKeyFrame(0.0f, 1.0f);
-            _pulseScaleAnimation.InsertKeyFrame(1.0f, 3.0f);
-            _pulseScaleAnimation.Duration = TimeSpan.FromSeconds(1.5);
-            _pulseScaleAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
-
-            _pulseOpacityAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
-            _pulseOpacityAnimation.InsertKeyFrame(0.0f, 0.6f);
-            _pulseOpacityAnimation.InsertKeyFrame(1.0f, 0.0f);
-            _pulseOpacityAnimation.Duration = TimeSpan.FromSeconds(1.5);
-            _pulseOpacityAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
-        }
-
-        private void StartRadar()
-        {
-            if (_radarRunning || _radarCompositor == null) return;
-            _radarRunning = true;
-
-            _scanLineVisual!.RotationAngleInDegrees = 0f;
-            _scanLineVisual.Opacity = 0f;
-
-            var fadeIn = _radarCompositor.CreateScalarKeyFrameAnimation();
-            fadeIn.InsertKeyFrame(1.0f, 1.0f);
-            fadeIn.Duration = TimeSpan.FromSeconds(0.3);
-
-            _scanLineVisual.StartAnimation("Opacity", fadeIn);
-            _scanLineVisual.StartAnimation("RotationAngleInDegrees", _rotationAnimation!);
-
-            _pulseVisual!.StartAnimation("Scale.X", _pulseScaleAnimation!);
-            _pulseVisual.StartAnimation("Scale.Y", _pulseScaleAnimation);
-            _pulseVisual.StartAnimation("Opacity", _pulseOpacityAnimation!);
-
-            // 若窗口已失活（如 USB 自动扫描在最小化时触发），立即暂停雷达，避免 Composition 线程空转
-            if (!_isWindowActive && !_isPaused)
-            {
-                _radarPausedByWindowDeactivation = true;
-                PauseRadar();
-            }
-        }
-
-        private void StopRadar()
-        {
-            if (!_radarRunning || _radarCompositor == null) return;
-            _radarRunning = false;
-            // 清理"因失活而暂停"的语义状态，避免下次 StartRadar 后 ResumeRadar 读取过期的 _radarPausedAngle 导致视觉跳变
-            _radarPausedByWindowDeactivation = false;
-
-            _scanLineVisual!.StopAnimation("RotationAngleInDegrees");
-
-            var fadeOut = _radarCompositor.CreateScalarKeyFrameAnimation();
-            fadeOut.InsertKeyFrame(1.0f, 0.0f);
-            fadeOut.Duration = TimeSpan.FromSeconds(0.2);
-            _scanLineVisual.StartAnimation("Opacity", fadeOut);
-
-            _pulseVisual!.StopAnimation("Scale.X");
-            _pulseVisual.StopAnimation("Scale.Y");
-            _pulseVisual.StopAnimation("Opacity");
-            _pulseVisual.Opacity = 0f;
-        }
-
-        private void PauseRadar()
-        {
-            if (!_radarRunning || _radarCompositor == null) return;
-
-            _radarPausedAngle = _scanLineVisual!.RotationAngleInDegrees;
-            _scanLineVisual.StopAnimation("RotationAngleInDegrees");
-
-            _pulseVisual!.StopAnimation("Scale.X");
-            _pulseVisual.StopAnimation("Scale.Y");
-            _pulseVisual.StopAnimation("Opacity");
-        }
-
-        private void ResumeRadar()
-        {
-            if (!_radarRunning || _radarCompositor == null) return;
-
-            float startAngle = _radarPausedAngle % 360;
-            var resumeAnimation = _radarCompositor.CreateScalarKeyFrameAnimation();
-            resumeAnimation.InsertKeyFrame(0.0f, startAngle);
-            resumeAnimation.InsertKeyFrame(1.0f, startAngle + 360.0f);
-            resumeAnimation.Duration = TimeSpan.FromSeconds(3);
-            resumeAnimation.IterationBehavior = AnimationIterationBehavior.Forever;
-            _scanLineVisual!.StartAnimation("RotationAngleInDegrees", resumeAnimation);
-
-            _pulseVisual!.StartAnimation("Scale.X", _pulseScaleAnimation!);
-            _pulseVisual.StartAnimation("Scale.Y", _pulseScaleAnimation);
-            _pulseVisual.StartAnimation("Opacity", _pulseOpacityAnimation!);
+            // 扫描在后台继续跑（页面被 Frame 缓存复用），此时切到别的页不能把任务栏进度清掉
+            if (!_isScanRunning) ClearTaskbarProgress();
         }
 
         private void ClearTaskbarProgress()
@@ -425,7 +264,7 @@ namespace Xdows_Security.Views
                     double percent = 0;
                     try
                     {
-                        var total = _scanItems?.Count ?? 0;
+                        var total = _scanTotalFiles;
                         percent = total == 0 ? 0 : Math.Min(1.0, (double)_filesScanned / total);
                     }
                     catch { }
@@ -452,6 +291,112 @@ namespace Xdows_Security.Views
             };
 
             CurrentResults?.Add(row);
+            UpdateThreatListVisibility();
+        }
+
+        /// <summary>
+        /// 结果列表为空时（包括扫描开始前）整个列表与表头都不显示，只在真正有威胁时出现。
+        /// </summary>
+        private void UpdateThreatListVisibility()
+        {
+            bool hasResults = CurrentResults is { Count: > 0 };
+            if (hasResults == _threatListVisible) return;
+            _threatListVisible = hasResults;
+
+            if (hasResults)
+            {
+                ShowThreatList();
+                ShowBackToVirusListButton();
+            }
+            else
+            {
+                HideThreatList();
+                HideWithVisualReset(BackToVirusListButton);
+                SyncBackToVirusListButtonText(false);
+            }
+        }
+
+        /// <summary>
+        /// 显示威胁列表。每次显隐都换一次 token，让还在淡出中的旧动画收尾时不会把列表又收起来。
+        /// </summary>
+        private void ShowThreatList()
+        {
+            _threatListVisualToken++;
+            _threatListShown = true;
+            ShowWithEntranceAnimation(ThreatListBorder);
+        }
+
+        /// <summary>
+        /// 隐藏威胁列表：先淡出，动画结束后才真正 Collapsed（原来是瞬间消失，和入场动画不对称）。
+        /// </summary>
+        private void HideThreatList()
+        {
+            if (!_threatListShown) return;
+
+            _threatListShown = false;
+            int token = ++_threatListVisualToken;
+            App.PlayFadeOutAnimation(ThreatListBorder, () =>
+            {
+                if (token == _threatListVisualToken) ThreatListBorder.Visibility = Visibility.Collapsed;
+            });
+        }
+
+        private void OnCancelScanClick(object sender, RoutedEventArgs e)
+        {
+            // 取消请求已发出：按钮立刻禁用并把图标换成转圈，
+            // 扫描真正结束前不再接受重复点击（完成/取消/失败分支统一把这个按钮隐藏）
+            CancelScanButton.IsEnabled = false;
+            CancelScanButtonIcon.Visibility = Visibility.Collapsed;
+            CancelScanButtonRing.IsActive = true;
+            CancelScanButtonRing.Visibility = Visibility.Visible;
+
+            // 平均速度只统计到「点下取消」这一刻：之后再扫完的文件和收尾耗时都不算进去。
+            // _scanElapsedSeconds 是并行分支每 150ms 更新一次的耗时（已经扣掉暂停），_filesScanned 是实时计数
+            _cancelElapsedSeconds = _scanElapsedSeconds;
+            _cancelScannedCount = _filesScanned;
+
+            _cts?.Cancel();
+        }
+
+        private void OnSelectAllThreatsClick(object sender, RoutedEventArgs e)
+        {
+            if (CurrentResults is null) return;
+
+            bool isChecked = SelectAllThreatsCheckBox.IsChecked == true;
+            foreach (VirusRow row in CurrentResults) row.IsChecked = isChecked;
+            UpdateSelectAllThreatsState();
+        }
+
+        private void OnVirusRowCheckedChanged(object sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox box || box.Tag is not VirusRow row) return;
+
+            // 全选/全不选会把 IsChecked 推到行上，绑定再回推控件并触发本事件；
+            // 值已经相同就直接返回，避免逐行触发一次全表扫描。
+            bool isChecked = box.IsChecked == true;
+            if (row.IsChecked == isChecked) return;
+
+            row.IsChecked = isChecked;
+            UpdateSelectAllThreatsState();
+            UpdateHandleAllButtonVisibility();
+        }
+
+        private void UpdateSelectAllThreatsState()
+        {
+            if (CurrentResults is null || CurrentResults.Count == 0)
+            {
+                SelectAllThreatsCheckBox.IsChecked = true;
+                return;
+            }
+
+            bool allChecked = true;
+            foreach (VirusRow row in CurrentResults)
+            {
+                if (row.IsChecked) continue;
+                allChecked = false;
+                break;
+            }
+            SelectAllThreatsCheckBox.IsChecked = allChecked;
         }
 
         private async Task OnTrustClickInternal(VirusRow? row)
@@ -498,8 +443,7 @@ namespace Xdows_Security.Views
                             CurrentResults.Remove(itemToRemove);
                         }
                         _threatsFound--;
-                        UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-                        StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
+                        UpdateScanStats(_filesScanned, _threatsFound);
                         UpdateHandleAllButtonVisibility();
                     }
                 }
@@ -620,8 +564,7 @@ namespace Xdows_Security.Views
                                 _threatsFound--;
                             }
                         }
-                        UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-                        StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults.Count);
+                        UpdateScanStats(_filesScanned, _threatsFound);
                     }
                 }
                 catch (Exception ex)
@@ -772,10 +715,23 @@ namespace Xdows_Security.Views
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
-                bool hasResults = CurrentResults != null && CurrentResults.Count > 0;
+                UpdateSelectAllThreatsState();
+                UpdateThreatListVisibility();
+
+                bool hasSelected = false;
+                if (CurrentResults != null)
+                {
+                    foreach (VirusRow row in CurrentResults)
+                    {
+                        if (!row.IsChecked) continue;
+                        hasSelected = true;
+                        break;
+                    }
+                }
+
                 bool scanComplete = PauseScanButton.Visibility == Visibility.Collapsed
                     && ResumeScanButton.Visibility == Visibility.Collapsed;
-                bool shouldShow = hasResults && scanComplete;
+                bool shouldShow = hasSelected && scanComplete;
 
                 if (shouldShow)
                 {
@@ -795,11 +751,22 @@ namespace Xdows_Security.Views
             });
         }
 
+        private int CountSelectedThreats()
+        {
+            if (CurrentResults == null) return 0;
+
+            int count = 0;
+            foreach (VirusRow row in CurrentResults)
+            {
+                if (row.IsChecked) count++;
+            }
+            return count;
+        }
+
         private async void OnHandleAllClick(object sender, RoutedEventArgs e)
         {
-            if (CurrentResults == null || CurrentResults.Count == 0) return;
-
-            int threatCount = CurrentResults.Count;
+            int threatCount = CountSelectedThreats();
+            if (threatCount == 0) return;
 
             ContentDialog confirmDialog = new()
             {
@@ -819,9 +786,15 @@ namespace Xdows_Security.Views
 
         private async Task HandleAllThreatsAsync()
         {
-            if (CurrentResults == null || CurrentResults.Count == 0) return;
-
-            List<VirusRow> snapshot = [.. CurrentResults];
+            List<VirusRow> snapshot = [];
+            if (CurrentResults != null)
+            {
+                foreach (VirusRow row in CurrentResults)
+                {
+                    if (row.IsChecked) snapshot.Add(row);
+                }
+            }
+            if (snapshot.Count == 0) return;
             int total = snapshot.Count;
 
             HideWithVisualReset(HandleAllButton);
@@ -932,8 +905,7 @@ namespace Xdows_Security.Views
                 }
             }
 
-            UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-            StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
+            UpdateScanStats(_filesScanned, _threatsFound);
 
             dialog.Hide();
 
@@ -1050,56 +1022,21 @@ namespace Xdows_Security.Views
 
             await resultDialog.ShowAsync();
         }
-        private void InitializeScanItems()
-        {
-            _scanItems =
-            [
-                new() { ItemName = Localizer.Get().GetLocalizedString("SecurityPage_ScanItem_System"), IconGlyph = "&#xE721;", StatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting") },
-                new() { ItemName = Localizer.Get().GetLocalizedString("SecurityPage_ScanItem_Memory"), IconGlyph = "&#xE896;", StatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting") },
-                new() { ItemName = Localizer.Get().GetLocalizedString("SecurityPage_ScanItem_Startup"), IconGlyph = "&#xE812;", StatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting") },
-                new() { ItemName = Localizer.Get().GetLocalizedString("SecurityPage_ScanItem_UserDocs"), IconGlyph = "&#xE8A5;", StatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting") }
-            ];
-        }
 
-        private void UpdateScanItemStatus(int itemIndex, string status, bool isActive, int threatCount = 0)
-        {
-            _dispatcherQueue.TryEnqueue(() =>
-            {
-                try
-                {
-                    if (_scanItems != null && itemIndex < _scanItems.Count)
-                    {
-                        ScanItem item = _scanItems[itemIndex];
-                        item.StatusText = status;
-                        item.IconColor = new SolidColorBrush(isActive ? Colors.DodgerBlue : Colors.Gray);
-                        item.ThreatCount = threatCount;
-                        item.ThreatCountVisibility = threatCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-                    }
-                }
-                catch { }
-            });
-        }
-
-        private void UpdateScanStats(int filesScanned, int _, int threatsFound)
+        private void UpdateScanStats(int filesScanned, int threatsFound)
         {
             _dispatcherQueue.TryEnqueue(() =>
             {
                 int threatForDisplay = CurrentResults?.Count ?? threatsFound;
 
-                // Keep UI counters consistent even under parallel scanning:
-                // safe + threats should match scanned (treat failures/unknown as safe for display).
-                int safeForDisplay = filesScanned - threatForDisplay;
-                if (safeForDisplay < 0) safeForDisplay = 0;
-
                 _filesScanned = filesScanned;
-                _filesSafe = safeForDisplay;
                 _threatsFound = threatsFound;
                 try
                 {
                     // 优先使用缓存的格式字符串（扫描期间已初始化），回退到实时查询以支持非扫描上下文调用
-                    FilesScannedText.Text = string.Format(_fmtFilesScanned ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format"), filesScanned);
-                    FilesSafeText.Text = string.Format(_fmtFilesSafe ?? Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format"), safeForDisplay);
-                    ThreatsFoundText.Text = string.Format(_fmtThreatsFound ?? Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format"), threatForDisplay);
+                    ScanStatsText.Text = string.Format(
+                        _fmtScanSummary ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Format"),
+                        filesScanned, _scanElapsedSeconds, _scanSpeed, threatForDisplay);
                 }
                 catch { }
             });
@@ -1285,7 +1222,7 @@ namespace Xdows_Security.Views
 
             if (result == ContentDialogResult.Primary)
             {
-                return [.. items.Select(i => i.Path)];
+                return (string[])[.. items.Select(i => i.Path)];
             }
             return [];
         }
@@ -1522,7 +1459,6 @@ namespace Xdows_Security.Views
                     {
                         if (!IsCurrentScan(scanId, token)) return;
                         LogText.AddNewLog(LogText.LogLevel.INFO, "Security - ScanFile", displayPath);
-                        try { StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning"), displayPath); } catch { }
                     });
 
                     string tempFile = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -1532,7 +1468,6 @@ namespace Xdows_Security.Views
 
                         if (TrustManager.IsPathTrusted(tempFile))
                         {
-                            Interlocked.Increment(ref _filesSafe);
                             continue;
                         }
 
@@ -1565,10 +1500,6 @@ namespace Xdows_Security.Views
 
                             Interlocked.Increment(ref _threatsFound);
                             LogText.AddNewLog(LogText.LogLevel.INFO, "Security - Find", $"ZIP Entry: {entryPath} - {virusResult}");
-                        }
-                        else
-                        {
-                            Interlocked.Increment(ref _filesSafe);
                         }
 
                         // ZIP entry should count as one completed scan unit for UI statistics.
@@ -1655,10 +1586,10 @@ namespace Xdows_Security.Views
             _pauseEvent.Set();
             _zipFileThreats.Clear();
             // 缓存 UI 格式化字符串，避免扫描期间每次 UpdateScanStats 都查询本地化资源
-            _fmtFilesScanned = Localizer.Get().GetLocalizedString("SecurityPage_FilesScanned_Format");
-            _fmtFilesSafe = Localizer.Get().GetLocalizedString("SecurityPage_FilesSafe_Format");
-            _fmtThreatsFound = Localizer.Get().GetLocalizedString("SecurityPage_ThreatsFound_Format");
-            _lastStatusFileName = null;
+            _fmtScanSummary = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Format");
+            _fmtScanSummaryCompleted = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Completed");
+            _scanElapsedSeconds = 0;
+            _scanSpeed = 0;
 
             var settings = App.LocalSettings;
             bool showScanProgress = settings.Values.TryGetValue("ShowScanProgress", out object? showProgressRaw) && showProgressRaw is bool showProgress && showProgress;
@@ -1726,7 +1657,6 @@ namespace Xdows_Security.Views
             {
                 _taskbarProgressActive = true;
                 _lastShowScanProgress = showScanProgress;
-                _lastShowTaskbarProgress = showTaskbarProgress;
                 try
                 {
                     if (showScanProgress)
@@ -1743,7 +1673,6 @@ namespace Xdows_Security.Views
             else
             {
                 _lastShowScanProgress = showScanProgress;
-                _lastShowTaskbarProgress = showTaskbarProgress;
                 ClearTaskbarProgress();
             }
 
@@ -1769,39 +1698,41 @@ namespace Xdows_Security.Views
             {
                 _dispatcherQueue.TryEnqueue(() =>
                 {
-                    StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Cancelled");
-                    StopRadar();
+                    StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Idle");
                 });
                 return;
             }
 
             ScanButton.IsEnabled = false;
 
-            _filesScanned = 0; _filesSafe = 0; _threatsFound = 0;
-            UpdateScanStats(0, 0, 0);
-
-            for (int i = 0; i < _scanItems!.Count; i++)
-                UpdateScanItemStatus(i, Localizer.Get().GetLocalizedString("SecurityPage_Status_Waiting"), false, 0);
+            _filesScanned = 0; _threatsFound = 0;
+            _scanTotalFiles = 0;
+            UpdateScanStats(0, 0);
 
             CurrentResults = [];
             _dispatcherQueue.TryEnqueue(() =>
             {
                 ScanProgress.IsIndeterminate = !showScanProgress;
                 VirusList.ItemsSource = CurrentResults;
+                SelectAllThreatsCheckBox.IsChecked = true;
                 ScanProgress.Value = 0;
                 ScanProgress.ShowPaused = false;
                 ScanProgress.Visibility = Visibility.Visible;
-                ProgressPercentText.Text = showScanProgress ? "0%" : string.Empty;
-                PathText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_PathText_Format"), displayName);
+                UpdateThreatListVisibility();
                 HideWithVisualReset(BackToVirusListButton);
-                PauseScanButton.Visibility = Visibility.Visible;
+                ShowWithEntranceAnimation(PauseScanButton, "right");
+                ShowWithEntranceAnimation(CancelScanButton, "right");
+                CancelScanButton.IsEnabled = true;
+                CancelScanButtonIcon.Visibility = Visibility.Visible;
+                CancelScanButtonRing.IsActive = false;
+                CancelScanButtonRing.Visibility = Visibility.Collapsed;
                 PauseScanButton.IsEnabled = false;
                 HideWithVisualReset(ResumeScanButton);
                 StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Processing");
-                OnBackList(false);
                 HideWithVisualReset(HandleAllButton);
-                StartRadar();
             });
+
+            _isScanRunning = true;
 
             await Task.Run(async () =>
             {
@@ -1822,26 +1753,21 @@ namespace Xdows_Security.Views
                         total = parallelIndex ? 0 : CountFiles(mode, userPath, customPaths);
                     }
 
+                    _scanTotalFiles = total;
+
                     DateTime startTime = DateTime.Now;
                     DateTime lastSpeedUpdateUtc = DateTime.UtcNow;
                     int lastSpeedScanned = 0;
 
-                    int currentItemIndex = mode switch
+                    _dispatcherQueue.TryEnqueue(() =>
                     {
-                        ScanMode.Quick => 0,
-                        ScanMode.Full => 1,
-                        ScanMode.File => 2,
-                        ScanMode.Folder => 3,
-                        ScanMode.More => 0,
-                        _ => 0
-                    };
+                        PauseScanButton.IsEnabled = true;
+                        // 索引结束、真正开始扫描时把顶部标题换成扫描阶段
+                        StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning");
+                    });
 
-                    UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning"), true);
-                    _dispatcherQueue.TryEnqueue(() => PauseScanButton.IsEnabled = true);
-
-                    string tStatusText = Localizer.Get().GetLocalizedString("SecurityPage_Status_Scanning");
-                    TimeSpan pausedTime = TimeSpan.Zero;
-                    DateTime lastPauseTime = DateTime.MinValue;
+                    long pausedTicks = 0;             // 累计暂停时长（ticks），被并行分支共享，只能原子累加
+                    long pauseStartedTicks = 0;       // 0 表示当前没有进行中的暂停计时
                     bool ScanInside = settings.Values.TryGetValue("ScanInside", out object? scanInsideRaw) && scanInsideRaw is bool scanInside && scanInside;
 
                     // 双层并行架构：
@@ -1948,16 +1874,17 @@ namespace Xdows_Security.Views
                     {
                         while (_isPaused && !ct.IsCancellationRequested)
                         {
-                            if (lastPauseTime == DateTime.MinValue) lastPauseTime = DateTime.Now;
+                            if (Interlocked.Read(ref pauseStartedTicks) == 0)
+                                Interlocked.CompareExchange(ref pauseStartedTicks, DateTime.Now.Ticks, 0);
                             await WaitWhilePausedAsync(ct);
                         }
                         if (ct.IsCancellationRequested) return;
 
-                        if (lastPauseTime != DateTime.MinValue)
-                        {
-                            pausedTime += DateTime.Now - lastPauseTime;
-                            lastPauseTime = DateTime.MinValue;
-                        }
+                        // 用 Exchange 一次性取走暂停起点：并行分支之间若先读后改，
+                        // 会把已经清零的起点当成 DateTime.MinValue 再算一次，pausedTicks 会变成「从公元 1 年起」的跨度
+                        long pauseStart = Interlocked.Exchange(ref pauseStartedTicks, 0);
+                        if (pauseStart != 0)
+                            Interlocked.Add(ref pausedTicks, DateTime.Now.Ticks - pauseStart);
 
                         if (!IsCurrentScan(thisId, ct)) return;
 
@@ -1965,24 +1892,13 @@ namespace Xdows_Security.Views
                         if (shouldUpdateUi)
                         {
                             lastUiUpdate = DateTime.UtcNow;
-                            // best-effort 去重：并行下多 worker 可能同时通过引用比较，最多冗余一次 TryEnqueue，无正确性问题
-                            if (!ReferenceEquals(file, _lastStatusFileName))
-                            {
-                                _lastStatusFileName = file;
-                                _dispatcherQueue.TryEnqueue(() =>
-                                {
-                                    if (!IsCurrentScan(thisId, token)) return;
-                                    try { StatusText.Text = string.Format(tStatusText, file); } catch { }
-                                });
-                            }
                         }
 
                         // 快速路径：受信任文件直接跳过，不进scanGate，零内存开销
                         if (TrustManager.IsPathTrusted(file))
                         {
-                            Interlocked.Increment(ref _filesSafe);
                             Interlocked.Increment(ref _filesScanned);
-                            if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                            if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _threatsFound); } catch { }
                             return;
                         }
 
@@ -2065,17 +1981,15 @@ namespace Xdows_Security.Views
                                             }
                                             catch { }
                                         });
-                                        int newThreats = Interlocked.Increment(ref _threatsFound);
-                                        UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
+                                        Interlocked.Increment(ref _threatsFound);
                                         Interlocked.Increment(ref _filesScanned);
-                                        if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                                        if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _threatsFound); } catch { }
                                         return;
                                     }
                                     else if (exactRuleSuccess && result == "safe")
                                     {
-                                        Interlocked.Increment(ref _filesSafe);
                                         Interlocked.Increment(ref _filesScanned);
-                                        if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                                        if (shouldUpdateUi) try { UpdateScanStats(_filesScanned, _threatsFound); } catch { }
                                         return;
                                     }
                                 }
@@ -2089,17 +2003,23 @@ namespace Xdows_Security.Views
 
                         if (ScanInside && ArchiveScanner.IsArchiveFile(file))
                         {
-                            await scanGate.WaitAsync(ct);
+                            // 取消时 WaitAsync 会抛 TaskCanceledException。这一句在任何 try 之外，
+                            // 异常会穿过 Parallel 的分支循环（调试器在抛出点就中断），而取消只需要放弃本次迭代
+                            try { await scanGate.WaitAsync(ct); }
+                            catch (OperationCanceledException) { return; }
                             try
                             {
                                 await ScanArchiveFileAsync(thisId, file, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, scanGate, ct);
                             }
+                            catch (OperationCanceledException) { }
                             finally { scanGate.Release(); }
                             return;
                         }
 
                         // 重扫描：scanGate限制并发，不预读文件，由引擎按需读取
-                        await scanGate.WaitAsync(ct);
+                        // 取消走这里返回，不要让 TaskCanceledException 从并行体抛出去
+                        try { await scanGate.WaitAsync(ct); }
+                        catch (OperationCanceledException) { return; }
                         try
                         {
                             var scanRes = await RunScansOnFileAsync(file, null, null, DeepScan, ExtraData, UseLocalScan, UseCloudScan, UseModelScan, UseInfectorCleaner, UseVirusFamily, ModelEngine, ct);
@@ -2149,12 +2069,10 @@ namespace Xdows_Security.Views
                                     AddVirusResult(file, scanRes.VirusInfo ?? string.Empty, scanRes.FamilyInfo, scanRes.EngineName, UseVirusFamily);
                                     ShowBackToVirusListButton();
                                 });
-                                int newThreats = Interlocked.Increment(ref _threatsFound);
-                                UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_FoundThreat"), true, newThreats);
+                                Interlocked.Increment(ref _threatsFound);
                             }
                             else
                             {
-                                Interlocked.Increment(ref _filesSafe);
                             }
                         }
                         catch (OperationCanceledException) { }
@@ -2171,7 +2089,7 @@ namespace Xdows_Security.Views
 
                         if (shouldUpdateUi)
                         {
-                            TimeSpan elapsedTime = DateTime.Now - startTime - pausedTime;
+                            TimeSpan elapsedTime = DateTime.Now - startTime - TimeSpan.FromTicks(Interlocked.Read(ref pausedTicks));
                             DateTime nowUtc = DateTime.UtcNow;
                             double scanSpeed = 0.0;
                             double speedWindowSeconds = (nowUtc - lastSpeedUpdateUtc).TotalSeconds;
@@ -2182,17 +2100,9 @@ namespace Xdows_Security.Views
                                 scanSpeed = speedWindowSeconds > 0 ? delta / speedWindowSeconds : 0.0;
                                 lastSpeedScanned = nowScanned;
                                 lastSpeedUpdateUtc = nowUtc;
+                                _scanSpeed = scanSpeed;
                             }
-                            _dispatcherQueue.TryEnqueue(() =>
-                            {
-                                if (!IsCurrentScan(thisId, token)) return;
-                                try
-                                {
-                                    if (speedWindowSeconds >= 1.0)
-                                        ScanSpeedText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanSpeed_Format"), scanSpeed);
-                                }
-                                catch { }
-                            });
+                            _scanElapsedSeconds = elapsedTime.TotalSeconds;
 
                             if (showScanProgress)
                             {
@@ -2200,7 +2110,7 @@ namespace Xdows_Security.Views
                                 if (percent > 100) percent = 100;
                                 _dispatcherQueue.TryEnqueue(() =>
                                 {
-                                    try { ScanProgress.Value = percent; ProgressPercentText.Text = $"{percent:F0}%"; } catch { }
+                                    try { ScanProgress.Value = percent; } catch { }
                                 });
 
                                 if (showTaskbarProgress && !_isPaused)
@@ -2209,7 +2119,7 @@ namespace Xdows_Security.Views
                                 }
                             }
 
-                            try { UpdateScanStats(_filesScanned, _filesSafe, _threatsFound); } catch { }
+                            try { UpdateScanStats(_filesScanned, _threatsFound); } catch { }
                         }
                     });
                     if (UseExactRule)
@@ -2220,20 +2130,26 @@ namespace Xdows_Security.Views
                     scanGate.Dispose();
                     hashGate.Dispose();
 
-                    UpdateScanItemStatus(currentItemIndex, Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed"), false, _threatsFound);
+                    TimeSpan totalElapsed = DateTime.Now - startTime - TimeSpan.FromTicks(Interlocked.Read(ref pausedTicks));
+                    double totalSeconds = totalElapsed.TotalSeconds;
+                    int scannedCount = _filesScanned;
+                    double averageSpeed = totalSeconds > 0 ? scannedCount / totalSeconds : 0;
 
                     _dispatcherQueue.TryEnqueue(() =>
                     {
                         if (!IsCurrentScan(thisId, token)) return;
                         ApplicationDataContainer settingsLocal = App.LocalSettings;
                         settingsLocal.Values["LastScanTime"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                        UpdateScanStats(_filesScanned, _filesSafe, _threatsFound);
-                        StatusText.Text = string.Format(Localizer.Get().GetLocalizedString("SecurityPage_ScanCompleteFound"), CurrentResults?.Count ?? 0);
+                        // 完成态直接写这两行，不要再走 UpdateScanStats —— 它会再排一次队，把完成文案覆盖回进行中
+                        StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_Status_Completed");
+                        ScanStatsText.Text = string.Format(
+                            _fmtScanSummaryCompleted ?? Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Completed"),
+                            scannedCount, totalSeconds, averageSpeed, CurrentResults?.Count ?? _threatsFound);
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
                         HideWithVisualReset(PauseScanButton);
                         HideWithVisualReset(ResumeScanButton);
-                        StopRadar();
+                        HideWithVisualReset(CancelScanButton);
                         UpdateHandleAllButtonVisibility();
                     });
                     ClearTaskbarProgress();
@@ -2242,13 +2158,23 @@ namespace Xdows_Security.Views
                 {
                     _dispatcherQueue.TryEnqueue(() =>
                     {
-                        if (!IsCurrentScan(thisId, token)) return;
+                        // 取消后 token 已经置位，IsCurrentScan 会直接返回 false；
+                        // 这里只判断是不是已经被新扫描顶替，否则取消永远看不到任何反馈。
+                        if (thisId != _scanId) return;
+
                         StatusText.Text = Localizer.Get().GetLocalizedString("SecurityPage_ScanCancelled");
+                        // 摘要换成「平均速度」，口径是开始扫描 → 点下取消那一刻（见 OnCancelScanClick 的快照），
+                        // 不用收尾时循环里的最终值，否则等待并行分支退出的时间会稀释平均速度
+                        double cancelAverageSpeed = _cancelElapsedSeconds > 0 ? _cancelScannedCount / _cancelElapsedSeconds : 0;
+                        ScanStatsText.Text = string.Format(
+                            Localizer.Get().GetLocalizedString("SecurityPage_ScanSummary_Cancelled"),
+                            _cancelScannedCount, _cancelElapsedSeconds, cancelAverageSpeed, CurrentResults?.Count ?? _threatsFound);
                         ScanProgress.ShowPaused = false;
                         ScanProgress.Visibility = Visibility.Collapsed;
+                        HideWithVisualReset(PauseScanButton);
                         HideWithVisualReset(ResumeScanButton);
-                        StopRadar();
-                        HideWithVisualReset(HandleAllButton);
+                        HideWithVisualReset(CancelScanButton);
+                        UpdateHandleAllButtonVisibility();
                     });
                     ClearTaskbarProgress();
                 }
@@ -2263,34 +2189,35 @@ namespace Xdows_Security.Views
                         ScanProgress.Visibility = Visibility.Collapsed;
                         HideWithVisualReset(PauseScanButton);
                         HideWithVisualReset(ResumeScanButton);
-                        StopRadar();
+                        HideWithVisualReset(CancelScanButton);
                         HideWithVisualReset(HandleAllButton);
                     });
                     ClearTaskbarProgress();
                 }
             });
 
+            _isScanRunning = false;
             ScanButton.IsEnabled = true;
         }
 
         private void OnBackToVirusListClick(object sender, RoutedEventArgs e)
         {
-            OnBackList(VirusList.Visibility != Visibility.Visible);
+            // 用目标状态判断而不是 Visibility：淡出那 200ms 里 Visibility 还是 Visible
+            OnBackList(!_threatListShown);
         }
 
         private void OnBackList(bool isShow)
         {
             if (isShow)
             {
-                ShowWithEntranceAnimation(VirusList);
+                ShowThreatList();
             }
             else
             {
-                HideWithVisualReset(VirusList);
+                HideThreatList();
             }
 
-            BackToVirusListButtonText.Text = isShow ? Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Hide") : Localizer.Get().GetLocalizedString("SecurityPage_BackToVirusList_Show");
-            BackToVirusListButtonIcon.Glyph = isShow ? "\uED1A" : "\uE890";
+            SyncBackToVirusListButtonText(isShow);
         }
 
         private void OnPauseScanClick(object sender, RoutedEventArgs e)
@@ -2300,7 +2227,6 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = true;
             HideWithVisualReset(PauseScanButton);
             ShowWithEntranceAnimation(ResumeScanButton, "right");
-            PauseRadar();
             ScanProgress.ShowPaused = true;
 
             if (_taskbarProgressActive)
@@ -2309,7 +2235,7 @@ namespace Xdows_Security.Views
                 {
                     if (_lastShowScanProgress)
                     {
-                        var total = _scanItems?.Count ?? 0;
+                        var total = _scanTotalFiles;
                         double progress01 = total == 0 ? 0 : Math.Min(1.0, (double)_filesScanned / total);
                         TaskbarProgressService.TrySetPaused(progress01);
                     }
@@ -2329,7 +2255,6 @@ namespace Xdows_Security.Views
             ScanButton.IsEnabled = false;
             ShowWithEntranceAnimation(PauseScanButton, "right");
             HideWithVisualReset(ResumeScanButton);
-            ResumeRadar();
             ScanProgress.ShowPaused = false;
 
             UpdateTaskbarProgressStateForRunning();
@@ -2748,7 +2673,7 @@ namespace Xdows_Security.Views
             try
             {
                 var files = await new FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickMultipleFilesAsync();
-                return files is null ? [] : [.. files.Select(f => f.Path)];
+                return files is null ? [] : (string[])[.. files.Select(f => f.Path)];
             }
             catch { return []; }
         }
@@ -2759,7 +2684,7 @@ namespace Xdows_Security.Views
             try
             {
                 var folders = await new FolderPicker(XamlRoot.ContentIslandEnvironment.AppWindowId).PickMultipleFoldersAsync();
-                return folders is null ? [] : [.. folders.Select(f => f.Path)];
+                return folders is null ? [] : (string[])[.. folders.Select(f => f.Path)];
             }
             catch { return []; }
         }
