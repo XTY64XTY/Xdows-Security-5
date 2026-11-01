@@ -34,8 +34,8 @@ namespace Xdows_Security
         private bool _closeConfirmationPending;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubclassProc;
-        private TaskCompletionSource<SecurityPage?>? _securityPageReadyTcs;
-        private static readonly TimeSpan SecurityPageWaitTimeout = TimeSpan.FromSeconds(5);
+        private TaskCompletionSource<ScanPage?>? _scanPageReadyTcs;
+        private static readonly TimeSpan ScanPageWaitTimeout = TimeSpan.FromSeconds(5);
         private MenuFlyout? _trayMenu;
         private MenuFlyoutItem? _trayOpenItem;
         private MenuFlyoutItem? _traySettingsItem;
@@ -167,19 +167,19 @@ namespace Xdows_Security
             {
                 try
                 {
-                    GoToPage("Security");
-                    SecurityPage? securityPage = await WaitForSecurityPageAsync();
+                    GoToPage("Scan");
+                    ScanPage? scanPage = await WaitForScanPageAsync();
 
-                    if (securityPage != null)
+                    if (scanPage != null)
                     {
                         string displayName = System.IO.Path.GetFileName(scanPath);
                         if (string.IsNullOrEmpty(displayName))
                             displayName = scanPath;
-                        await securityPage.StartScanAsync(displayName, ScanMode.More, [scanPath]);
+                        await scanPage.StartScanAsync(displayName, ScanMode.More, [scanPath]);
                     }
                     else
                     {
-                        LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Failed to get SecurityPage for scanning");
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Failed to get ScanPage for scanning");
                     }
                 }
                 catch (Exception ex)
@@ -208,19 +208,19 @@ namespace Xdows_Security
             {
                 try
                 {
-                    GoToPage("Security");
-                    SecurityPage? securityPage = await WaitForSecurityPageAsync();
+                    GoToPage("Scan");
+                    ScanPage? scanPage = await WaitForScanPageAsync();
 
-                    if (securityPage != null)
+                    if (scanPage != null)
                     {
                         string displayName = validPaths.Count == 1
                             ? System.IO.Path.GetFileName(validPaths[0]) ?? validPaths[0]
                             : $"{validPaths.Count} items";
-                        await securityPage.StartScanAsync(displayName, ScanMode.More, validPaths);
+                        await scanPage.StartScanAsync(displayName, ScanMode.More, validPaths);
                     }
                     else
                     {
-                        LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Failed to get SecurityPage for scanning");
+                        LogText.AddNewLog(LogText.LogLevel.ERROR, "MainWindow", "Failed to get ScanPage for scanning");
                     }
                 }
                 catch (Exception ex)
@@ -230,28 +230,28 @@ namespace Xdows_Security
             });
         }
 
-        private async Task<SecurityPage?> WaitForSecurityPageAsync()
+        private async Task<ScanPage?> WaitForScanPageAsync()
         {
-            if (navContainer.Content is SecurityPage { IsLoaded: true } loadedPage)
+            if (navContainer.Content is ScanPage { IsLoaded: true } loadedPage)
                 return loadedPage;
 
-            var existing = _securityPageReadyTcs;
+            var existing = _scanPageReadyTcs;
             if (existing is { Task.IsCompleted: false })
                 return await existing.Task;
 
-            var tcs = new TaskCompletionSource<SecurityPage?>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _securityPageReadyTcs = tcs;
+            var tcs = new TaskCompletionSource<ScanPage?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _scanPageReadyTcs = tcs;
 
-            using var cts = new CancellationTokenSource(SecurityPageWaitTimeout);
+            using var cts = new CancellationTokenSource(ScanPageWaitTimeout);
             cts.Token.Register(() => tcs.TrySetResult(null));
 
             return await tcs.Task;
         }
 
-        internal void NotifySecurityPageReady(SecurityPage page)
+        internal void NotifyScanPageReady(ScanPage page)
         {
-            var tcs = _securityPageReadyTcs;
-            _securityPageReadyTcs = null;
+            var tcs = _scanPageReadyTcs;
+            _scanPageReadyTcs = null;
             tcs?.TrySetResult(page);
         }
 
@@ -421,7 +421,7 @@ namespace Xdows_Security
             var pageType = PageName switch
             {
                 "Home" => typeof(HomePage),
-                "Security" => typeof(SecurityPage),
+                "Scan" => typeof(ScanPage),
                 "XdowsTools" => typeof(XdowsToolsPage),
                 "Settings" => typeof(SettingsPage),
                 "Quarantine" => typeof(QuarantinePage),

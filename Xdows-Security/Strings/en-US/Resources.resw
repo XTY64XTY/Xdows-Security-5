@@ -237,154 +237,154 @@
   <data name="SettingsPage_Other_RestartOOBE.Description" xml:space="preserve">
     <value>Run the out-of-box experience again</value>
   </data>
-  <data name="MainWindow_Nav_Security.Content" xml:space="preserve">
-    <value>Security</value>
+  <data name="MainWindow_Nav_Scan.Content" xml:space="preserve">
+    <value>Scan</value>
   </data>
-  <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
+  <data name="ScanPage_GetFailed_Text" xml:space="preserve">
     <value>Get Failed</value>
   </data>
-  <data name="SecurityPage_BackToVirusListButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_BackToVirusListButtonText.Text" xml:space="preserve">
     <value>View list</value>
   </data>
-  <data name="SecurityPage_PauseScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_PauseScanButtonText.Text" xml:space="preserve">
     <value>Pause scan</value>
   </data>
-  <data name="SecurityPage_CancelScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_CancelScanButtonText.Text" xml:space="preserve">
     <value>Cancel scan</value>
   </data>
-  <data name="SecurityPage_ResumeScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_ResumeScanButtonText.Text" xml:space="preserve">
     <value>Resume scan</value>
   </data>
-  <data name="SecurityPage_ScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_ScanButtonText.Text" xml:space="preserve">
     <value>Start Scan</value>
   </data>
-  <data name="SecurityPage_ScanMenu_Quick.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_Quick.Text" xml:space="preserve">
     <value>Quick scan</value>
   </data>
-  <data name="SecurityPage_ScanMenu_Full.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_Full.Text" xml:space="preserve">
     <value>Full scan</value>
   </data>
-  <data name="SecurityPage_ScanMenu_File.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_File.Text" xml:space="preserve">
     <value>File scan</value>
   </data>
-  <data name="SecurityPage_ScanMenu_Folder.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_Folder.Text" xml:space="preserve">
     <value>Folder scan</value>
   </data>
-  <data name="SecurityPage_ScanMenu_More.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_More.Text" xml:space="preserve">
     <value>More scan</value>
   </data>
-  <data name="SecurityPage_MenuItem_Details.Text" xml:space="preserve">
+  <data name="ScanPage_MenuItem_Details.Text" xml:space="preserve">
     <value>Details</value>
   </data>
-  <data name="SecurityPage_NoEngine_Title" xml:space="preserve">
+  <data name="ScanPage_NoEngine_Title" xml:space="preserve">
     <value>No scan engine selected</value>
   </data>
-  <data name="SecurityPage_NoEngine_Content" xml:space="preserve">
+  <data name="ScanPage_NoEngine_Content" xml:space="preserve">
     <value>Please go to Settings - Scan Engine and select at least one engine.</value>
   </data>
   <data name="Button_Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="SecurityPage_More_BrowseFolder" xml:space="preserve">
+  <data name="ScanPage_More_BrowseFolder" xml:space="preserve">
     <value>Browse folder</value>
   </data>
-  <data name="SecurityPage_More_BrowseFile" xml:space="preserve">
+  <data name="ScanPage_More_BrowseFile" xml:space="preserve">
     <value>Browse file</value>
   </data>
-  <data name="SecurityPage_More_RemoveItem" xml:space="preserve">
+  <data name="ScanPage_More_RemoveItem" xml:space="preserve">
     <value>Remove item</value>
   </data>
-  <data name="SecurityPage_More_ClearAll" xml:space="preserve">
+  <data name="ScanPage_More_ClearAll" xml:space="preserve">
     <value>Clear all</value>
   </data>
-  <data name="SecurityPage_MoreScan_Title" xml:space="preserve">
+  <data name="ScanPage_MoreScan_Title" xml:space="preserve">
     <value>More scan</value>
   </data>
-  <data name="SecurityPage_StartScanButton" xml:space="preserve">
+  <data name="ScanPage_StartScanButton" xml:space="preserve">
     <value>Start scan</value>
   </data>
-  <data name="SecurityPage_DuplicatePath_Title" xml:space="preserve">
+  <data name="ScanPage_DuplicatePath_Title" xml:space="preserve">
     <value>Duplicate path</value>
   </data>
-  <data name="SecurityPage_DuplicatePath_Content" xml:space="preserve">
+  <data name="ScanPage_DuplicatePath_Content" xml:space="preserve">
     <value>The path is already in the list: {0}</value>
   </data>
-  <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
+  <data name="ScanPage_InitFailed_Content" xml:space="preserve">
     <value>Please go to Settings - Scan and uncheck this engine.</value>
   </data>
-  <data name="SecurityPage_Status_Processing" xml:space="preserve">
+  <data name="ScanPage_Status_Processing" xml:space="preserve">
     <value>Indexing files...</value>
   </data>
-  <data name="SecurityPage_ScanCancelled" xml:space="preserve">
+  <data name="ScanPage_ScanCancelled" xml:space="preserve">
     <value>Scan cancelled</value>
   </data>
-  <data name="SecurityPage_ScanFailed_Format" xml:space="preserve">
+  <data name="ScanPage_ScanFailed_Format" xml:space="preserve">
     <value>Scan failed: {0}</value>
   </data>
-  <data name="SecurityPage_Details_Title" xml:space="preserve">
+  <data name="ScanPage_Details_Title" xml:space="preserve">
     <value>File Details</value>
   </data>
-  <data name="SecurityPage_Details_FilePath" xml:space="preserve">
+  <data name="ScanPage_Details_FilePath" xml:space="preserve">
     <value>File Path:</value>
   </data>
-  <data name="SecurityPage_ListHeader_Path.Text" xml:space="preserve">
+  <data name="ScanPage_ListHeader_Path.Text" xml:space="preserve">
     <value>File path</value>
   </data>
-  <data name="SecurityPage_ListHeader_Threat.Text" xml:space="preserve">
+  <data name="ScanPage_ListHeader_Threat.Text" xml:space="preserve">
     <value>Threat name</value>
   </data>
-  <data name="SecurityPage_Details_VirusName" xml:space="preserve">
+  <data name="ScanPage_Details_VirusName" xml:space="preserve">
     <value>Virus Name: {0}</value>
   </data>
-  <data name="SecurityPage_Details_FileSize" xml:space="preserve">
+  <data name="ScanPage_Details_FileSize" xml:space="preserve">
     <value>File Size: {0:F2} KB</value>
   </data>
-  <data name="SecurityPage_Details_CreationTime" xml:space="preserve">
+  <data name="ScanPage_Details_CreationTime" xml:space="preserve">
     <value>Creation Time: {0}</value>
   </data>
-  <data name="SecurityPage_Details_LastWriteTime" xml:space="preserve">
+  <data name="ScanPage_Details_LastWriteTime" xml:space="preserve">
     <value>Last Write Time: {0}</value>
   </data>
-  <data name="SecurityPage_Details_LocateButton" xml:space="preserve">
+  <data name="ScanPage_Details_LocateButton" xml:space="preserve">
     <value>Locate File</value>
   </data>
-  <data name="SecurityPage_Details_Unknown" xml:space="preserve">
+  <data name="ScanPage_Details_Unknown" xml:space="preserve">
     <value>Unknown</value>
   </data>
-  <data name="SecurityPage_Details_NotAvailable" xml:space="preserve">
+  <data name="ScanPage_Details_NotAvailable" xml:space="preserve">
     <value>Not Available</value>
   </data>
-  <data name="SecurityPage_Details_EngineName" xml:space="preserve">
+  <data name="ScanPage_Details_EngineName" xml:space="preserve">
     <value>Detection Engine:</value>
   </data>
-  <data name="SecurityPage_Details_SHA256" xml:space="preserve">
+  <data name="ScanPage_Details_SHA256" xml:space="preserve">
     <value>SHA256:</value>
   </data>
-  <data name="SecurityPage_LocateFailed_Title" xml:space="preserve">
+  <data name="ScanPage_LocateFailed_Title" xml:space="preserve">
     <value>Locate Failed</value>
   </data>
-  <data name="SecurityPage_LocateFailed_Content" xml:space="preserve">
+  <data name="ScanPage_LocateFailed_Content" xml:space="preserve">
     <value>Unable to locate file: {0}</value>
   </data>
-  <data name="SecurityPage_BackToVirusList_Hide" xml:space="preserve">
+  <data name="ScanPage_BackToVirusList_Hide" xml:space="preserve">
     <value>Hide List</value>
   </data>
-  <data name="SecurityPage_BackToVirusList_Show" xml:space="preserve">
+  <data name="ScanPage_BackToVirusList_Show" xml:space="preserve">
     <value>Show List</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Idle" xml:space="preserve">
-    <value>Select a location to continue</value>
+  <data name="ScanPage_ScanSummary_Idle" xml:space="preserve">
+    <value>No active scan task</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Format" xml:space="preserve">
+  <data name="ScanPage_ScanSummary_Format" xml:space="preserve">
     <value>{0} files scanned, {1:F0} s elapsed, current speed {2:F0} files/s, {3} threats found</value>
   </data>
-  <data name="SecurityPage_Status_Scanning" xml:space="preserve">
+  <data name="ScanPage_Status_Scanning" xml:space="preserve">
     <value>Scanning...</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Completed" xml:space="preserve">
+  <data name="ScanPage_ScanSummary_Completed" xml:space="preserve">
     <value>{0} files scanned in this scan</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Stats" xml:space="preserve">
+  <data name="ScanPage_ScanSummary_Stats" xml:space="preserve">
     <value>{0:F0} s elapsed, average speed {1:F0} files/s, {2} threats found</value>
   </data>
   <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
@@ -960,87 +960,87 @@ The original developer of this software (Xdows Software) bears no responsibility
 In the event of any form of dispute, the Chinese version of the disclaimer shall prevail.
 If you do not accept it, please turn off the engine, or stop using and delete the software.</value>
   </data>
-  <data name="SecurityPage_MenuItem_Trust.Text" xml:space="preserve">
+  <data name="ScanPage_MenuItem_Trust.Text" xml:space="preserve">
     <value>Trust File</value>
   </data>
-  <data name="SecurityPage_MenuItem_Handle.Text" xml:space="preserve">
+  <data name="ScanPage_MenuItem_Handle.Text" xml:space="preserve">
     <value>Handle File</value>
   </data>
-  <data name="SecurityPage_TrustConfirm_Title" xml:space="preserve">
+  <data name="ScanPage_TrustConfirm_Title" xml:space="preserve">
     <value>Trust File</value>
   </data>
-  <data name="SecurityPage_TrustConfirm_Content" xml:space="preserve">
+  <data name="ScanPage_TrustConfirm_Content" xml:space="preserve">
     <value>Are you sure you want to add this file to the trust area? {0} will no longer be detected as a threat by the scan engine.</value>
   </data>
-  <data name="SecurityPage_TrustConfirm_Primary" xml:space="preserve">
+  <data name="ScanPage_TrustConfirm_Primary" xml:space="preserve">
     <value>Trust</value>
   </data>
-  <data name="SecurityPage_TrustResult_Title" xml:space="preserve">
+  <data name="ScanPage_TrustResult_Title" xml:space="preserve">
     <value>Trust Successful</value>
   </data>
-  <data name="SecurityPage_TrustResult_Content" xml:space="preserve">
+  <data name="ScanPage_TrustResult_Content" xml:space="preserve">
     <value>File {0} has been successfully added to the trust area and will no longer be detected as a threat.</value>
   </data>
-  <data name="SecurityPage_TrustFailed_Title" xml:space="preserve">
+  <data name="ScanPage_TrustFailed_Title" xml:space="preserve">
     <value>Trust Failed</value>
   </data>
-  <data name="SecurityPage_TrustFailed_Content" xml:space="preserve">
+  <data name="ScanPage_TrustFailed_Content" xml:space="preserve">
     <value>Failed to add file to trust area. Please check if the file exists or if permissions are sufficient.</value>
   </data>
-  <data name="SecurityPage_HandleConfirm_Title" xml:space="preserve">
+  <data name="ScanPage_HandleConfirm_Title" xml:space="preserve">
     <value>Handle File</value>
   </data>
-  <data name="SecurityPage_HandleConfirm_Content" xml:space="preserve">
+  <data name="ScanPage_HandleConfirm_Content" xml:space="preserve">
     <value>Are you sure to handle this file
 {0}</value>
   </data>
-  <data name="SecurityPage_HandleConfirm_Primary" xml:space="preserve">
+  <data name="ScanPage_HandleConfirm_Primary" xml:space="preserve">
     <value>Handle</value>
   </data>
-  <data name="SecurityPage_HandleAction_Quarantined" xml:space="preserve">
+  <data name="ScanPage_HandleAction_Quarantined" xml:space="preserve">
     <value>File has been successfully quarantined</value>
   </data>
-  <data name="SecurityPage_HandleAction_Deleted" xml:space="preserve">
+  <data name="ScanPage_HandleAction_Deleted" xml:space="preserve">
     <value>File has been successfully deleted</value>
   </data>
-  <data name="SecurityPage_HandleAction_Failed" xml:space="preserve">
+  <data name="ScanPage_HandleAction_Failed" xml:space="preserve">
     <value>Failed to handle file</value>
   </data>
-  <data name="SecurityPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
+  <data name="ScanPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
     <value>Quarantined {0} files and deleted {1} entries from archive</value>
   </data>
-  <data name="SecurityPage_HandleFailed_Title" xml:space="preserve">
+  <data name="ScanPage_HandleFailed_Title" xml:space="preserve">
     <value>Handle Failed</value>
   </data>
-  <data name="SecurityPage_HandleAllButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_HandleAllButtonText.Text" xml:space="preserve">
     <value>Handle selected</value>
   </data>
-  <data name="SecurityPage_HandleAllConfirm_Title" xml:space="preserve">
+  <data name="ScanPage_HandleAllConfirm_Title" xml:space="preserve">
     <value>Handle Selected Threats</value>
   </data>
-  <data name="SecurityPage_HandleAllConfirm_Content" xml:space="preserve">
+  <data name="ScanPage_HandleAllConfirm_Content" xml:space="preserve">
     <value>Are you sure you want to handle the {0} selected threat files?
 Files can be restored from quarantine after handling. Some files may be deleted directly.</value>
   </data>
-  <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
+  <data name="ScanPage_HandleAllConfirm_Primary" xml:space="preserve">
     <value>Handle</value>
   </data>
-  <data name="SecurityPage_HandleProcessing" xml:space="preserve">
+  <data name="ScanPage_HandleProcessing" xml:space="preserve">
     <value>Processing threat files...</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_Title" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_Title" xml:space="preserve">
     <value>Handling Complete</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_Success" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_Success" xml:space="preserve">
     <value>Successfully handled {0} file(s)</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_FailedHeader" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_FailedHeader" xml:space="preserve">
     <value>The following files failed to handle:</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_AllFailed_Title" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_AllFailed_Title" xml:space="preserve">
     <value>Handling Failed</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_FailedTip" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_FailedTip" xml:space="preserve">
     <value>Failed threats remain in the list and can be handled individually</value>
   </data>
   <data name="Common_OperationSuccess" xml:space="preserve">
@@ -1367,16 +1367,16 @@ Files can be restored from quarantine after handling. Some files may be deleted 
   <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Description" xml:space="preserve">
     <value>Show a back button in the title bar or navigation bar</value>
   </data>
-  <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
+  <data name="ScanPage_Model_InitFailed_Title" xml:space="preserve">
     <value>Cannot initialize Xdows Model</value>
   </data>
   <data name="Button_Skip" xml:space="preserve">
     <value>Skip</value>
   </data>
-  <data name="SecurityPage_ArchivePassword_Title" xml:space="preserve">
+  <data name="ScanPage_ArchivePassword_Title" xml:space="preserve">
     <value>Archive is password protected</value>
   </data>
-  <data name="SecurityPage_ArchivePassword_Placeholder" xml:space="preserve">
+  <data name="ScanPage_ArchivePassword_Placeholder" xml:space="preserve">
     <value>Please enter password</value>
   </data>
   <data name="SettingsPage_Appearance_Sound.Header" xml:space="preserve">
@@ -1767,26 +1767,26 @@ Do you want to continue?</value>
   <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
     <value>Driver protection could not be enabled. Opening the environment check.</value>
   </data>
-  <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
+  <data name="ScanPage_Details_FamilyName" xml:space="preserve">
     <value>Threats Family:</value>
   </data>
-  <data name="SecurityPage_Details_OpenButton" xml:space="preserve">
+  <data name="ScanPage_Details_OpenButton" xml:space="preserve">
     <value>Open File</value>
   </data>
-  <data name="SecurityPage_Risk_Title" xml:space="preserve">
+  <data name="ScanPage_Risk_Title" xml:space="preserve">
     <value>Risk Warning</value>
   </data>
-  <data name="SecurityPage_Risk_ArchiveContent" xml:space="preserve">
+  <data name="ScanPage_Risk_ArchiveContent" xml:space="preserve">
     <value>Do you want to open this file with the default program on this device:
 {0}
 This action may cause you to accidentally run a threat file.</value>
   </data>
-  <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
+  <data name="ScanPage_Risk_FileContent" xml:space="preserve">
     <value>Do you want to select this file with File Explorer:
 {0}
 This action may cause you to accidentally run a threat file.</value>
   </data>
-  <data name="SecurityPage_Risk_Allow" xml:space="preserve">
+  <data name="ScanPage_Risk_Allow" xml:space="preserve">
     <value>Allow</value>
   </data>
   <data name="ProcessManager_DriverModeToggle.OffContent" xml:space="preserve">

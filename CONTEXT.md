@@ -17,9 +17,9 @@
 ## Scanning
 
 - **Executable Extensions**: `.exe`, `.dll`, `.sys`, `.com`, `.scr`, `.bat`, `.cmd`, `.ps1`, `.vbs`, `.js`, `.wsf`, `.msi`. Only files with these extensions are scanned on USB devices.
-- **Single-threaded Scan**: USB scan processes files one at a time (no internal parallelism), independent of SecurityPage's concurrent scan architecture.
-- **RunScansOnFileAsync**: A `internal static` method on `SecurityPage` that runs configured scan engines against a single file. Shared between SecurityPage's main scan and UsbScanService.
-- **ScanResult**: A `internal record` on `SecurityPage` representing scan output (engine name, virus info, family info).
+- **Single-threaded Scan**: USB scan processes files one at a time (no internal parallelism), independent of ScanPage's concurrent scan architecture.
+- **RunScansOnFileAsync**: A `internal static` method on `ScanPage` that runs configured scan engines against a single file. Shared between ScanPage's main scan and UsbScanService.
+- **ScanResult**: A `internal record` on `ScanPage` representing scan output (engine name, virus info, family info).
 
 ## UI Behavior
 

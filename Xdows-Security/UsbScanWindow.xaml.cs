@@ -187,7 +187,7 @@ public sealed partial class UsbScanWindow : Window
             if (App.MainWindow != null)
             {
                 App.MainWindow.Activate();
-                App.MainWindow.GoToPage("Security");
+                App.MainWindow.GoToPage("Scan");
             }
         }
         catch { }

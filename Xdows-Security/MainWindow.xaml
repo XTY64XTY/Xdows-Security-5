@@ -51,7 +51,7 @@
                         <FontIcon Glyph="&#xE80F;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem l:Uids.Uid="MainWindow_Nav_Security" Tag="Security">
+                <NavigationViewItem l:Uids.Uid="MainWindow_Nav_Scan" Tag="Scan">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xEA18;" />
                     </NavigationViewItem.Icon>

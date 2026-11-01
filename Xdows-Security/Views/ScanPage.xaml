@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page
-    x:Class="Xdows_Security.Views.SecurityPage"
+    x:Class="Xdows_Security.Views.ScanPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Xdows_Security"
@@ -49,7 +49,7 @@
                            TextTrimming="CharacterEllipsis"/>
                 <Grid.ContextFlyout>
                     <MenuFlyout>
-                        <MenuFlyoutItem  l:Uids.Uid="SecurityPage_MenuItem_Details"
+                        <MenuFlyoutItem  l:Uids.Uid="ScanPage_MenuItem_Details"
                             Click="OnVirusRowDetailsClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
@@ -57,14 +57,14 @@
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                         <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem  l:Uids.Uid="SecurityPage_MenuItem_Trust"
+                        <MenuFlyoutItem  l:Uids.Uid="ScanPage_MenuItem_Trust"
                             Click="OnVirusRowTrustClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE73E;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_MenuItem_Handle"
+                        <MenuFlyoutItem l:Uids.Uid="ScanPage_MenuItem_Handle"
                             Click="OnVirusRowHandleClick"
                             Tag="{x:Bind}">
                             <MenuFlyoutItem.Icon>
@@ -102,28 +102,28 @@
             <Button x:Name="BackToVirusListButton" Click="OnBackToVirusListClick" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Tag="Visible" Spacing="8">
                     <FontIcon x:Name="BackToVirusListButtonIcon" Glyph="&#xE890;"/>
-                    <TextBlock x:Name="BackToVirusListButtonText" l:Uids.Uid="SecurityPage_BackToVirusListButtonText"/>
+                    <TextBlock x:Name="BackToVirusListButtonText" l:Uids.Uid="ScanPage_BackToVirusListButtonText"/>
                 </StackPanel>
             </Button>
 
             <Button x:Name="HandleAllButton" Click="OnHandleAllClick" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE74D;" FontSize="16"/>
-                    <TextBlock x:Name="HandleAllButtonText" l:Uids.Uid="SecurityPage_HandleAllButtonText"/>
+                    <TextBlock x:Name="HandleAllButtonText" l:Uids.Uid="ScanPage_HandleAllButtonText"/>
                 </StackPanel>
             </Button>
 
             <Button x:Name="PauseScanButton" Click="OnPauseScanClick" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xF5E7;"/>
-                    <TextBlock l:Uids.Uid="SecurityPage_PauseScanButtonText"/>
+                    <TextBlock l:Uids.Uid="ScanPage_PauseScanButtonText"/>
                 </StackPanel>
             </Button>
 
             <Button x:Name="ResumeScanButton" Click="OnResumeScanClick" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <FontIcon Glyph="&#xE768;"/>
-                    <TextBlock l:Uids.Uid="SecurityPage_ResumeScanButtonText"/>
+                    <TextBlock l:Uids.Uid="ScanPage_ResumeScanButtonText"/>
                 </StackPanel>
             </Button>
 
@@ -136,40 +136,40 @@
                                       IsActive="False"
                                       Visibility="Collapsed"/>
                     </Grid>
-                    <TextBlock l:Uids.Uid="SecurityPage_CancelScanButtonText"/>
+                    <TextBlock l:Uids.Uid="ScanPage_CancelScanButtonText"/>
                 </StackPanel>
             </Button>
 
             <SplitButton x:Name="ScanButton" Click="ScanButton_Click">
                 <StackPanel Orientation="Horizontal" Spacing="4">
                     <FontIcon Glyph="&#xE8B7;" FontSize="16"/>
-                    <TextBlock x:Name="ScanButtonText" l:Uids.Uid="SecurityPage_ScanButtonText"/>
+                    <TextBlock x:Name="ScanButtonText" l:Uids.Uid="ScanPage_ScanButtonText"/>
                 </StackPanel>
                 <SplitButton.Flyout>
                     <MenuFlyout Placement="Bottom">
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Quick" Tag="Quick" Click="OnScanMenuClick">
+                        <MenuFlyoutItem l:Uids.Uid="ScanPage_ScanMenu_Quick" Tag="Quick" Click="OnScanMenuClick">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE945;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Full" Tag="Full" Click="OnScanMenuClick">
+                        <MenuFlyoutItem l:Uids.Uid="ScanPage_ScanMenu_Full" Tag="Full" Click="OnScanMenuClick">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xEDA2;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                         <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_File" Tag="File" Click="OnScanMenuClick">
+                        <MenuFlyoutItem l:Uids.Uid="ScanPage_ScanMenu_File" Tag="File" Click="OnScanMenuClick">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8A5;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_Folder" Tag="Folder" Click="OnScanMenuClick">
+                        <MenuFlyoutItem l:Uids.Uid="ScanPage_ScanMenu_Folder" Tag="Folder" Click="OnScanMenuClick">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE8B7;" />
                             </MenuFlyoutItem.Icon>
                         </MenuFlyoutItem>
                         <MenuFlyoutSeparator/>
-                        <MenuFlyoutItem l:Uids.Uid="SecurityPage_ScanMenu_More" Tag="More" Click="OnScanMenuClick">
+                        <MenuFlyoutItem l:Uids.Uid="ScanPage_ScanMenu_More" Tag="More" Click="OnScanMenuClick">
                             <MenuFlyoutItem.Icon>
                                 <FontIcon Glyph="&#xE944;" />
                             </MenuFlyoutItem.Icon>
@@ -228,11 +228,11 @@
                               VerticalAlignment="Center"
                               Click="OnSelectAllThreatsClick"/>
                     <TextBlock Grid.Column="1"
-                               l:Uids.Uid="SecurityPage_ListHeader_Path"
+                               l:Uids.Uid="ScanPage_ListHeader_Path"
                                VerticalAlignment="Center"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                     <TextBlock Grid.Column="2"
-                               l:Uids.Uid="SecurityPage_ListHeader_Threat"
+                               l:Uids.Uid="ScanPage_ListHeader_Threat"
                                VerticalAlignment="Center"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                 </Grid>

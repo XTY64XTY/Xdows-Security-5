@@ -237,154 +237,154 @@
   <data name="SettingsPage_Other_RestartOOBE.Description" xml:space="preserve">
     <value>重新執行開箱體驗流程</value>
   </data>
-  <data name="MainWindow_Nav_Security.Content" xml:space="preserve">
-    <value>安全</value>
+  <data name="MainWindow_Nav_Scan.Content" xml:space="preserve">
+    <value>掃描</value>
   </data>
-  <data name="SecurityPage_GetFailed_Text" xml:space="preserve">
+  <data name="ScanPage_GetFailed_Text" xml:space="preserve">
     <value>獲取失敗</value>
   </data>
-  <data name="SecurityPage_BackToVirusListButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_BackToVirusListButtonText.Text" xml:space="preserve">
     <value>查看列表</value>
   </data>
-  <data name="SecurityPage_PauseScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_PauseScanButtonText.Text" xml:space="preserve">
     <value>暫停掃描</value>
   </data>
-  <data name="SecurityPage_CancelScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_CancelScanButtonText.Text" xml:space="preserve">
     <value>取消掃描</value>
   </data>
-  <data name="SecurityPage_ResumeScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_ResumeScanButtonText.Text" xml:space="preserve">
     <value>繼續掃描</value>
   </data>
-  <data name="SecurityPage_ScanButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_ScanButtonText.Text" xml:space="preserve">
     <value>開始掃描</value>
   </data>
-  <data name="SecurityPage_ScanMenu_Quick.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_Quick.Text" xml:space="preserve">
     <value>快速掃描</value>
   </data>
-  <data name="SecurityPage_ScanMenu_Full.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_Full.Text" xml:space="preserve">
     <value>完整掃描</value>
   </data>
-  <data name="SecurityPage_ScanMenu_File.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_File.Text" xml:space="preserve">
     <value>文件掃描</value>
   </data>
-  <data name="SecurityPage_ScanMenu_Folder.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_Folder.Text" xml:space="preserve">
     <value>目錄掃描</value>
   </data>
-  <data name="SecurityPage_ScanMenu_More.Text" xml:space="preserve">
+  <data name="ScanPage_ScanMenu_More.Text" xml:space="preserve">
     <value>更多掃描</value>
   </data>
-  <data name="SecurityPage_MenuItem_Details.Text" xml:space="preserve">
+  <data name="ScanPage_MenuItem_Details.Text" xml:space="preserve">
     <value>詳細信息</value>
   </data>
-  <data name="SecurityPage_NoEngine_Title" xml:space="preserve">
+  <data name="ScanPage_NoEngine_Title" xml:space="preserve">
     <value>當前沒有選擇掃描引擎</value>
   </data>
-  <data name="SecurityPage_NoEngine_Content" xml:space="preserve">
+  <data name="ScanPage_NoEngine_Content" xml:space="preserve">
     <value>請轉到 設置 - 掃描引擎 選擇一個引擎。</value>
   </data>
   <data name="Button_Cancel" xml:space="preserve">
     <value>取消</value>
   </data>
-  <data name="SecurityPage_More_BrowseFolder" xml:space="preserve">
+  <data name="ScanPage_More_BrowseFolder" xml:space="preserve">
     <value>瀏覽目錄</value>
   </data>
-  <data name="SecurityPage_More_BrowseFile" xml:space="preserve">
+  <data name="ScanPage_More_BrowseFile" xml:space="preserve">
     <value>瀏覽文件</value>
   </data>
-  <data name="SecurityPage_More_RemoveItem" xml:space="preserve">
+  <data name="ScanPage_More_RemoveItem" xml:space="preserve">
     <value>刪除項目</value>
   </data>
-  <data name="SecurityPage_More_ClearAll" xml:space="preserve">
+  <data name="ScanPage_More_ClearAll" xml:space="preserve">
     <value>清空全部</value>
   </data>
-  <data name="SecurityPage_MoreScan_Title" xml:space="preserve">
+  <data name="ScanPage_MoreScan_Title" xml:space="preserve">
     <value>更多掃描</value>
   </data>
-  <data name="SecurityPage_StartScanButton" xml:space="preserve">
+  <data name="ScanPage_StartScanButton" xml:space="preserve">
     <value>開始掃描</value>
   </data>
-  <data name="SecurityPage_DuplicatePath_Title" xml:space="preserve">
+  <data name="ScanPage_DuplicatePath_Title" xml:space="preserve">
     <value>路徑重復</value>
   </data>
-  <data name="SecurityPage_DuplicatePath_Content" xml:space="preserve">
+  <data name="ScanPage_DuplicatePath_Content" xml:space="preserve">
     <value>該路徑已在列表中：{0}</value>
   </data>
-  <data name="SecurityPage_InitFailed_Content" xml:space="preserve">
+  <data name="ScanPage_InitFailed_Content" xml:space="preserve">
     <value>請轉到 設置 - 掃描引擎 取消這個引擎的選中。</value>
   </data>
-  <data name="SecurityPage_Status_Processing" xml:space="preserve">
+  <data name="ScanPage_Status_Processing" xml:space="preserve">
     <value>正在索引文件...</value>
   </data>
-  <data name="SecurityPage_ScanCancelled" xml:space="preserve">
+  <data name="ScanPage_ScanCancelled" xml:space="preserve">
     <value>掃描已取消</value>
   </data>
-  <data name="SecurityPage_ScanFailed_Format" xml:space="preserve">
+  <data name="ScanPage_ScanFailed_Format" xml:space="preserve">
     <value>掃描失敗：{0}</value>
   </data>
-  <data name="SecurityPage_Details_Title" xml:space="preserve">
+  <data name="ScanPage_Details_Title" xml:space="preserve">
     <value>文件詳細信息</value>
   </data>
-  <data name="SecurityPage_Details_FilePath" xml:space="preserve">
+  <data name="ScanPage_Details_FilePath" xml:space="preserve">
     <value>文件路徑：</value>
   </data>
-  <data name="SecurityPage_ListHeader_Path.Text" xml:space="preserve">
+  <data name="ScanPage_ListHeader_Path.Text" xml:space="preserve">
     <value>檔案路徑</value>
   </data>
-  <data name="SecurityPage_ListHeader_Threat.Text" xml:space="preserve">
+  <data name="ScanPage_ListHeader_Threat.Text" xml:space="preserve">
     <value>威脅名稱</value>
   </data>
-  <data name="SecurityPage_Details_VirusName" xml:space="preserve">
+  <data name="ScanPage_Details_VirusName" xml:space="preserve">
     <value>病毒名稱：{0}</value>
   </data>
-  <data name="SecurityPage_Details_FileSize" xml:space="preserve">
+  <data name="ScanPage_Details_FileSize" xml:space="preserve">
     <value>文件大小：{0:F2} KB</value>
   </data>
-  <data name="SecurityPage_Details_CreationTime" xml:space="preserve">
+  <data name="ScanPage_Details_CreationTime" xml:space="preserve">
     <value>創建時間：{0}</value>
   </data>
-  <data name="SecurityPage_Details_LastWriteTime" xml:space="preserve">
+  <data name="ScanPage_Details_LastWriteTime" xml:space="preserve">
     <value>修改時間：{0}</value>
   </data>
-  <data name="SecurityPage_Details_LocateButton" xml:space="preserve">
+  <data name="ScanPage_Details_LocateButton" xml:space="preserve">
     <value>定位文件</value>
   </data>
-  <data name="SecurityPage_Details_Unknown" xml:space="preserve">
+  <data name="ScanPage_Details_Unknown" xml:space="preserve">
     <value>未知</value>
   </data>
-  <data name="SecurityPage_Details_NotAvailable" xml:space="preserve">
+  <data name="ScanPage_Details_NotAvailable" xml:space="preserve">
     <value>無法獲取</value>
   </data>
-  <data name="SecurityPage_Details_EngineName" xml:space="preserve">
+  <data name="ScanPage_Details_EngineName" xml:space="preserve">
     <value>檢測引擎：</value>
   </data>
-  <data name="SecurityPage_Details_SHA256" xml:space="preserve">
+  <data name="ScanPage_Details_SHA256" xml:space="preserve">
     <value>SHA256：</value>
   </data>
-  <data name="SecurityPage_LocateFailed_Title" xml:space="preserve">
+  <data name="ScanPage_LocateFailed_Title" xml:space="preserve">
     <value>定位失敗</value>
   </data>
-  <data name="SecurityPage_LocateFailed_Content" xml:space="preserve">
+  <data name="ScanPage_LocateFailed_Content" xml:space="preserve">
     <value>無法定位文件：{0}</value>
   </data>
-  <data name="SecurityPage_BackToVirusList_Hide" xml:space="preserve">
+  <data name="ScanPage_BackToVirusList_Hide" xml:space="preserve">
     <value>隱藏列表</value>
   </data>
-  <data name="SecurityPage_BackToVirusList_Show" xml:space="preserve">
+  <data name="ScanPage_BackToVirusList_Show" xml:space="preserve">
     <value>查看列表</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Idle" xml:space="preserve">
-    <value>選擇位置後繼續</value>
+  <data name="ScanPage_ScanSummary_Idle" xml:space="preserve">
+    <value>暫無活動掃描任務</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Format" xml:space="preserve">
+  <data name="ScanPage_ScanSummary_Format" xml:space="preserve">
     <value>已掃描 {0} 個文件 耗時 {1:F0} 秒 當前速度 {2:F0} 文件/秒 發現 {3} 個威脅</value>
   </data>
-  <data name="SecurityPage_Status_Scanning" xml:space="preserve">
+  <data name="ScanPage_Status_Scanning" xml:space="preserve">
     <value>正在進行掃描任務...</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Completed" xml:space="preserve">
+  <data name="ScanPage_ScanSummary_Completed" xml:space="preserve">
     <value>本次任務已掃描 {0} 個文件</value>
   </data>
-  <data name="SecurityPage_ScanSummary_Stats" xml:space="preserve">
+  <data name="ScanPage_ScanSummary_Stats" xml:space="preserve">
     <value>耗時 {0:F0} 秒，平均速度 {1:F0} 文件/秒，發現 {2} 個威脅</value>
   </data>
   <data name="MainWindow_Nav_XdowsTools.Content" xml:space="preserve">
@@ -959,87 +959,87 @@
 對於此軟件的分支產生的問題，此軟件的源開發者（Xdows Software）不承擔任何責任。
 當你通過任何方式使用該引擎時則表示同意並接受該聲明，如果你不接受請自行關閉此引擎或停止使用並刪除該軟件。</value>
   </data>
-  <data name="SecurityPage_MenuItem_Trust.Text" xml:space="preserve">
+  <data name="ScanPage_MenuItem_Trust.Text" xml:space="preserve">
     <value>信任文件</value>
   </data>
-  <data name="SecurityPage_MenuItem_Handle.Text" xml:space="preserve">
+  <data name="ScanPage_MenuItem_Handle.Text" xml:space="preserve">
     <value>處理文件</value>
   </data>
-  <data name="SecurityPage_TrustConfirm_Title" xml:space="preserve">
+  <data name="ScanPage_TrustConfirm_Title" xml:space="preserve">
     <value>信任文件</value>
   </data>
-  <data name="SecurityPage_TrustConfirm_Content" xml:space="preserve">
+  <data name="ScanPage_TrustConfirm_Content" xml:space="preserve">
     <value>確定要將此文件添加到信任區嗎？{0} 將不再被掃描引擎檢測爲威脅。</value>
   </data>
-  <data name="SecurityPage_TrustConfirm_Primary" xml:space="preserve">
+  <data name="ScanPage_TrustConfirm_Primary" xml:space="preserve">
     <value>信任</value>
   </data>
-  <data name="SecurityPage_TrustResult_Title" xml:space="preserve">
+  <data name="ScanPage_TrustResult_Title" xml:space="preserve">
     <value>信任成功</value>
   </data>
-  <data name="SecurityPage_TrustResult_Content" xml:space="preserve">
+  <data name="ScanPage_TrustResult_Content" xml:space="preserve">
     <value>文件 {0} 已成功添加到信任區，將不再被檢測爲威脅。</value>
   </data>
-  <data name="SecurityPage_TrustFailed_Title" xml:space="preserve">
+  <data name="ScanPage_TrustFailed_Title" xml:space="preserve">
     <value>信任失敗</value>
   </data>
-  <data name="SecurityPage_TrustFailed_Content" xml:space="preserve">
+  <data name="ScanPage_TrustFailed_Content" xml:space="preserve">
     <value>添加文件到信任區失敗，請檢查文件是否存在或權限是否足夠。</value>
   </data>
-  <data name="SecurityPage_HandleConfirm_Title" xml:space="preserve">
+  <data name="ScanPage_HandleConfirm_Title" xml:space="preserve">
     <value>處理文件</value>
   </data>
-  <data name="SecurityPage_HandleConfirm_Content" xml:space="preserve">
+  <data name="ScanPage_HandleConfirm_Content" xml:space="preserve">
     <value>確定要處理此文件
 {0}</value>
   </data>
-  <data name="SecurityPage_HandleConfirm_Primary" xml:space="preserve">
+  <data name="ScanPage_HandleConfirm_Primary" xml:space="preserve">
     <value>處理</value>
   </data>
-  <data name="SecurityPage_HandleAction_Quarantined" xml:space="preserve">
+  <data name="ScanPage_HandleAction_Quarantined" xml:space="preserve">
     <value>文件已成功隔離</value>
   </data>
-  <data name="SecurityPage_HandleAction_Deleted" xml:space="preserve">
+  <data name="ScanPage_HandleAction_Deleted" xml:space="preserve">
     <value>文件已成功刪除</value>
   </data>
-  <data name="SecurityPage_HandleAction_Failed" xml:space="preserve">
+  <data name="ScanPage_HandleAction_Failed" xml:space="preserve">
     <value>處理文件失敗</value>
   </data>
-  <data name="SecurityPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
+  <data name="ScanPage_HandleAction_ZipEntriesQuarantined" xml:space="preserve">
     <value>已隔離 {0} 個文件並從壓縮包中刪除 {1} 個條目</value>
   </data>
-  <data name="SecurityPage_HandleFailed_Title" xml:space="preserve">
+  <data name="ScanPage_HandleFailed_Title" xml:space="preserve">
     <value>處理失敗</value>
   </data>
-  <data name="SecurityPage_HandleAllButtonText.Text" xml:space="preserve">
+  <data name="ScanPage_HandleAllButtonText.Text" xml:space="preserve">
     <value>處理選取</value>
   </data>
-  <data name="SecurityPage_HandleAllConfirm_Title" xml:space="preserve">
+  <data name="ScanPage_HandleAllConfirm_Title" xml:space="preserve">
     <value>處理選取確認</value>
   </data>
-  <data name="SecurityPage_HandleAllConfirm_Content" xml:space="preserve">
+  <data name="ScanPage_HandleAllConfirm_Content" xml:space="preserve">
     <value>確定要處理選取的 {0} 個威脅文件嗎？
 處理完成後可在隔離區恢復該文件，部分文件可能會直接刪除</value>
   </data>
-  <data name="SecurityPage_HandleAllConfirm_Primary" xml:space="preserve">
+  <data name="ScanPage_HandleAllConfirm_Primary" xml:space="preserve">
     <value>處理</value>
   </data>
-  <data name="SecurityPage_HandleProcessing" xml:space="preserve">
+  <data name="ScanPage_HandleProcessing" xml:space="preserve">
     <value>正在處理威脅文件...</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_Title" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_Title" xml:space="preserve">
     <value>處理完成</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_Success" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_Success" xml:space="preserve">
     <value>成功處理 {0} 個文件</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_FailedHeader" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_FailedHeader" xml:space="preserve">
     <value>以下文件處理失敗：</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_AllFailed_Title" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_AllFailed_Title" xml:space="preserve">
     <value>處理失敗</value>
   </data>
-  <data name="SecurityPage_HandleAllResult_FailedTip" xml:space="preserve">
+  <data name="ScanPage_HandleAllResult_FailedTip" xml:space="preserve">
     <value>失敗的威脅將保留在列表中，可單獨處理</value>
   </data>
   <data name="Common_OperationSuccess" xml:space="preserve">
@@ -1366,16 +1366,16 @@
   <data name="SettingsPage_Appearance_Nav_IsBackButtonVisible.Description" xml:space="preserve">
     <value>在標題欄或導航欄中顯示返回按鈕</value>
   </data>
-  <data name="SecurityPage_Model_InitFailed_Title" xml:space="preserve">
+  <data name="ScanPage_Model_InitFailed_Title" xml:space="preserve">
     <value>無法初始化 Xdows Model</value>
   </data>
   <data name="Button_Skip" xml:space="preserve">
     <value>跳過</value>
   </data>
-  <data name="SecurityPage_ArchivePassword_Title" xml:space="preserve">
+  <data name="ScanPage_ArchivePassword_Title" xml:space="preserve">
     <value>壓縮包受密碼保護</value>
   </data>
-  <data name="SecurityPage_ArchivePassword_Placeholder" xml:space="preserve">
+  <data name="ScanPage_ArchivePassword_Placeholder" xml:space="preserve">
     <value>請輸入密碼</value>
   </data>
   <data name="SettingsPage_Appearance_Sound.Header" xml:space="preserve">
@@ -1762,26 +1762,26 @@
   <data name="SettingsPage_Protection_Driver_Setup_Failed" xml:space="preserve">
     <value>驅動防護未能啟用。即將打開環境檢測。</value>
   </data>
-  <data name="SecurityPage_Details_FamilyName" xml:space="preserve">
+  <data name="ScanPage_Details_FamilyName" xml:space="preserve">
     <value>威脅家族：</value>
   </data>
-  <data name="SecurityPage_Details_OpenButton" xml:space="preserve">
+  <data name="ScanPage_Details_OpenButton" xml:space="preserve">
     <value>打開文件</value>
   </data>
-  <data name="SecurityPage_Risk_Title" xml:space="preserve">
+  <data name="ScanPage_Risk_Title" xml:space="preserve">
     <value>風險提示</value>
   </data>
-  <data name="SecurityPage_Risk_ArchiveContent" xml:space="preserve">
+  <data name="ScanPage_Risk_ArchiveContent" xml:space="preserve">
     <value>是否使用此設備預設程式打開此檔案：
 {0}
 該操作可能會導致你意外運行威脅檔案</value>
   </data>
-  <data name="SecurityPage_Risk_FileContent" xml:space="preserve">
+  <data name="ScanPage_Risk_FileContent" xml:space="preserve">
     <value>是否使用 檔案總管 選中此檔案：
 {0}
 該操作可能會導致你意外運行威脅檔案</value>
   </data>
-  <data name="SecurityPage_Risk_Allow" xml:space="preserve">
+  <data name="ScanPage_Risk_Allow" xml:space="preserve">
     <value>放行</value>
   </data>
   <data name="ProcessManager_DriverModeToggle.OffContent" xml:space="preserve">

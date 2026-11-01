@@ -189,7 +189,7 @@ public class UsbScanService
                     using var fileCts = CancellationTokenSource.CreateLinkedTokenSource(token);
                     fileCts.CancelAfter(PerFileTimeout);
 
-                    var scanRes = await SecurityPage.RunScansOnFileAsync(
+                    var scanRes = await ScanPage.RunScansOnFileAsync(
                         file, null, md5Hash,
                         deepScan, extraData,
                         useLocalScan, useCloudScan, useModelScan,
