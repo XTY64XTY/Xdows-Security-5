@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Protection;
+using Protection.Drivers.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -169,7 +170,7 @@ namespace Xdows_Security.Views
             UpdateCloudScanHealthBar();
         }
 
-        private async void CloudScanHealthRefreshButton_Click(object sender, RoutedEventArgs e)
+        private async void CloudScanHealthRefreshButton_Click(object _1, RoutedEventArgs _2)
         {
             _cloudScanHealthChecked = false;
             CloudScanHealthBar.IsOpen = false;
@@ -286,69 +287,21 @@ namespace Xdows_Security.Views
             RegistryToggle.IsEnabled = !driverRunning && App.IsRunAsAdmin();
         }
 
-        private Task LoadScanSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadScanSetting);
-            }
-        }
+        private Task LoadScanSettingAsync => RunOnDispatcher(LoadScanSetting);
 
-        private Task LoadLanguageSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadLanguageSetting);
-            }
-        }
+        private Task LoadLanguageSettingAsync => RunOnDispatcher(LoadLanguageSetting);
 
-        private Task LoadThemeSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadThemeSetting);
-            }
-        }
+        private Task LoadThemeSettingAsync => RunOnDispatcher(LoadThemeSetting);
 
-        private Task LoadFontSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadFontSetting);
-            }
-        }
+        private Task LoadFontSettingAsync => RunOnDispatcher(LoadFontSetting);
 
-        private Task LoadBackdropSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadBackdropSetting);
-            }
-        }
+        private Task LoadBackdropSettingAsync => RunOnDispatcher(LoadBackdropSetting);
 
-        private Task LoadSoundSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadSoundSetting);
-            }
-        }
+        private Task LoadSoundSettingAsync => RunOnDispatcher(LoadSoundSetting);
 
-        private Task LoadTransitionSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadTransitionSetting);
-            }
-        }
+        private Task LoadTransitionSettingAsync => RunOnDispatcher(LoadTransitionSetting);
 
-        private Task LoadThreatNotificationSettingAsync
-        {
-            get
-            {
-                return RunOnDispatcher(LoadThreatNotificationSetting);
-            }
-        }
+        private Task LoadThreatNotificationSettingAsync => RunOnDispatcher(LoadThreatNotificationSetting);
 
         private Task<object?> RunOnDispatcher(Action action)
         {
@@ -377,7 +330,7 @@ namespace Xdows_Security.Views
             }
 
             toggle.Toggled -= RunProtection;
-            if (!ProtectionStatus.Run(runId))
+            if (!ProtectionStatus.Run(runId, null))
                 toggle.IsOn = !toggle.IsOn;
             toggle.IsOn = ProtectionStatus.IsRun(runId);
             toggle.Toggled += RunProtection;
@@ -442,9 +395,7 @@ namespace Xdows_Security.Views
 
                 operationSucceeded = await Task.Run(() =>
                 {
-                    if (ProtectionStatus.IsRun(2) == requestedOn)
-                        return true;
-                    return ProtectionStatus.Run(2);
+                    return ProtectionStatus.IsRun(2) == requestedOn || ProtectionStatus.Run(2, null);
                 });
             }
             catch (Exception ex)
@@ -512,7 +463,7 @@ namespace Xdows_Security.Views
                 operationSucceeded = requestedOn
                     ? await ShowDriverProtectionSetupDialogAsync(
                         progress => Task.Run(() => ProtectionStatus.Run(5, progress)))
-                    : await Task.Run(() => ProtectionStatus.Run(5));
+                    : await Task.Run(() => ProtectionStatus.Run(5, null));
             }
             catch (Exception ex)
             {
@@ -740,14 +691,7 @@ namespace Xdows_Security.Views
 
             InfectorCleanerToggle.IsEnabled = VirusFamilyToggle.IsOn;
 
-            if (settings.Values.TryGetValue("AppBackdropOpacity", out object? opacityRaw) && opacityRaw is double opacity)
-            {
-                Appearance_Backdrop_Opacity.Value = opacity;
-            }
-            else
-            {
-                Appearance_Backdrop_Opacity.Value = 100;
-            }
+            Appearance_Backdrop_Opacity.Value = settings.Values.TryGetValue("AppBackdropOpacity", out object? opacityRaw) && opacityRaw is double opacity ? opacity : 100;
 
             ProcessToggle.IsOn = ProtectionStatus.IsRun(0);
             FilesToggle.IsOn = ProtectionStatus.IsRun(1);
@@ -799,7 +743,7 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void ScanIndexModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ScanIndexModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs _1)
         {
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
@@ -829,17 +773,17 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void Model_Card_Click(object sender, RoutedEventArgs e)
+        private void Model_Card_Click(object _1, RoutedEventArgs _2)
         {
             App.MainWindow?.GoToPage("Model");
         }
 
-        private void CloudEngine_About_Card_Click(object sender, RoutedEventArgs e)
+        private void CloudEngine_About_Card_Click(object _1, RoutedEventArgs _2)
         {
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://sevenengine-cloud.onrender.com/"));
         }
 
-        private void DriverEnvironmentLink_Click(object sender, RoutedEventArgs e)
+        private void DriverEnvironmentLink_Click(object _1, RoutedEventArgs _2)
         {
             App.MainWindow?.GoToPage("DriverEnvironment");
         }
@@ -862,7 +806,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void RestartOOBEButton_Click(object sender, RoutedEventArgs e)
+        private async void RestartOOBEButton_Click(object _1, RoutedEventArgs _2)
         {
             try
             {
@@ -948,7 +892,7 @@ namespace Xdows_Security.Views
                 frame.BackStack.RemoveAt(frame.BackStack.Count - 1);
         }
 
-        private void CloudScanModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void CloudScanModeComboBox_SelectionChanged(object _1, SelectionChangedEventArgs _2)
         {
             if (IsInitialize) return;
             if (CloudScanModeComboBox.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag is string mode)
@@ -957,7 +901,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void LanguageComboBox_SelectionChanged(object _1, SelectionChangedEventArgs _2)
         {
             if (IsInitialize) return;
             if (LanguageComboBox.SelectedItem is ComboBoxItem selectedItem)
@@ -973,7 +917,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void UpdateButtonClick(object sender, RoutedEventArgs e)
+        private async void UpdateButtonClick(object _1, RoutedEventArgs _2)
         {
             try
             {
@@ -1092,10 +1036,9 @@ namespace Xdows_Security.Views
                 webView.Close();
             }
 
-            if (webViewFailure != null)
-                throw new InvalidOperationException("The update Markdown view could not be initialized.", webViewFailure);
-
-            return result;
+            return webViewFailure != null
+                ? throw new InvalidOperationException("The update Markdown view could not be initialized.", webViewFailure)
+                : result;
         }
 
         private void UpdateTeachingTipClose(TeachingTip sender, object args)
@@ -1103,7 +1046,7 @@ namespace Xdows_Security.Views
             UpdateTeachingTip.IsOpen = false;
         }
 
-        private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ThemeComboBox_SelectionChanged(object _1, SelectionChangedEventArgs _2)
         {
             if (IsInitialize || ThemeComboBox.SelectedIndex == -1) return;
 
@@ -1157,7 +1100,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void BackdropComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void BackdropComboBox_SelectionChanged(object _1, SelectionChangedEventArgs _2)
         {
             if (IsInitialize) return;
             if (BackdropComboBox.SelectedItem is ComboBoxItem selected)
@@ -1174,7 +1117,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private void OpacitySlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        private void OpacitySlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs _1)
         {
             if (IsInitialize || sender is not Slider slider) return;
             ApplicationDataContainer settings = App.LocalSettings;
@@ -1186,7 +1129,7 @@ namespace Xdows_Security.Views
             App.MainWindow.ApplyBackdrop(backdrop, false);
         }
 
-        private void NavComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void NavComboBox_SelectionChanged(object _1, SelectionChangedEventArgs _2)
         {
             if (IsInitialize) return;
             try
@@ -1204,12 +1147,12 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void Quarantine_Card_Click(object sender, RoutedEventArgs e)
+        private void Quarantine_Card_Click(object _1, RoutedEventArgs _2)
         {
             App.MainWindow?.GoToPage("Quarantine");
         }
 
-        private void Trust_Card_Click(object sender, RoutedEventArgs e)
+        private void Trust_Card_Click(object _1, RoutedEventArgs _2)
         {
             App.MainWindow?.GoToPage("Trust");
         }
@@ -1224,16 +1167,7 @@ namespace Xdows_Security.Views
         {
             if (IsInitialize || sender is not ToggleSwitch toggle) return;
 
-            bool success;
-            if (toggle.IsOn)
-            {
-                success = StartupService.EnableStartup();
-            }
-            else
-            {
-                success = StartupService.DisableStartup();
-            }
-
+            bool success = toggle.IsOn ? StartupService.EnableStartup() : StartupService.DisableStartup();
             if (!success)
             {
                 toggle.Toggled -= StartupToggle_Toggled;
@@ -1251,7 +1185,7 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void ContextMenuScanToggle_Toggled(object sender, RoutedEventArgs e)
+        private void ContextMenuScanToggle_Toggled(object _1, RoutedEventArgs _2)
         {
             if (IsInitialize) return;
             if (ContextMenuScanToggle.IsOn)
@@ -1381,9 +1315,7 @@ namespace Xdows_Security.Views
         private static bool IsSettingsItemMatched(FrameworkElement item, string searchText)
         {
             string itemText = GetSettingsItemText(item);
-            if (string.IsNullOrEmpty(itemText))
-                return false;
-            return itemText.Contains(searchText, StringComparison.InvariantCultureIgnoreCase);
+            return !string.IsNullOrEmpty(itemText) && itemText.Contains(searchText, StringComparison.InvariantCultureIgnoreCase);
         }
 
         private static string GetSettingsItemText(FrameworkElement item)
@@ -1430,7 +1362,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void OpenConfigLocationButton_Click(object sender, RoutedEventArgs e)
+        private async void OpenConfigLocationButton_Click(object _1, RoutedEventArgs _2)
         {
             try
             {
@@ -1451,7 +1383,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void OpenBrowserProtectionFolderButton_Click(object sender, RoutedEventArgs e)
+        private async void OpenBrowserProtectionFolderButton_Click(object _1, RoutedEventArgs _2)
         {
             try
             {
@@ -1472,7 +1404,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void ResetConfigButton_Click(object sender, RoutedEventArgs e)
+        private async void ResetConfigButton_Click(object _1, RoutedEventArgs _2)
         {
             ContentDialog confirmDialog = new()
             {
@@ -1525,7 +1457,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void Boot_Save_Button_Click(object sender, RoutedEventArgs e)
+        private async void Boot_Save_Button_Click(object _1, RoutedEventArgs _2)
         {
             await RunBootOperationAsync(async () =>
             {
@@ -1567,7 +1499,7 @@ namespace Xdows_Security.Views
             });
         }
 
-        private async void Boot_Restore_Button_Click(object sender, RoutedEventArgs e)
+        private async void Boot_Restore_Button_Click(object _1, RoutedEventArgs _2)
         {
             await RunBootOperationAsync(async () =>
             {
@@ -1646,9 +1578,7 @@ namespace Xdows_Security.Views
                 return null;
             }
 
-            List<BootDiskChoice> choices = disks
-                .Select(disk => new BootDiskChoice(disk, FormatDiskTitle(disk)))
-                .ToList();
+            List<BootDiskChoice> choices = [.. disks.Select(disk => new BootDiskChoice(disk, FormatDiskTitle(disk)))];
             ComboBox diskSelector = new()
             {
                 Header = BootText("SettingsPage_Protection_Boot_DiskDialog_ComboHeader"),
@@ -1887,7 +1817,7 @@ namespace Xdows_Security.Views
             App.MainWindow?.UpdatePaneToggleButtonPosition();
         }
 
-        private void SettingsPage_Appearance_Nav_LeftStyleCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SettingsPage_Appearance_Nav_LeftStyleCombo_SelectionChanged(object _1, SelectionChangedEventArgs _2)
         {
             if (IsInitialize || SettingsPage_Appearance_Nav_LeftStyleCombo.SelectedIndex == -1) return;
 
@@ -1934,7 +1864,7 @@ namespace Xdows_Security.Views
             ApplySoundSettings();
         }
 
-        private void TransitionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void TransitionComboBox_SelectionChanged(object sender, SelectionChangedEventArgs _1)
         {
             if (IsInitialize) return;
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item && item.Tag is string tag)
@@ -1997,7 +1927,7 @@ namespace Xdows_Security.Views
             ThreatNotificationModeComboBox.IsEnabled = !onlyWhenGaming;
         }
 
-        private async void GamePathsViewButton_Click(object sender, RoutedEventArgs e)
+        private async void GamePathsViewButton_Click(object _1, RoutedEventArgs _2)
         {
             try
             {
@@ -2011,7 +1941,7 @@ namespace Xdows_Security.Views
             catch { }
         }
 
-        private void ThreatNotificationModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ThreatNotificationModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs _1)
         {
             if (IsInitialize || sender is not ComboBox { SelectedItem: ComboBoxItem item } || item.Tag is not string mode)
                 return;
@@ -2019,7 +1949,7 @@ namespace Xdows_Security.Views
             App.LocalSettings.Values[ThreatNotificationModeService.NotificationModeSetting] = mode;
         }
 
-        private void CompactNotificationWhenGamingToggle_Toggled(object sender, RoutedEventArgs e)
+        private void CompactNotificationWhenGamingToggle_Toggled(object sender, RoutedEventArgs _1)
         {
             if (sender is not ToggleSwitch toggle)
                 return;

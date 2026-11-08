@@ -4,12 +4,13 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Settings;
 using Microsoft.Win32.SafeHandles;
 using Microsoft.Windows.AppLifecycle;
 using Microsoft.Windows.Globalization;
 using Microsoft.Windows.Storage;
 using Protection;
+using Protection.Compatibility;
+using Protection.Drivers.Runtime;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -387,10 +388,7 @@ namespace Xdows_Security
                 }
             });
 
-            if (!queued)
-                return ProtectionUserDecision.Block;
-
-            return await tcs.Task;
+            return !queued ? ProtectionUserDecision.Block : await tcs.Task;
         }
 
         private static async Task<BootProtectionUserDecision> BootProtectionDecisionCallbackAsync(
@@ -483,10 +481,7 @@ namespace Xdows_Security
                 }
             });
 
-            if (!queued)
-                return BootProtectionUserDecision.KeepRepair;
-
-            return await completion.Task.ConfigureAwait(false);
+            return !queued ? BootProtectionUserDecision.KeepRepair : await completion.Task.ConfigureAwait(false);
         }
 
         private static async Task ShowProcessedThreatNotificationAsync(InterceptWindowHelper.InterceptWindowSetting setting)
@@ -506,11 +501,6 @@ namespace Xdows_Security
             {
                 LogText.AddNewLog(LogText.LogLevel.ERROR, "Protection", $"Failed to show threat notification: {ex.Message}");
             }
-        }
-
-        public static bool Run(int RunId)
-        {
-            return Run(RunId, null);
         }
 
         /// <summary>
@@ -534,16 +524,7 @@ namespace Xdows_Security
 
             try
             {
-                bool result;
-                if (protection.IsRun())
-                {
-                    result = protection.Stop();
-                }
-                else
-                {
-                    result = protection.Run(interceptCallback);
-                }
-
+                bool result = protection.IsRun() ? protection.Stop() : protection.Run(interceptCallback);
                 if (result)
                 {
                     SaveProtectionState(RunId, IsRun(RunId));
@@ -555,8 +536,7 @@ namespace Xdows_Security
             finally
             {
                 // 进度回调只服务于本次启动，用完立刻摘掉，避免页面销毁后仍被调用。
-                if (driverProtection is not null)
-                    driverProtection.ProgressCallback = null;
+                driverProtection?.ProgressCallback = null;
             }
         }
 
@@ -705,18 +685,17 @@ namespace Xdows_Security
 
         public static string GetDriverStatusKey()
         {
-            if (DriverProtection.IsRun())
-                return "SettingsPage_Protection_Driver_Status_Protected";
-
-            return DriverProtection.QueryRuntimeStatus() switch
-            {
-                DriverProtectionRuntimeStatus.NotInstalled => "SettingsPage_Protection_Driver_Status_NotInstalled",
-                DriverProtectionRuntimeStatus.NotRunning => "SettingsPage_Protection_Driver_Status_NotRunning",
-                DriverProtectionRuntimeStatus.Loading => "SettingsPage_Protection_Driver_Status_Loading",
-                DriverProtectionRuntimeStatus.Protected => "SettingsPage_Protection_Driver_Status_Protected",
-                DriverProtectionRuntimeStatus.NeedsRepair => "SettingsPage_Protection_Driver_Status_NeedsRepair",
-                _ => "SettingsPage_Protection_Driver_Status_Error"
-            };
+            return DriverProtection.IsRun()
+                ? "SettingsPage_Protection_Driver_Status_Protected"
+                : DriverProtection.QueryRuntimeStatus() switch
+                {
+                    DriverProtectionRuntimeStatus.NotInstalled => "SettingsPage_Protection_Driver_Status_NotInstalled",
+                    DriverProtectionRuntimeStatus.NotRunning => "SettingsPage_Protection_Driver_Status_NotRunning",
+                    DriverProtectionRuntimeStatus.Loading => "SettingsPage_Protection_Driver_Status_Loading",
+                    DriverProtectionRuntimeStatus.Protected => "SettingsPage_Protection_Driver_Status_Protected",
+                    DriverProtectionRuntimeStatus.NeedsRepair => "SettingsPage_Protection_Driver_Status_NeedsRepair",
+                    _ => "SettingsPage_Protection_Driver_Status_Error"
+                };
         }
 
         private static IProtectionModel? RunIdToProtection(int RunId)
@@ -730,8 +709,7 @@ namespace Xdows_Security
                 5 => DriverProtection,
                 _ => null,
             };
-            if (protection is null) { return null; }
-            return protection;
+            return protection is null ? null : protection;
         }
     }
 
@@ -820,13 +798,15 @@ namespace Xdows_Security
 
         private static CancellationTokenSource? _pipeListenerCts;
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool GetNamedPipeServerProcessId(
+        [LibraryImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool GetNamedPipeServerProcessId(
             SafePipeHandle pipe,
             out uint serverProcessId);
 
-        [DllImport("user32.dll")]
-        private static extern bool AllowSetForegroundWindow(uint processId);
+        [LibraryImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static partial bool AllowSetForegroundWindow(uint processId);
 
         public static void ReleaseResources()
         {
@@ -1090,11 +1070,7 @@ namespace Xdows_Security
             lock (_settingsLock)
             {
                 var settings = App.LocalSettings;
-                if (settings.Values.TryGetValue(RunOOBESettingKey, out var raw) && raw is bool b)
-                {
-                    return b;
-                }
-                return true;
+                return !settings.Values.TryGetValue(RunOOBESettingKey, out var raw) || raw is not bool b || b;
             }
         }
 

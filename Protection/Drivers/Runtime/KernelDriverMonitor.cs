@@ -1,7 +1,8 @@
 using Microsoft.Win32.SafeHandles;
+using Protection.Drivers.Installation;
 using System.Runtime.InteropServices;
 
-namespace Protection;
+namespace Protection.Drivers.Runtime;
 
 public sealed record UntrustedKernelDriver(
     string ServiceName,
@@ -19,7 +20,7 @@ public sealed record UntrustedKernelDriver(
 /// <c>PsSetLoadImageNotifyRoutine</c>，属于驱动侧能力，用户态无法覆盖。
 /// 启动时已经存在的驱动不参与判定，只报「新出现且签名不可信」的。
 /// </summary>
-public sealed class KernelDriverMonitor : IDisposable
+public sealed partial class KernelDriverMonitor(TimeSpan? interval = null) : IDisposable
 {
     private const uint ScManagerConnect = 0x0001;
     private const int ScEnumProcessInfo = 0;
@@ -32,23 +33,19 @@ public sealed class KernelDriverMonitor : IDisposable
     private static readonly TimeSpan DefaultInterval = TimeSpan.FromSeconds(2);
 
     // 自己的驱动是自签测试证书，WinVerifyTrust 必然判为不受信，不能当成可疑项。
-    private static readonly HashSet<string> SelfDriverServices = new(StringComparer.OrdinalIgnoreCase)
-    {
+    private static readonly HashSet<string> SelfDriverServices =
+    [
+        with(StringComparer.OrdinalIgnoreCase),
         DriverPackageLocator.ServiceName,
         DriverPackageLocator.BootFilterServiceName
-    };
+    ];
 
-    private readonly TimeSpan _interval;
+    private readonly TimeSpan _interval = interval ?? DefaultInterval;
     private readonly CancellationTokenSource _cts = new();
-    private readonly HashSet<string> _knownServices = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _reportedServices = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _knownServices = [with(StringComparer.OrdinalIgnoreCase)];
+    private readonly HashSet<string> _reportedServices = [with(StringComparer.OrdinalIgnoreCase)];
 
     private Task? _loop;
-
-    public KernelDriverMonitor(TimeSpan? interval = null)
-    {
-        _interval = interval ?? DefaultInterval;
-    }
 
     public event Action<UntrustedKernelDriver>? UntrustedDriverDetected;
 
@@ -311,7 +308,7 @@ public sealed class KernelDriverMonitor : IDisposable
             trustData.StateAction = WtdStateActionClose;
             Marshal.StructureToPtr(trustData, trustDataPointer, false);
             action = WintrustActionGenericVerifyV2;
-            NativeMethods.WinVerifyTrust(IntPtr.Zero, ref action, trustDataPointer);
+            _ = NativeMethods.WinVerifyTrust(IntPtr.Zero, ref action, trustDataPointer);
 
             return result == 0;
         }
@@ -397,9 +394,9 @@ public sealed class KernelDriverMonitor : IDisposable
         public IntPtr DisplayName;
     }
 
-    private sealed class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
+    private sealed partial class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
-        private SafeServiceHandle()
+        public SafeServiceHandle()
             : base(true)
         {
         }
@@ -410,23 +407,23 @@ public sealed class KernelDriverMonitor : IDisposable
         }
     }
 
-    private static class NativeMethods
+    private static partial class NativeMethods
     {
-        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern SafeServiceHandle OpenSCManager(
+        [LibraryImport("advapi32.dll", EntryPoint = "OpenSCManagerW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+        public static partial SafeServiceHandle OpenSCManager(
             string? machineName,
             string? databaseName,
             uint desiredAccess);
 
-        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern SafeServiceHandle OpenService(
+        [LibraryImport("advapi32.dll", EntryPoint = "OpenServiceW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+        public static partial SafeServiceHandle OpenService(
             SafeServiceHandle serviceControlManager,
             string serviceName,
             uint desiredAccess);
 
-        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [LibraryImport("advapi32.dll", EntryPoint = "EnumServicesStatusExW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool EnumServicesStatusEx(
+        public static partial bool EnumServicesStatusEx(
             SafeServiceHandle serviceControlManager,
             int infoLevel,
             uint serviceType,
@@ -438,20 +435,20 @@ public sealed class KernelDriverMonitor : IDisposable
             ref uint resumeHandle,
             string? groupName);
 
-        [DllImport("advapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [LibraryImport("advapi32.dll", EntryPoint = "QueryServiceConfigW", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool QueryServiceConfig(
+        public static partial bool QueryServiceConfig(
             SafeServiceHandle service,
             IntPtr serviceConfig,
             uint bufferSize,
             out uint bytesNeeded);
 
-        [DllImport("advapi32.dll", SetLastError = true)]
+        [LibraryImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool CloseServiceHandle(nint service);
+        public static partial bool CloseServiceHandle(nint service);
 
-        [DllImport("wintrust.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern uint WinVerifyTrust(
+        [LibraryImport("wintrust.dll", SetLastError = true)]
+        public static partial uint WinVerifyTrust(
             IntPtr windowHandle,
             ref Guid actionId,
             IntPtr trustData);

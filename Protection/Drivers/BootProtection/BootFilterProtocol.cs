@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Protection;
+namespace Protection.Drivers.BootProtection;
 
 internal static class BootFilterProtocol
 {

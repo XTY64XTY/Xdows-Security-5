@@ -75,7 +75,7 @@ namespace Helper.InfectorCleaner
             int coffHeaderOffset = peOffset + 4;
             UInt16 numSections = BitConverter.ToUInt16(data, coffHeaderOffset + 2);
 
-            if (numSections < 2 || numSections > 20)
+            if (numSections is < 2 or > 20)
                 return result;
 
             UInt16 optionalHeaderSize = BitConverter.ToUInt16(data, coffHeaderOffset + 16);

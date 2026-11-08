@@ -1,6 +1,7 @@
+using Protection.Drivers.Installation;
 using System.Security.Cryptography;
 
-namespace Protection;
+namespace Protection.Drivers.Runtime;
 
 public enum SelfIntegrityIssue
 {
@@ -22,7 +23,7 @@ public sealed record SelfIntegrityViolation(SelfIntegrityIssue Issue, string Det
 /// 只检测、只上报，不尝试自动修复——用户态没有可靠手段把被摘掉的内核回调装回去，
 /// 擅自重启服务反而会把「防护仍在工作」变成「防护彻底消失」。
 /// </summary>
-public sealed class SelfIntegrityMonitor : IDisposable
+public sealed partial class SelfIntegrityMonitor : IDisposable
 {
     private static readonly TimeSpan DefaultInterval = TimeSpan.FromSeconds(5);
 

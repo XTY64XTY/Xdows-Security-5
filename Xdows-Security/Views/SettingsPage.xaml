@@ -4,8 +4,8 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-xmlns:ui="using:CommunityToolkit.WinUI"
-      xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+      xmlns:ui="using:CommunityToolkit.WinUI"
+      xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
       xmlns:l="using:WinUI3Localizer"
       NavigationCacheMode="Enabled"
       mc:Ignorable="d">
@@ -22,7 +22,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                     <RepositionThemeTransition />
                 </StackPanel.ChildrenTransitions>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Appearance" x:Name="Appearance_Header"/>
-                <controls:SettingsExpander
+                <toolkit:SettingsExpander
                               l:Uids.Uid="SettingsPage_Appearance_Theme"
                               HeaderIcon="{ui:FontIcon Glyph=&#xE790;}"
                               x:Name="Appearance_Theme"
@@ -32,8 +32,8 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Theme_ComboBox_Light" />
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Theme_ComboBox_Dark" />
                     </ComboBox>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                                       l:Uids.Uid="SettingsPage_Appearance_Theme_UseNotoSans"
                                       HeaderIcon="{ui:FontIcon Glyph=&#xE8D2;}"
                                       x:Name="Appearance_Theme_UseNotoSans">
@@ -41,10 +41,10 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                           AutomationProperties.AutomationId="UseNotoSansToggle"
                                           Tag="UseNotoSansFont"
                                           Toggled="UseNotoSansToggle_Toggled" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                               l:Uids.Uid="SettingsPage_Appearance_Nav"
                               HeaderIcon="{ui:FontIcon Glyph=&#xE700;}"
                               x:Name="Appearance_Nav"
@@ -53,14 +53,14 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_Left" />
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_Top" />
                     </ComboBox>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF165;}"
                            x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Card">
                             <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar" Tag="IsPaneToggleButtonInTitleBar" Toggled="SettingsPage_Appearance_Nav_IsPaneToggleButtonInTitleBar_Toggled" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE740;}"
                            x:Name="SettingsPage_Appearance_Nav_LeftStyle_Card">
@@ -69,15 +69,15 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                 <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle_Default" />
                                 <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Nav_LeftStyle_Wide" />
                             </ComboBox>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Nav_IsBackButtonVisible"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE72B;}">
                             <ToggleSwitch x:Name="SettingsPage_Appearance_Nav_IsBackButtonVisible" Tag="IsBackButtonVisible" Toggled="SettingsPage_Appearance_Nav_IsBackButtonVisible_Toggled" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                    l:Uids.Uid="SettingsPage_Appearance_Backdrop"
                    HeaderIcon="{ui:FontIcon Glyph=&#xEF1F;}"
                    x:Name="Appearance_Backdrop"
@@ -88,30 +88,30 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Backdrop_MicaAlt" Tag="MicaAlt" x:Name="MicaAltOption"/>
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Backdrop_Acrylic" Tag="Acrylic"/>
                     </ComboBox>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Backdrop_Opacity"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF5ED;}"
                            x:Name="Appearance_Backdrop_Opacity_Card">
                             <Slider x:Name="Appearance_Backdrop_Opacity" Value="100" ValueChanged="OpacitySlider_ValueChanged"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                    l:Uids.Uid="SettingsPage_Appearance_Sound"
                    HeaderIcon="{ui:FontIcon Glyph=&#xE8D6;}"
                    x:Name="Appearance_Sound"
                    Margin="0,0,0,4">
                     <ToggleSwitch x:Name="SoundEffectsToggle" Tag="SoundEffects" Toggled="SoundEffectsToggle_Toggled" />
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Appearance_Sound_SpatialAudio"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE7F5;}">
                             <ToggleSwitch x:Name="SpatialAudioToggle" Tag="SpatialAudio" Toggled="SpatialAudioToggle_Toggled" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsCard
                    l:Uids.Uid="SettingsPage_Appearance_Transition"
                    HeaderIcon="{ui:FontIcon Glyph=&#xE8E2;}"
                    x:Name="Appearance_Transition"
@@ -125,9 +125,9 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_SlideFromLeft" Tag="SlideFromLeft" />
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_Continuum" Tag="Continuum" />
                     </ComboBox>
-                </controls:SettingsCard>
+                </toolkit:SettingsCard>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Scan" x:Name="Scan_Header"/>
-                <controls:SettingsExpander
+                <toolkit:SettingsExpander
                            l:Uids.Uid="SettingsPage_Scan_IndexMode"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE773;}"
                            x:Name="Scan_IndexMode"
@@ -136,59 +136,59 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_IndexMode_Parallel" Tag="Parallel" />
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Scan_IndexMode_After" Tag="After" />
                     </ComboBox>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_IndexMode_FastIndex"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE945;}">
                             <ToggleSwitch x:Name="FastIndexToggle"
                                           AutomationProperties.AutomationId="FastIndexToggle"
                                           Tag="UseFastIndexing"
                                           Toggled="Toggled_SaveToggleData" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_IndexMode_ScanProgress"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF0B5;}"
                            x:Name="Scan_ScanProgress">
                             <ToggleSwitch x:Name="ScanProgressToggle" Tag="ShowScanProgress" Toggled="Toggled_SaveToggleData" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_IndexMode_TaskbarScanProgress"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
                            x:Name="Scan_TaskbarScanProgress">
                             <ToggleSwitch x:Name="TaskbarScanProgressToggle" Tag="ShowTaskbarScanProgress" IsOn="True" Toggled="Toggled_SaveToggleData" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}"
                            x:Name="Scan_BuiltInRuleEngine"
                            Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_ScanInside"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF012;}">
                             <ToggleSwitch x:Name="ScanInsideToggle" Tag="ScanInside" Toggled="Toggled_SaveToggleData" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_VirusFamily"
                            HeaderIcon="{ui:FontIcon Glyph=&#xEBDA;}">
                             <ToggleSwitch x:Name="VirusFamilyToggle" Tag="VirusFamily" Toggled="VirusFamilyToggle_Toggled" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_InfectorCleaner"
                            HeaderIcon="{ui:FontIcon Glyph=&#xEA99;}">
                             <ToggleSwitch x:Name="InfectorCleanerToggle" Tag="InfectorCleaner" Toggled="Toggled_SaveToggleData" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_BuiltInRuleEngine_ExactRule"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE71C;}">
                             <ToggleSwitch x:Name="ExactRuleToggle" Tag="ExactRuleScan" Toggled="Toggled_SaveToggleData" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsCard
                    VerticalAlignment="Top"
                    l:Uids.Uid="SettingsPage_Scan_Model"
                    HeaderIcon="{ui:FontIcon Glyph=&#xEC26;}"
@@ -199,39 +199,39 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                   AutomationProperties.AutomationId="SettingsModelScanToggle"
                                   Tag="ModelScan"
                                   Toggled="Toggled_SaveToggleData" />
-                </controls:SettingsCard>
-                <controls:SettingsExpander
+                </toolkit:SettingsCard>
+                <toolkit:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Scan_Local"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}"
                            x:Name="Scan_Local"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="LocalScanToggle" Tag="LocalScan" Toggled="Toggled_SaveToggleData" />
-                    <controls:SettingsExpander.Items>
+                    <toolkit:SettingsExpander.Items>
                         <InfoBar
                             l:Uids.Uid="SettingsPage_Scan_Local_SupportWarning"
                             IsOpen="True"
                             IsClosable="False"
                             Severity="Warning" />
-                        <controls:SettingsCard
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Local_DeepScan"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
                             <ToggleSwitch x:Name="DeepScanToggle" Tag="DeepScan" Toggled="Toggled_SaveToggleData"  />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Local_ExtraData"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF211;}">
                             <ToggleSwitch x:Name="ExtraDataToggle" Tag="ExtraData" Toggled="Toggled_SaveToggleData"  />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Scan_Cloud"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE753;}"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="CloudScanToggle" Tag="CloudScan" Toggled="Toggled_SaveToggleData"  />
-                    <controls:SettingsExpander.Items>
+                    <toolkit:SettingsExpander.Items>
                         <InfoBar
                             x:Name="CloudScanHealthBar"
                             IsOpen="False"
@@ -243,7 +243,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                     Click="CloudScanHealthRefreshButton_Click" />
                             </InfoBar.ActionButton>
                         </InfoBar>
-                        <controls:SettingsCard
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8B7;}">
                             <ComboBox
@@ -262,17 +262,20 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                     Tag="FullUpload"
                                     l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType_FullUpload" />
                             </ComboBox>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Cloud_AboutEngine"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE946;}"
                            IsClickEnabled="True"
-                           ActionIcon="{ui:FontIcon Glyph=&#xE8A7;}"
-                           Click="CloudEngine_About_Card_Click" />
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                           Click="CloudEngine_About_Card_Click" >
+                            <toolkit:SettingsCard.ActionIcon>
+                                <FontIcon Glyph="&#xE8A7;" />
+                            </toolkit:SettingsCard.ActionIcon>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Protection" />
-                <controls:SettingsExpander
+                <toolkit:SettingsExpander
                     x:Name="DriverProtectionCard"
                     VerticalAlignment="Top"
                     l:Uids.Uid="SettingsPage_Protection_Driver"
@@ -291,8 +294,8 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                       Tag="Driver"
                                       Toggled="DriverProtectionToggle_Toggled"/>
                     </StackPanel>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                             x:Name="InjectionProtectionCard"
                             l:Uids.Uid="SettingsPage_Protection_Injection"
                             HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}">
@@ -300,29 +303,29 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                           AutomationProperties.AutomationId="SettingsInjectionProtectionToggle"
                                           Tag="InjectionProtection"
                                           Toggled="InjectionProtectionToggle_Toggled"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                     x:Name="CompatProtectionCard"
                     VerticalAlignment="Top"
                     l:Uids.Uid="SettingsPage_Protection_CompatGroup"
                     HeaderIcon="{ui:FontIcon Glyph=&#xE7B8;}"
                     Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Process"
                             HeaderIcon="{ui:FontIcon Glyph=&#xE9D5;}">
                             <ToggleSwitch x:Name="ProcessToggle" Tag="Process" Toggled="RunProtection" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Files"
                             HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
                             <ToggleSwitch x:Name="FilesToggle" Tag="Files" Toggled="RunProtection"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Boot"
                             HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}">
@@ -331,27 +334,27 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                           l:Uids.Uid="SettingsPage_Protection_Boot_Toggle"
                                           Tag="Boot"
                                           Toggled="BootProtectionToggle_Toggled"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                             VerticalAlignment="Top"
                             l:Uids.Uid="SettingsPage_Protection_Registry"
                             x:Name="SettingsPage_Protection_Registry"
                             HeaderIcon="{ui:FontIcon Glyph=&#xEA37;}">
                             <ToggleSwitch x:Name="RegistryToggle" Tag="Registry" Toggled="RunProtection"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsCard
                     VerticalAlignment="Top"
                     l:Uids.Uid="SettingsPage_UsbAutoScan"
                     HeaderIcon="{ui:FontIcon Glyph=&#xE88E;}"
                     Margin="0,0,0,4">
                     <ToggleSwitch x:Name="UsbAutoScanToggle" Toggled="Toggled_SaveToggleData" Tag="UsbAutoScan"/>
-                </controls:SettingsCard>
+                </toolkit:SettingsCard>
                 <TextBlock x:Name="Feature_Header"
                            Margin="0,4,0,8"
                            l:Uids.Uid="SettingsPage_Feature" />
-                <controls:SettingsExpander x:Name="Feature_ThreatNotificationMode"
+                <toolkit:SettingsExpander x:Name="Feature_ThreatNotificationMode"
                                            l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode"
                                            HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
                                            Margin="0,0,0,4">
@@ -363,54 +366,54 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_Compact"
                                       Tag="Compact" />
                     </ComboBox>
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming"
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_OnlyWhenGaming"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE7FC;}">
                             <ToggleSwitch x:Name="CompactNotificationWhenGamingToggle"
                                           AutomationProperties.AutomationId="CompactNotificationWhenGamingToggle"
                                           Tag="UseCompactThreatNotificationsWhenGaming"
                                           Toggled="CompactNotificationWhenGamingToggle_Toggled" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths"
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode_GamePaths"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE71D;}">
                             <Button x:Name="GamePathsViewButton"
                                     AutomationProperties.AutomationId="GamePathsViewButton"
                                     l:Uids.Uid="AllPage_OpenLink"
                                     Click="GamePathsViewButton_Click" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander x:Name="Feature_BrowserProtection"
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander x:Name="Feature_BrowserProtection"
                                            l:Uids.Uid="SettingsPage_Feature_BrowserProtection"
                                            HeaderIcon="{ui:FontIcon Glyph=&#xE774;}"
                                            Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Feature_BrowserProtection_OpenFolder"
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Feature_BrowserProtection_OpenFolder"
                                                HeaderIcon="{ui:FontIcon Glyph=&#xE8DA;}">
                             <Button x:Name="OpenBrowserProtectionFolderButton"
                                     AutomationProperties.AutomationId="OpenBrowserProtectionFolderButton"
                                     l:Uids.Uid="AllPage_OpenLink"
                                     Click="OpenBrowserProtectionFolderButton_Click" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsCard
                                     l:Uids.Uid="SettingsPage_Protection_Boot_Save"
                                     HeaderIcon="{ui:FontIcon Glyph=&#xECF0;}">
                     <Button x:Name="BootSaveButton"
                                             AutomationProperties.AutomationId="SettingsBootBackupButton"
                                             l:Uids.Uid="SettingsPage_Protection_Boot_Save_Button"
                                             Click="Boot_Save_Button_Click"/>
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                                     l:Uids.Uid="SettingsPage_Protection_Boot_Open"
                                     HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
                     <Button x:Name="BootRestoreButton"
                                             AutomationProperties.AutomationId="SettingsBootRestoreButton"
                                             l:Uids.Uid="SettingsPage_Protection_Boot_Open_Button"
                                             Click="Boot_Restore_Button_Click"/>
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                                     l:Uids.Uid="SettingsPage_Feature_LegacyFilePicker"
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE8B7;}"
                                     Margin="0,0,0,4">
@@ -418,16 +421,16 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                                             AutomationProperties.AutomationId="LegacyFilePickerToggle"
                                             Tag="UseLegacyFilePicker"
                                             Toggled="Toggled_SaveToggleData" />
-                </controls:SettingsCard>
+                </toolkit:SettingsCard>
                 <TextBlock Margin="0,8,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
-                <controls:SettingsCard
+                <toolkit:SettingsCard
                    VerticalAlignment="Top"
                    l:Uids.Uid="SettingsPage_Quarantine"
                    HeaderIcon="{ui:FontIcon Glyph=&#xE8B6;}"
                    IsClickEnabled="True"
                    Click="Quarantine_Card_Click"
                    Margin="0,0,0,4" />
-                <controls:SettingsCard
+                <toolkit:SettingsCard
                    VerticalAlignment="Top"
                    l:Uids.Uid="SettingsPage_Trust"
                    HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}"
@@ -435,7 +438,7 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                    Click="Trust_Card_Click"
                    Margin="0,0,0,4" />
                 <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Other"/>
-                <controls:SettingsCard 
+                <toolkit:SettingsCard 
                     l:Uids.Uid="SettingsPage_Other_Language"
                     HeaderIcon="{ui:FontIcon Glyph=&#xF2B7;}"
                     Margin="0,0,0,4">
@@ -445,38 +448,38 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <ComboBoxItem Tag="zh-HANS">简体中文</ComboBoxItem>
                         <ComboBoxItem Tag="zh-HANT">繁體中文</ComboBoxItem>
                     </ComboBox>
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_Tray"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE90E;}"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="TrayVisibleToggle" Tag="TrayVisibleToggle" Toggled="TrayVisibleToggle_Toggled" />
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_Startup"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE7E8;}"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="StartupToggle" Toggled="StartupToggle_Toggled" />
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_ContextMenuScan"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="ContextMenuScanToggle" Tag="ContextMenuScan" Toggled="ContextMenuScanToggle_Toggled" />
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_DisableVerify"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE72E;}"
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="DisabledVerifyToggle" Tag="DisabledVerify" Toggled="DisabledVerifyToggle_Toggled" />
-                </controls:SettingsCard>
-                <controls:SettingsCard
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Other_RestartOOBE"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE7B3;}"
                            Margin="0,0,0,4">
                     <Button l:Uids.Uid="AllPage_OpenLink" Click="RestartOOBEButton_Click" />
-                </controls:SettingsCard>
-                <controls:SettingsCard 
+                </toolkit:SettingsCard>
+                <toolkit:SettingsCard 
                    l:Uids.Uid="SettingsPage_Other_CheckUpdate"
                    HeaderIcon="{ui:FontIcon Glyph=&#xE895;}"
                    Margin="0,0,0,4">
@@ -484,49 +487,49 @@ xmlns:ui="using:CommunityToolkit.WinUI"
                         <Button l:Uids.Uid="SettingsPage_Other_CheckUpdate_Button" x:Name="UpdateButton" Click="UpdateButtonClick" Style="{ThemeResource AccentButtonStyle}" />
                         <ProgressRing x:Name="UpdateProgressRing" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" IsActive="False" Visibility="Collapsed" />
                     </Grid>
-                </controls:SettingsCard>
-                <controls:SettingsExpander
+                </toolkit:SettingsCard>
+                <toolkit:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Other_Config"
                            HeaderIcon="{ui:FontIcon Glyph=&#xF259;}"
                            Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard
                        l:Uids.Uid="SettingsPage_Other_Config_Location"
                        HeaderIcon="{ui:FontIcon Glyph=&#xE8DA;}">
                             <Button l:Uids.Uid="AllPage_OpenLink" x:Name="OpenConfigLocationButton" Click="OpenConfigLocationButton_Click"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard
                        l:Uids.Uid="SettingsPage_Other_Config_Reset"
                        HeaderIcon="{ui:FontIcon Glyph=&#xEBC4;}">
                             <Button l:Uids.Uid="AllPage_OpenLink" x:Name="ResetConfigButton" Click="ResetConfigButton_Click"/>
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-                <controls:SettingsExpander
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
+                <toolkit:SettingsExpander
                            VerticalAlignment="Top"
                            l:Uids.Uid="SettingsPage_Other_About"
                            IsExpanded="True"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE946;}"
                            Margin="0,0,0,4">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Name" HeaderIcon="{ui:FontIcon Glyph=&#xE8AC;}">
+                    <toolkit:SettingsExpander.Items>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Name" HeaderIcon="{ui:FontIcon Glyph=&#xE8AC;}">
                             <TextBlock x:Name="Settings_About_Name"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Version" HeaderIcon="{ui:FontIcon Glyph=&#xE7B8;}">
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Version" HeaderIcon="{ui:FontIcon Glyph=&#xE7B8;}">
                             <TextBlock x:Name="Settings_About_Version"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Developer" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Developer" HeaderIcon="{ui:FontIcon Glyph=&#xEC7A;}">
                             <TextBlock x:Name="Settings_About_Developer"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Feedback" HeaderIcon="{ui:FontIcon Glyph=&#xED15;}">
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Feedback" HeaderIcon="{ui:FontIcon Glyph=&#xED15;}">
                             <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" x:Name="Settings_About_Feedback"/>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Website" HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                        </toolkit:SettingsCard>
+                        <toolkit:SettingsCard l:Uids.Uid="SettingsPage_Other_About_Website" HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
                             <HyperlinkButton l:Uids.Uid="AllPage_OpenLink" x:Name="Settings_About_Website" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                        </toolkit:SettingsCard>
+                    </toolkit:SettingsExpander.Items>
+                </toolkit:SettingsExpander>
                 <TeachingTip
                x:Name="UpdateTeachingTip"
                l:Uids.Uid="SettingsPage_Other_CheckUpdate_UpdateTeachingTip"

@@ -26,7 +26,7 @@ namespace Xdows_Security.Views.OOBE
             {
                 if (!ProtectionStatus.IsRun(0))
                 {
-                    ProtectionStatus.Run(0);
+                    ProtectionStatus.Run(0, null);
                 }
             });
 
@@ -51,7 +51,7 @@ namespace Xdows_Security.Views.OOBE
             }
         }
 
-        private void FinishButton_Click(object sender, RoutedEventArgs e)
+        private void FinishButton_Click(object _1, RoutedEventArgs _2)
         {
             RaiseComplete();
         }

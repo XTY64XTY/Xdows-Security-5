@@ -1,4 +1,4 @@
-namespace Protection;
+namespace Protection.Drivers.Runtime;
 
 internal sealed class DriverShutdownToken
 {

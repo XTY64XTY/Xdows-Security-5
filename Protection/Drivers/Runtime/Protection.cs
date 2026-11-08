@@ -1,14 +1,17 @@
 using Helper;
+using Protection.Drivers.BootProtection;
+using Protection.Drivers.Communication;
+using Protection.Drivers.Infrastructure;
+using Protection.Drivers.Installation;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security.Principal;
-using System.Text.Json;
 using System.Threading.Channels;
 using TrustQuarantine;
 using static Protection.Callback;
 
-namespace Protection;
+namespace Protection.Drivers.Runtime;
 
 public enum DriverProtectionRuntimeStatus
 {
@@ -70,18 +73,11 @@ public sealed record DriverLoadProgress(DriverLoadStage Stage, DriverLoadStageSt
 /// 某一阶段的可预期失败（驱动装不上、服务起不来）。带上阶段与日志模块，
 /// 由 <see cref="DriverProtection.Run"/> 统一记录并上报进度。
 /// </summary>
-public sealed class DriverLoadException : Exception
+public sealed class DriverLoadException(DriverLoadStage stage, string module, string message) : Exception(message)
 {
-    public DriverLoadException(DriverLoadStage stage, string module, string message)
-        : base(message)
-    {
-        Stage = stage;
-        Module = module;
-    }
+    public DriverLoadStage Stage { get; } = stage;
 
-    public DriverLoadStage Stage { get; }
-
-    public string Module { get; }
+    public string Module { get; } = module;
 }
 
 public sealed record DriverProtectionLogEntry(
@@ -201,27 +197,23 @@ public sealed partial class DriverProtection : IProtectionModel
 
     public static DriverProtectionRuntimeStatus QueryRuntimeStatus()
     {
-        if (DriverBridgeClient.TryQueryStateWithoutRegister(out var state, out int error))
-        {
-            if (state.ClientConnected == 0)
-                return DriverProtectionRuntimeStatus.NotRunning;
-
-            return state.ProcessProtectionEnabled == 0 ||
+        return DriverBridgeClient.TryQueryStateWithoutRegister(out var state, out int error)
+            ? state.ClientConnected == 0
+                ? DriverProtectionRuntimeStatus.NotRunning
+                : state.ProcessProtectionEnabled == 0 ||
                 state.FileProtectionEnabled == 0 ||
                 state.SelfProtectionEnabled == 0 ||
                 state.ProtectedProcessId != (uint)Environment.ProcessId ||
                 !HasRequiredModules(state) ||
                 !HasRequiredCapabilities(state)
                 ? DriverProtectionRuntimeStatus.NeedsRepair
-                : DriverProtectionRuntimeStatus.Protected;
-        }
-
-        return error switch
-        {
-            2 or 3 => DriverProtectionRuntimeStatus.NotInstalled,
-            DriverBridgeClient.ErrorRevisionMismatch => DriverProtectionRuntimeStatus.NeedsRepair,
-            _ => DriverProtectionRuntimeStatus.Error
-        };
+                : DriverProtectionRuntimeStatus.Protected
+            : error switch
+            {
+                2 or 3 => DriverProtectionRuntimeStatus.NotInstalled,
+                DriverBridgeClient.ErrorRevisionMismatch => DriverProtectionRuntimeStatus.NeedsRepair,
+                _ => DriverProtectionRuntimeStatus.Error
+            };
     }
 
     /// <summary>
@@ -383,7 +375,7 @@ public sealed partial class DriverProtection : IProtectionModel
         }
     }
 
-    private void EnsureDriverPackagesReady(CancellationToken token)
+    private static void EnsureDriverPackagesReady(CancellationToken token)
     {
         DriverRepairResult driver = DriverInstaller
             .EnsureInstalledAndStartedAsync(token)
@@ -680,18 +672,21 @@ public sealed partial class DriverProtection : IProtectionModel
         lock (StateLock)
         {
             DriverBridgeClient client = GetRunningClient();
-            return client.QueryProcesses()
-                .Select(entry => new DriverProcessInfo(
-                    entry.ProcessId,
-                    entry.ParentProcessId,
-                    entry.SessionId,
-                    entry.ThreadCount,
-                    entry.HandleCount,
-                    entry.BasePriority,
-                    entry.WorkingSetBytes,
-                    entry.PrivateBytes,
-                    entry.ImageName ?? string.Empty))
-                .ToArray();
+            DriverProcessInfo[] processes =
+            [
+                .. client.QueryProcesses()
+                    .Select(entry => new DriverProcessInfo(
+                        entry.ProcessId,
+                        entry.ParentProcessId,
+                        entry.SessionId,
+                        entry.ThreadCount,
+                        entry.HandleCount,
+                        entry.BasePriority,
+                        entry.WorkingSetBytes,
+                        entry.PrivateBytes,
+                        entry.ImageName ?? string.Empty))
+            ];
+            return processes;
         }
     }
 
@@ -714,10 +709,9 @@ public sealed partial class DriverProtection : IProtectionModel
 
     private DriverBridgeClient GetRunningClient()
     {
-        if (!IsRun() || _client is not { IsConnected: true } client)
-            throw new InvalidOperationException("Driver protection must be running before using driver process management.");
-
-        return client;
+        return !IsRun() || _client is not { IsConnected: true } client
+            ? throw new InvalidOperationException("Driver protection must be running before using driver process management.")
+            : client;
     }
 
     private void QueueQuarantineAfterBlock(
@@ -1770,12 +1764,13 @@ public sealed partial class DriverProtection : IProtectionModel
         XdowsSecurityEvent driverEvent,
         string imagePath,
         string commandLine,
-        string processCacheKey,
+        string _processCacheKey,
         NativeModelScannerResult scan,
         string detectionName)
     {
         try
-        {            DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
+        {
+            DateTimeOffset decisionDeadline = DateTimeOffset.UtcNow.Add(UserDecisionTimeout);
             var request = new ProtectionDecisionRequest(
                 imagePath,
                 "Process",
@@ -2069,7 +2064,7 @@ public sealed partial class DriverProtection : IProtectionModel
         return CriticalProcessImageNames.Contains(leaf, StringComparer.OrdinalIgnoreCase);
     }
 
-    private Task<XdowsSecurityDecision> HandleSensitiveOperationAsync(
+    private static Task<XdowsSecurityDecision> HandleSensitiveOperationAsync(
         XdowsSecurityEvent driverEvent,
         CancellationToken token)
     {
@@ -2220,10 +2215,7 @@ public sealed partial class DriverProtection : IProtectionModel
     /// </summary>
     private static bool IsModelInfrastructureFailure(NativeModelScannerResult scan)
     {
-        if (scan.Status is NativeModelStatus.UnsupportedFile or NativeModelStatus.FileNotFound)
-            return false;
-
-        return !string.IsNullOrWhiteSpace(scan.ErrorMessage);
+        return scan.Status is not NativeModelStatus.UnsupportedFile and not NativeModelStatus.FileNotFound && !string.IsNullOrWhiteSpace(scan.ErrorMessage);
     }
 
     private static XdowsSecurityDecision Allow(ulong eventId, string reason, TimeSpan? ttl = null)
@@ -2322,13 +2314,9 @@ public sealed partial class DriverProtection : IProtectionModel
         if (!string.IsNullOrWhiteSpace(actorPath))
             return actorPath;
 
-        if (driverEvent.CreatingProcessId != 0)
-            return SignerTrustService.TryResolveProcessPath(driverEvent.CreatingProcessId);
-
-        if (driverEvent.ProcessId != 0)
-            return SignerTrustService.TryResolveProcessPath(driverEvent.ProcessId);
-
-        return null;
+        return driverEvent.CreatingProcessId != 0
+            ? SignerTrustService.TryResolveProcessPath(driverEvent.CreatingProcessId)
+            : driverEvent.ProcessId != 0 ? SignerTrustService.TryResolveProcessPath(driverEvent.ProcessId) : null;
     }
 
     private static readonly Lazy<string?> OwnDeploymentDirectory = new(

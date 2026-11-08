@@ -659,7 +659,7 @@ internal static class BootProtectionSnapshotService
                 $"sectorCount={sectorCount}, diskSize={diskSize}, sectorSize={sectorSize}).");
 
         UInt64 entryBytes = checked((UInt64)entryCount * entrySize);
-        if (entryBytes == 0 || entryBytes > MaxGptEntryBytes)
+        if (entryBytes is 0 or > MaxGptEntryBytes)
             throw new InvalidDataException($"The {label} partition-entry array is too large.");
 
         return new GptHeaderInfo(backupLba, entryLba, checked((int)entryBytes), entryCrc);
@@ -1285,7 +1285,7 @@ internal sealed class BootBaselineStore
         int length,
         string sha256)
     {
-        if (length < 0 || length > 64 * 1024 * 1024)
+        if (length is < 0 or > (64 * 1024 * 1024))
             throw new InvalidDataException("A boot baseline entry length is invalid.");
 
         Byte[] data = ReadEntry(archive, entryName, length);

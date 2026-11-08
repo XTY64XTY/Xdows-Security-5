@@ -8,7 +8,7 @@ namespace Xdows_Security.Views
 {
     public sealed partial class ModelPage : Page
     {
-        private bool IsInitialize = true;
+        private readonly bool IsInitialize = true;
 
         public ModelPage()
         {

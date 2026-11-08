@@ -2,7 +2,7 @@ using Microsoft.Win32.SafeHandles;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Protection;
+namespace Protection.Drivers.Infrastructure;
 
 internal static class DriverPathNormalizer
 {

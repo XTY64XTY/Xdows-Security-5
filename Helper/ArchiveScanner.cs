@@ -477,8 +477,7 @@ namespace Helper
                 var nameField = typeof(ZipArchiveEntry).GetField("_storedEntryNameBytes", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                 if (nameField == null) return entry.FullName;
 
-                var nameBytes = nameField.GetValue(entry) as Byte[];
-                if (nameBytes == null || nameBytes.Length == 0) return entry.FullName;
+                if (nameField.GetValue(entry) is not Byte[] nameBytes || nameBytes.Length == 0) return entry.FullName;
 
                 string utf8Result = Encoding.UTF8.GetString(nameBytes);
                 if (!utf8Result.Contains('\uFFFD') && !utf8Result.Contains('?'))

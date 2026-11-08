@@ -278,7 +278,7 @@ namespace Helper.InfectorCleaner
                 for (int i = start; i < end - 4; i++)
                 {
                     UInt32 val = BitConverter.ToUInt32(code, i);
-                    if (val >= 0x1000 && val < 0x10000000)
+                    if (val is >= 0x1000 and < 0x10000000)
                     {
                         foreach (var sec in peInfo.Sections)
                         {

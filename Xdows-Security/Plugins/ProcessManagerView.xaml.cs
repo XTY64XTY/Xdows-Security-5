@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Protection;
+using Protection.Drivers.Runtime;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -65,16 +65,16 @@ namespace Xdows_Security.Views
 
         [LibraryImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static partial bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, byte[] lpBuffer, nuint nSize, out nuint lpNumberOfBytesWritten);
+        public static partial bool WriteProcessMemory(nint hProcess, nint lpBaseAddress, [In] byte[] lpBuffer, nuint nSize, out nuint lpNumberOfBytesWritten);
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern nint GetModuleHandleW(string lpModuleName);
+        [LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+        public static partial nint GetModuleHandleW(string lpModuleName);
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern nint LoadLibraryW(string lpLibFileName);
+        [LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+        public static partial nint LoadLibraryW(string lpLibFileName);
 
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi, ExactSpelling = true)]
-        public static extern nint GetProcAddress(nint hModule, string lpProcName);
+        [LibraryImport("kernel32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
+        public static partial nint GetProcAddress(nint hModule, string lpProcName);
 
         [LibraryImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -92,9 +92,9 @@ namespace Xdows_Security.Views
         [return: MarshalAs(UnmanagedType.Bool)]
         public static partial bool DebugBreakProcess(nint process);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        [LibraryImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool WaitForDebugEvent(ref DEBUG_EVENT lpDebugEvent, uint dwMilliseconds);
+        public static partial bool WaitForDebugEvent(ref DEBUG_EVENT lpDebugEvent, uint dwMilliseconds);
 
         [LibraryImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -124,22 +124,23 @@ namespace Xdows_Security.Views
         [LibraryImport("ntdll.dll")]
         public static partial int NtAlertThread(nint threadHandle);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [LibraryImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, nint lParam);
+        public static partial bool EnumWindows(EnumWindowsProc lpEnumFunc, nint lParam);
 
-        [DllImport("user32.dll", SetLastError = true)]
-        public static extern uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
+        [LibraryImport("user32.dll", SetLastError = true)]
+        public static partial uint GetWindowThreadProcessId(nint hWnd, out uint lpdwProcessId);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [LibraryImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool IsWindowVisible(nint hWnd);
+        public static partial bool IsWindowVisible(nint hWnd);
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [LibraryImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool EndTask(nint hWnd, [MarshalAs(UnmanagedType.Bool)] bool fShutDown, [MarshalAs(UnmanagedType.Bool)] bool fForce);
+        public static partial bool EndTask(nint hWnd, [MarshalAs(UnmanagedType.Bool)] bool fShutDown, [MarshalAs(UnmanagedType.Bool)] bool fForce);
 
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public delegate bool EnumWindowsProc(nint hWnd, nint lParam);
 
         [StructLayout(LayoutKind.Sequential)]
@@ -260,11 +261,10 @@ namespace Xdows_Security.Views
 
             try
             {
-                var list = await Task.Run(() => useDriverMode
-                    ? ProtectionStatus.GetDriverProcesses()
+                List<ProcessInfoEx> list = await Task.Run(() => useDriverMode
+                    ? [.. ProtectionStatus.GetDriverProcesses()
                         .Select(process => new ProcessInfoEx(process))
-                        .OrderBy(process => process.Name)
-                        .ToList()
+                        .OrderBy(process => process.Name)]
                     : GetUserModeProcessSnapshot());
 
                 if (refreshGeneration != Volatile.Read(ref _refreshGeneration))
@@ -304,10 +304,12 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void Refresh_Click(object sender, RoutedEventArgs e)
-            => await RefreshProcesses();
+        private async void Refresh_Click(object _1, RoutedEventArgs _2)
+        {
+            await RefreshProcesses();
+        }
 
-        private async void ViewModeToggle_Toggled(object sender, RoutedEventArgs e)
+        private async void ViewModeToggle_Toggled(object _1, RoutedEventArgs _2)
         {
             IsTreeView = ViewModeToggle.IsOn;
 
@@ -337,7 +339,7 @@ namespace Xdows_Security.Views
             }
         }
 
-        private async void DriverModeToggle_Toggled(object sender, RoutedEventArgs e)
+        private async void DriverModeToggle_Toggled(object _1, RoutedEventArgs _2)
         {
             if (_suppressDriverModeToggle)
                 return;
@@ -401,10 +403,12 @@ namespace Xdows_Security.Views
             Process[] processes = Process.GetProcesses();
             try
             {
-                return processes
-                    .Select(process => new ProcessInfoEx(process))
-                    .OrderBy(process => process.Name)
-                    .ToList();
+                return
+                [
+                    .. processes
+                        .Select(process => new ProcessInfoEx(process))
+                        .OrderBy(process => process.Name)
+                ];
             }
             finally
             {
@@ -479,11 +483,15 @@ namespace Xdows_Security.Views
             return node;
         }
 
-        private void SortCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-            => ApplyFilterAndSort();
+        private void SortCombo_SelectionChanged(object _1, SelectionChangedEventArgs _2)
+        {
+            ApplyFilterAndSort();
+        }
 
-        private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
-            => ApplyFilterAndSort();
+        private void SearchBox_TextChanged(AutoSuggestBox _1, AutoSuggestBoxTextChangedEventArgs _2)
+        {
+            ApplyFilterAndSort();
+        }
 
         private void ApplyFilterAndSort()
         {
@@ -494,10 +502,9 @@ namespace Xdows_Security.Views
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                if (uint.TryParse(keyword, out var pid))
-                    filtered = _allProcesses.Where(p => p.Id == pid);
-                else
-                    filtered = _allProcesses.Where(p => p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+                filtered = uint.TryParse(keyword, out var pid)
+                    ? _allProcesses.Where(p => p.Id == pid)
+                    : _allProcesses.Where(p => p.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase));
             }
 
             ProcessList.ItemsSource = ApplySort(filtered).ToList();
@@ -518,20 +525,14 @@ namespace Xdows_Security.Views
 
         private ProcessInfoEx? GetProcessInfoFromSender(object sender)
         {
-            if (sender is MenuFlyoutItem menuItem)
-                return menuItem.DataContext as ProcessInfoEx;
-
-            if (IsTreeView)
-            {
-                if (ProcessTree.SelectedNode?.Content is ProcessInfoEx treeInfo)
-                    return treeInfo;
-                return null;
-            }
-
-            return ProcessList.SelectedItem as ProcessInfoEx;
+            return sender is MenuFlyoutItem menuItem
+                ? menuItem.DataContext as ProcessInfoEx
+                : IsTreeView
+                ? ProcessTree.SelectedNode?.Content is ProcessInfoEx treeInfo ? treeInfo : null
+                : ProcessList.SelectedItem as ProcessInfoEx;
         }
 
-        private async void Kill_Click(object sender, RoutedEventArgs e)
+        private async void Kill_Click(object sender, RoutedEventArgs _1)
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
@@ -584,7 +585,7 @@ namespace Xdows_Security.Views
             await RefreshProcesses();
         }
 
-        private async void Suspend_Click(object sender, RoutedEventArgs e)
+        private async void Suspend_Click(object sender, RoutedEventArgs _1)
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
@@ -616,7 +617,7 @@ namespace Xdows_Security.Views
                     FormatLocalized("ProcessManager_Operation_Failed_Text", info.Name, error));
         }
 
-        private async void Resume_Click(object sender, RoutedEventArgs e)
+        private async void Resume_Click(object sender, RoutedEventArgs _1)
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
@@ -648,7 +649,7 @@ namespace Xdows_Security.Views
                     FormatLocalized("ProcessManager_Operation_Failed_Text", info.Name, error));
         }
 
-        private async void ShowProcessDetail_Click(object sender, RoutedEventArgs e)
+        private async void ShowProcessDetail_Click(object sender, RoutedEventArgs _1)
         {
             var info = GetProcessInfoFromSender(sender);
             if (info == null) return;
@@ -812,7 +813,9 @@ namespace Xdows_Security.Views
         }
 
         private ElementTheme GetDialogTheme()
-            => (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
+        {
+            return (XamlRoot.Content as FrameworkElement)?.RequestedTheme ?? ElementTheme.Default;
+        }
 
         private static string Localize(string key)
         {
@@ -821,7 +824,9 @@ namespace Xdows_Security.Views
         }
 
         private static string FormatLocalized(string key, params object[] args)
-            => string.Format(CultureInfo.CurrentCulture, Localize(key), args);
+        {
+            return string.Format(CultureInfo.CurrentCulture, Localize(key), args);
+        }
 
         public static void SuspendProcess(int processId)
         {
@@ -973,10 +978,7 @@ namespace Xdows_Security.Views
             var native = TryTerminateProcessNative(processId);
             if (native.Success)
             {
-                if (messages.Count == 0)
-                    return native;
-
-                return (true, $"{native.Message}；{string.Join("；", messages)}");
+                return messages.Count == 0 ? native : ((bool Success, string Message))(true, $"{native.Message}；{string.Join("；", messages)}");
             }
 
             messages.Add(FormatLocalized("ProcessManager_TerminateProcess_Failed", native.Message));
@@ -1264,9 +1266,9 @@ namespace Xdows_Security.Views
 
             try
             {
-                var loadResult = EnsureRemoteModuleLoaded(hProcess, "user32.dll");
-                if (!loadResult.Success)
-                    return (false, loadResult.Message);
+                var (Success, Message) = EnsureRemoteModuleLoaded(hProcess, "user32.dll");
+                if (!Success)
+                    return (false, Message);
 
                 var messageBoxIndirect = GetLocalProcAddress("user32.dll", "MessageBoxIndirectW", out var procError);
                 if (messageBoxIndirect == 0)
@@ -1275,10 +1277,10 @@ namespace Xdows_Security.Views
                 var text = Encoding.Unicode.GetBytes(FormatLocalized("ProcessManager_Mbox_Text") + "\0");
                 var caption = Encoding.Unicode.GetBytes("Xdows Security\0");
 
-                var textRemote = RemoteAllocAndWrite(hProcess, text, NativeMethods.PAGE_READWRITE);
-                if (textRemote.Address == 0)
-                    return (false, FormatLocalized("ProcessManager_WriteRemote_TextFailed", textRemote.Error));
-                remoteAllocations.Add(textRemote.Address);
+                var (Address, Error) = RemoteAllocAndWrite(hProcess, text, NativeMethods.PAGE_READWRITE);
+                if (Address == 0)
+                    return (false, FormatLocalized("ProcessManager_WriteRemote_TextFailed", Error));
+                remoteAllocations.Add(Address);
 
                 var captionRemote = RemoteAllocAndWrite(hProcess, caption, NativeMethods.PAGE_READWRITE);
                 if (captionRemote.Address == 0)
@@ -1288,7 +1290,7 @@ namespace Xdows_Security.Views
                 var parameters = new NativeMethods.MSGBOXPARAMSW
                 {
                     cbSize = (uint)Marshal.SizeOf<NativeMethods.MSGBOXPARAMSW>(),
-                    lpszText = textRemote.Address,
+                    lpszText = Address,
                     lpszCaption = captionRemote.Address,
                     dwStyle = NativeMethods.MB_OK | NativeMethods.MB_ICONERROR | NativeMethods.MB_SETFOREGROUND
                 };
@@ -1346,11 +1348,11 @@ namespace Xdows_Security.Views
             try
             {
                 var garbage = Encoding.ASCII.GetBytes("APC_GARBAGE_TARGET_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0123456789");
-                var allocation = RemoteAllocAndWrite(hProcess, garbage, NativeMethods.PAGE_READWRITE);
-                if (allocation.Address == 0)
-                    return (false, FormatLocalized("ProcessManager_WriteRemote_GarbageFailed", allocation.Error));
+                var (garbageAddress, garbageError) = RemoteAllocAndWrite(hProcess, garbage, NativeMethods.PAGE_READWRITE);
+                if (garbageAddress == 0)
+                    return (false, FormatLocalized("ProcessManager_WriteRemote_GarbageFailed", garbageError));
 
-                remoteGarbage = allocation.Address;
+                remoteGarbage = garbageAddress;
 
                 var queued = 0;
                 var alerted = 0;
@@ -1409,9 +1411,9 @@ namespace Xdows_Security.Views
         {
             var windows = new List<nint>();
 
-            NativeMethods.EnumWindows((hWnd, _) =>
+            NativeMethods.EnumWindows((hWnd, _1) =>
             {
-                NativeMethods.GetWindowThreadProcessId(hWnd, out var windowProcessId);
+                _ = NativeMethods.GetWindowThreadProcessId(hWnd, out var windowProcessId);
                 if (windowProcessId == processId && NativeMethods.IsWindowVisible(hWnd))
                     windows.Add(hWnd);
 
@@ -1516,19 +1518,19 @@ namespace Xdows_Security.Views
                 return (false, procError);
 
             var moduleNameBytes = Encoding.Unicode.GetBytes(moduleName + "\0");
-            var remoteModuleName = RemoteAllocAndWrite(hProcess, moduleNameBytes, NativeMethods.PAGE_READWRITE);
-            if (remoteModuleName.Address == 0)
-                return (false, FormatLocalized("ProcessManager_WriteRemote_ModuleNameFailed", remoteModuleName.Error));
+            var (remoteModuleNameAddress, remoteModuleNameError) = RemoteAllocAndWrite(hProcess, moduleNameBytes, NativeMethods.PAGE_READWRITE);
+            if (remoteModuleNameAddress == 0)
+                return (false, FormatLocalized("ProcessManager_WriteRemote_ModuleNameFailed", remoteModuleNameError));
 
             nint hThread = 0;
 
             try
             {
-                var thread = StartRemoteThread(hProcess, loadLibrary, remoteModuleName.Address);
-                if (thread.Handle == 0)
-                    return (false, FormatLocalized("ProcessManager_RemoteThread_LoadLibrary_Failed", thread.Error));
+                var (threadHandle, _, threadError) = StartRemoteThread(hProcess, loadLibrary, remoteModuleNameAddress);
+                if (threadHandle == 0)
+                    return (false, FormatLocalized("ProcessManager_RemoteThread_LoadLibrary_Failed", threadError));
 
-                hThread = thread.Handle;
+                hThread = threadHandle;
                 var wait = NativeMethods.WaitForSingleObject(hThread, 5000);
 
                 if (wait == NativeMethods.WAIT_OBJECT_0)
@@ -1544,7 +1546,7 @@ namespace Xdows_Security.Views
                 if (hThread != 0)
                     NativeMethods.CloseHandle(hThread);
 
-                TryFreeRemoteMemory(hProcess, remoteModuleName.Address);
+                TryFreeRemoteMemory(hProcess, remoteModuleNameAddress);
             }
         }
 
@@ -1588,7 +1590,9 @@ namespace Xdows_Security.Views
         }
 
         private static bool IsThreadExited(nint hThread)
-            => NativeMethods.GetExitCodeThread(hThread, out var exitCode) && exitCode != NativeMethods.STILL_ACTIVE;
+        {
+            return NativeMethods.GetExitCodeThread(hThread, out var exitCode) && exitCode != NativeMethods.STILL_ACTIVE;
+        }
 
         private static byte[] StructureToBytes<T>(T value)
             where T : struct
@@ -1616,7 +1620,7 @@ namespace Xdows_Security.Views
             try
             {
                 using var process = Process.GetProcessById(processId);
-                return process.Threads.Cast<ProcessThread>().Select(static thread => thread.Id).ToList();
+                return [.. process.Threads.Cast<ProcessThread>().Select(static thread => thread.Id)];
             }
             catch (Exception ex)
             {
@@ -1680,10 +1684,14 @@ namespace Xdows_Security.Views
             public bool Success { get; set; }
 
             public void Add(string name, bool success, string message, bool skipped = false)
-                => _attempts.Add(new ProcessKillAttempt(name, success, message, skipped));
+            {
+                _attempts.Add(new ProcessKillAttempt(name, success, message, skipped));
+            }
 
             public string ToDisplayText()
-                => string.Join("\n", _attempts.Select(static attempt => attempt.ToDisplayText()));
+            {
+                return string.Join("\n", _attempts.Select(static attempt => attempt.ToDisplayText()));
+            }
         }
 
         private sealed class ProcessKillAttempt(string name, bool success, string message, bool skipped)
@@ -1721,7 +1729,10 @@ namespace Xdows_Security.Views
         public string CommandLine => _commandLine;
         public bool IsWow64 => _isWow64;
 
-        public override string ToString() => $"{Name}   PID: {Id}   {Memory}";
+        public override string ToString()
+        {
+            return $"{Name}   PID: {Id}   {Memory}";
+        }
 
         public ProcessInfoEx(Process process)
         {
@@ -1889,13 +1900,9 @@ namespace Xdows_Security.Views
 
         private static string FormatSize(long bytes)
         {
-            if (bytes >= 1073741824)
-                return $"{bytes / 1073741824.0:F2} GB";
-            if (bytes >= 1048576)
-                return $"{bytes / 1048576.0:F2} MB";
-            if (bytes >= 1024)
-                return $"{bytes / 1024.0:F2} KB";
-            return $"{bytes} B";
+            return bytes >= 1073741824
+                ? $"{bytes / 1073741824.0:F2} GB"
+                : bytes >= 1048576 ? $"{bytes / 1048576.0:F2} MB" : bytes >= 1024 ? $"{bytes / 1024.0:F2} KB" : $"{bytes} B";
         }
 
     }

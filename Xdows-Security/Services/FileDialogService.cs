@@ -1,9 +1,9 @@
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
-using Microsoft.UI.Xaml;
 
 namespace Xdows_Security.Services;
 
@@ -133,7 +133,7 @@ internal static unsafe partial class FileDialogService
             suggestedFileName,
             defaultExtension,
             filter,
-            initialDirectory) is { Count: > 0 } results ? results[0] : null;
+            initialDirectory) is { Length: > 0 } results ? results[0] : null;
     }
 
     /// <summary>单选打开文件对话框。用户取消或失败时返回 null。</summary>
@@ -150,7 +150,7 @@ internal static unsafe partial class FileDialogService
             suggestedFileName: null,
             defaultExtension: null,
             filter,
-            initialDirectory) is { Count: > 0 } results ? results[0] : null;
+            initialDirectory) is { Length: > 0 } results ? results[0] : null;
     }
 
     /// <summary>多选打开文件对话框。用户取消或失败时返回空集合。</summary>
@@ -167,7 +167,7 @@ internal static unsafe partial class FileDialogService
             suggestedFileName: null,
             defaultExtension: null,
             filter,
-            initialDirectory) ?? Array.Empty<string>();
+            initialDirectory) ?? [];
     }
 
     /// <summary>选择文件夹对话框。用户取消或失败时返回 null。</summary>
@@ -183,10 +183,10 @@ internal static unsafe partial class FileDialogService
             suggestedFileName: null,
             defaultExtension: null,
             filter: null,
-            initialDirectory) is { Count: > 0 } results ? results[0] : null;
+            initialDirectory) is { Length: > 0 } results ? results[0] : null;
     }
 
-    private static IReadOnlyList<string>? ShowCore(
+    private static string[]? ShowCore(
         nint ownerHwnd,
         bool saveMode,
         bool multiSelect,
@@ -360,7 +360,7 @@ internal static unsafe partial class FileDialogService
                     IntPtr arrayPtr;
                     if (getResults(dialog, &arrayPtr) != 0 || arrayPtr == IntPtr.Zero)
                     {
-                        return Array.Empty<string>();
+                        return [];
                     }
 
                     try
@@ -371,7 +371,7 @@ internal static unsafe partial class FileDialogService
                         uint count;
                         if (getCount(arrayPtr, &count) != 0)
                         {
-                            return Array.Empty<string>();
+                            return [];
                         }
 
                         var paths = new List<string>((int)count);
@@ -397,7 +397,7 @@ internal static unsafe partial class FileDialogService
                                 }
                             }
                         }
-                        return paths;
+                        return [.. paths];
                     }
                     finally
                     {
@@ -415,7 +415,7 @@ internal static unsafe partial class FileDialogService
                 }
 
                 string selected = Marshal.PtrToStringUni(resultPath) ?? string.Empty;
-                return new List<string> { selected };
+                return [selected];
             }
             finally
             {
@@ -440,16 +440,10 @@ internal static unsafe partial class FileDialogService
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private readonly struct FilterSpec
+    private readonly struct FilterSpec(IntPtr name, IntPtr spec)
     {
-        public readonly IntPtr Name;
-        public readonly IntPtr Spec;
-
-        public FilterSpec(IntPtr name, IntPtr spec)
-        {
-            Name = name;
-            Spec = spec;
-        }
+        public readonly IntPtr Name = name;
+        public readonly IntPtr Spec = spec;
     }
 
     private static FilterSpec* BuildNativeFilter(string? filter, out uint count)
@@ -561,7 +555,7 @@ internal static unsafe partial class FileDialogService
             }
 
             int useDark = s_useDarkTheme ? 1 : 0;
-            DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDark, sizeof(int));
+            _ = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDark, sizeof(int));
             SetWindowTheme(hwnd, s_useDarkTheme ? "DarkMode_Explorer" : null, null);
             Volatile.Write(ref s_themeApplied, 1);
         }
@@ -638,7 +632,10 @@ internal static unsafe partial class FileDialogService
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-    private static uint EventsAddRef(IntPtr thisPtr) => (uint)AddRefCore(thisPtr);
+    private static uint EventsAddRef(IntPtr thisPtr)
+    {
+        return (uint)AddRefCore(thisPtr);
+    }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static uint EventsRelease(IntPtr thisPtr)
@@ -648,7 +645,10 @@ internal static unsafe partial class FileDialogService
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-    private static int EventsOnFileOk(IntPtr thisPtr, IntPtr dialog) => S_OK;
+    private static int EventsOnFileOk(IntPtr thisPtr, IntPtr dialog)
+    {
+        return S_OK;
+    }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static int EventsOnFolderChanging(IntPtr thisPtr, IntPtr dialog, IntPtr folder)
@@ -658,10 +658,16 @@ internal static unsafe partial class FileDialogService
     }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-    private static int EventsOnFolderChange(IntPtr thisPtr, IntPtr dialog) => S_OK;
+    private static int EventsOnFolderChange(IntPtr thisPtr, IntPtr dialog)
+    {
+        return S_OK;
+    }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
-    private static int EventsOnSelectionChange(IntPtr thisPtr, IntPtr dialog) => S_OK;
+    private static int EventsOnSelectionChange(IntPtr thisPtr, IntPtr dialog)
+    {
+        return S_OK;
+    }
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static int EventsOnTypeChange(IntPtr thisPtr, IntPtr dialog)

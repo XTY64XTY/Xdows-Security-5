@@ -1,7 +1,7 @@
 using Microsoft.Win32.SafeHandles;
 using System.Runtime.InteropServices;
 
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 internal enum DriverServiceState
 {

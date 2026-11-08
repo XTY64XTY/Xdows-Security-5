@@ -1,11 +1,12 @@
 using Microsoft.Win32.SafeHandles;
+using Protection.Drivers.Runtime;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Threading.Channels;
 
-namespace Protection;
+namespace Protection.Drivers.Communication;
 
-internal sealed class DriverBridgeClient : IDisposable
+internal sealed partial class DriverBridgeClient : IDisposable
 {
     private sealed record LegacyUpgradeSource(uint ProtocolVersion, ulong[] BuildIds);
 
@@ -64,11 +65,8 @@ internal sealed class DriverBridgeClient : IDisposable
         if (IsConnected)
             return;
 
-        _handle = OpenDriverDevice(out int openError);
-        if (_handle is null)
-        {
+        _handle = OpenDriverDevice(out int openError) ??
             throw new Win32Exception(openError, "Failed to open Xdows Security Driver device.");
-        }
 
         _clientProcessId = checked((uint)Environment.ProcessId);
         var request = new RegisterRequest
@@ -137,9 +135,11 @@ internal sealed class DriverBridgeClient : IDisposable
             SingleReader = false,
             FullMode = BoundedChannelFullMode.Wait
         });
-        Task[] workers = Enumerable.Range(0, workerCount)
-            .Select(_ => RunDecisionWorkerAsync(channel.Reader, handler, afterDecisionSubmitted, token))
-            .ToArray();
+        Task[] workers =
+        [
+            .. Enumerable.Range(0, workerCount)
+                .Select(_ => RunDecisionWorkerAsync(channel.Reader, handler, afterDecisionSubmitted, token))
+        ];
 
         try
         {
@@ -526,11 +526,13 @@ internal sealed class DriverBridgeClient : IDisposable
         if (configuration.NtVolumeRoots.Count is < 1 or > DriverProtocol.MaxBootVolumeRoots)
             throw new InvalidDataException("Boot protection requires between one and four NT volume roots.");
 
-        string[] roots = configuration.NtVolumeRoots
-            .Select(root => Truncate(root, DriverProtocol.MaxBootVolumeRootChars - 1))
-            .Concat(Enumerable.Repeat(string.Empty, DriverProtocol.MaxBootVolumeRoots))
-            .Take(DriverProtocol.MaxBootVolumeRoots)
-            .ToArray();
+        string[] roots =
+        [
+            .. configuration.NtVolumeRoots
+                .Select(root => Truncate(root, DriverProtocol.MaxBootVolumeRootChars - 1))
+                .Concat(Enumerable.Repeat(string.Empty, DriverProtocol.MaxBootVolumeRoots))
+                .Take(DriverProtocol.MaxBootVolumeRoots)
+        ];
         var request = new BootProtectionRequest
         {
             Header = DriverProtocol.Header<BootProtectionRequest>(),
@@ -1088,8 +1090,8 @@ internal sealed class DriverBridgeClient : IDisposable
         return value[..maxChars];
     }
 
-    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern SafeFileHandle CreateFile(
+    [LibraryImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
+    private static partial SafeFileHandle CreateFile(
         string lpFileName,
         uint dwDesiredAccess,
         uint dwShareMode,
@@ -1098,9 +1100,9 @@ internal sealed class DriverBridgeClient : IDisposable
         uint dwFlagsAndAttributes,
         IntPtr hTemplateFile);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool DeviceIoControl(
+    private static partial bool DeviceIoControl(
         SafeFileHandle hDevice,
         uint dwIoControlCode,
         IntPtr lpInBuffer,

@@ -454,35 +454,23 @@ namespace Xdows_Security
         /// </summary>
         private void UpdateHeader(string pageName)
         {
-            switch (pageName)
+            nav.Header = pageName switch
             {
-                case "Settings":
-                    nav.Header = BuildHeaderText(Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings"));
-                    break;
-                case "Quarantine":
-                    nav.Header = BuildBreadcrumb(
-                        ("MainWindow_Nav_Settings", "Settings"),
-                        ("QuarantinePage_Title", null));
-                    break;
-                case "Trust":
-                    nav.Header = BuildBreadcrumb(
-                        ("MainWindow_Nav_Settings", "Settings"),
-                        ("TrustPage_Title", null));
-                    break;
-                case "Model":
-                    nav.Header = BuildBreadcrumb(
-                        ("MainWindow_Nav_Settings", "Settings"),
-                        ("ModelPage_Title", null));
-                    break;
-                case "DriverEnvironment":
-                    nav.Header = BuildBreadcrumb(
-                        ("MainWindow_Nav_Settings", "Settings"),
-                        ("DriverEnvironmentPage_Title", null));
-                    break;
-                default:
-                    nav.Header = BuildHeaderText((nav.SelectedItem as NavigationViewItem)?.Content?.ToString() ?? string.Empty);
-                    break;
-            }
+                "Settings" => BuildHeaderText(Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings")),
+                "Quarantine" => BuildBreadcrumb(
+                                        ("MainWindow_Nav_Settings", "Settings"),
+                                        ("QuarantinePage_Title", null)),
+                "Trust" => BuildBreadcrumb(
+                                        ("MainWindow_Nav_Settings", "Settings"),
+                                        ("TrustPage_Title", null)),
+                "Model" => BuildBreadcrumb(
+                                        ("MainWindow_Nav_Settings", "Settings"),
+                                        ("ModelPage_Title", null)),
+                "DriverEnvironment" => BuildBreadcrumb(
+                                        ("MainWindow_Nav_Settings", "Settings"),
+                                        ("DriverEnvironmentPage_Title", null)),
+                _ => BuildHeaderText((nav.SelectedItem as NavigationViewItem)?.Content?.ToString() ?? string.Empty),
+            };
         }
 
         /// <summary>按当前字体设置刷新导航标题（用于运行时切换"使用 Noto 字体"后立即生效）。</summary>

@@ -1,7 +1,7 @@
 using Helper;
 using TrustQuarantine;
 using static Protection.Callback;
-namespace Protection
+namespace Protection.Compatibility
 {
     public class LegacyFilesProtection : IProtectionModel
     {

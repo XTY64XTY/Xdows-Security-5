@@ -3,7 +3,7 @@ using System.Diagnostics;
 using TrustQuarantine;
 using static Protection.Callback;
 
-namespace Protection
+namespace Protection.Compatibility
 {
     public class LegacyProcessProtection : IProtectionModel
     {

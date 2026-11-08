@@ -1,8 +1,8 @@
-using System;
-using System.Threading;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Settings;
+using System;
+using System.Threading;
 
 namespace Xdows_Security;
 

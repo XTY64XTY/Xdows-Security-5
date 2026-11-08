@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 internal static class DriverPackageInstaller
 {

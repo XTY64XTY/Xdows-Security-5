@@ -1,3 +1,4 @@
+using Protection.Drivers.Communication;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -38,8 +39,8 @@ namespace Protection;
 //
 internal sealed partial class DriverBehaviorRuleCatalog
 {
-    private static readonly IReadOnlyList<BehaviorRule> NoRules = Array.Empty<BehaviorRule>();
-    private static readonly IReadOnlyList<InitiatorExclusion> NoExclusions = Array.Empty<InitiatorExclusion>();
+    private static readonly IReadOnlyList<BehaviorRule> NoRules = [];
+    private static readonly IReadOnlyList<InitiatorExclusion> NoExclusions = [];
 
     private DriverBehaviorRuleCatalog(
         IReadOnlyList<BehaviorRule> rules,
@@ -76,12 +77,10 @@ internal sealed partial class DriverBehaviorRuleCatalog
         // 反射式 Deserialize<T> 会抛 InvalidOperationException。此前这个异常类型不在
         // 调用方的过滤器里，直接把整个驱动防护启动带崩（2026-10-03 用户实测日志）。
         //
-        BehaviorRuleConfigFile? file = JsonSerializer.Deserialize(
+        BehaviorRuleConfigFile file = JsonSerializer.Deserialize(
             stream,
-            BehaviorRuleJsonContext.Default.BehaviorRuleConfigFile);
-
-        if (file is null)
-            throw new InvalidDataException("BehaviorRules.json is empty or not a JSON object.");
+            BehaviorRuleJsonContext.Default.BehaviorRuleConfigFile)
+            ?? throw new InvalidDataException("BehaviorRules.json is empty or not a JSON object.");
 
         var rules = new List<BehaviorRule>();
         var seenIds = new HashSet<uint>();
@@ -132,9 +131,9 @@ internal sealed partial class DriverBehaviorRuleCatalog
         uint flags = ParseFlags(entry.Flags);
         uint matchKind = ParseMatchKind(entry.TargetMatchKind);
 
-        if (entry.Threshold < 0 || entry.Threshold > 10000)
+        if (entry.Threshold is < 0 or > 10000)
             throw new InvalidDataException($"Rule {entry.Id}: threshold must be between 0 and 10000.");
-        if (entry.WindowMs < 0 || entry.WindowMs > 60000)
+        if (entry.WindowMs is < 0 or > 60000)
             throw new InvalidDataException($"Rule {entry.Id}: windowMs must be between 0 and 60000.");
 
         return new BehaviorRule

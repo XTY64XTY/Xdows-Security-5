@@ -1,7 +1,9 @@
 using Microsoft.Windows.Storage;
+using Protection.Drivers.Communication;
+using Protection.Drivers.Runtime;
 using Xdows_Model_Config;
 
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 public sealed record DriverRepairResult(bool Success, string Message);
 
@@ -36,7 +38,7 @@ public static class DriverInstaller
     private static async Task<DriverRepairResult> EnableTestSigningAsync(CancellationToken token)
     {
         CommandResult result = await DriverCommandLine
-            .RunAsync("bcdedit", ["/set", "testsigning", "on"], token)
+            .RunAsync("bcdedit", (string[])["/set", "testsigning", "on"], token)
             .ConfigureAwait(false);
 
         return result.Success
@@ -54,7 +56,7 @@ public static class DriverInstaller
     private static async Task<DriverRepairResult> DisableTestSigningAsync(CancellationToken token)
     {
         CommandResult result = await DriverCommandLine
-            .RunAsync("bcdedit", ["/set", "testsigning", "off"], token)
+            .RunAsync("bcdedit", (string[])["/set", "testsigning", "off"], token)
             .ConfigureAwait(false);
 
         return result.Success
@@ -235,15 +237,12 @@ internal static class BootFilterLoadWorkflow
                 if (!DriverPackageInstaller.Install(package.InfPath, out bool rebootRequired, out string message))
                     return new DriverRepairResult(false, message);
 
-                if (rebootRequired)
-                {
-                    return new DriverRepairResult(
+                return rebootRequired
+                    ? new DriverRepairResult(
                         false,
                         "Boot filter package was installed, but a restart is required before the new driver can be loaded. " +
-                        "Restart Windows, then start driver protection.");
-                }
-
-                return new DriverRepairResult(true, message);
+                        "Restart Windows, then start driver protection.")
+                    : new DriverRepairResult(true, message);
             }, token).ConfigureAwait(false);
             if (!install.Success)
                 return install;
@@ -317,7 +316,7 @@ internal static class DriverLoadWorkflow
         }
 
         CommandResult drivers = await DriverCommandLine
-            .RunAsync("pnputil", ["/enum-drivers"], token)
+            .RunAsync("pnputil", (string[])["/enum-drivers"], token)
             .ConfigureAwait(false);
         if (!drivers.Success)
             return new DriverRepairResult(false, $"Unable to enumerate drivers: {drivers.ShortOutput}");
@@ -327,7 +326,7 @@ internal static class DriverLoadWorkflow
             return new DriverRepairResult(true, "Driver package is not installed.");
 
         CommandResult delete = await DriverCommandLine
-            .RunAsync("pnputil", ["/delete-driver", publishedName, "/uninstall", "/force"], token)
+            .RunAsync("pnputil", (string[])["/delete-driver", publishedName, "/uninstall", "/force"], token)
             .ConfigureAwait(false);
 
         return delete.Success
@@ -402,10 +401,9 @@ internal static class DriverLoadWorkflow
         if (ready.BridgeReady)
             return Ready(successPrefix, ready);
 
-        if (ready.Service.IsRunning)
-            return CreateLoadedWithoutBridgeResult(ready);
-
-        return new DriverRepairResult(
+        return ready.Service.IsRunning
+            ? CreateLoadedWithoutBridgeResult(ready)
+            : new DriverRepairResult(
             false,
             $"Driver did not become ready. Runtime: {ready.RuntimeStatus}. Service: {ready.Service.Detail}. Install: {install.Message} Start: {start.Message}");
     }
@@ -460,14 +458,11 @@ internal static class DriverLoadWorkflow
                 $"Driver package install completed, but service {ServiceName} was not registered.");
         }
 
-        if (registered.State == DriverServiceState.Unknown)
-        {
-            return new DriverRepairResult(
+        return registered.State == DriverServiceState.Unknown
+            ? new DriverRepairResult(
                 false,
-                $"Driver package install completed, but service state could not be queried. {registered.Detail}");
-        }
-
-        return await StartServiceCoreAsync(registered, token).ConfigureAwait(false);
+                $"Driver package install completed, but service state could not be queried. {registered.Detail}")
+            : await StartServiceCoreAsync(registered, token).ConfigureAwait(false);
     }
 
     private static async Task<DriverRepairResult> TryStopLegacyDriverForUpgradeAsync(
@@ -492,14 +487,11 @@ internal static class DriverLoadWorkflow
         DriverServiceSnapshot stopped = await WaitForServiceStateAsync(
             DriverServiceState.Stopped,
             token).ConfigureAwait(false);
-        if (stopped.State != DriverServiceState.Stopped)
-        {
-            return new DriverRepairResult(
+        return stopped.State != DriverServiceState.Stopped
+            ? new DriverRepairResult(
                 false,
-                $"Legacy driver did not stop after upgrade authorization. {stopped.Detail}");
-        }
-
-        return new DriverRepairResult(
+                $"Legacy driver did not stop after upgrade authorization. {stopped.Detail}")
+            : new DriverRepairResult(
             true,
             $"{authorizationMessage} Driver service stopped and is ready for package replacement.");
     }
@@ -511,15 +503,12 @@ internal static class DriverLoadWorkflow
             if (!DriverPackageInstaller.Install(package.InfPath, out bool rebootRequired, out string message))
                 return new DriverRepairResult(false, message);
 
-            if (rebootRequired)
-            {
-                return new DriverRepairResult(
+            return rebootRequired
+                ? new DriverRepairResult(
                     false,
                     "Driver package was installed, but a restart is required before the new driver can be loaded. " +
-                    "Restart Windows, then start driver protection.");
-            }
-
-            return new DriverRepairResult(true, message);
+                    "Restart Windows, then start driver protection.")
+                : new DriverRepairResult(true, message);
         }, token);
     }
 
@@ -590,11 +579,8 @@ internal static class DriverLoadWorkflow
     /// </summary>
     private static bool IsDriverVersionMismatch()
     {
-        if (!DriverBridgeClient.TryQueryRawDriverState(out var rawState, out _))
-            return false;
-
-        return rawState.ProtocolVersion != DriverProtocol.ProtocolVersion ||
-            rawState.DriverBuildId != DriverProtocol.DriverBuildId;
+        return DriverBridgeClient.TryQueryRawDriverState(out var rawState, out _) && (rawState.ProtocolVersion != DriverProtocol.ProtocolVersion ||
+            rawState.DriverBuildId != DriverProtocol.DriverBuildId);
     }
 
     /// <summary>
@@ -614,13 +600,10 @@ internal static class DriverLoadWorkflow
                     $"The installed driver binary is outdated — rebuild and redeploy the driver package.";
             }
 
-            if (rawState.ClientConnected != 0)
-            {
-                return $"A previous client (PID {rawState.ProtectedProcessId}) is still registered with the driver. " +
-                    "Wait for the heartbeat to expire or restart Windows.";
-            }
-
-            return null;
+            return rawState.ClientConnected != 0
+                ? $"A previous client (PID {rawState.ProtectedProcessId}) is still registered with the driver. " +
+                    "Wait for the heartbeat to expire or restart Windows."
+                : null;
         }
 
         return rawError switch

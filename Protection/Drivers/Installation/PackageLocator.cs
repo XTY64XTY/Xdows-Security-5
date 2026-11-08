@@ -1,4 +1,4 @@
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 internal sealed record DriverPackage(
     string DirectoryPath,

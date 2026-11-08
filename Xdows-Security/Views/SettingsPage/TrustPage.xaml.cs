@@ -1,6 +1,5 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Xdows_Security.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TrustQuarantine;
 using WinUI3Localizer;
+using Xdows_Security.Services;
 
 namespace Xdows_Security.Views
 {

@@ -2,7 +2,7 @@ using Microsoft.Win32.SafeHandles;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace Protection;
+namespace Protection.Drivers.BootProtection;
 
 internal sealed class BootFilterClient : IDisposable
 {

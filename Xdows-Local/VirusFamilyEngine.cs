@@ -558,7 +558,7 @@ namespace Xdows_Local
             for (int i = 0; i < data.Length; i++)
             {
                 Byte b = data[i];
-                lower[i] = (Byte)(b >= 0x41 && b <= 0x5A ? b + 32 : b);
+                lower[i] = (Byte)(b is >= 0x41 and <= 0x5A ? b + 32 : b);
             }
 
             // 1. 工具字符串 (ASCII, 大小写不敏感) - 任一命中即足够 (defendnot/defenderkiller 等)

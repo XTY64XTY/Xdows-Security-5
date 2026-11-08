@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 /// <summary>
 /// 命令行执行的唯一入口。环境检测（bcdedit 查询/设置）与安装流程（pnputil）共用，

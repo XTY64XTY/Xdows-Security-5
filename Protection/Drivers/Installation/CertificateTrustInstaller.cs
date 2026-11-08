@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 internal static class DriverCertificateTrustInstaller
 {

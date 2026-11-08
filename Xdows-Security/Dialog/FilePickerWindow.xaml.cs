@@ -17,9 +17,9 @@ using System.Threading.Tasks;
 using Windows.Graphics;
 using Windows.System;
 using Windows.UI.Core;
+using WinRT.Interop;
 using WinUI3Localizer;
 using WinUIEx;
-using WinRT.Interop;
 using Xdows_Security.Services;
 
 namespace Xdows_Security;
@@ -720,7 +720,7 @@ public sealed partial class FilePickerWindow : Window
         if (e.Key == VirtualKey.Escape)
         {
             e.Handled = true;
-            Finish(Array.Empty<string>());
+            Finish([]);
             return;
         }
 
@@ -910,48 +910,48 @@ public sealed partial class FilePickerWindow : Window
                 return;
 
             case FilePickerMode.Open:
-            {
-                string[] files = EntryList.SelectedItems
-                    .Cast<FilePickerEntry>()
-                    .Where(entry => !entry.IsFolder)
-                    .Select(entry => entry.FullPath)
-                    .ToArray();
-                if (files.Length == 0)
                 {
+                    string[] files = EntryList.SelectedItems
+                        .Cast<FilePickerEntry>()
+                        .Where(entry => !entry.IsFolder)
+                        .Select(entry => entry.FullPath)
+                        .ToArray();
+                    if (files.Length == 0)
+                    {
+                        return;
+                    }
+
+                    Finish(files);
                     return;
                 }
-
-                Finish(files);
-                return;
-            }
 
             case FilePickerMode.Save:
-            {
-                string name = FileNameBox.Text.Trim();
-                if (name.Length == 0)
                 {
-                    await ShowMessageAsync(Localizer.Get().GetLocalizedString("FilePicker_FileNameRequired"));
-                    return;
-                }
-
-                string target = Path.Combine(_currentDirectory, name);
-                if (Path.GetExtension(name).Length == 0)
-                {
-                    string extension = PreferredExtension();
-                    if (extension.Length > 0)
+                    string name = FileNameBox.Text.Trim();
+                    if (name.Length == 0)
                     {
-                        target += extension;
+                        await ShowMessageAsync(Localizer.Get().GetLocalizedString("FilePicker_FileNameRequired"));
+                        return;
                     }
-                }
 
-                if (File.Exists(target) && !await ConfirmOverwriteAsync(Path.GetFileName(target)))
-                {
+                    string target = Path.Combine(_currentDirectory, name);
+                    if (Path.GetExtension(name).Length == 0)
+                    {
+                        string extension = PreferredExtension();
+                        if (extension.Length > 0)
+                        {
+                            target += extension;
+                        }
+                    }
+
+                    if (File.Exists(target) && !await ConfirmOverwriteAsync(Path.GetFileName(target)))
+                    {
+                        return;
+                    }
+
+                    Finish([target]);
                     return;
                 }
-
-                Finish([target]);
-                return;
-            }
         }
     }
 

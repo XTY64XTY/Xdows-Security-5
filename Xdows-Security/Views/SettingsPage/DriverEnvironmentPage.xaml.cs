@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Protection;
+using Protection.Drivers.Installation;
 using System;
 using System.Linq;
 using System.Threading;
@@ -38,7 +38,7 @@ namespace Xdows_Security.Views
             _checkCts = null;
         }
 
-        private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+        private async void RefreshButton_Click(object _1, RoutedEventArgs _2)
         {
             await RefreshAsync();
         }
@@ -180,7 +180,7 @@ namespace Xdows_Security.Views
             };
         }
 
-        private async void ItemRepairButton_Click(object sender, RoutedEventArgs e)
+        private async void ItemRepairButton_Click(object sender, RoutedEventArgs _1)
         {
             if (sender is not Button { Tag: DriverEnvironmentCheckItem item })
                 return;
@@ -253,8 +253,11 @@ namespace Xdows_Security.Views
             }
         }
 
-        private static Brush GetStatusBrush(bool passed) => (Brush)Application.Current.Resources[
+        private static Brush GetStatusBrush(bool passed)
+        {
+            return (Brush)Application.Current.Resources[
             passed ? "SystemFillColorSuccessBrush" : "SystemFillColorCriticalBrush"];
+        }
 
         private void SetBusy(bool busy, string? message)
         {

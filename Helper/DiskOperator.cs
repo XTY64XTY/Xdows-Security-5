@@ -290,7 +290,7 @@ namespace Helper
         {
             if (offset < 0)
                 throw new ArgumentOutOfRangeException(nameof(offset));
-            if (length <= 0 || length > MaxRawRegionSize)
+            if (length is <= 0 or > MaxRawRegionSize)
                 throw new ArgumentOutOfRangeException(nameof(length), $"Raw disk regions must be between 1 and {MaxRawRegionSize} bytes.");
             _ = checked(offset + length);
         }

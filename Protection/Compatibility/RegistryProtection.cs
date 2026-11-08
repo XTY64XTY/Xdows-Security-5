@@ -1,13 +1,15 @@
 using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
+using Protection.Drivers.Infrastructure;
+using Protection.Drivers.Runtime;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Channels;
 using TrustQuarantine;
 using static Protection.Callback;
 
-namespace Protection;
+namespace Protection.Compatibility;
 
 public sealed class LegacyRegistryProtection : IProtectionModel
 {
@@ -113,7 +115,10 @@ public sealed class LegacyRegistryProtection : IProtectionModel
             return IsRunningLocked();
     }
 
-    private bool IsRunningLocked() => _cts is { IsCancellationRequested: false };
+    private bool IsRunningLocked()
+    {
+        return _cts is { IsCancellationRequested: false };
+    }
 
     private TraceEventSession CreateTraceSession()
     {

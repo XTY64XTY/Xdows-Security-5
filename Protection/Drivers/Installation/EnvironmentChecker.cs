@@ -1,7 +1,8 @@
+using Protection.Drivers.Runtime;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 
-namespace Protection;
+namespace Protection.Drivers.Installation;
 
 public enum DriverEnvironmentCheckStatus
 {
@@ -60,7 +61,7 @@ public sealed record DriverEnvironmentReport(
     public int FailedCount => Items.Count(i => !i.Passed);
 }
 
-public static class DriverEnvironmentChecker
+public static partial class DriverEnvironmentChecker
 {
     /// <summary>SystemInformationClass = SystemCodeIntegrityInformation（winternl.h，数值 103）。</summary>
     private const int SystemCodeIntegrityInformationClass = 103;
@@ -116,7 +117,7 @@ public static class DriverEnvironmentChecker
         }
 
         CommandResult result = await DriverCommandLine
-            .RunAsync("bcdedit", ["/enum", "{current}"], token)
+            .RunAsync("bcdedit", (string[])["/enum", "{current}"], token)
             .ConfigureAwait(false);
 
         bool? configured = result.Started ? TryReadTestSigning(result.Output) : null;
@@ -197,10 +198,9 @@ public static class DriverEnvironmentChecker
             Path.Combine(bootFilterDirectory, DriverPackageLocator.BootFilterCatName)
         ];
 
-        string[] missing = required
+        string[] missing = [.. required
             .Where(path => !File.Exists(path))
-            .Select(path => Path.GetRelativePath(AppContext.BaseDirectory, path))
-            .ToArray();
+            .Select(path => Path.GetRelativePath(AppContext.BaseDirectory, path))];
 
         return new DriverEnvironmentCheckItem(
             DriverEnvironmentCheckId.FileIntegrity,
@@ -247,8 +247,8 @@ public static class DriverEnvironmentChecker
         public uint CodeIntegrityOptions;
     }
 
-    [DllImport("ntdll.dll")]
-    private static extern int NtQuerySystemInformation(
+    [LibraryImport("ntdll.dll")]
+    private static partial int NtQuerySystemInformation(
         int systemInformationClass,
         ref SystemCodeIntegrityInformation systemInformation,
         int systemInformationLength,
