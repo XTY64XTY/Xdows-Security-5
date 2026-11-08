@@ -109,7 +109,7 @@
 		<PackageReference Include="Markdig" Version="1.4.0" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
-		<PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+		<PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
 		<PackageReference Include="System.Drawing.Common" Version="10.0.12" />
 		<PackageReference Include="WinUI3Localizer" Version="2.3.0" />
 		<PackageReference Include="WinUIEx" Version="2.9.3" />
@@ -126,6 +126,11 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<AssemblyVersion>5.0.3.0</AssemblyVersion>
 		<FileVersion>5.0.3.0</FileVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<MarkupCompilePass1DependsOn>ResolveReferences;$(MarkupCompilePass1DependsOn)</MarkupCompilePass1DependsOn>
+		<SupportedOSPlatformVersion>10.0.18362.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
