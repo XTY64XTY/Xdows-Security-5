@@ -148,6 +148,13 @@ namespace Xdows_Security.Views
             UpdateDriverProtectionState();
             UpdateCloudScanModeToolTips();
             UpdateCloudScanHealthBar();
+            UpdateLocalEngineSupportWarning();
+        }
+
+        private void UpdateLocalEngineSupportWarning()
+        {
+            LocalEngineSupportWarningBar.Title = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Local_SupportWarning_Title");
+            LocalEngineSupportWarningBar.Message = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Local_SupportWarning_Message");
         }
 
         private void UpdateCloudScanModeToolTips()
@@ -165,28 +172,47 @@ namespace Xdows_Security.Views
 
         private async Task LoadCloudScanHealthAsync()
         {
-            _cloudScanHealth = await ScanEngine.GetCloudHealthAsync();
-            _cloudScanHealthChecked = true;
+            _cloudScanHealthChecked = false;
             UpdateCloudScanHealthBar();
+            CloudScanHealthRefreshButton.IsEnabled = false;
+            try
+            {
+                _cloudScanHealth = await ScanEngine.GetCloudHealthAsync();
+            }
+            catch (Exception ex)
+            {
+                _cloudScanHealth = null;
+                LogText.AddNewLog(LogText.LogLevel.WARN, "CloudHealth", ex.Message);
+            }
+            finally
+            {
+                _cloudScanHealthChecked = true;
+                UpdateCloudScanHealthBar();
+                CloudScanHealthRefreshButton.IsEnabled = true;
+            }
         }
 
         private async void CloudScanHealthRefreshButton_Click(object _1, RoutedEventArgs _2)
         {
-            _cloudScanHealthChecked = false;
-            CloudScanHealthBar.IsOpen = false;
             await LoadCloudScanHealthAsync();
         }
 
         private void UpdateCloudScanHealthBar()
         {
-            if (!_cloudScanHealthChecked) return;
+            CloudScanHealthBar.IsOpen = true;
+            if (!_cloudScanHealthChecked)
+            {
+                CloudScanHealthBar.Severity = InfoBarSeverity.Informational;
+                CloudScanHealthBar.Title = "SevenEngine";
+                CloudScanHealthBar.Message = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Loading");
+                return;
+            }
 
             if (_cloudScanHealth is not { } health)
             {
                 CloudScanHealthBar.Severity = InfoBarSeverity.Warning;
                 CloudScanHealthBar.Title = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Warning_Title");
                 CloudScanHealthBar.Message = Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Warning_Message");
-                CloudScanHealthBar.IsOpen = true;
                 return;
             }
 
@@ -194,11 +220,7 @@ namespace Xdows_Security.Views
             CloudScanHealthBar.Title = "SevenEngine";
             CloudScanHealthBar.Message = string.Format(
                 Localizer.Get().GetLocalizedString("SettingsPage_Scan_Cloud_Health_Message"),
-                health.Engine,
-                health.FeatureDim,
-                health.Threshold,
-                health.UptimeSeconds);
-            CloudScanHealthBar.IsOpen = true;
+                health.Engine, health.FeatureDim, health.Threshold, health.UptimeSeconds);
         }
 
         private void UpdateInjectionProtectionText()

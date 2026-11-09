@@ -208,11 +208,17 @@
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="LocalScanToggle" Tag="LocalScan" Toggled="Toggled_SaveToggleData" />
                     <toolkit:SettingsExpander.Items>
-                        <InfoBar
-                            l:Uids.Uid="SettingsPage_Scan_Local_SupportWarning"
-                            IsOpen="True"
-                            IsClosable="False"
-                            Severity="Warning" />
+                        <!-- Keep the SettingsCard container required by the expander's item style.
+                             Its template lets the InfoBar use the full row width. -->
+                        <toolkit:SettingsCard IsClickEnabled="False" HorizontalContentAlignment="Stretch" Padding="0">
+                            <toolkit:SettingsCard.Template>
+                                <ControlTemplate TargetType="toolkit:SettingsCard">
+                                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch" />
+                                </ControlTemplate>
+                            </toolkit:SettingsCard.Template>
+                            <InfoBar x:Name="LocalEngineSupportWarningBar"
+                                     IsOpen="True" IsClosable="False" Severity="Warning" />
+                        </toolkit:SettingsCard>
                         <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Local_DeepScan"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8A5;}">
@@ -232,17 +238,21 @@
                            Margin="0,0,0,4">
                     <ToggleSwitch x:Name="CloudScanToggle" Tag="CloudScan" Toggled="Toggled_SaveToggleData"  />
                     <toolkit:SettingsExpander.Items>
-                        <InfoBar
-                            x:Name="CloudScanHealthBar"
-                            IsOpen="False"
-                            IsClosable="False"
-                            Severity="Warning">
-                            <InfoBar.ActionButton>
-                                <Button
-                                    l:Uids.Uid="SettingsPage_Scan_Cloud_Health_Refresh"
-                                    Click="CloudScanHealthRefreshButton_Click" />
-                            </InfoBar.ActionButton>
-                        </InfoBar>
+                        <toolkit:SettingsCard IsClickEnabled="False" HorizontalContentAlignment="Stretch" Padding="0">
+                            <toolkit:SettingsCard.Template>
+                                <ControlTemplate TargetType="toolkit:SettingsCard">
+                                    <ContentPresenter Content="{TemplateBinding Content}" HorizontalContentAlignment="Stretch" />
+                                </ControlTemplate>
+                            </toolkit:SettingsCard.Template>
+                            <InfoBar x:Name="CloudScanHealthBar"
+                                     Title="SevenEngine" IsOpen="True" IsClosable="False" Severity="Informational">
+                                <InfoBar.ActionButton>
+                                    <Button x:Name="CloudScanHealthRefreshButton"
+                                            l:Uids.Uid="SettingsPage_Scan_Cloud_Health_Refresh"
+                                            Click="CloudScanHealthRefreshButton_Click" />
+                                </InfoBar.ActionButton>
+                            </InfoBar>
+                        </toolkit:SettingsCard>
                         <toolkit:SettingsCard
                            l:Uids.Uid="SettingsPage_Scan_Cloud_ScanType"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE8B7;}">

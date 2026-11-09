@@ -468,10 +468,10 @@
   <data name="SettingsPage_Scan_Local.Description" xml:space="preserve">
     <value>The built-in local engine is fast but may not detect the latest threats promptly.</value>
   </data>
-  <data name="SettingsPage_Scan_Local_SupportWarning.Title" xml:space="preserve">
+  <data name="SettingsPage_Scan_Local_SupportWarning_Title" xml:space="preserve">
     <value>Warning</value>
   </data>
-  <data name="SettingsPage_Scan_Local_SupportWarning.Message" xml:space="preserve">
+  <data name="SettingsPage_Scan_Local_SupportWarning_Message" xml:space="preserve">
     <value>This engine may no longer be supported.</value>
   </data>
   <data name="SettingsPage_Scan_Model.Header" xml:space="preserve">
@@ -2999,5 +2999,8 @@ Restart File Explorer or sign in again for it to take effect.</value>
   </data>
   <data name="FilePicker_Type_FileFormat" xml:space="preserve">
     <value>{0} file</value>
+  </data>
+  <data name="SettingsPage_Scan_Cloud_Health_Loading" xml:space="preserve">
+    <value>Checking cloud engine status…</value>
   </data>
 </root>

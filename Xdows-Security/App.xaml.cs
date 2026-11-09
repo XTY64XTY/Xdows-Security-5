@@ -829,7 +829,79 @@ namespace Xdows_Security
         public App()
         {
             LogText.AddNewLog(LogText.LogLevel.INFO, "UI Interface", "Attempting to load the MainWindow...");
+            InstallCrashDiagnostics();
             this.InitializeComponent();
+        }
+
+        private static readonly Lock CrashDiagnosticsLock = new();
+
+        /// <summary>
+        /// 设置 XDOWS_CRASH_DIAG=1 后运行，会把未处理异常与首次机会异常写入
+        /// %LOCALAPPDATA%\Xdows-Security\crash-diag.log，用于排查只在该环境复现的崩溃。
+        /// 未设置该变量时不做任何额外工作。
+        /// </summary>
+        private void InstallCrashDiagnostics()
+        {
+            if (Environment.GetEnvironmentVariable("XDOWS_CRASH_DIAG") != "1")
+            {
+                return;
+            }
+
+            WriteCrashDiagnostic("diagnostics enabled");
+            AppDomain.CurrentDomain.FirstChanceException += (_, e) =>
+                WriteCrashDiagnostic($"first-chance {Describe(e.Exception)}");
+            UnhandledException += (_, e) =>
+                WriteCrashDiagnostic($"unhandled {Describe(e.Exception)}");
+            AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+                WriteCrashDiagnostic($"appdomain unhandled: {Describe(e.ExceptionObject as Exception)}");
+        }
+
+        private static string Describe(Exception? exception)
+        {
+            if (exception is null)
+            {
+                return "<null>";
+            }
+
+            var builder = new System.Text.StringBuilder();
+            Exception? current = exception;
+            int depth = 0;
+            while (current is not null && depth++ < 6)
+            {
+                builder.Append(current.GetType().FullName).Append(": ").Append(current.Message);
+                builder.AppendLine();
+                if (!string.IsNullOrEmpty(current.StackTrace))
+                {
+                    builder.AppendLine(current.StackTrace);
+                }
+                current = current.InnerException;
+                if (current is not null)
+                {
+                    builder.AppendLine("--- inner ---");
+                }
+            }
+            return builder.ToString();
+        }
+
+        private static void WriteCrashDiagnostic(string text)
+        {
+            try
+            {
+                string directory = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Xdows-Security");
+                Directory.CreateDirectory(directory);
+                lock (CrashDiagnosticsLock)
+                {
+                    File.AppendAllText(
+                        Path.Combine(directory, "crash-diag.log"),
+                        $"[{DateTime.Now:o}] {text}{Environment.NewLine}");
+                }
+            }
+            catch
+            {
+                // 诊断日志失败不能影响应用本身。
+            }
         }
 
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
