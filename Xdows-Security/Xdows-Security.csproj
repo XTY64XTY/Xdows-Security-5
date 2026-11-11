@@ -168,6 +168,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="Dialog\" />
+	  <Folder Include="Views\SettingsPage\Scanning\Engines\" />
 	</ItemGroup>
 
 	<Target Name="BuildNativeAndDriverProjects" BeforeTargets="CollectDriverAndModelAssets" Condition="'$(Platform)' == 'x64' OR '$(Platform)' == 'ARM64'">

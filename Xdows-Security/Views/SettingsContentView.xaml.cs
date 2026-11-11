@@ -22,9 +22,12 @@ using ApplicationDataContainer = Microsoft.Windows.Storage.ApplicationDataContai
 
 namespace Xdows_Security.Views
 {
-    public sealed partial class SettingsPage : Page
+    public sealed partial class SettingsContentView : UserControl
     {
         private bool IsInitialize = true;
+        private bool _protectionStateSubscribed;
+        private readonly SettingsCategoryDefinition _category;
+        private StackPanel? _activeCategoryPanel;
         private DispatcherTimer? ProtectionStatusTimer;
         private const string DriverProtectionDisclaimerAcceptedSetting = "DriverProtectionDisclaimerAccepted";
         private bool _driverProtectionOperationInProgress;
@@ -35,9 +38,11 @@ namespace Xdows_Security.Views
 
         private sealed record BootDiskChoice(PhysicalDiskInfo Disk, string Title);
 
-        public SettingsPage()
+        internal SettingsContentView(SettingsCategoryDefinition category)
         {
+            _category = category;
             this.InitializeComponent();
+            ApplyCategory();
             _ = InitializeAsync();
             InitializeProtectionStatusTimer();
             //
@@ -45,7 +50,42 @@ namespace Xdows_Security.Views
             // 订阅状态变化，恢复完成的瞬间就把开关与状态文字刷新过来，不再等 5 秒轮询。
             //
             ProtectionStatus.StateChanged += OnProtectionStateChanged;
-            Unloaded += (_, _) => ProtectionStatus.StateChanged -= OnProtectionStateChanged;
+            _protectionStateSubscribed = true;
+            Loaded += SettingsContentView_Loaded;
+            Unloaded += SettingsContentView_Unloaded;
+        }
+
+        private void SettingsContentView_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (!_protectionStateSubscribed)
+            {
+                ProtectionStatus.StateChanged += OnProtectionStateChanged;
+                _protectionStateSubscribed = true;
+            }
+
+            if (IsInitialize) return;
+
+            InitializeProtectionStatusTimer();
+            if (App.LocalSettings.Values.TryGetValue("ModelScan", out var modelScanRaw) && modelScanRaw is bool modelScanOn)
+            {
+                if (_category.Key is "scanning" or "engines")
+                    ModelScanToggle.IsOn = modelScanOn;
+            }
+        }
+
+        private void SettingsContentView_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (ProtectionStatusTimer != null)
+            {
+                ProtectionStatusTimer.Stop();
+                ProtectionStatusTimer.Tick -= ProtectionStatusTimer_Tick;
+            }
+
+            if (_protectionStateSubscribed)
+            {
+                ProtectionStatus.StateChanged -= OnProtectionStateChanged;
+                _protectionStateSubscribed = false;
+            }
         }
 
         private void OnProtectionStateChanged(object? sender, EventArgs e)
@@ -150,6 +190,24 @@ namespace Xdows_Security.Views
             UpdateCloudScanHealthBar();
             UpdateLocalEngineSupportWarning();
         }
+
+        /// <summary>每个设置类别页只显示对应的设置组。</summary>
+        private void ApplyCategory()
+        {
+            foreach (SettingsCategoryDefinition category in SettingsCategories.All)
+            {
+                if (FindName(category.PanelName) is not StackPanel panel)
+                    throw new InvalidOperationException($"Settings category panel '{category.PanelName}' was not found.");
+
+                panel.Visibility = category.Key == _category.Key ? Visibility.Visible : Visibility.Collapsed;
+                if (category.Key == _category.Key)
+                    _activeCategoryPanel = panel;
+            }
+        }
+
+        private StackPanel? ActiveCategoryPanel => _activeCategoryPanel;
+
+        private string ActiveCategoryTitle => Localizer.Get().GetLocalizedString(_category.TitleResourceKey);
 
         private void UpdateLocalEngineSupportWarning()
         {
@@ -800,6 +858,11 @@ namespace Xdows_Security.Views
             App.MainWindow?.GoToPage("Model");
         }
 
+        private void Engines_Card_Click(object _1, RoutedEventArgs _2)
+        {
+            App.MainWindow?.GoToPage("Engines");
+        }
+
         private void CloudEngine_About_Card_Click(object _1, RoutedEventArgs _2)
         {
             _ = Windows.System.Launcher.LaunchUriAsync(new Uri("https://sevenengine-cloud.onrender.com/"));
@@ -900,18 +963,7 @@ namespace Xdows_Security.Views
             // 之前的"翻转 RequestedTheme"方案既不彻底又会闪一次相反主题。
             // 这里改为直接重载设置页：新页面按变更后的字体资源重建。
             // 开启与关闭都必须重载，否则另一方向的字体不会生效且无闪烁代价。
-            ProtectionStatusTimer?.Stop();
-            Frame frame = this.Frame;
-            if (frame == null) return;
-            // 设置页启用了导航缓存，直接 Navigate 会复用缓存实例导致字体资源不重新求值；
-            // 先清空帧缓存移除当前实例，再恢复缓存容量后重建页面（新页面仍会被缓存）。
-            int cacheSize = frame.CacheSize;
-            frame.CacheSize = 0;
-            frame.CacheSize = cacheSize;
-            frame.Navigate(typeof(SettingsPage));
-            // 重载不应产生一条"返回到旧设置页"的历史记录。
-            if (frame.BackStack.Count > 0)
-                frame.BackStack.RemoveAt(frame.BackStack.Count - 1);
+            App.MainWindow?.ReloadCurrentPage();
         }
 
         private void CloudScanModeComboBox_SelectionChanged(object _1, SelectionChangedEventArgs _2)
@@ -1241,9 +1293,10 @@ namespace Xdows_Security.Views
 
         private void ShowAllSettingsItems()
         {
-            if (SettingsContentPanel == null) return;
+            StackPanel? panel = ActiveCategoryPanel;
+            if (panel == null) return;
 
-            foreach (UIElement child in SettingsContentPanel.Children)
+            foreach (UIElement child in panel.Children)
             {
                 if (child is FrameworkElement element)
                 {
@@ -1265,9 +1318,10 @@ namespace Xdows_Security.Views
 
         private void FilterSettingsItems(string searchText)
         {
-            if (SettingsContentPanel == null) return;
+            StackPanel? panel = ActiveCategoryPanel;
+            if (panel == null) return;
 
-            foreach (UIElement child in SettingsContentPanel.Children)
+            foreach (UIElement child in panel.Children)
             {
                 if (child is FrameworkElement element)
                 {
@@ -1285,50 +1339,32 @@ namespace Xdows_Security.Views
                 }
             }
 
-            bool currentHeaderMatched = false;
-            for (int i = 0; i < SettingsContentPanel.Children.Count; i++)
+            bool currentHeaderMatched = ActiveCategoryTitle.Contains(
+                searchText,
+                StringComparison.InvariantCultureIgnoreCase);
+            for (int i = 0; i < panel.Children.Count; i++)
             {
-                UIElement child = SettingsContentPanel.Children[i];
-                if (child is FrameworkElement element)
+                UIElement child = panel.Children[i];
+                if (child is FrameworkElement element && element is SettingsCard or SettingsExpander)
                 {
-                    if (element is TextBlock textBlock)
+                    bool shouldShow = IsSettingsItemMatched(element, searchText) || currentHeaderMatched;
+                    if (element is SettingsExpander expander)
                     {
-                        currentHeaderMatched = IsSettingsItemMatched(textBlock, searchText);
-                        if (currentHeaderMatched)
+                        foreach (object expanderChild in expander.Items)
                         {
-                            textBlock.Visibility = Visibility.Visible;
-                        }
-                    }
-                    else if (element is SettingsCard or SettingsExpander)
-                    {
-                        bool shouldShow = false;
-                        if (IsSettingsItemMatched(element, searchText))
-                        {
-                            shouldShow = true;
-                        }
-                        if (!shouldShow && currentHeaderMatched)
-                        {
-                            shouldShow = true;
-                        }
-                        if (element is SettingsExpander expander)
-                        {
-                            foreach (object expanderChild in expander.Items)
+                            if (expanderChild is SettingsCard card)
                             {
-                                if (expanderChild is SettingsCard card)
+                                bool cardMatches = IsSettingsItemMatched(card, searchText) || currentHeaderMatched;
+                                card.Visibility = cardMatches ? Visibility.Visible : Visibility.Collapsed;
+                                if (cardMatches)
                                 {
-                                    if (IsSettingsItemMatched(card, searchText) || currentHeaderMatched)
-                                    {
-                                        shouldShow = true;
-                                        card.Visibility = Visibility.Visible;
-                                    }
+                                    shouldShow = true;
                                 }
                             }
                         }
-                        if (shouldShow)
-                        {
-                            element.Visibility = Visibility.Visible;
-                        }
                     }
+
+                    element.Visibility = shouldShow ? Visibility.Visible : Visibility.Collapsed;
                 }
             }
             App.PlayEntranceAnimation(SettingsContentPanel, "up", 40);
@@ -1341,21 +1377,12 @@ namespace Xdows_Security.Views
         }
 
         private static string GetSettingsItemText(FrameworkElement item)
-        {
-            if (item is TextBlock textBlock)
+            => item switch
             {
-                return textBlock.Text;
-            }
-            else if (item is SettingsCard card)
-            {
-                return card.Header?.ToString() ?? string.Empty;
-            }
-            else if (item is SettingsExpander expander)
-            {
-                return expander.Header?.ToString() ?? string.Empty;
-            }
-            return string.Empty;
-        }
+                SettingsCard card => card.Header?.ToString() ?? string.Empty,
+                SettingsExpander expander => expander.Header?.ToString() ?? string.Empty,
+                _ => string.Empty,
+            };
 
         private bool DisabledVerifyToggleVerify = true;
 
@@ -1991,29 +2018,5 @@ namespace Xdows_Security.Views
             if (sound) ElementSoundPlayer.SpatialAudioMode = spatial ? ElementSpatialAudioMode.On : ElementSpatialAudioMode.Off;
         }
 
-        protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            // 页面被缓存后再次进入时不会执行构造函数，这里恢复防护状态轮询。
-            if (!IsInitialize)
-            {
-                InitializeProtectionStatusTimer();
-                // Xdows Model 页内也能改模型扫描开关，返回设置页时同步卡片上的开关状态。
-                if (App.LocalSettings.Values.TryGetValue("ModelScan", out var modelScanRaw) && modelScanRaw is bool modelScanOn)
-                {
-                    ModelScanToggle.IsOn = modelScanOn;
-                }
-            }
-        }
-
-        protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
-        {
-            if (ProtectionStatusTimer != null)
-            {
-                ProtectionStatusTimer.Stop();
-                ProtectionStatusTimer.Tick -= ProtectionStatusTimer_Tick;
-            }
-            base.OnNavigatedFrom(e);
-        }
     }
 }

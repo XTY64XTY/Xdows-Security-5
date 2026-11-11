@@ -10,6 +10,9 @@
       mc:Ignorable="d">
     <ScrollViewer>
         <StackPanel Spacing="4" Margin="80,24,80,24">
+            <StackPanel.ChildrenTransitions>
+                <RepositionThemeTransition />
+            </StackPanel.ChildrenTransitions>
             <TextBlock Margin="0,4,0,8" l:Uids.Uid="ModelPage_Overview" />
             <controls:SettingsCard
                l:Uids.Uid="SettingsPage_Scan_Model"

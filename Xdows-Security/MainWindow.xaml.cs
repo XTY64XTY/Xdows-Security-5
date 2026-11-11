@@ -32,6 +32,7 @@ namespace Xdows_Security
         private bool _isOOBEShown;
         private bool _voluntaryExitAuthorized;
         private bool _closeConfirmationPending;
+        private bool _isSyncingSettingsNavigationSelection;
         private readonly Stack<string> _navigationHistory = new();
         private readonly SUBCLASSPROC? _deviceChangeSubclassProc;
         private TaskCompletionSource<ScanPage?>? _scanPageReadyTcs;
@@ -379,8 +380,10 @@ namespace Xdows_Security
         }
         public void GoToPage(string PageName, bool pushHistory = true)
         {
-            // 隔离区 / 信任区 / Xdows Model / 驱动环境检测是「设置」下的子页面，不作为导航菜单项处理
-            bool isSettingsSubPage = PageName is "Quarantine" or "Trust" or "Model" or "DriverEnvironment";
+            // 设置类别及相关工具页都属于「设置」下的独立子页面，不作为导航菜单项处理。
+            bool isSettingsSubPage = SettingsCategories.IsSettingsSubPageName(PageName);
+            if (isSettingsSubPage)
+                SelectSettingsNavigationRoot();
 
             string previousPage = NowPage;
             var selectedItem = nav.SelectedItem as NavigationViewItem;
@@ -418,19 +421,34 @@ namespace Xdows_Security
 
             NowPage = PageName;
             UpdateHeader(PageName);
-            var pageType = PageName switch
+            Type pageType = PageName switch
             {
                 "Home" => typeof(HomePage),
                 "Scan" => typeof(ScanPage),
                 "XdowsTools" => typeof(XdowsToolsPage),
-                "Settings" => typeof(SettingsPage),
+                "Settings" => typeof(SettingsHomePage),
                 "Quarantine" => typeof(QuarantinePage),
                 "Trust" => typeof(TrustPage),
                 "Model" => typeof(ModelPage),
+                "Engines" => typeof(EnginesSettingsPage),
                 "DriverEnvironment" => typeof(DriverEnvironmentPage),
+                string settingsPage when SettingsCategories.IsCategoryPageName(settingsPage) =>
+                    SettingsCategories.GetByPageName(settingsPage).PageType,
                 _ => typeof(HomePage)
             };
             navContainer.Navigate(pageType, null, ResolveTransition(previousPage, PageName));
+        }
+
+        public void ReloadCurrentPage()
+        {
+            string currentPage = NowPage;
+            int cacheSize = navContainer.CacheSize;
+            navContainer.CacheSize = 0;
+            navContainer.CacheSize = cacheSize;
+            GoToPage(currentPage, false);
+
+            if (navContainer.BackStack.Count > 0)
+                navContainer.BackStack.RemoveAt(navContainer.BackStack.Count - 1);
         }
 
         /// <summary>
@@ -439,39 +457,95 @@ namespace Xdows_Security
         /// </summary>
         private static NavigationTransitionInfo ResolveTransition(string from, string to)
         {
-            if (from == "Settings" && to is "Quarantine" or "Trust" or "Model" or "DriverEnvironment")
+            if (from == "Settings" && SettingsCategories.IsSettingsSubPageName(to))
                 return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromRight };
 
-            if (from is "Quarantine" or "Trust" or "Model" or "DriverEnvironment" && to == "Settings")
+            if (SettingsCategories.IsSettingsSubPageName(from) && to == "Settings")
+                return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft };
+
+            if (SettingsCategories.IsCategoryPageName(from) && SettingsCategories.IsToolPageName(to))
+                return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromRight };
+
+            if (SettingsCategories.IsToolPageName(from) && SettingsCategories.IsCategoryPageName(to))
                 return new SlideNavigationTransitionInfo { Effect = SlideNavigationTransitionEffect.FromLeft };
 
             return App.GetNavigationTransitionInfo();
         }
 
         /// <summary>
-        /// 根据当前页面构建导航标题。设置子页面（隔离区 / 信任区）显示
-        /// 「设置 &gt; 隔离区」层级面包屑，点击父级可返回上一层。
+        /// 构建设置页面的导航标题：沿父级链生成面包屑（设置 &gt; 扫描 &gt; 引擎 &gt; Xdows Model），
+        /// 除当前页外每一级都可点击返回。
         /// </summary>
         private void UpdateHeader(string pageName)
         {
-            nav.Header = pageName switch
+            if (pageName == "Settings")
             {
-                "Settings" => BuildHeaderText(Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings")),
-                "Quarantine" => BuildBreadcrumb(
-                                        ("MainWindow_Nav_Settings", "Settings"),
-                                        ("QuarantinePage_Title", null)),
-                "Trust" => BuildBreadcrumb(
-                                        ("MainWindow_Nav_Settings", "Settings"),
-                                        ("TrustPage_Title", null)),
-                "Model" => BuildBreadcrumb(
-                                        ("MainWindow_Nav_Settings", "Settings"),
-                                        ("ModelPage_Title", null)),
-                "DriverEnvironment" => BuildBreadcrumb(
-                                        ("MainWindow_Nav_Settings", "Settings"),
-                                        ("DriverEnvironmentPage_Title", null)),
-                _ => BuildHeaderText((nav.SelectedItem as NavigationViewItem)?.Content?.ToString() ?? string.Empty),
-            };
+                nav.Header = BuildHeaderText(Localizer.Get().GetLocalizedString("MainWindow_Nav_Settings"));
+                return;
+            }
+
+            List<(string Uid, string? TargetPage)> trail = BuildSettingsTrail(pageName);
+            nav.Header = trail.Count > 0
+                ? BuildBreadcrumb(trail.ToArray())
+                : BuildHeaderText((nav.SelectedItem as NavigationViewItem)?.Content?.ToString() ?? string.Empty);
         }
+
+        /// <summary>从当前设置页向上收集到设置首页的父级链，末项为当前页自身。</summary>
+        private static List<(string Uid, string? TargetPage)> BuildSettingsTrail(string pageName)
+        {
+            List<(string Uid, string? TargetPage)> trail = [];
+            string? current = pageName;
+
+            while (!string.IsNullOrEmpty(current) && current != "Settings")
+            {
+                string page = current;
+                string? parent = SettingsParentPageOf(page);
+                if (parent is null)
+                    return [];
+
+                trail.Add((SettingsPageTitleKey(page), page));
+                if (string.Equals(parent, page, StringComparison.Ordinal))
+                    break;
+
+                current = parent;
+            }
+
+            if (trail.Count == 0)
+                return trail;
+
+            trail.Reverse();
+            trail.Insert(0, ("MainWindow_Nav_Settings", "Settings"));
+            // 当前页自身不是链接。
+            trail[^1] = (trail[^1].Uid, null);
+            return trail;
+        }
+
+        /// <summary>工具页归属于其类别页；类别页归属于设置首页。</summary>
+        private static string? SettingsParentPageOf(string pageName)
+        {
+            if (SettingsCategories.IsToolPageName(pageName))
+                return SettingsCategories.GetByToolPageName(pageName).PageName;
+
+            if (SettingsCategories.IsCategoryPageName(pageName))
+                return "Settings";
+
+            return null;
+        }
+
+        private static string SettingsPageTitleKey(string pageName) =>
+            SettingsCategories.IsToolPageName(pageName)
+                ? SettingsToolTitleKey(pageName)
+                : SettingsCategories.GetByPageName(pageName).TitleResourceKey;
+
+        private static string SettingsToolTitleKey(string pageName) => pageName switch
+        {
+            "Quarantine" => "QuarantinePage_Title",
+            "Trust" => "TrustPage_Title",
+            "Model" => "ModelPage_Title",
+            "Engines" => "EnginesPage_Title",
+            "DriverEnvironment" => "DriverEnvironmentPage_Title",
+            _ => throw new ArgumentOutOfRangeException(nameof(pageName), pageName, "Unknown settings tool page."),
+        };
 
         /// <summary>按当前字体设置刷新导航标题（用于运行时切换"使用 Noto 字体"后立即生效）。</summary>
         public void RefreshHeader() => UpdateHeader(NowPage);
@@ -534,7 +608,7 @@ namespace Xdows_Security
                     };
                     if (uiFont != null)
                         link.FontFamily = uiFont;
-                    link.Click += (sender, args) => GoToPage(targetPage, false);
+                    link.Click += (sender, args) => NavigateToSettingsBreadcrumb(targetPage);
                     panel.Children.Add(link);
                 }
                 else
@@ -566,6 +640,44 @@ namespace Xdows_Security
             return panel;
         }
 
+        private void NavigateToSettingsBreadcrumb(string targetPage)
+        {
+            if (_navigationHistory.Count > 0 && _navigationHistory.Peek() == targetPage)
+            {
+                _navigationHistory.Pop();
+                UpdateBackEnabled();
+            }
+
+            GoToPage(targetPage, false);
+        }
+
+        private void SelectSettingsNavigationRoot()
+        {
+            if (nav.SettingsItem is not NavigationViewItem settingsItem ||
+                ReferenceEquals(nav.SelectedItem, settingsItem))
+            {
+                return;
+            }
+
+            _isSyncingSettingsNavigationSelection = true;
+            try
+            {
+                nav.SelectedItem = settingsItem;
+            }
+            finally
+            {
+                _isSyncingSettingsNavigationSelection = false;
+            }
+        }
+
+        /// <summary>
+        /// 从「设置」首页进入对应的独立类别页。Nav 保持选中「设置」。
+        /// </summary>
+        public void OpenSettingsCategory(string categoryKey)
+        {
+            GoToPage(SettingsCategories.GetByKey(categoryKey).PageName);
+        }
+
         private static NavigationViewItem? FindNavigationItemByTag(IList<object> items, string targetTag)
         {
             foreach (var item in items)
@@ -586,6 +698,9 @@ namespace Xdows_Security
         }
         private void NavigationSelectionChanged()
         {
+            if (_isSyncingSettingsNavigationSelection)
+                return;
+
             if (nav.SelectedItem is NavigationViewItem item)
             {
                 string pageName = item.Tag as string ?? string.Empty;

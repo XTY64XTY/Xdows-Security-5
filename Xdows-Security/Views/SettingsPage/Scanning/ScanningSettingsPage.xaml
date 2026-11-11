@@ -1,0 +1,8 @@
+<Page x:Class="Xdows_Security.Views.ScanningSettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      NavigationCacheMode="Enabled">
+    <ContentControl x:Name="SettingsContentHost"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch" />
+</Page>

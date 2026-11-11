@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Page x:Class="Xdows_Security.Views.SettingsPage"
+<UserControl x:Class="Xdows_Security.Views.SettingsContentView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,21 +7,21 @@
       xmlns:ui="using:CommunityToolkit.WinUI"
       xmlns:toolkit="using:CommunityToolkit.WinUI.Controls"
       xmlns:l="using:WinUI3Localizer"
-      NavigationCacheMode="Enabled"
       mc:Ignorable="d">
-    <ScrollViewer>
-        <StackPanel Spacing="4" Margin="80,24,80,0">
+    <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="4" Margin="80,24,80,0" HorizontalAlignment="Stretch">
             <AutoSuggestBox x:Name="SettingsSearchBox"
                             l:Uids.Uid="SettingsPage_Search"
                             QueryIcon="Find"
                             TextChanged="SettingsSearchBox_TextChanged"
+                            Margin="0,0,0,4"
                             VerticalAlignment="Top"
                             HorizontalAlignment="Stretch" />
             <StackPanel x:Name="SettingsContentPanel">
-                <StackPanel.ChildrenTransitions>
-                    <RepositionThemeTransition />
-                </StackPanel.ChildrenTransitions>
-                <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Appearance" x:Name="Appearance_Header"/>
+                <StackPanel x:Name="Category_Personalization" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsExpander
                               l:Uids.Uid="SettingsPage_Appearance_Theme"
                               HeaderIcon="{ui:FontIcon Glyph=&#xE790;}"
@@ -126,7 +126,11 @@
                         <ComboBoxItem l:Uids.Uid="SettingsPage_Appearance_Transition_Continuum" Tag="Continuum" />
                     </ComboBox>
                 </toolkit:SettingsCard>
-                <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Scan" x:Name="Scan_Header"/>
+                </StackPanel>
+                <StackPanel x:Name="Category_Scanning" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsExpander
                            l:Uids.Uid="SettingsPage_Scan_IndexMode"
                            HeaderIcon="{ui:FontIcon Glyph=&#xE773;}"
@@ -188,6 +192,18 @@
                         </toolkit:SettingsCard>
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
+                    <toolkit:SettingsCard
+                   l:Uids.Uid="SettingsPage_Scan_Engines"
+                   HeaderIcon="{ui:FontIcon Glyph=&#xF0B9;}"
+                   IsClickEnabled="True"
+                   Click="Engines_Card_Click"
+                   Margin="0,0,0,4">
+                    </toolkit:SettingsCard>
+                </StackPanel>
+                <StackPanel x:Name="Category_Engines" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsCard
                    VerticalAlignment="Top"
                    l:Uids.Uid="SettingsPage_Scan_Model"
@@ -284,7 +300,11 @@
                         </toolkit:SettingsCard>
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
-                <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Protection" />
+                </StackPanel>
+                <StackPanel x:Name="Category_Protection" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsExpander
                     x:Name="DriverProtectionCard"
                     VerticalAlignment="Top"
@@ -361,9 +381,11 @@
                     Margin="0,0,0,4">
                     <ToggleSwitch x:Name="UsbAutoScanToggle" Toggled="Toggled_SaveToggleData" Tag="UsbAutoScan"/>
                 </toolkit:SettingsCard>
-                <TextBlock x:Name="Feature_Header"
-                           Margin="0,4,0,8"
-                           l:Uids.Uid="SettingsPage_Feature" />
+                </StackPanel>
+                <StackPanel x:Name="Category_Features" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsExpander x:Name="Feature_ThreatNotificationMode"
                                            l:Uids.Uid="SettingsPage_Feature_ThreatNotificationMode"
                                            HeaderIcon="{ui:FontIcon Glyph=&#xE7F4;}"
@@ -432,7 +454,11 @@
                                             Tag="UseLegacyFilePicker"
                                             Toggled="Toggled_SaveToggleData" />
                 </toolkit:SettingsCard>
-                <TextBlock Margin="0,8,0,8" l:Uids.Uid="SettingsPage_Quarantine_Trust" />
+                </StackPanel>
+                <StackPanel x:Name="Category_Quarantine" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsCard
                    VerticalAlignment="Top"
                    l:Uids.Uid="SettingsPage_Quarantine"
@@ -447,7 +473,11 @@
                    IsClickEnabled="True"
                    Click="Trust_Card_Click"
                    Margin="0,0,0,4" />
-                <TextBlock Margin="0,4,0,8" l:Uids.Uid="SettingsPage_Other"/>
+                </StackPanel>
+                <StackPanel x:Name="Category_General" Spacing="4">
+                    <StackPanel.ChildrenTransitions>
+                        <RepositionThemeTransition />
+                    </StackPanel.ChildrenTransitions>
                 <toolkit:SettingsCard 
                     l:Uids.Uid="SettingsPage_Other_Language"
                     HeaderIcon="{ui:FontIcon Glyph=&#xF2B7;}"
@@ -540,6 +570,7 @@
                         </toolkit:SettingsCard>
                     </toolkit:SettingsExpander.Items>
                 </toolkit:SettingsExpander>
+                </StackPanel>
                 <TeachingTip
                x:Name="UpdateTeachingTip"
                l:Uids.Uid="SettingsPage_Other_CheckUpdate_UpdateTeachingTip"
@@ -548,4 +579,4 @@
             </StackPanel>
         </StackPanel>
     </ScrollViewer>
-</Page>
+</UserControl>
